@@ -374,7 +374,7 @@ export default function UsersPage() {
           Showing {filteredUsers.length} of {tableData.length} users
           {searchTerm && (
             <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-              Search: "{searchTerm}"
+              Search: &quot;{searchTerm}&quot;
             </span>
           )}
           {(selectedFilters.tierLevel || selectedFilters.status) && (

@@ -76,7 +76,7 @@ export default function UserDetail() {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-semibold text-gray-900 mb-4">User Not Found</h1>
-        <p className="text-gray-600 mb-6">The user with ID "{userId}" could not be found.</p>
+        <p className="text-gray-600 mb-6">The user with ID &quot;{userId}&quot; could not be found.</p>
         <button
           onClick={() => router.push('/users')}
           className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
