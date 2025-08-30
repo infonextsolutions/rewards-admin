@@ -2,22 +2,22 @@ import React from "react";
 
 export const BalanceTierSection = ({ user }) => {
   const balanceAndTierData = [
-    { label: "Current XP", value: "2,850 XP" },
-    { label: "Current Coin Balance", value: "15,200 Coins", hasButton: true },
-    { label: "XP Tier with Badge", value: "Gold", isBadge: true },
-    { label: "Redemption Count", value: "3 redemptions" },
-    { label: "Redemption Type Preference", value: "", hasImage: true },
+    { label: "Current XP (Read-only)", value: user?.currentXP || "2,850 XP" },
+    { label: "Current Coin Balance (Read-only)", value: user?.coinBalance || "15,200 Coins" },
+    { label: "XP Tier & Badge", value: user?.tier || "Gold", isBadge: true },
+    { label: "Redemption Count & Types", value: user?.redemptionCount || "3 redemptions (2 PayPal, 1 Gift Card)" },
+    { label: "Redemption Preference", value: user?.redemptionPreference || "PayPal", isPreference: true },
   ];
 
-  const activitySummaryData = [
-    { label: "Most Played Game", value: "Spin Master" },
-    { label: "Last Game Played", value: "Coin Tycoon – May 27" },
-    { label: "Total Games Downloaded", value: "17 games" },
-    { label: "Avg. Session Duration", value: "12 minutes" },
-    { label: "Primary Earning Source", value: "Surveys (BitLabs)" },
-    { label: "Preferred Game Category", value: "Puzzle & Trivia" },
-    { label: "Onboarding Goal Selected", value: "Earn Extra Income" },
-    { label: "Notification Behavior", value: "Muted – Push Disabled" },
+  const engagementData = [
+    { label: "Most Played Game", value: user?.mostPlayedGame || "Spin Master" },
+    { label: "Last Game Played", value: user?.lastGamePlayed || "Coin Tycoon – May 27" },
+    { label: "Total Games Downloaded", value: user?.totalGamesDownloaded || "17 games" },
+    { label: "Avg. Session Duration", value: user?.avgSessionDuration || "12 minutes" },
+    { label: "Primary Earning Source", value: user?.primaryEarningSource || "Surveys (BitLabs)" },
+    { label: "Preferred Game Category", value: user?.preferredGameCategory || "Puzzle & Trivia" },
+    { label: "Onboarding Goal Selected", value: user?.onboardingGoal || "Earn Extra Income" },
+    { label: "Notification Settings", value: user?.notificationSettings || "Push Enabled, Email Disabled" },
   ];
 
   return (
@@ -73,31 +73,35 @@ export const BalanceTierSection = ({ user }) => {
               );
             }
 
-            if (item.hasImage) {
+            if (item.isPreference) {
               return (
-                <img
+                <div
                   key={index}
-                  className={`absolute w-[75px] h-5 ${topPositions[index]} left-0 aspect-[3.75] object-cover`}
-                  alt="Image"
-                  src="https://c.animaapp.com/OW4NDadO/img/image-17@2x.png"
-                />
+                  className={`absolute ${topPositions[index]} left-0 flex items-center gap-2`}
+                >
+                  <img
+                    className="w-6 h-6 rounded"
+                    alt={item.value}
+                    src={item.value === 'PayPal' ? 
+                      'https://cdn.worldvectorlogo.com/logos/paypal-2.svg' : 
+                      'https://cdn-icons-png.flaticon.com/128/891/891462.png'
+                    }
+                  />
+                  <span className="text-sm font-medium text-black">{item.value}</span>
+                </div>
               );
             }
 
             return null;
           })}
 
-          <button className="all-[unset] box-border inline-flex h-[30px] items-center justify-end gap-2.5 px-[18px] py-1.5 absolute top-[41px] left-[97px] rounded-[100px] border border-solid border-[#f68d2b] hover:bg-[#f68d2b] hover:text-white transition-colors">
-            <div className="relative w-fit mt-[-1.50px] [font-family:'Inter',Helvetica] font-medium text-[#f68d2b] hover:text-white text-[13px] tracking-[0] leading-[19px] whitespace-nowrap">
-              Adjust Balance
-            </div>
-          </button>
+          {/* Adjust Balance button removed per requirements */}
         </div>
       </div>
 
       <div className="relative w-[497px] h-[354px]">
         <div className="inline-flex flex-col items-start gap-[30px] absolute top-0 left-0">
-          {activitySummaryData.map((item, index) => (
+          {engagementData.map((item, index) => (
             <div
               key={index}
               className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]"
@@ -108,12 +112,22 @@ export const BalanceTierSection = ({ user }) => {
         </div>
 
         <div className="flex flex-col w-52 h-[354px] items-start gap-[30px] absolute top-0 left-[289px]">
-          {activitySummaryData.map((item, index) => (
+          {engagementData.map((item, index) => (
             <div
               key={index}
               className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]"
             >
-              {item.value}
+              {index === 7 ? ( // Notification settings with icon
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs ${
+                    item.value.includes('Push Enabled') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {item.value.includes('Push Enabled') ? '🔔' : '🔕'} {item.value}
+                  </span>
+                </div>
+              ) : (
+                item.value
+              )}
             </div>
           ))}
         </div>

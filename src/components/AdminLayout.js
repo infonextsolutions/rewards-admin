@@ -35,7 +35,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 fixed h-full">
+      <div className="w-64 bg-white border-r border-gray-200 fixed h-full z-30 transform lg:transform-none lg:translate-x-0 -translate-x-full transition-transform duration-200 ease-in-out">
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-200">
             <h1 className="font-bold text-2xl text-gray-900">Jackson.</h1>
@@ -66,18 +66,18 @@ export default function AdminLayout({ children }) {
       </div>
 
       {/* Main Content */}
-      <div className="ml-64 flex-1">
+      <div className="w-full lg:ml-64 flex-1">
         {/* Header */}
-        <header className="relative w-full h-28 py-8 " role="banner">
+        <header className="relative w-full h-28 py-8 px-4 lg:px-6" role="banner">
           <div className="relative w-full h-full">
             {/* Divider line */}
             <div
-              className="absolute w-px h-[40px] top-4 right-[240px] bg-[#d0d5de] rounded-[6.4px]"
+              className="absolute w-px h-[40px] top-4 right-[240px] bg-[#d0d5de] rounded-[6.4px] hidden lg:block"
               aria-hidden="true"
             />
 
             {/* Search section */}
-            <div className="absolute w-[549px] h-[45px] top-5 left-6 bg-[#fcfcfc] rounded-[6.4px] border-[0.8px] border-solid border-[#ebebeb]">
+            <div className="absolute w-full max-w-[549px] h-[45px] top-5 left-4 lg:left-6 right-4 lg:right-auto bg-[#fcfcfc] rounded-[6.4px] border-[0.8px] border-solid border-[#ebebeb]">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -87,7 +87,7 @@ export default function AdminLayout({ children }) {
               >
                 <button
                   type="submit"
-                  className="absolute w-[19px] h-[19px] top-0 left-[480px] cursor-pointer hover:opacity-70 transition-opacity"
+                  className="absolute w-[19px] h-[19px] top-0 right-[22px] cursor-pointer hover:opacity-70 transition-opacity"
                   aria-label="Search"
                 >
                   <svg className="w-full h-full text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ export default function AdminLayout({ children }) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for games or users...."
-                  className="absolute top-0.5 left-0 w-[460px] h-[18px] [font-family:'DM_Sans-Regular',Helvetica] font-normal text-[#969ba0] text-[12.8px] tracking-[0] leading-[normal] bg-transparent border-none outline-none placeholder:text-[#969ba0] focus:text-[#464154]"
+                  className="absolute top-0.5 left-0 right-[50px] h-[18px] [font-family:'DM_Sans-Regular',Helvetica] font-normal text-[#969ba0] text-[12.8px] tracking-[0] leading-[normal] bg-transparent border-none outline-none placeholder:text-[#969ba0] focus:text-[#464154]"
                   aria-describedby="search-description"
                 />
                 <div id="search-description" className="sr-only">
@@ -114,7 +114,7 @@ export default function AdminLayout({ children }) {
             </div>
 
             {/* User profile section */}
-            <div className="absolute w-[180px] h-12 top-3 right-6">
+            <div className="absolute w-[180px] h-12 top-3 right-4 lg:right-6 hidden sm:block">
               <div className="absolute w-[81px] h-[19px] top-[15px] left-0">
                 <p className="absolute top-0 left-0 [font-family:'Barlow-Regular',Helvetica] font-normal text-[#464154] text-base tracking-[0] leading-[normal] whitespace-nowrap">
                   <span className="[font-family:'Barlow-Regular',Helvetica] font-normal text-[#464154] text-base tracking-[0]">
@@ -136,7 +136,7 @@ export default function AdminLayout({ children }) {
             </div>
 
             {/* Notification section */}
-            <div className="absolute w-[50px] h-[38px] top-5 right-[260px]">
+            <div className="absolute w-[50px] h-[38px] top-5 right-[200px] lg:right-[260px] hidden md:block">
               <button
                 className="absolute w-[38px] h-[38px] top-0 left-0 bg-[#2d9cdb26] rounded-xl hover:bg-[#2d9cdb40] transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Notifications"
@@ -156,7 +156,7 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="p-4 lg:p-6">
           {children}
         </main>
       </div>

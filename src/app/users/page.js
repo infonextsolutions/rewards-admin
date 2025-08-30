@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import EditUserModal from '../../components/users/EditUserModal';
+import SuspendUserModal from '../../components/users/SuspendUserModal';
 
 const tableData = [
   {
@@ -233,7 +235,18 @@ export default function UsersPage() {
     location: "",
     memberSince: "",
     status: "",
+    gender: "",
+    ageRange: "",
+    dateRange: "",
   });
+
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [suspendingUser, setSuspendingUser] = useState(null);
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
 
   const filterOptions = [
     {
@@ -247,12 +260,17 @@ export default function UsersPage() {
       label: "Location",
       icon: "data:image/svg+xml,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%233E4954' stroke-width='2'/%3E%3C/svg%3E",
       options: [
-        "North America",
-        "Europe",
-        "Asia",
-        "South America",
-        "Africa",
-        "Oceania",
+        "New York, USA",
+        "Lyon, France", 
+        "London, UK",
+        "Delhi, India",
+        "Madrid, Spain",
+        "Cairo, Egypt",
+        "Los Angeles, USA",
+        "Berlin, Germany",
+        "Chicago, USA",
+        "Miami, USA",
+        "Sydney, Australia",
       ],
     },
     {
@@ -273,6 +291,18 @@ export default function UsersPage() {
       icon: "data:image/svg+xml,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%233E4954' stroke-width='2'/%3E%3C/svg%3E",
       options: ["Active", "Inactive", "Paused"],
     },
+    {
+      id: "gender",
+      label: "Gender",
+      icon: "data:image/svg+xml,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%233E4954' stroke-width='2'/%3E%3C/svg%3E",
+      options: ["Male", "Female", "Other"],
+    },
+    {
+      id: "ageRange",
+      label: "Age Range",
+      icon: "data:image/svg+xml,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%233E4954' stroke-width='2'/%3E%3C/svg%3E",
+      options: ["18–24", "25–34", "35–44", "45–54", "55+"],
+    },
   ];
 
   const handleFilterChange = (filterId, value) => {
@@ -292,67 +322,206 @@ export default function UsersPage() {
 
     const matchesTier = !selectedFilters.tierLevel || user.tier === selectedFilters.tierLevel;
     const matchesStatus = !selectedFilters.status || user.status === selectedFilters.status;
+    const matchesLocation = !selectedFilters.location || user.location === selectedFilters.location;
+    const matchesGender = !selectedFilters.gender || user.gender === selectedFilters.gender;
+    const matchesAgeRange = !selectedFilters.ageRange || user.age === selectedFilters.ageRange;
     
-    return matchesSearch && matchesTier && matchesStatus;
+    // Member since filter logic (simplified for demo)
+    let matchesMemberSince = true;
+    if (selectedFilters.memberSince) {
+      const now = new Date();
+      const memberSinceDate = new Date('2025-01-01'); // Mock date
+      const daysDiff = Math.floor((now - memberSinceDate) / (1000 * 60 * 60 * 24));
+      
+      switch (selectedFilters.memberSince) {
+        case 'Last 30 days':
+          matchesMemberSince = daysDiff <= 30;
+          break;
+        case 'Last 3 months':
+          matchesMemberSince = daysDiff <= 90;
+          break;
+        case 'Last 6 months':
+          matchesMemberSince = daysDiff <= 180;
+          break;
+        case 'Last year':
+          matchesMemberSince = daysDiff <= 365;
+          break;
+        default:
+          matchesMemberSince = true;
+      }
+    }
+    
+    return matchesSearch && matchesTier && matchesStatus && matchesLocation && matchesGender && matchesAgeRange && matchesMemberSince;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const exportData = () => {
+    const csvContent = [
+      ['User ID', 'Name', 'Email', 'Phone', 'Gender', 'Age', 'Location', 'Tier', 'Status'],
+      ...filteredUsers.map(user => [
+        user.userId, user.name, user.email, user.phone, user.gender, user.age, user.location, user.tier, user.status
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setShowEditModal(true);
+  };
+
+  const handleSaveUser = async (updatedUserData) => {
+    try {
+      // Here you would typically make an API call to save the user data
+      console.log('Saving user data:', updatedUserData);
+      
+      // For now, we'll just simulate a successful save
+      // In a real app, you'd update the tableData state or refetch from API
+      
+      // Show success message
+      alert('User profile updated successfully!');
+      
+      setShowEditModal(false);
+      setEditingUser(null);
+    } catch (error) {
+      console.error('Error saving user:', error);
+      throw error; // Re-throw to let the modal handle the error
+    }
+  };
+
+  const handleSuspendUser = (user) => {
+    setSuspendingUser(user);
+    setShowSuspendModal(true);
+  };
+
+  const handleConfirmSuspend = async (suspendData) => {
+    try {
+      // Here you would typically make an API call to suspend the user
+      console.log('Suspending user:', suspendData);
+      
+      // For now, we'll just simulate a successful suspension
+      // In a real app, you'd update the user's status in tableData or refetch from API
+      
+      // Show success message
+      alert(`User ${suspendingUser.name} has been suspended successfully!`);
+      
+      setShowSuspendModal(false);
+      setSuspendingUser(null);
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      throw error; // Re-throw to let the modal handle the error
+    }
+  };
+
   return (
-    <div className="max-w-full">
+    <div className="w-full bg-white">
       {/* Header with Filters */}
-      <header className="flex w-full items-end justify-between mb-6" role="banner">
-        <div className="relative w-[189px] h-[58.2px]">
-          <h1 className="absolute top-0 left-0 [font-family:'DM_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[25.6px] tracking-[0] leading-[normal]">
+      <header className="flex flex-col lg:flex-row w-full items-start lg:items-end justify-between gap-6 mb-6" role="banner">
+        <div className="flex-shrink-0">
+          <h1 className="[font-family:'DM_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[25.6px] tracking-[0] leading-[normal]">
             Users
           </h1>
-          <p className="absolute top-[39px] left-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#666666] text-[14.4px] tracking-[0] leading-[normal]">
+          <p className="[font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#666666] text-[14.4px] tracking-[0] leading-[normal] mt-1">
             Track all your users activity
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2 relative flex-[0_0_auto]" role="toolbar" aria-label="User filters">
-          {filterOptions.map((filter) => (
-            <div key={filter.id} className="relative w-[178px] h-[42px]">
-              <div className="h-[42px] bg-white rounded-[9.6px] shadow-[0px_3.2px_3.2px_#0000000a] border border-gray-200">
-                <div className="inline-flex items-center gap-[22px] relative top-[9px] left-[18px]">
-                  <div className="relative w-[97.73px] h-[19px]">
-                    <label
-                      htmlFor={`filter-${filter.id}`}
-                      className="absolute w-24 top-0 left-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14.4px] tracking-[0] leading-[normal] cursor-pointer"
-                    >
-                      {filter.label}
-                    </label>
-                  </div>
-                  <div className="relative w-6 h-6 aspect-[1]">
-                    <img
-                      className="absolute w-3 h-[7px] top-[9px] left-1.5 pointer-events-none"
-                      alt={`${filter.label} dropdown arrow`}
-                      src={filter.icon}
-                    />
+        <div className="flex flex-col gap-2 w-full lg:w-auto lg:max-w-4xl" role="toolbar" aria-label="User filters">
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            {filterOptions.slice(0, 4).map((filter) => (
+              <div key={filter.id} className="relative min-w-[150px] flex-shrink-0">
+                <div className="relative h-[42px] bg-white rounded-[9.6px] shadow-[0px_3.2px_3.2px_#0000000a] border border-gray-200">
+                  <select
+                    id={`filter-${filter.id}`}
+                    value={selectedFilters[filter.id]}
+                    onChange={(e) => handleFilterChange(filter.id, e.target.value)}
+                    className="w-full h-full px-4 pr-10 bg-transparent border-none rounded-[9.6px] cursor-pointer [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14.4px] tracking-[0] leading-[normal] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                    aria-label={`Filter by ${filter.label}`}
+                  >
+                    <option value="">{filter.label}</option>
+                    {filter.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                    <svg className="w-3 h-2 text-[#3e4954]" fill="currentColor" viewBox="0 0 12 7">
+                      <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </div>
                 </div>
-                <select
-                  id={`filter-${filter.id}`}
-                  value={selectedFilters[filter.id]}
-                  onChange={(e) => handleFilterChange(filter.id, e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  aria-label={`Filter by ${filter.label}`}
-                >
-                  <option value="">{filter.label}</option>
-                  {filter.options.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            {filterOptions.slice(4).map((filter) => (
+              <div key={filter.id} className="relative min-w-[120px] flex-shrink-0">
+                <div className="relative h-[42px] bg-white rounded-[9.6px] shadow-[0px_3.2px_3.2px_#0000000a] border border-gray-200">
+                  <select
+                    id={`filter-${filter.id}`}
+                    value={selectedFilters[filter.id]}
+                    onChange={(e) => handleFilterChange(filter.id, e.target.value)}
+                    className="w-full h-full px-4 pr-10 bg-transparent border-none rounded-[9.6px] cursor-pointer [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14.4px] tracking-[0] leading-[normal] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                    aria-label={`Filter by ${filter.label}`}
+                  >
+                    <option value="">{filter.label}</option>
+                    {filter.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                    <svg className="w-3 h-2 text-[#3e4954]" fill="currentColor" viewBox="0 0 12 7">
+                      <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={exportData}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors h-[42px] whitespace-nowrap ml-2"
+              title="Export user data"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+              Export
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="relative w-full max-w-md">
+        <div className="relative w-full max-w-full sm:max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -369,72 +538,95 @@ export default function UsersPage() {
       </div>
 
       {/* Results Summary */}
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
         <div className="text-sm text-gray-600">
-          Showing {filteredUsers.length} of {tableData.length} users
+          <span className="font-medium">Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users</span>
+          {filteredUsers.length < tableData.length && (
+            <span className="ml-2 text-xs text-gray-500">
+              (filtered from {tableData.length} total)
+            </span>
+          )}
           {searchTerm && (
             <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
               Search: &quot;{searchTerm}&quot;
             </span>
           )}
-          {(selectedFilters.tierLevel || selectedFilters.status) && (
-            <span className="ml-2 text-xs text-gray-500">
-              (Filtered)
-            </span>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {Object.entries(selectedFilters).map(([key, value]) => value && (
+              <span key={key} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: {value}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+          <select
+            value={itemsPerPage}
+            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+            className="text-sm border border-gray-300 rounded px-2 py-1"
+          >
+            <option value={10}>10 per page</option>
+            <option value={25}>25 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
+          {(searchTerm || Object.values(selectedFilters).some(v => v)) && (
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedFilters({
+                  tierLevel: "",
+                  location: "",
+                  memberSince: "",
+                  status: "",
+                  gender: "",
+                  ageRange: "",
+                  dateRange: "",
+                });
+                setCurrentPage(1);
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Clear all filters
+            </button>
           )}
         </div>
-        {(searchTerm || selectedFilters.tierLevel || selectedFilters.status) && (
-          <button
-            onClick={() => {
-              setSearchTerm("");
-              setSelectedFilters({
-                tierLevel: "",
-                location: "",
-                memberSince: "",
-                status: "",
-              });
-            }}
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
-          >
-            Clear all filters
-          </button>
-        )}
       </div>
 
       {/* Users Table */}
       <div className="bg-white rounded-[10px] border border-gray-200 w-full">
-        <div className="overflow-x-auto" style={{ maxWidth: 'calc(100vw - 256px - 48px)' }}>
-          <table className="w-full" style={{ minWidth: '1200px' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full" style={{ minWidth: '800px' }}>
             <thead>
               <tr className="bg-[#ecf8f1]">
-                <th className="text-left py-4 px-6 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[180px] whitespace-nowrap">
+                <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '150px'}}>
                   Name
                 </th>
-                <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[120px] whitespace-nowrap">
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '90px'}}>
                   User ID
                 </th>
-                <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[200px] whitespace-nowrap">
+                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '180px'}}>
                   Email ID
                 </th>
-                <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[150px] whitespace-nowrap">
+                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden md:table-cell" style={{minWidth: '120px'}}>
                   Phone
                 </th>
-                <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[100px] whitespace-nowrap">
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '70px'}}>
                   Gender
                 </th>
-                <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[100px] whitespace-nowrap">
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '70px'}}>
                   Age
                 </th>
-                <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[160px] whitespace-nowrap">
+                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden sm:table-cell" style={{minWidth: '130px'}}>
                   Location
                 </th>
-                <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[120px] whitespace-nowrap">
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '90px'}}>
                   Tier
                 </th>
-                <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[100px] whitespace-nowrap">
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '90px'}}>
                   Status
                 </th>
-                <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[180px] whitespace-nowrap">
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '120px'}}>
                   Actions
                 </th>
               </tr>
@@ -442,16 +634,16 @@ export default function UsersPage() {
             <tbody>
 
               {/* Table Rows */}
-              {filteredUsers.map((row, index) => (
+              {paginatedUsers.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === filteredUsers.length - 1 ? "border-b-0" : ""}`}
+                  className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === paginatedUsers.length - 1 ? "border-b-0" : ""}`}
                 >
                   {/* Name Column */}
-                  <td className="py-4 px-6 min-w-[180px]">
-                    <div className="flex items-center gap-3">
+                  <td className="py-4 px-3">
+                    <div className="flex items-center gap-2">
                       <img
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
                         src={row.avatar}
                         alt={`${row.name} avatar`}
                         onError={(e) => {
@@ -459,11 +651,11 @@ export default function UsersPage() {
                           e.target.nextSibling.style.display = 'flex';
                         }}
                       />
-                      <div className="w-10 h-10 bg-gray-200 rounded-full items-center justify-center text-sm hidden flex-shrink-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full items-center justify-center text-sm hidden flex-shrink-0">
                         👤
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-black text-sm tracking-[0.1px] leading-5 whitespace-nowrap">
+                        <div className="font-medium text-black text-sm tracking-[0.1px] leading-5 truncate">
                           {row.name}
                         </div>
                       </div>
@@ -471,63 +663,63 @@ export default function UsersPage() {
                   </td>
 
                   {/* User ID Column */}
-                  <td className="py-4 px-3 text-center min-w-[120px]">
-                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 whitespace-nowrap">
+                  <td className="py-4 px-2 text-center hidden lg:table-cell">
+                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate">
                       {row.userId}
                     </div>
                   </td>
 
                   {/* Email Column */}
-                  <td className="py-4 px-3 min-w-[200px]">
-                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 whitespace-nowrap">
+                  <td className="py-4 px-2">
+                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.email}>
                       {row.email}
                     </div>
                   </td>
 
                   {/* Phone Column */}
-                  <td className="py-4 px-3 min-w-[150px]">
-                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 whitespace-nowrap">
+                  <td className="py-4 px-2 hidden md:table-cell">
+                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.phone}>
                       {row.phone}
                     </div>
                   </td>
 
                   {/* Gender Column */}
-                  <td className="py-4 px-3 text-center min-w-[100px]">
-                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 whitespace-nowrap">
+                  <td className="py-4 px-2 text-center hidden lg:table-cell">
+                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5">
                       {row.gender}
                     </div>
                   </td>
 
                   {/* Age Column */}
-                  <td className="py-4 px-3 text-center min-w-[100px]">
-                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 whitespace-nowrap">
+                  <td className="py-4 px-2 text-center hidden lg:table-cell">
+                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5">
                       {row.age}
                     </div>
                   </td>
 
                   {/* Location Column */}
-                  <td className="py-4 px-3 min-w-[160px]">
-                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 whitespace-nowrap">
+                  <td className="py-4 px-2 hidden sm:table-cell">
+                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.location}>
                       {row.location}
                     </div>
                   </td>
 
                   {/* Tier Column */}
-                  <td className="py-4 px-3 text-center min-w-[120px]">
+                  <td className="py-4 px-2 text-center">
                     <div
-                      className="inline-flex justify-center gap-2 px-3 py-1.5 rounded-full border border-solid items-center"
+                      className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center min-w-0"
                       style={{
                         backgroundColor: row.tierBg,
                         borderColor: row.tierBorder,
                       }}
                     >
                       <img
-                        className="w-3.5 h-3.5 flex-shrink-0"
+                        className="w-3 h-3 flex-shrink-0"
                         alt="Icon star"
                         src={row.tierIcon}
                       />
                       <div
-                        className="font-semibold text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap"
+                        className="font-semibold text-xs sm:text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap"
                         style={{ color: row.tierColor }}
                       >
                         {row.tier}
@@ -536,13 +728,13 @@ export default function UsersPage() {
                   </td>
 
                   {/* Status Column */}
-                  <td className="py-4 px-3 text-center min-w-[100px]">
+                  <td className="py-4 px-2 text-center">
                     <div
-                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-full"
+                      className="inline-flex items-center justify-center px-2 py-1.5 rounded-full min-w-0"
                       style={{ backgroundColor: row.statusBg }}
                     >
                       <div
-                        className="font-medium text-sm tracking-[0.1px] leading-4 whitespace-nowrap"
+                        className="font-medium text-xs sm:text-sm tracking-[0.1px] leading-4 whitespace-nowrap"
                         style={{ color: row.statusColor }}
                       >
                         {row.status}
@@ -551,15 +743,15 @@ export default function UsersPage() {
                   </td>
 
                   {/* Actions Column */}
-                  <td className="py-4 px-3 min-w-[180px]">
-                    <div className="flex items-center justify-center gap-3 whitespace-nowrap">
+                  <td className="py-4 px-2">
+                    <div className="flex items-center justify-center gap-1">
                       <button
-                        onClick={() => console.log(`Edit user: ${row.userId}`)}
-                        className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+                        onClick={() => handleEditUser(row)}
+                        className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
                         title="Edit user"
                       >
                         <img
-                          className="w-4 h-4"
+                          className="w-3.5 h-3.5"
                           alt="Icon pencil"
                           src="https://c.animaapp.com/t66hdvJZ/img/---icon--pencil--10@2x.png"
                         />
@@ -567,19 +759,19 @@ export default function UsersPage() {
 
                       <button 
                         onClick={() => router.push(`/users/${row.userId}`)}
-                        className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-[#00a389] rounded-full hover:bg-[#008a73] transition-colors cursor-pointer flex-shrink-0"
+                        className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-[#00a389] rounded-full hover:bg-[#008a73] transition-colors cursor-pointer text-xs"
                       >
-                        <div className="font-medium text-white text-sm tracking-[0] leading-4 whitespace-nowrap">
+                        <div className="font-medium text-white text-xs tracking-[0] leading-4">
                           View
                         </div>
                       </button>
 
                       {row.status === "Active" && (
                         <button
-                          onClick={() => console.log(`Suspend user: ${row.userId}`)}
-                          className="inline-flex items-center justify-center gap-1 px-4 py-2 bg-[#f40202] rounded-full hover:bg-[#d10000] transition-colors cursor-pointer flex-shrink-0"
+                          onClick={() => handleSuspendUser(row)}
+                          className=" items-center justify-center gap-1 px-2 py-1.5 bg-[#f40202] rounded-full hover:bg-[#d10000] transition-colors cursor-pointer text-xs hidden sm:flex"
                         >
-                          <div className="font-medium text-white text-sm tracking-[0] leading-4 whitespace-nowrap">
+                          <div className="font-medium text-white text-xs tracking-[0] leading-4">
                             Suspend
                           </div>
                         </button>
@@ -593,21 +785,101 @@ export default function UsersPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex justify-center items-center gap-2 p-6 border-t border-gray-200">
-          {paginationData.map((item, index) => (
-            <div
-              key={index}
-              className={`${item.page === "Prev" || item.page === "Next" ? "inline-flex px-4 py-2" : "flex w-9 h-9"} ${item.page === "..." ? "bg-white" : item.isActive ? "bg-[#d0fee4]" : "bg-white"} items-center justify-center relative rounded-lg ${!item.isActive && item.page !== "..." && item.page !== "Prev" && item.page !== "Next" ? "border border-gray-200 hover:border-gray-300" : ""} ${item.isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-gray-50"} transition-colors`}
+        <div className="flex justify-between items-center p-6 border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages} ({filteredUsers.length} total results)
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium transition-colors ${
+                currentPage === 1 
+                  ? "cursor-not-allowed text-gray-400 bg-gray-50" 
+                  : "cursor-pointer hover:bg-gray-50 text-gray-700"
+              }`}
             >
-              <div
-                className={`font-semibold text-sm ${item.isDisabled ? "text-gray-400" : "text-[#333333]"}`}
-              >
-                {item.page}
-              </div>
-            </div>
-          ))}
+              Previous
+            </button>
+            
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`flex w-9 h-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === pageNum
+                      ? "bg-[#d0fee4] text-[#333333] border border-green-300"
+                      : "bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-[#333333]"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            
+            {totalPages > 5 && currentPage < totalPages - 2 && (
+              <>
+                <div className="flex w-9 h-9 items-center justify-center text-sm text-gray-400">
+                  ...
+                </div>
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  className="flex w-9 h-9 items-center justify-center rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-sm font-medium text-[#333333] transition-colors"
+                >
+                  {totalPages}
+                </button>
+              </>
+            )}
+            
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium transition-colors ${
+                currentPage === totalPages 
+                  ? "cursor-not-allowed text-gray-400 bg-gray-50" 
+                  : "cursor-pointer hover:bg-gray-50 text-gray-700"
+              }`}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        user={editingUser}
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingUser(null);
+        }}
+        onSave={handleSaveUser}
+      />
+
+      {/* Suspend User Modal */}
+      <SuspendUserModal
+        user={suspendingUser}
+        isOpen={showSuspendModal}
+        onClose={() => {
+          setShowSuspendModal(false);
+          setSuspendingUser(null);
+        }}
+        onSuspend={handleConfirmSuspend}
+      />
     </div>
   );
 }

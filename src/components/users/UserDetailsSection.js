@@ -3,12 +3,14 @@ import { BalanceTierSection } from "./BalanceTierSection";
 import { ActivitySummarySection } from "./ActivitySummarySection";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { InputModal } from "./InputModal";
+import SuspendUserModal from "./SuspendUserModal";
 import { showSuccessNotification, showErrorNotification, showInfoNotification } from "./NotificationSystem";
 
 export const UserDetailsSection = ({ user }) => {
   const [activeTab, setActiveTab] = useState("Profile");
   const [confirmationModal, setConfirmationModal] = useState({ isOpen: false, action: null, data: {} });
   const [inputModal, setInputModal] = useState({ isOpen: false, action: null, data: {} });
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
 
   const tabs = [
     { name: "Profile", active: true },
@@ -24,24 +26,24 @@ export const UserDetailsSection = ({ user }) => {
     { label: "Registration Date", value: user?.registrationDate || "March 12, 2025" },
     { label: "Age Range", value: user?.age || "25–34" },
     { label: "Gender", value: user?.gender || "Male" },
-    { label: "Country/Region", value: user?.country || "France" },
-    { label: "Location", value: user?.location || "Lyon, France" },
+    { label: "Country/Region (IP Signup)", value: user?.signupCountry || user?.country || "France" },
+    { label: "Current Location", value: user?.location || "Lyon, France" },
     { label: "Device Type", value: user?.device || "Android – Samsung Galaxy M13" },
     { label: "App Version", value: user?.appVersion || "1.1.3.7" },
-    { label: "Current State", value: user?.status || "Active" },
-    { label: "Face Verification", value: user?.faceVerification || "Yes" },
-    { label: "Last Active Date", value: user?.lastActive || "12:08 am on 23 May 2025" },
-    { label: "IP Address", value: user?.ipAddress || "182.77.56.14 (Lyon, France)" },
-    { label: "Member Since", value: user?.memberSince || "12 Jan 2025" },
+    { label: "Current Account Status", value: user?.accountStatus || user?.status || "Active", isBadge: true },
+    { label: "Face Verification Status", value: user?.faceVerification || "Verified", isVerification: true },
+    { label: "Last Active Timestamp", value: user?.lastActive || "12:08 AM on May 23, 2025" },
+    { label: "Last Login IP Address", value: user?.lastLoginIp || user?.ipAddress || "182.77.56.14" },
+    { label: "Last Login Location", value: user?.lastLoginLocation || "Lyon, France" },
+    { label: "Member Since", value: user?.memberSince || "January 12, 2025" },
   ];
 
+  // Filtered actions per requirements - exclude Ban/Restore/Delete
   const actionButtons = [
     { text: "Reset Password", bgColor: "bg-blue-600 hover:bg-blue-700", action: "resetPassword" },
     { text: "Change Tier", bgColor: "bg-purple-600 hover:bg-purple-700", action: "changeTier" },
     { text: "Send Notification", bgColor: "bg-green-600 hover:bg-green-700", action: "sendNotification" },
-    { text: "Suspend Account", bgColor: "bg-gray-600 hover:bg-gray-700", action: "suspend" },
-    { text: "Delete User", bgColor: "bg-red-600 hover:bg-red-700", action: "delete" },
-    { text: "Restore Account", bgColor: "bg-gray-400 hover:bg-gray-500", action: "restore" },
+    { text: "Suspend Account", bgColor: "bg-red-600 hover:bg-red-700", action: "suspend" },
   ];
 
   const handleTabClick = (tabName) => {
@@ -91,37 +93,7 @@ export const UserDetailsSection = ({ user }) => {
         });
         break;
       case 'suspend':
-        setConfirmationModal({
-          isOpen: true,
-          action: 'suspend',
-          data: {
-            title: 'Suspend User Account',
-            message: `Are you sure you want to suspend ${user?.name || 'this user'}'s account? They will not be able to login until restored.`,
-            type: 'warning'
-          }
-        });
-        break;
-      case 'delete':
-        setConfirmationModal({
-          isOpen: true,
-          action: 'delete',
-          data: {
-            title: 'Delete User Account',
-            message: `Are you sure you want to permanently delete ${user?.name || 'this user'}'s account? This action cannot be undone and will remove all user data.`,
-            type: 'danger'
-          }
-        });
-        break;
-      case 'restore':
-        setConfirmationModal({
-          isOpen: true,
-          action: 'restore',
-          data: {
-            title: 'Restore User Account',
-            message: `Are you sure you want to restore ${user?.name || 'this user'}'s account? They will be able to login again.`,
-            type: 'info'
-          }
-        });
+        setShowSuspendModal(true);
         break;
       default:
         console.log(`${action} action clicked for user:`, user?.name);
@@ -139,22 +111,7 @@ export const UserDetailsSection = ({ user }) => {
           showSuccessNotification(`Password reset email sent to ${user?.email || 'user email'}`);
           break;
         case 'suspend':
-          console.log(`Suspending user: ${user?.name || 'user'}`);
-          // TODO: API call to suspend user
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          showSuccessNotification(`User ${user?.name || 'account'} has been suspended`);
-          break;
-        case 'delete':
-          console.log(`Deleting user: ${user?.name || 'user'}`);
-          // TODO: API call to delete user
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          showSuccessNotification(`User ${user?.name || 'account'} has been deleted`);
-          break;
-        case 'restore':
-          console.log(`Restoring user: ${user?.name || 'user'}`);
-          // TODO: API call to restore user
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          showSuccessNotification(`User ${user?.name || 'account'} has been restored`);
+          // This case is now handled by the SuspendUserModal
           break;
         default:
           console.log(`Confirmed action: ${action}`);
@@ -164,6 +121,23 @@ export const UserDetailsSection = ({ user }) => {
       showErrorNotification(`Failed to ${action.replace(/([A-Z])/g, ' $1').toLowerCase()}. Please try again.`);
     } finally {
       setConfirmationModal({ isOpen: false, action: null, data: {} });
+    }
+  };
+
+  const handleConfirmSuspend = async (suspendData) => {
+    try {
+      // Here you would typically make an API call to suspend the user
+      console.log('Suspending user from details section:', suspendData);
+      
+      // Show success message
+      showSuccessNotification(`User ${user?.name || 'account'} has been suspended`);
+      
+      setShowSuspendModal(false);
+      
+      // In a real app, you might want to redirect or refresh the page
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      throw error; // Re-throw to let the modal handle the error
     }
   };
 
@@ -218,6 +192,32 @@ export const UserDetailsSection = ({ user }) => {
                   >
                     {field.value}
                   </a>
+                ) : field.isBadge ? (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    field.value === 'Active' ? 'bg-green-100 text-green-800' : 
+                    field.value === 'Inactive' ? 'bg-red-100 text-red-800' :
+                    field.value === 'Paused' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {field.value}
+                  </span>
+                ) : field.isVerification ? (
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      field.value === 'Verified' || field.value === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {field.value === 'Verified' || field.value === 'Yes' ? (
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      {field.value}
+                    </span>
+                  </div>
                 ) : (
                   field.value
                 )}
@@ -318,6 +318,14 @@ export const UserDetailsSection = ({ user }) => {
         type={inputModal.data.type}
         options={inputModal.data.options}
         placeholder={inputModal.data.placeholder}
+      />
+
+      {/* Suspend User Modal */}
+      <SuspendUserModal
+        user={user}
+        isOpen={showSuspendModal}
+        onClose={() => setShowSuspendModal(false)}
+        onSuspend={handleConfirmSuspend}
       />
     </section>
   );
