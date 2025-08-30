@@ -95,7 +95,7 @@ const SuspendUserModal = ({ user, isOpen, onClose, onSuspend }) => {
           </div>
           <h4 className="text-lg font-bold text-gray-900 mb-2">Suspend User Access</h4>
           <p className="text-sm text-gray-600">
-            This will temporarily disable <span className="font-semibold">{user.name}</span>'s account access. 
+            This will temporarily disable <span className="font-semibold">{user.name}</span>&apos;s account access. 
             They will not be able to log in until reactivated.
           </p>
         </div>
