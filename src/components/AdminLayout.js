@@ -1,28 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-const menuItems = [
-  { name: 'Dashboard', href: '/', icon: '🏠' },
-  { name: 'Users', href: '/users', icon: '👥' },
-  { name: 'Offers & Games', href: '/offers', icon: '🎮' },
-  { name: 'Analytics & Reports', href: '/analytics', icon: '📊' },
-  { name: 'Transactions', href: '/transactions', icon: '💳' },
-  { name: 'Rewards', href: '/rewards', icon: '🎁' },
-  { name: 'Payments', href: '/payments', icon: '💰' },
-  { name: 'Remote Config', href: '/config', icon: '⚙️' },
-  { name: 'Creative Manager', href: '/creative', icon: '🎨' },
-  { name: 'Settings', href: '/settings', icon: '⚙️' },
-  { name: 'Integrations', href: '/integrations', icon: '🔗' },
-  { name: 'Support', href: '/support', icon: '🎧' },
-];
+import Sidebar from './layout/Sidebar';
 
 export default function AdminLayout({ children }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -35,38 +18,10 @@ export default function AdminLayout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 fixed h-full z-30 transform lg:transform-none lg:translate-x-0 -translate-x-full transition-transform duration-200 ease-in-out">
-        <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-gray-200">
-            <h1 className="font-bold text-2xl text-gray-900">Jackson.</h1>
-          </div>
-          <nav className="flex-1 px-4 py-6">
-            <ul className="space-y-2">
-              {menuItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-teal-50 text-teal-700'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                    >
-                      <span className="text-lg mr-3">{item.icon}</span>
-                      <span>{item.name}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Main Content */}
-      <div className="w-full lg:ml-64 flex-1">
+      <div className="w-full ml-64 flex-1">
         {/* Header */}
         <header className="relative w-full h-28 py-8 px-4 lg:px-6" role="banner">
           <div className="relative w-full h-full">
