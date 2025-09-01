@@ -248,6 +248,8 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [suspendingUser, setSuspendingUser] = useState(null);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   useEffect(() => {
     registerSearchHandler((query) => {
@@ -446,6 +448,41 @@ export default function UsersPage() {
     }
   };
 
+  // Bulk select handlers
+  const handleSelectUser = (userId) => {
+    setSelectedUsers(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.length === paginatedUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(paginatedUsers.map(user => user.id));
+    }
+  };
+
+  const handleBulkAction = (action) => {
+    const selectedCount = selectedUsers.length;
+    if (selectedCount === 0) {
+      alert('Please select at least one user');
+      return;
+    }
+    
+    const confirmMessage = `Are you sure you want to ${action} ${selectedCount} selected user(s)?`;
+    if (window.confirm(confirmMessage)) {
+      console.log(`Bulk ${action} for users:`, selectedUsers);
+      alert(`Bulk ${action} applied to ${selectedCount} user(s)`);
+      setSelectedUsers([]);
+      setShowBulkActions(false);
+    }
+  };
+
   return (
     <div className="w-full">
       {/* Header with Filters */}
@@ -480,7 +517,7 @@ export default function UsersPage() {
                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                   <svg className="w-3 h-2 text-[#3e4954]" fill="currentColor" viewBox="0 0 12 7">
                     <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  </svg>a
                 </div>
               </div>
             </div>
@@ -498,6 +535,40 @@ export default function UsersPage() {
         </div>
       </header>
 
+      {/* Bulk Actions Bar */}
+      {selectedUsers.length > 0 && (
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center justify-between">
+          <div className="text-sm text-blue-800">
+            <span className="font-medium">{selectedUsers.length}</span> user{selectedUsers.length > 1 ? 's' : ''} selected
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleBulkAction('suspend')}
+              className="px-3 py-1.5 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 transition-colors"
+            >
+              Bulk Suspend
+            </button>
+            <button
+              onClick={() => handleBulkAction('ban')}
+              className="px-3 py-1.5 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+            >
+              Bulk Ban
+            </button>
+            <button
+              onClick={() => handleBulkAction('restore')}
+              className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+            >
+              Bulk Restore
+            </button>
+            <button
+              onClick={() => setSelectedUsers([])}
+              className="px-3 py-1.5 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors"
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Results Summary */}
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0  py-2 z-10 border-b border-gray-100">
@@ -558,37 +629,45 @@ export default function UsersPage() {
       {/* Users Table */}
       <div className="bg-white rounded-[10px] border border-gray-200 w-full">
         <div className="overflow-x-auto">
-          <table className="w-full" style={{ minWidth: '800px' }}>
+          <table className="w-full" style={{ minWidth: '1000px' }}>
             <thead>
               <tr className="bg-[#ecf8f1]">
-                <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '150px'}}>
+                <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '50px'}}>
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                </th>
+                <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '140px'}}>
                   Name
                 </th>
-                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '90px'}}>
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '80px'}}>
                   User ID
                 </th>
-                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '180px'}}>
+                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '160px'}}>
                   Email ID
                 </th>
-                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden md:table-cell" style={{minWidth: '120px'}}>
+                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden md:table-cell" style={{minWidth: '110px'}}>
                   Phone
                 </th>
-                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '70px'}}>
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '60px'}}>
                   Gender
                 </th>
-                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '70px'}}>
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '60px'}}>
                   Age
                 </th>
-                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden sm:table-cell" style={{minWidth: '130px'}}>
+                <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden sm:table-cell" style={{minWidth: '120px'}}>
                   Location
                 </th>
-                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '90px'}}>
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '80px'}}>
                   Tier
                 </th>
-                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '90px'}}>
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '80px'}}>
                   Status
                 </th>
-                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '120px'}}>
+                <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '140px'}}>
                   Actions
                 </th>
               </tr>
@@ -599,8 +678,18 @@ export default function UsersPage() {
               {paginatedUsers.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === paginatedUsers.length - 1 ? "border-b-0" : ""}`}
+                  className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === paginatedUsers.length - 1 ? "border-b-0" : ""} ${selectedUsers.includes(row.id) ? "bg-blue-50" : ""}`}
                 >
+                  {/* Select Column */}
+                  <td className="py-4 px-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.includes(row.id)}
+                      onChange={() => handleSelectUser(row.id)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                  </td>
+
                   {/* Name Column */}
                   <td className="py-4 px-3">
                     <div className="flex items-center gap-2">

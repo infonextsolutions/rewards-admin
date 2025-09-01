@@ -38,12 +38,13 @@ export const UserDetailsSection = ({ user }) => {
     { label: "Member Since", value: user?.memberSince || "January 12, 2025" },
   ];
 
-  // Filtered actions per requirements - exclude Ban/Restore/Delete
+  // Action buttons per requirements
   const actionButtons = [
-    { text: "Reset Password", bgColor: "bg-blue-600 hover:bg-blue-700", action: "resetPassword" },
-    { text: "Change Tier", bgColor: "bg-purple-600 hover:bg-purple-700", action: "changeTier" },
-    { text: "Send Notification", bgColor: "bg-green-600 hover:bg-green-700", action: "sendNotification" },
-    { text: "Suspend Account", bgColor: "bg-red-600 hover:bg-red-700", action: "suspend" },
+    { text: "Ban Account", bgColor: "bg-red-600 hover:bg-red-700", action: "ban" },
+    { text: "Restore Account", bgColor: "bg-green-600 hover:bg-green-700", action: "restore" },
+    { text: "Suspend Account", bgColor: "bg-yellow-600 hover:bg-yellow-700", action: "suspend" },
+    { text: "Delete Account", bgColor: "bg-gray-800 hover:bg-gray-900", action: "delete" },
+    { text: "Adjust Balance", bgColor: "bg-blue-600 hover:bg-blue-700", action: "adjustBalance" },
   ];
 
   const handleTabClick = (tabName) => {
@@ -52,48 +53,53 @@ export const UserDetailsSection = ({ user }) => {
 
   const handleActionClick = (action) => {
     switch (action) {
-      case 'resetPassword':
+      case 'ban':
         setConfirmationModal({
           isOpen: true,
-          action: 'resetPassword',
+          action: 'ban',
           data: {
-            title: 'Reset Password',
-            message: `Send password reset email to ${user?.email || 'user email'}?`,
+            title: 'Ban Account',
+            message: `Are you sure you want to ban ${user?.name || 'this user'}? This will permanently block their access to the platform.`,
+            type: 'danger'
+          }
+        });
+        break;
+      case 'restore':
+        setConfirmationModal({
+          isOpen: true,
+          action: 'restore',
+          data: {
+            title: 'Restore Account',
+            message: `Are you sure you want to restore ${user?.name || 'this user'}? This will reactivate their account and restore full access.`,
             type: 'info'
-          }
-        });
-        break;
-      case 'changeTier':
-        setInputModal({
-          isOpen: true,
-          action: 'changeTier',
-          data: {
-            title: 'Change User Tier',
-            message: 'Select the new tier for this user:',
-            type: 'select',
-            options: [
-              { label: 'Bronze', value: 'Bronze' },
-              { label: 'Silver', value: 'Silver' },
-              { label: 'Gold', value: 'Gold' },
-              { label: 'Premium', value: 'Premium' }
-            ]
-          }
-        });
-        break;
-      case 'sendNotification':
-        setInputModal({
-          isOpen: true,
-          action: 'sendNotification',
-          data: {
-            title: 'Send Notification',
-            message: 'Enter the notification message to send to this user:',
-            type: 'textarea',
-            placeholder: 'Enter notification message...'
           }
         });
         break;
       case 'suspend':
         setShowSuspendModal(true);
+        break;
+      case 'delete':
+        setConfirmationModal({
+          isOpen: true,
+          action: 'delete',
+          data: {
+            title: 'Delete Account',
+            message: `Are you sure you want to permanently delete ${user?.name || 'this user'}? This action cannot be undone and all user data will be lost.`,
+            type: 'danger'
+          }
+        });
+        break;
+      case 'adjustBalance':
+        setInputModal({
+          isOpen: true,
+          action: 'adjustBalance',
+          data: {
+            title: 'Adjust User Balance',
+            message: `Current balance: ${user?.coinBalance || '15,200 Coins'}. Enter the adjustment amount:`,
+            type: 'number',
+            placeholder: 'Enter amount (use + for add, - for subtract)'
+          }
+        });
         break;
       default:
         console.log(`${action} action clicked for user:`, user?.name);
@@ -103,12 +109,26 @@ export const UserDetailsSection = ({ user }) => {
   const handleConfirmAction = async (action) => {
     try {
       switch (action) {
-        case 'resetPassword':
-          console.log(`Sending password reset email to: ${user?.email || 'user email'}`);
-          // TODO: API call to send password reset email
+        case 'ban':
+          console.log(`Banning user: ${user?.name || 'user'}`);
+          // TODO: API call to ban user
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          showSuccessNotification(`Password reset email sent to ${user?.email || 'user email'}`);
+          showSuccessNotification(`User ${user?.name || 'account'} has been banned successfully`);
+          break;
+        case 'restore':
+          console.log(`Restoring user: ${user?.name || 'user'}`);
+          // TODO: API call to restore user
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          showSuccessNotification(`User ${user?.name || 'account'} has been restored successfully`);
+          break;
+        case 'delete':
+          console.log(`Deleting user: ${user?.name || 'user'}`);
+          // TODO: API call to delete user
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          showSuccessNotification(`User ${user?.name || 'account'} has been deleted successfully`);
           break;
         case 'suspend':
           // This case is now handled by the SuspendUserModal
@@ -156,6 +176,15 @@ export const UserDetailsSection = ({ user }) => {
           await new Promise(resolve => setTimeout(resolve, 500));
           showSuccessNotification(`Notification sent to ${user?.name || 'user'}`);
           showInfoNotification(`Message: "${inputValue}"`);
+          break;
+        case 'adjustBalance':
+          console.log(`Adjusting user balance by: ${inputValue}`);
+          // TODO: API call to adjust user balance
+          await new Promise(resolve => setTimeout(resolve, 800));
+          const isPositive = !inputValue.startsWith('-');
+          const amount = Math.abs(parseFloat(inputValue.replace(/[+-]/g, '')));
+          const actionText = isPositive ? 'added to' : 'deducted from';
+          showSuccessNotification(`${amount} coins ${actionText} ${user?.name || 'user'}'s balance successfully`);
           break;
         default:
           console.log(`Input action: ${action}, value: ${inputValue}`);

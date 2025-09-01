@@ -49,11 +49,10 @@ export const ActivitySummarySection = ({ user }) => {
   ];
 
   return (
-    <div
-      className="inline-flex flex-col min-h-[450px] items-start gap-[30px] relative"
-    >
-      {/* Export functionality for activity data */}
-      <div className="mb-4 flex justify-end w-full">
+    <div className="w-full space-y-6">
+      {/* Header with Export Button */}
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-semibold text-gray-800">Activity Summary</h3>
         <button
           onClick={() => {
             const csvContent = [
@@ -76,33 +75,23 @@ export const ActivitySummarySection = ({ user }) => {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
           }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           title="Export activity data"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           </svg>
-          Export Activity
+          Export
         </button>
       </div>
-      <dl className="flex w-[509px] items-start gap-24 relative flex-[0_0_auto]">
-        <div className="flex flex-col items-start justify-between relative flex-1 self-stretch grow">
-          {activityData.slice(0, 4).map((item, index) => (
-            <dt
-              key={index}
-              className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]"
-            >
+      {/* Activity Data - First Column */}
+      <div className="space-y-[30px]">
+        {activityData.slice(0, 5).map((item, index) => (
+          <div key={index} className="flex items-start gap-24">
+            <dt className="w-[280px] flex-shrink-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
               {item.label}
             </dt>
-          ))}
-        </div>
-
-        <div className="flex flex-col w-[220px] items-start gap-[30px] relative">
-          {activityData.slice(0, 4).map((item, index) => (
-            <dd
-              key={index}
-              className={`relative ${index === 0 ? "self-stretch mt-[-1.00px]" : index === 1 ? "self-stretch" : "w-fit"} [font-family:'DM_Sans-Medium',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]`}
-            >
+            <dd className="flex-1 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]">
               {item.isTimestamp ? (
                 <div className="flex items-center gap-2">
                   <span className="text-green-600">🟢</span>
@@ -116,42 +105,11 @@ export const ActivitySummarySection = ({ user }) => {
                   <span className="text-gray-600 text-xs">{item.value.split(' ').slice(1).join(' ')}</span>
                 </div>
               ) : item.isHighlighted ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1">
+                <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1 inline-block">
                   <span className="font-semibold text-yellow-800">{item.value}</span>
                 </div>
-              ) : (
-                <div>
-                  <div>{item.value}</div>
-                  {item.additionalInfo && (
-                    <div className="text-xs text-gray-500 mt-1">{item.additionalInfo}</div>
-                  )}
-                </div>
-              )}
-            </dd>
-          ))}
-        </div>
-      </dl>
-
-      <div className="relative w-[497px] h-[258px]">
-        <dl className="inline-flex flex-col items-start gap-[30px] absolute top-0 left-0">
-          {activityData.slice(4).map((item, index) => (
-            <dt
-              key={index}
-              className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]"
-            >
-              {item.label}
-            </dt>
-          ))}
-        </dl>
-
-        <div className="flex flex-col w-[220px] items-start gap-[30px] absolute top-0 left-[289px]">
-          {activityData.slice(4).map((item, index) => (
-            <dd
-              key={index}
-              className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans-Medium',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]"
-            >
-              {item.isProgress ? (
-                <div className="flex flex-col gap-1">
+              ) : item.isProgress ? (
+                <div className="space-y-1">
                   <span>{item.value}</span>
                   <div className="w-32 bg-gray-200 rounded-full h-2">
                     <div className="bg-green-500 h-2 rounded-full" style={{ width: '85.7%' }}></div>
@@ -167,8 +125,53 @@ export const ActivitySummarySection = ({ user }) => {
                 </div>
               )}
             </dd>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Activity Data - Second Column */}
+      <div className="space-y-[30px]">
+        {activityData.slice(5).map((item, index) => (
+          <div key={index + 5} className="flex items-start gap-24">
+            <dt className="w-[280px] flex-shrink-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
+              {item.label}
+            </dt>
+            <dd className="flex-1 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]">
+              {item.isTimestamp ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600">🟢</span>
+                  <span>{item.value}</span>
+                </div>
+              ) : item.isCount ? (
+                <div className="flex items-center gap-2">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">
+                    {item.value.split(' ')[0]}
+                  </span>
+                  <span className="text-gray-600 text-xs">{item.value.split(' ').slice(1).join(' ')}</span>
+                </div>
+              ) : item.isHighlighted ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1 inline-block">
+                  <span className="font-semibold text-yellow-800">{item.value}</span>
+                </div>
+              ) : item.isProgress ? (
+                <div className="space-y-1">
+                  <span>{item.value}</span>
+                  <div className="w-32 bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '85.7%' }}></div>
+                  </div>
+                  <span className="text-xs text-gray-500">85.7% complete</span>
+                </div>
+              ) : (
+                <div>
+                  <div>{item.value}</div>
+                  {item.additionalInfo && (
+                    <div className="text-xs text-gray-500 mt-1">{item.additionalInfo}</div>
+                  )}
+                </div>
+              )}
+            </dd>
+          </div>
+        ))}
       </div>
     </div>
   );
