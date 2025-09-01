@@ -1,30 +1,37 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearch } from "../../contexts/SearchContext";
 
-const Frame = () => {
+const Frame = ({ filters, setFilters, onFilterChange }) => {
   const [dateRangeOpen, setDateRangeOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
+  const typeOptions = ["PayPal", "Gift Card"];
+  const statusOptions = ["Approved", "Pending", "Active"];
+
   const filterOptions = [
     {
       id: "dateRange",
-      label: "Date Range",
+      label: filters.dateRange || "Date Range",
       isOpen: dateRangeOpen,
       setOpen: setDateRangeOpen,
+      options: null,
     },
     {
       id: "type",
-      label: "Type",
+      label: filters.type || "Type",
       isOpen: typeOpen,
       setOpen: setTypeOpen,
+      options: typeOptions,
     },
     {
       id: "status",
-      label: "Status",
+      label: filters.status || "Status",
       isOpen: statusOpen,
       setOpen: setStatusOpen,
+      options: statusOptions,
     },
   ];
 
@@ -33,6 +40,19 @@ const Frame = () => {
     if (filter) {
       filter.setOpen(!filter.isOpen);
     }
+  };
+
+  const handleFilterSelect = (filterId, value) => {
+    onFilterChange(filterId, value);
+    const filter = filterOptions.find((f) => f.id === filterId);
+    if (filter) {
+      filter.setOpen(false);
+    }
+  };
+
+  const handleDateRangeSelect = (range) => {
+    onFilterChange("dateRange", range);
+    setDateRangeOpen(false);
   };
 
   return (
@@ -48,6 +68,7 @@ const Frame = () => {
           Track all payments from users
         </p>
       </div>
+
 
       <div className="flex flex-col gap-2 w-full lg:w-auto lg:max-w-4xl" role="toolbar" aria-label="Payment filters">
         <div className="flex flex-wrap items-center gap-2 justify-end">
@@ -69,6 +90,68 @@ const Frame = () => {
                   </svg>
                 </div>
               </div>
+
+              {/* Dropdown Options */}
+              {filter.isOpen && filter.options && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-[9.6px] shadow-lg border border-gray-200 z-10">
+                  {filter.options.map((option, optionIndex) => (
+                    <button
+                      key={optionIndex}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14.4px] tracking-[0] leading-[normal] first:rounded-t-[9.6px] last:rounded-b-[9.6px]"
+                      onClick={() => handleFilterSelect(filter.id, option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                  <button
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#666666] text-[14.4px] tracking-[0] leading-[normal] border-t border-gray-200 last:rounded-b-[9.6px]"
+                    onClick={() => handleFilterSelect(filter.id, null)}
+                  >
+                    Clear Filter
+                  </button>
+                </div>
+              )}
+
+              {/* Date Range Picker */}
+              {filter.id === "dateRange" && filter.isOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-[9.6px] shadow-lg border border-gray-200 z-10 p-4 min-w-[300px]">
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium text-[#333333] mb-2">Select Date Range</div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <button
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 rounded-md [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14px]"
+                        onClick={() => handleDateRangeSelect("Today")}
+                      >
+                        Today
+                      </button>
+                      <button
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 rounded-md [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14px]"
+                        onClick={() => handleDateRangeSelect("Yesterday")}
+                      >
+                        Yesterday
+                      </button>
+                      <button
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 rounded-md [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14px]"
+                        onClick={() => handleDateRangeSelect("Last 7 days")}
+                      >
+                        Last 7 days
+                      </button>
+                      <button
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 rounded-md [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14px]"
+                        onClick={() => handleDateRangeSelect("Last 30 days")}
+                      >
+                        Last 30 days
+                      </button>
+                      <button
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 rounded-md [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#666666] text-[14px] border-t border-gray-200 mt-2 pt-3"
+                        onClick={() => handleDateRangeSelect(null)}
+                      >
+                        Clear Filter
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -168,16 +251,6 @@ const tableData = [
   },
 ];
 
-const paginationData = [
-  { label: "Prev", disabled: true },
-  { label: "1", active: true },
-  { label: "2", active: false },
-  { label: "3", active: false },
-  { label: "...", active: false },
-  { label: "10", active: false },
-  { label: "Next", disabled: false },
-];
-
 const getStatusStyles = (status) => {
   switch (status) {
     case "Approved":
@@ -190,7 +263,95 @@ const getStatusStyles = (status) => {
   }
 };
 
-const Table = () => {
+const Pagination = ({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) => {
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 4) {
+        for (let i = 1; i <= 5; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex justify-between items-center p-6 border-t border-gray-200">
+      <div className="text-sm text-gray-600">
+        Showing {startItem}-{endItem} of {totalItems} payments
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+          className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium ${
+            currentPage === 1
+              ? "cursor-not-allowed text-gray-400 bg-gray-50"
+              : "cursor-pointer hover:bg-gray-50 text-gray-700"
+          }`}
+        >
+          Prev
+        </button>
+
+        {getPageNumbers().map((page, index) => {
+          if (page === "...") {
+            return (
+              <div key={index} className="flex w-9 h-9 items-center justify-center text-sm text-gray-400">
+                ...
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={index}
+              onClick={() => onPageChange(page)}
+              className={`flex w-9 h-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                currentPage === page
+                  ? "bg-[#d0fee4] text-[#333333] border border-green-300"
+                  : "border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-[#333333]"
+              }`}
+            >
+              {page}
+            </button>
+          );
+        })}
+
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+          className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium ${
+            currentPage === totalPages
+              ? "cursor-not-allowed text-gray-400 bg-gray-50"
+              : "cursor-pointer hover:bg-gray-50 text-gray-700"
+          }`}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Table = ({ data, onApprove, currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) => {
   return (
     <div className="bg-white rounded-[10px] border border-gray-200 w-full">
       <div className="overflow-x-auto">
@@ -221,10 +382,10 @@ const Table = () => {
             </tr>
           </thead>
           <tbody>
-            {tableData.map((row, index) => (
+            {data.map((row, index) => (
               <tr
                 key={index}
-                className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === tableData.length - 1 ? "border-b-0" : ""}`}
+                className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === data.length - 1 ? "border-b-0" : ""}`}
               >
                 <td className="py-4 px-3">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5">
@@ -268,11 +429,22 @@ const Table = () => {
 
                 <td className="py-4 px-2">
                   <div className="flex items-center justify-center">
-                    <button className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-[#00a389] rounded-full hover:bg-[#008a73] transition-colors cursor-pointer text-xs">
-                      <div className="font-medium text-white text-xs tracking-[0] leading-4">
-                        Approve
-                      </div>
-                    </button>
+                    {row.status === "Pending" ? (
+                      <button 
+                        className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-[#00a389] rounded-full hover:bg-[#008a73] transition-colors cursor-pointer text-xs"
+                        onClick={() => onApprove(row.id)}
+                      >
+                        <div className="font-medium text-white text-xs tracking-[0] leading-4">
+                          Approve
+                        </div>
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-200 rounded-full text-xs cursor-not-allowed">
+                        <div className="font-medium text-gray-500 text-xs tracking-[0] leading-4">
+                          {row.status === "Approved" ? "Approved" : "Active"}
+                        </div>
+                      </span>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -282,74 +454,89 @@ const Table = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between items-center p-6 border-t border-gray-200">
-        <div className="text-sm text-gray-600">
-          Showing 1-11 of 11 payments
-        </div>
-        <div className="flex items-center gap-2">
-          {paginationData.map((item, index) => {
-            if (item.label === "Prev" && item.disabled) {
-              return (
-                <button
-                  key={index}
-                  disabled
-                  className="inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium cursor-not-allowed text-gray-400 bg-gray-50"
-                >
-                  {item.label}
-                </button>
-              );
-            }
-
-            if (item.label === "1" && item.active) {
-              return (
-                <button
-                  key={index}
-                  className="flex w-9 h-9 items-center justify-center rounded-lg text-sm font-medium bg-[#d0fee4] text-[#333333] border border-green-300"
-                >
-                  {item.label}
-                </button>
-              );
-            }
-
-            if (item.label === "...") {
-              return (
-                <div key={index} className="flex w-9 h-9 items-center justify-center text-sm text-gray-400">
-                  {item.label}
-                </div>
-              );
-            }
-
-            if (item.label === "Next") {
-              return (
-                <button
-                  key={index}
-                  className="inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium cursor-pointer hover:bg-gray-50 text-gray-700"
-                >
-                  {item.label}
-                </button>
-              );
-            }
-
-            return (
-              <button
-                key={index}
-                className="flex w-9 h-9 items-center justify-center rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-sm font-medium text-[#333333] transition-colors"
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 };
 
 export default function PaymentsPage() {
+  const { searchTerm, registerSearchHandler } = useSearch();
+  const [filters, setFilters] = useState({
+    dateRange: null,
+    type: null,
+    status: null,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paymentsData, setPaymentsData] = useState(tableData);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    registerSearchHandler((query) => {
+      // Search functionality is automatically handled by filteredData
+      setCurrentPage(1); // Reset to first page when searching
+    });
+  }, [registerSearchHandler]);
+
+  const handleFilterChange = (filterId, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterId]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleApprove = (redemptionId) => {
+    setPaymentsData(prev => 
+      prev.map(payment => 
+        payment.id === redemptionId 
+          ? { ...payment, status: "Approved" }
+          : payment
+      )
+    );
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const filteredData = paymentsData.filter(payment => {
+    const matchesSearch = searchTerm === "" || 
+      payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.userId.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = !filters.type || payment.payoutMethod === filters.type;
+    const matchesStatus = !filters.status || payment.status === filters.status;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const totalItems = filteredData.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="w-full p-6">
-      <Frame />
-      <Table />
+      <Frame 
+        filters={filters}
+        setFilters={setFilters}
+        onFilterChange={handleFilterChange}
+      />
+      <Table 
+        data={paginatedData}
+        onApprove={handleApprove}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

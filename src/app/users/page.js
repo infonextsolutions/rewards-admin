@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import EditUserModal from '../../components/users/EditUserModal';
 import SuspendUserModal from '../../components/users/SuspendUserModal';
+import { useSearch } from '../../contexts/SearchContext';
 
 const tableData = [
   {
@@ -229,7 +230,7 @@ const paginationData = [
 
 export default function UsersPage() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, registerSearchHandler } = useSearch();
   const [selectedFilters, setSelectedFilters] = useState({
     tierLevel: "",
     location: "",
@@ -247,6 +248,13 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [suspendingUser, setSuspendingUser] = useState(null);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
+
+  useEffect(() => {
+    registerSearchHandler((query) => {
+      // Search functionality is automatically handled by filteredUsers
+      setCurrentPage(1); // Reset to first page when searching
+    });
+  }, [registerSearchHandler]);
 
   const filterOptions = [
     {
@@ -451,91 +459,45 @@ export default function UsersPage() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 w-full lg:w-auto lg:max-w-4xl" role="toolbar" aria-label="User filters">
-          <div className="flex flex-wrap items-center gap-2 justify-end">
-            {filterOptions.slice(0, 4).map((filter) => (
-              <div key={filter.id} className="relative min-w-[150px] flex-shrink-0">
-                <div className="relative h-[42px] bg-white rounded-[9.6px] shadow-[0px_3.2px_3.2px_#0000000a] border border-gray-200">
-                  <select
-                    id={`filter-${filter.id}`}
-                    value={selectedFilters[filter.id]}
-                    onChange={(e) => handleFilterChange(filter.id, e.target.value)}
-                    className="w-full h-full px-4 pr-10 bg-transparent border-none rounded-[9.6px] cursor-pointer [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14.4px] tracking-[0] leading-[normal] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                    aria-label={`Filter by ${filter.label}`}
-                  >
-                    <option value="">{filter.label}</option>
-                    {filter.options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                    <svg className="w-3 h-2 text-[#3e4954]" fill="currentColor" viewBox="0 0 12 7">
-                      <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end" role="toolbar" aria-label="User filters">
+          {filterOptions.map((filter) => (
+            <div key={filter.id} className="relative min-w-[130px] flex-shrink-0">
+              <div className="relative h-[42px] bg-white rounded-[9.6px] shadow-[0px_3.2px_3.2px_#0000000a] border border-gray-200">
+                <select
+                  id={`filter-${filter.id}`}
+                  value={selectedFilters[filter.id]}
+                  onChange={(e) => handleFilterChange(filter.id, e.target.value)}
+                  className="w-full h-full px-3 pr-8 bg-transparent border-none rounded-[9.6px] cursor-pointer [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[13.5px] tracking-[0] leading-[normal] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                  aria-label={`Filter by ${filter.label}`}
+                >
+                  <option value="">{filter.label}</option>
+                  {filter.options.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                  <svg className="w-3 h-2 text-[#3e4954]" fill="currentColor" viewBox="0 0 12 7">
+                    <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2 justify-end">
-            {filterOptions.slice(4).map((filter) => (
-              <div key={filter.id} className="relative min-w-[120px] flex-shrink-0">
-                <div className="relative h-[42px] bg-white rounded-[9.6px] shadow-[0px_3.2px_3.2px_#0000000a] border border-gray-200">
-                  <select
-                    id={`filter-${filter.id}`}
-                    value={selectedFilters[filter.id]}
-                    onChange={(e) => handleFilterChange(filter.id, e.target.value)}
-                    className="w-full h-full px-4 pr-10 bg-transparent border-none rounded-[9.6px] cursor-pointer [font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#3e4954] text-[14.4px] tracking-[0] leading-[normal] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                    aria-label={`Filter by ${filter.label}`}
-                  >
-                    <option value="">{filter.label}</option>
-                    {filter.options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                    <svg className="w-3 h-2 text-[#3e4954]" fill="currentColor" viewBox="0 0 12 7">
-                      <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button
-              onClick={exportData}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors h-[42px] whitespace-nowrap ml-2"
-              title="Export user data"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              </svg>
-              Export
-            </button>
-          </div>
+            </div>
+          ))}
+          <button
+            onClick={exportData}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors h-[42px] whitespace-nowrap"
+            title="Export user data"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            </svg>
+            Export
+          </button>
         </div>
       </header>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative w-full max-w-full sm:max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-[#00a389] focus:border-[#00a389] text-sm"
-            placeholder="Search by name, email, user ID, phone, or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
 
       {/* Results Summary */}
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0  py-2 z-10 border-b border-gray-100">
