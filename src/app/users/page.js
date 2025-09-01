@@ -439,7 +439,7 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full">
       {/* Header with Filters */}
       <header className="flex flex-col lg:flex-row w-full items-start lg:items-end justify-between gap-6 mb-6" role="banner">
         <div className="flex-shrink-0">
@@ -538,11 +538,11 @@ export default function UsersPage() {
       </div>
 
       {/* Results Summary */}
-      <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
+      <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0  py-2 z-10 border-b border-gray-100">
         <div className="text-sm text-gray-600">
           <span className="font-medium">Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users</span>
           {filteredUsers.length < tableData.length && (
-            <span className="ml-2 text-xs text-gray-500">
+            <span className="ml-2 text-xs text-gray-600">
               (filtered from {tableData.length} total)
             </span>
           )}
@@ -553,7 +553,7 @@ export default function UsersPage() {
           )}
           <div className="mt-1 flex flex-wrap gap-1">
             {Object.entries(selectedFilters).map(([key, value]) => value && (
-              <span key={key} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+              <span key={key} className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
                 {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: {value}
               </span>
             ))}
