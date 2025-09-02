@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 
 const SearchContext = createContext();
@@ -18,7 +18,7 @@ export const SearchProvider = ({ children }) => {
   const [onSearch, setOnSearch] = useState(() => () => {});
   const pathname = usePathname();
 
-  const getSearchConfig = useCallback(() => {
+  const searchConfig = useMemo(() => {
     switch (pathname) {
       case '/users':
         return {
@@ -31,6 +31,24 @@ export const SearchProvider = ({ children }) => {
           placeholder: 'Search by Redemption ID or User ID...',
           ariaLabel: 'Search payments',
           description: 'Enter keywords to search for payment transactions'
+        };
+      case '/offers':
+        return {
+          placeholder: 'Search offers by title, ID, type, or segment...',
+          ariaLabel: 'Search offers',
+          description: 'Enter keywords to search for offers and campaigns'
+        };
+      case '/offers/games':
+        return {
+          placeholder: 'Search games by title, ID, or category...',
+          ariaLabel: 'Search games',
+          description: 'Enter keywords to search for games'
+        };
+      case '/offers/tasks':
+        return {
+          placeholder: 'Search tasks by title, game, or rule type...',
+          ariaLabel: 'Search tasks',
+          description: 'Enter keywords to search for tasks and rules'
         };
       default:
         return {
@@ -55,14 +73,14 @@ export const SearchProvider = ({ children }) => {
     onSearch('');
   }, [onSearch]);
 
-  const value = {
+  const value = useMemo(() => ({
     searchTerm,
     setSearchTerm,
     handleSearch,
     clearSearch,
     registerSearchHandler,
-    searchConfig: getSearchConfig(),
-  };
+    searchConfig,
+  }), [searchTerm, handleSearch, clearSearch, registerSearchHandler, searchConfig]);
 
   return (
     <SearchContext.Provider value={value}>
