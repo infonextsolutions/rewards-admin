@@ -32,6 +32,24 @@ export default function RewardsTable({
     setEditValue('');
   };
 
+  const renderToggle = (value, onChange, size = 'sm') => {
+    return (
+      <button
+        onClick={onChange}
+        className={`relative inline-flex items-center h-5 rounded-full w-9 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+          value ? 'bg-blue-600' : 'bg-gray-300'
+        }`}
+      >
+        <span className="sr-only">Toggle</span>
+        <span
+          className={`inline-block w-3 h-3 transform transition-transform bg-white rounded-full ${
+            value ? 'translate-x-5' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    );
+  };
+
   const renderEditableCell = (item, field, value, type = 'text') => {
     const isEditing = editingCell === `${item.id}-${field}`;
     
@@ -110,6 +128,7 @@ export default function RewardsTable({
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Inactivity Duration</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Min XP Limit</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Notifications</th>
+            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Status</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Actions</th>
           </tr>
         );
@@ -117,10 +136,9 @@ export default function RewardsTable({
         return (
           <tr className="bg-[#ecf8f1]">
             <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">Tier Name</th>
-            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">XP Range</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Conversion Ratio</th>
             <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm">Redemption Channels</th>
-            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Status</th>
+            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Enabled</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Actions</th>
           </tr>
         );
@@ -208,7 +226,13 @@ export default function RewardsTable({
         return (
           <tr key={item.id} className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === data.length - 1 ? "border-b-0" : ""}`}>
             <td className="py-4 px-3">
-              <span className="font-medium text-gray-900">{item.tierName}</span>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center bg-gray-50 border-gray-300">
+                  <div className="font-semibold text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap text-gray-700">
+                    {item.tierName}
+                  </div>
+                </div>
+              </div>
             </td>
             <td className="py-4 px-2 text-center">
               <span className="text-sm text-gray-700">{item.xpRange}</span>
@@ -223,11 +247,20 @@ export default function RewardsTable({
               <span className="text-sm text-gray-700">{item.minimumXpLimit}</span>
             </td>
             <td className="py-4 px-2 text-center">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                item.notificationToggle ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {item.notificationToggle ? 'On' : 'Off'}
-              </span>
+              <div className="flex justify-center">
+                {renderToggle(
+                  item.notificationToggle,
+                  () => onToggleStatus && onToggleStatus({ ...item, notificationToggle: !item.notificationToggle })
+                )}
+              </div>
+            </td>
+            <td className="py-4 px-2 text-center">
+              <div className="flex justify-center">
+                {renderToggle(
+                  item.status,
+                  () => onToggleStatus && onToggleStatus({ ...item, status: !item.status })
+                )}
+              </div>
             </td>
             <td className="py-4 px-2">
               <div className="flex items-center justify-center gap-1">
@@ -258,10 +291,13 @@ export default function RewardsTable({
         return (
           <tr key={item.id} className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === data.length - 1 ? "border-b-0" : ""}`}>
             <td className="py-4 px-3">
-              <span className="font-medium text-gray-900">{item.tierName}</span>
-            </td>
-            <td className="py-4 px-2 text-center">
-              <span className="text-sm text-gray-700">{item.xpRange}</span>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center bg-gray-50 border-gray-300">
+                  <div className="font-semibold text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap text-gray-700">
+                    {item.tierName}
+                  </div>
+                </div>
+              </div>
             </td>
             <td className="py-4 px-2 text-center">
               <span className="text-sm text-gray-700 font-medium">{item.conversionRatio}</span>
@@ -276,11 +312,12 @@ export default function RewardsTable({
               </div>
             </td>
             <td className="py-4 px-2 text-center">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                item.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {item.status ? 'Active' : 'Inactive'}
-              </span>
+              <div className="flex justify-center">
+                {renderToggle(
+                  item.enabled,
+                  () => onToggleStatus && onToggleStatus({ ...item, enabled: !item.enabled })
+                )}
+              </div>
             </td>
             <td className="py-4 px-2">
               <div className="flex items-center justify-center gap-1">

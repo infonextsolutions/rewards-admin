@@ -16,15 +16,11 @@ export function AddEditModal({
     badgeFile: null,
     accessBenefits: editingItem?.accessBenefits || '',
     status: editingItem?.status ?? true,
-    tierColor: editingItem?.tierColor || '#f68d2b',
-    bgColor: editingItem?.bgColor || '#ffefda',
-    borderColor: editingItem?.borderColor || '#c77023',
     // XP Decay Settings
     decayRuleType: editingItem?.decayRuleType || 'Fixed',
     inactivityDuration: editingItem?.inactivityDuration || '',
     minimumXpLimit: editingItem?.minimumXpLimit || '',
     notificationToggle: editingItem?.notificationToggle ?? true,
-    decayPercentage: editingItem?.decayPercentage || '',
     xpRange: editingItem?.xpRange || '',
     // XP Conversion
     tier: editingItem?.tierName || '',
@@ -60,10 +56,6 @@ export function AddEditModal({
       if (!formData.xpMax || formData.xpMax <= formData.xpMin) {
         errors.xpMax = 'Max XP must be greater than Min XP';
       }
-      
-      if (formData.tierColor && !/^#([0-9A-F]{3}){1,2}$/i.test(formData.tierColor)) {
-        errors.tierColor = 'Invalid color format';
-      }
     }
     
     if (activeTab === 'XP Decay Settings') {
@@ -76,10 +68,6 @@ export function AddEditModal({
       
       if (!formData.minimumXpLimit || formData.minimumXpLimit < 0) {
         errors.minimumXpLimit = 'Min XP limit must be a positive number';
-      }
-      
-      if (formData.decayPercentage && (!/^\d+%?$/.test(formData.decayPercentage) || parseInt(formData.decayPercentage) > 100)) {
-        errors.decayPercentage = 'Decay percentage must be between 1-100';
       }
     }
     
@@ -123,9 +111,8 @@ export function AddEditModal({
   const resetForm = () => {
     setFormData({
       tierName: '', xpMin: '', xpMax: '', badge: '', badgeFile: null, accessBenefits: '', status: true,
-      tierColor: '#f68d2b', bgColor: '#ffefda', borderColor: '#c77023',
       decayRuleType: 'Fixed', inactivityDuration: '', minimumXpLimit: '', notificationToggle: true,
-      decayPercentage: '', xpRange: '',
+      xpRange: '',
       tier: '', conversionRatio: '', enabled: true, redemptionChannels: [], newChannel: '',
       bonusType: '', triggerCondition: '', rewardValue: '', active: true
     });
@@ -218,27 +205,17 @@ export function AddEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Badge</label>
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={formData.badge}
-                      onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
-                      placeholder="🥉"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                    />
-                    <div className="text-sm text-gray-600">Or upload an icon:</div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".png,.svg"
-                      onChange={handleFileUpload}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black file:mr-4 file:py-1 file:px-2 file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    />
-                    {formData.badgeFile && (
-                      <div className="text-xs text-green-600">File selected: {formData.badgeFile.name}</div>
-                    )}
-                  </div>
+                  <label className="block text-sm font-medium text-black mb-1">Badge/Icon</label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".png,.svg"
+                    onChange={handleFileUpload}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black file:mr-4 file:py-1 file:px-2 file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {formData.badgeFile && (
+                    <div className="text-xs text-green-600 mt-1">File selected: {formData.badgeFile.name}</div>
+                  )}
                 </div>
 
                 <div>
@@ -250,37 +227,6 @@ export function AddEditModal({
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-1">Tier Color</label>
-                    <input
-                      type="color"
-                      value={formData.tierColor}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tierColor: e.target.value }))}
-                      className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    {formErrors.tierColor && <p className="text-red-500 text-xs mt-1">{formErrors.tierColor}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-1">Background Color</label>
-                    <input
-                      type="color"
-                      value={formData.bgColor}
-                      onChange={(e) => setFormData(prev => ({ ...prev, bgColor: e.target.value }))}
-                      className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-1">Border Color</label>
-                    <input
-                      type="color"
-                      value={formData.borderColor}
-                      onChange={(e) => setFormData(prev => ({ ...prev, borderColor: e.target.value }))}
-                      className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -334,16 +280,48 @@ export function AddEditModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-black mb-1">Inactivity Duration</label>
-                    <input
-                      type="text"
-                      value={formData.inactivityDuration}
-                      onChange={(e) => setFormData(prev => ({ ...prev, inactivityDuration: e.target.value }))}
-                      placeholder="7 Days"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.inactivityDuration}
+                        onChange={(e) => setFormData(prev => ({ ...prev, inactivityDuration: e.target.value }))}
+                        placeholder="7 Days"
+                        className="w-full px-3 py-2 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                      />
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const match = formData.inactivityDuration.match(/(\d+)\s*(\w+)/);
+                            if (match) {
+                              const num = parseInt(match[1]) + 1;
+                              const unit = match[2];
+                              setFormData(prev => ({ ...prev, inactivityDuration: `${num} ${unit}` }));
+                            }
+                          }}
+                          className="text-xs text-gray-500 hover:text-gray-700 leading-none h-3 flex items-center justify-center"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const match = formData.inactivityDuration.match(/(\d+)\s*(\w+)/);
+                            if (match && parseInt(match[1]) > 1) {
+                              const num = parseInt(match[1]) - 1;
+                              const unit = match[2];
+                              setFormData(prev => ({ ...prev, inactivityDuration: `${num} ${unit}` }));
+                            }
+                          }}
+                          className="text-xs text-gray-500 hover:text-gray-700 leading-none h-3 flex items-center justify-center"
+                        >
+                          ▼
+                        </button>
+                      </div>
+                    </div>
                     {formErrors.inactivityDuration && <p className="text-red-500 text-xs mt-1">{formErrors.inactivityDuration}</p>}
                   </div>
 
@@ -357,18 +335,6 @@ export function AddEditModal({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                     />
                     {formErrors.minimumXpLimit && <p className="text-red-500 text-xs mt-1">{formErrors.minimumXpLimit}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-1">Decay Percentage</label>
-                    <input
-                      type="text"
-                      value={formData.decayPercentage}
-                      onChange={(e) => setFormData(prev => ({ ...prev, decayPercentage: e.target.value }))}
-                      placeholder="25%"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                    />
-                    {formErrors.decayPercentage && <p className="text-red-500 text-xs mt-1">{formErrors.decayPercentage}</p>}
                   </div>
                 </div>
 
@@ -391,7 +357,7 @@ export function AddEditModal({
                     onChange={(e) => setFormData(prev => ({ ...prev, notificationToggle: e.target.checked }))}
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                   />
-                  <label htmlFor="notifications" className="text-sm font-medium text-black">Enable Notifications</label>
+                  <label htmlFor="notifications" className="text-sm font-medium text-black">Send Notification</label>
                 </div>
               </>
             )}
@@ -535,17 +501,6 @@ export function AddEditModal({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                   />
                   <label htmlFor="active" className="text-sm font-medium text-black">Active</label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="status-bonus"
-                    checked={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.checked }))}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="status-bonus" className="text-sm font-medium text-black">Status Active</label>
                 </div>
               </>
             )}
