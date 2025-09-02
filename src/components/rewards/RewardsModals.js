@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 export function AddEditModal({ 
   isOpen, 
@@ -13,18 +13,25 @@ export function AddEditModal({
     xpMin: editingItem?.xpMin || '',
     xpMax: editingItem?.xpMax || '',
     badge: editingItem?.badge || '',
+    badgeFile: null,
     accessBenefits: editingItem?.accessBenefits || '',
     status: editingItem?.status ?? true,
+    tierColor: editingItem?.tierColor || '#f68d2b',
+    bgColor: editingItem?.bgColor || '#ffefda',
+    borderColor: editingItem?.borderColor || '#c77023',
     // XP Decay Settings
     decayRuleType: editingItem?.decayRuleType || 'Fixed',
     inactivityDuration: editingItem?.inactivityDuration || '',
     minimumXpLimit: editingItem?.minimumXpLimit || '',
     notificationToggle: editingItem?.notificationToggle ?? true,
+    decayPercentage: editingItem?.decayPercentage || '',
+    xpRange: editingItem?.xpRange || '',
     // XP Conversion
     tier: editingItem?.tierName || '',
     conversionRatio: editingItem?.conversionRatio || '',
     enabled: editingItem?.enabled ?? true,
     redemptionChannels: editingItem?.redemptionChannels || [],
+    newChannel: '',
     // Bonus Logic
     bonusType: editingItem?.bonusType || '',
     triggerCondition: editingItem?.triggerCondition || '',
@@ -33,21 +40,77 @@ export function AddEditModal({
   });
 
   const [formErrors, setFormErrors] = useState({});
+  const fileInputRef = useRef(null);
 
   const handleSubmit = () => {
     const errors = {};
     
-    // Basic validation
+    // Comprehensive validation with regex patterns
     if (activeTab === 'XP Tiers') {
+      if (!formData.tierName) {
+        errors.tierName = 'Tier name is required';
+      } else if (!/^[a-zA-Z\s]+$/.test(formData.tierName)) {
+        errors.tierName = 'Tier name must contain only letters and spaces';
+      }
+      
+      if (!formData.xpMin || formData.xpMin < 0) {
+        errors.xpMin = 'Min XP must be a positive number';
+      }
+      
+      if (!formData.xpMax || formData.xpMax <= formData.xpMin) {
+        errors.xpMax = 'Max XP must be greater than Min XP';
+      }
+      
+      if (formData.tierColor && !/^#([0-9A-F]{3}){1,2}$/i.test(formData.tierColor)) {
+        errors.tierColor = 'Invalid color format';
+      }
+    }
+    
+    if (activeTab === 'XP Decay Settings') {
       if (!formData.tierName) errors.tierName = 'Tier name is required';
-      if (!formData.xpMin) errors.xpMin = 'Min XP is required';
-      if (!formData.xpMax) errors.xpMax = 'Max XP is required';
+      if (!formData.inactivityDuration) {
+        errors.inactivityDuration = 'Inactivity duration is required';
+      } else if (!/^\d+\s+(Days?|Weeks?|Months?)$/i.test(formData.inactivityDuration)) {
+        errors.inactivityDuration = 'Format: "7 Days", "2 Weeks", etc.';
+      }
+      
+      if (!formData.minimumXpLimit || formData.minimumXpLimit < 0) {
+        errors.minimumXpLimit = 'Min XP limit must be a positive number';
+      }
+      
+      if (formData.decayPercentage && (!/^\d+%?$/.test(formData.decayPercentage) || parseInt(formData.decayPercentage) > 100)) {
+        errors.decayPercentage = 'Decay percentage must be between 1-100';
+      }
+    }
+    
+    if (activeTab === 'XP Conversion') {
+      if (!formData.conversionRatio) {
+        errors.conversionRatio = 'Conversion ratio is required';
+      } else if (!/^\d+\s+XP\s*=\s*[₹$]?\d+(\.\d{2})?\s*(Points?|₹|\$)?$/i.test(formData.conversionRatio)) {
+        errors.conversionRatio = 'Format: "150 XP = ₹1" or "100 XP = 1 Point"';
+      }
+      
+      if (!formData.redemptionChannels.length) {
+        errors.redemptionChannels = 'At least one redemption channel is required';
+      }
     }
     
     if (activeTab === 'Bonus Logic') {
-      if (!formData.bonusType) errors.bonusType = 'Bonus type is required';
-      if (!formData.triggerCondition) errors.triggerCondition = 'Trigger condition is required';
-      if (!formData.rewardValue) errors.rewardValue = 'Reward value is required';
+      if (!formData.bonusType) {
+        errors.bonusType = 'Bonus type is required';
+      } else if (!/^[a-zA-Z\s]+$/.test(formData.bonusType)) {
+        errors.bonusType = 'Bonus type must contain only letters and spaces';
+      }
+      
+      if (!formData.triggerCondition) {
+        errors.triggerCondition = 'Trigger condition is required';
+      }
+      
+      if (!formData.rewardValue) {
+        errors.rewardValue = 'Reward value is required';
+      } else if (!/^\+?\d+\s+(XP|Coins?|Points?|₹|\$)$/i.test(formData.rewardValue)) {
+        errors.rewardValue = 'Format: "+500 XP", "1000 Coins", or "₹50"';
+      }
     }
 
     setFormErrors(errors);
@@ -59,12 +122,41 @@ export function AddEditModal({
 
   const resetForm = () => {
     setFormData({
-      tierName: '', xpMin: '', xpMax: '', badge: '', accessBenefits: '', status: true,
+      tierName: '', xpMin: '', xpMax: '', badge: '', badgeFile: null, accessBenefits: '', status: true,
+      tierColor: '#f68d2b', bgColor: '#ffefda', borderColor: '#c77023',
       decayRuleType: 'Fixed', inactivityDuration: '', minimumXpLimit: '', notificationToggle: true,
-      tier: '', conversionRatio: '', enabled: true, redemptionChannels: [],
+      decayPercentage: '', xpRange: '',
+      tier: '', conversionRatio: '', enabled: true, redemptionChannels: [], newChannel: '',
       bonusType: '', triggerCondition: '', rewardValue: '', active: true
     });
     setFormErrors({});
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && (file.type === 'image/png' || file.type === 'image/svg+xml')) {
+      setFormData(prev => ({ ...prev, badgeFile: file }));
+    } else {
+      alert('Please upload a PNG or SVG file');
+    }
+  };
+
+  const addRedemptionChannel = () => {
+    if (formData.newChannel && !formData.redemptionChannels.includes(formData.newChannel)) {
+      setFormData(prev => ({
+        ...prev,
+        redemptionChannels: [...prev.redemptionChannels, prev.newChannel],
+        newChannel: ''
+      }));
+    }
+  };
+
+  const removeRedemptionChannel = (channel) => {
+    setFormData(prev => ({
+      ...prev,
+      redemptionChannels: prev.redemptionChannels.filter(c => c !== channel)
+    }));
   };
 
   if (!isOpen) return null;
@@ -127,13 +219,26 @@ export function AddEditModal({
 
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">Badge</label>
-                  <input
-                    type="text"
-                    value={formData.badge}
-                    onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
-                    placeholder="🥉"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={formData.badge}
+                      onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
+                      placeholder="🥉"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    />
+                    <div className="text-sm text-gray-600">Or upload an icon:</div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".png,.svg"
+                      onChange={handleFileUpload}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black file:mr-4 file:py-1 file:px-2 file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {formData.badgeFile && (
+                      <div className="text-xs text-green-600">File selected: {formData.badgeFile.name}</div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -145,6 +250,37 @@ export function AddEditModal({
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Tier Color</label>
+                    <input
+                      type="color"
+                      value={formData.tierColor}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tierColor: e.target.value }))}
+                      className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                    {formErrors.tierColor && <p className="text-red-500 text-xs mt-1">{formErrors.tierColor}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Background Color</label>
+                    <input
+                      type="color"
+                      value={formData.bgColor}
+                      onChange={(e) => setFormData(prev => ({ ...prev, bgColor: e.target.value }))}
+                      className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Border Color</label>
+                    <input
+                      type="color"
+                      value={formData.borderColor}
+                      onChange={(e) => setFormData(prev => ({ ...prev, borderColor: e.target.value }))}
+                      className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -187,7 +323,18 @@ export function AddEditModal({
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">XP Range</label>
+                  <input
+                    type="text"
+                    value={formData.xpRange}
+                    onChange={(e) => setFormData(prev => ({ ...prev, xpRange: e.target.value }))}
+                    placeholder="0 - 999 XP"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-black mb-1">Inactivity Duration</label>
                     <input
@@ -197,6 +344,7 @@ export function AddEditModal({
                       placeholder="7 Days"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                     />
+                    {formErrors.inactivityDuration && <p className="text-red-500 text-xs mt-1">{formErrors.inactivityDuration}</p>}
                   </div>
 
                   <div>
@@ -208,7 +356,31 @@ export function AddEditModal({
                       placeholder="100"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                     />
+                    {formErrors.minimumXpLimit && <p className="text-red-500 text-xs mt-1">{formErrors.minimumXpLimit}</p>}
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">Decay Percentage</label>
+                    <input
+                      type="text"
+                      value={formData.decayPercentage}
+                      onChange={(e) => setFormData(prev => ({ ...prev, decayPercentage: e.target.value }))}
+                      placeholder="25%"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    />
+                    {formErrors.decayPercentage && <p className="text-red-500 text-xs mt-1">{formErrors.decayPercentage}</p>}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="status-decay"
+                    checked={formData.status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="status-decay" className="text-sm font-medium text-black">Active</label>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -220,6 +392,91 @@ export function AddEditModal({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                   />
                   <label htmlFor="notifications" className="text-sm font-medium text-black">Enable Notifications</label>
+                </div>
+              </>
+            )}
+
+            {/* XP Conversion Fields */}
+            {activeTab === 'XP Conversion' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Tier</label>
+                  <select
+                    value={formData.tier}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tier: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  >
+                    <option value="">Select Tier</option>
+                    <option value="Bronze">Bronze</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Platinum">Platinum</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">
+                    Conversion Ratio <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.conversionRatio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, conversionRatio: e.target.value }))}
+                    placeholder="150 XP = ₹1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  />
+                  {formErrors.conversionRatio && <p className="text-red-500 text-xs mt-1">{formErrors.conversionRatio}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">
+                    Redemption Channels <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={formData.newChannel}
+                        onChange={(e) => setFormData(prev => ({ ...prev, newChannel: e.target.value }))}
+                        placeholder="Add redemption channel"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                        onKeyPress={(e) => e.key === 'Enter' && addRedemptionChannel()}
+                      />
+                      <button
+                        type="button"
+                        onClick={addRedemptionChannel}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.redemptionChannels.map((channel, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                          {channel}
+                          <button
+                            type="button"
+                            onClick={() => removeRedemptionChannel(channel)}
+                            className="ml-1 text-blue-600 hover:text-blue-800"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    {formErrors.redemptionChannels && <p className="text-red-500 text-xs mt-1">{formErrors.redemptionChannels}</p>}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="enabled"
+                    checked={formData.enabled}
+                    onChange={(e) => setFormData(prev => ({ ...prev, enabled: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="enabled" className="text-sm font-medium text-black">Enabled</label>
                 </div>
               </>
             )}
@@ -278,6 +535,17 @@ export function AddEditModal({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                   />
                   <label htmlFor="active" className="text-sm font-medium text-black">Active</label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="status-bonus"
+                    checked={formData.status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="status-bonus" className="text-sm font-medium text-black">Status Active</label>
                 </div>
               </>
             )}

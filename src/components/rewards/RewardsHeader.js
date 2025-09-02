@@ -9,6 +9,10 @@ export default function RewardsHeader({
   onFilterChange,
   onExport,
   onAdd,
+  onShowAuditLogs,
+  onShowAdvancedFilter,
+  selectedCount = 0,
+  hasAdvancedFilters = false,
   className = ""
 }) {
   return (
@@ -25,6 +29,11 @@ export default function RewardsHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end">
+          {selectedCount > 0 && (
+            <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium h-[42px] flex items-center">
+              {selectedCount} selected
+            </span>
+          )}
           {filterOptions.map((filter) => (
             <FilterDropdown
               key={filter.id}
@@ -35,6 +44,30 @@ export default function RewardsHeader({
               onChange={onFilterChange}
             />
           ))}
+          <button
+            onClick={onShowAdvancedFilter}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors h-[42px] whitespace-nowrap ${
+              hasAdvancedFilters 
+                ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                : 'bg-gray-600 text-white hover:bg-gray-700'
+            }`}
+            title="Advanced filters"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+            </svg>
+            {hasAdvancedFilters ? 'Filters Applied' : 'Advanced Filter'}
+          </button>
+          <button
+            onClick={onShowAuditLogs}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors h-[42px] whitespace-nowrap"
+            title="View audit logs"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Audit Logs
+          </button>
           <button
             onClick={onExport}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors h-[42px] whitespace-nowrap"

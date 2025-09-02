@@ -1,10 +1,93 @@
+import { useState } from 'react';
+
 export default function RewardsTable({
   activeTab,
   data,
   onEdit,
   onDelete,
+  onToggleStatus,
+  selectedItems = [],
+  onSelectItem,
+  onSelectAll,
   className = ""
 }) {
+  const [editingCell, setEditingCell] = useState(null);
+  const [editValue, setEditValue] = useState('');
+
+  const handleCellEdit = (itemId, field, currentValue) => {
+    setEditingCell(`${itemId}-${field}`);
+    setEditValue(currentValue);
+  };
+
+  const handleCellSave = (item, field) => {
+    if (editValue !== item[field]) {
+      onEdit({ ...item, [field]: editValue });
+    }
+    setEditingCell(null);
+    setEditValue('');
+  };
+
+  const handleCellCancel = () => {
+    setEditingCell(null);
+    setEditValue('');
+  };
+
+  const renderEditableCell = (item, field, value, type = 'text') => {
+    const isEditing = editingCell === `${item.id}-${field}`;
+    
+    if (isEditing) {
+      return (
+        <div className="flex items-center gap-1">
+          {type === 'select' ? (
+            <select
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="text-sm border rounded px-1 py-0.5 w-20"
+              onBlur={() => handleCellSave(item, field)}
+              onKeyPress={(e) => e.key === 'Enter' && handleCellSave(item, field)}
+              autoFocus
+            >
+              <option value="Fixed">Fixed</option>
+              <option value="Stepwise">Stepwise</option>
+              <option value="Gradual">Gradual</option>
+            </select>
+          ) : (
+            <input
+              type={type}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="text-sm border rounded px-1 py-0.5 w-16"
+              onBlur={() => handleCellSave(item, field)}
+              onKeyPress={(e) => e.key === 'Enter' && handleCellSave(item, field)}
+              autoFocus
+            />
+          )}
+          <button
+            onClick={() => handleCellSave(item, field)}
+            className="text-green-600 hover:text-green-800 text-xs"
+          >
+            ✓
+          </button>
+          <button
+            onClick={handleCellCancel}
+            className="text-red-600 hover:text-red-800 text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      );
+    }
+    
+    return (
+      <div 
+        className="cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded"
+        onClick={() => handleCellEdit(item.id, field, value)}
+        title="Click to edit"
+      >
+        <span className="text-sm text-gray-700">{value}</span>
+      </div>
+    );
+  };
   const renderTableHeaders = () => {
     switch (activeTab) {
       case "XP Tiers":

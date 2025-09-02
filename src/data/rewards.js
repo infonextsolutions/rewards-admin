@@ -54,6 +54,7 @@ export const MOCK_XP_DECAY_SETTINGS = [
     decayRuleType: "Fixed",
     inactivityDuration: "7 Days",
     minimumXpLimit: 100,
+    decayPercentage: "25%",
     notificationToggle: true,
     status: true,
   },
@@ -64,6 +65,7 @@ export const MOCK_XP_DECAY_SETTINGS = [
     decayRuleType: "Stepwise",
     inactivityDuration: "10 Days",
     minimumXpLimit: 200,
+    decayPercentage: "20%",
     notificationToggle: true,
     status: true,
   },
@@ -74,6 +76,7 @@ export const MOCK_XP_DECAY_SETTINGS = [
     decayRuleType: "Fixed",
     inactivityDuration: "14 Days",
     minimumXpLimit: 500,
+    decayPercentage: "15%",
     notificationToggle: false,
     status: true,
   },
@@ -148,40 +151,80 @@ export const REWARDS_FILTER_OPTIONS = {
     {
       id: "dateRange",
       label: "Date Range",
-      options: ["Date Range", "Last 7 Days", "Last 30 Days", "Last 90 Days", "Custom Range"],
+      options: ["Date Range", "Today", "Last 7 Days", "Last 30 Days", "Last 90 Days", "This Year", "Custom Range"],
     },
     {
       id: "status", 
       label: "Status",
       options: ["Status", "All Status", "Active", "Inactive"],
     },
+    {
+      id: "sortBy",
+      label: "Sort By",
+      options: ["Sort By", "Name A-Z", "Name Z-A", "Created Date", "Last Modified", "XP Range"],
+    },
   ],
   "XP Tiers": [
     {
       id: "type",
-      label: "Type", 
-      options: ["Type", "All Types", "Bronze", "Silver", "Gold", "Platinum"],
+      label: "Tier Level", 
+      options: ["Tier Level", "All Tiers", "Bronze", "Silver", "Gold", "Platinum"],
+    },
+    {
+      id: "xpRange",
+      label: "XP Range",
+      options: ["XP Range", "0-999", "1000-2999", "3000-9999", "10000+"],
     },
   ],
   "XP Decay Settings": [
     {
       id: "type",
-      label: "Type",
-      options: ["Type", "All Types", "Fixed", "Stepwise", "Gradual"],
+      label: "Decay Type",
+      options: ["Decay Type", "All Types", "Fixed", "Stepwise", "Gradual"],
+    },
+    {
+      id: "duration",
+      label: "Duration",
+      options: ["Duration", "7 Days", "10 Days", "14 Days", "30 Days"],
+    },
+    {
+      id: "percentage",
+      label: "Decay Rate",
+      options: ["Decay Rate", "15%", "20%", "25%", "30%+"],
     },
   ],
   "XP Conversion": [
     {
       id: "type", 
-      label: "Type",
-      options: ["Type", "All Types", "Bronze", "Silver", "Gold", "Platinum"],
+      label: "Tier Level",
+      options: ["Tier Level", "All Tiers", "Bronze", "Silver", "Gold", "Platinum"],
+    },
+    {
+      id: "enabled",
+      label: "Enabled Status",
+      options: ["Enabled Status", "Enabled", "Disabled"],
+    },
+    {
+      id: "channels",
+      label: "Channels",
+      options: ["Channels", "Mobile App", "Web Portal", "Partner Stores", "VIP Support"],
     },
   ],
   "Bonus Logic": [
     {
       id: "type",
-      label: "Type", 
-      options: ["Type", "All Types", "Login Streak", "Referral", "Daily Task", "Achievement"],
+      label: "Bonus Type", 
+      options: ["Bonus Type", "All Types", "Login Streak", "Referral", "Daily Task", "Achievement", "Special Event"],
+    },
+    {
+      id: "rewardType",
+      label: "Reward Type",
+      options: ["Reward Type", "XP", "Coins", "Currency", "Mixed"],
+    },
+    {
+      id: "activeStatus",
+      label: "Active Status",
+      options: ["Active Status", "Active", "Inactive"],
     },
   ],
 };
