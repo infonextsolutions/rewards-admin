@@ -1165,7 +1165,7 @@ const DeleteModal = ({ isOpen, onClose, creative, onConfirm }) => {
         </div>
         
         <p className="text-gray-800 mb-6">
-          Are you sure you want to delete "<span className="font-semibold">{creative.title}</span>"? This creative will be archived and removed from active display.
+          Are you sure you want to delete &quot;<span className="font-semibold">{creative.title}</span>&quot;? This creative will be archived and removed from active display.
         </p>
         
         <div className="flex justify-end gap-4">
