@@ -7,13 +7,54 @@ export default function Pagination({
   variant = "default"
 }) {
   if (variant === "compact") {
+    // Handle edge cases
+    if (totalPages === 0) return null;
+    
+    const getVisiblePages = () => {
+      const visiblePages = [];
+      
+      // Always show first page
+      visiblePages.push({ type: "page", label: "1", active: currentPage === 1 });
+      
+      if (totalPages <= 4) {
+        // Show all pages if 4 or fewer
+        for (let i = 2; i <= totalPages; i++) {
+          visiblePages.push({ type: "page", label: i.toString(), active: currentPage === i });
+        }
+      } else {
+        // Complex pagination logic
+        if (currentPage <= 3) {
+          // Show first 3 pages, then ellipsis, then last page
+          for (let i = 2; i <= 3; i++) {
+            visiblePages.push({ type: "page", label: i.toString(), active: currentPage === i });
+          }
+          if (totalPages > 4) {
+            visiblePages.push({ type: "ellipsis", label: "...", active: false });
+            visiblePages.push({ type: "page", label: totalPages.toString(), active: currentPage === totalPages });
+          }
+        } else if (currentPage >= totalPages - 2) {
+          // Show first page, ellipsis, then last 3 pages
+          visiblePages.push({ type: "ellipsis", label: "...", active: false });
+          for (let i = totalPages - 2; i <= totalPages; i++) {
+            visiblePages.push({ type: "page", label: i.toString(), active: currentPage === i });
+          }
+        } else {
+          // Show first, ellipsis, current-1, current, current+1, ellipsis, last
+          visiblePages.push({ type: "ellipsis", label: "...", active: false });
+          for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+            visiblePages.push({ type: "page", label: i.toString(), active: currentPage === i });
+          }
+          visiblePages.push({ type: "ellipsis", label: "...", active: false });
+          visiblePages.push({ type: "page", label: totalPages.toString(), active: currentPage === totalPages });
+        }
+      }
+      
+      return visiblePages;
+    };
+
     const paginationItems = [
       { type: "prev", label: "Prev", disabled: currentPage === 1 },
-      { type: "page", label: "1", active: currentPage === 1 },
-      { type: "page", label: "2", active: currentPage === 2 },
-      { type: "page", label: "3", active: currentPage === 3 },
-      { type: "ellipsis", label: "...", active: false },
-      { type: "page", label: totalPages.toString(), active: currentPage === totalPages },
+      ...getVisiblePages(),
       { type: "next", label: "Next", disabled: currentPage === totalPages },
     ];
 

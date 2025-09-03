@@ -50,6 +50,12 @@ export const SearchProvider = ({ children }) => {
           ariaLabel: 'Search tasks',
           description: 'Enter keywords to search for tasks and rules'
         };
+      case '/analytics':
+        return {
+          placeholder: 'Search by game title, acquisition source, or advertiser...',
+          ariaLabel: 'Search analytics data',
+          description: 'Enter keywords to search marketing attribution data'
+        };
       default:
         return {
           placeholder: 'Search for games or users....',

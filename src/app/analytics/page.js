@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Pagination from "../../components/ui/Pagination";
+import { useSearch } from "../../contexts/SearchContext";
 
 const Frame = ({ onExportCSV }) => {
   return (
@@ -67,46 +68,72 @@ const FiltersSection = ({ filters, onFilterChange }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
         {/* Acquisition Source */}
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-2">Acquisition Source</label>
-          <select
-            multiple
-            value={filters.acquisitionSources}
-            onChange={(e) => {
-              const values = Array.from(e.target.selectedOptions, option => option.value);
-              onFilterChange('acquisitionSources', values);
-            }}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent h-20 bg-white"
-            style={{
-              color: '#333333',
-              backgroundColor: 'white'
-            }}
-          >
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-sm font-medium text-gray-700">Acquisition Source</label>
+            {filters.acquisitionSources.length > 0 && (
+              <button
+                onClick={() => onFilterChange('acquisitionSources', [])}
+                className="text-xs text-red-600 hover:text-red-800 underline"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+          <div className="border border-gray-300 rounded-md p-3 bg-white max-h-24 overflow-y-auto">
             {acquisitionSources.map(source => (
-              <option key={source} value={source} style={{ color: '#333333', backgroundColor: 'white' }}>{source}</option>
+              <label key={source} className="flex items-center mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                <input
+                  type="checkbox"
+                  checked={filters.acquisitionSources.includes(source)}
+                  onChange={(e) => {
+                    const currentSources = filters.acquisitionSources;
+                    if (e.target.checked) {
+                      onFilterChange('acquisitionSources', [...currentSources, source]);
+                    } else {
+                      onFilterChange('acquisitionSources', currentSources.filter(s => s !== source));
+                    }
+                  }}
+                  className="mr-2 w-3 h-3 text-[#00a389] border-gray-300 rounded focus:ring-[#00a389] focus:ring-2"
+                />
+                <span className="text-sm text-gray-700">{source}</span>
+              </label>
             ))}
-          </select>
+          </div>
         </div>
 
         {/* Game Title */}
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-2">Game Title</label>
-          <select
-            multiple
-            value={filters.gamesTitles}
-            onChange={(e) => {
-              const values = Array.from(e.target.selectedOptions, option => option.value);
-              onFilterChange('gamesTitles', values);
-            }}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent h-20 bg-white"
-            style={{
-              color: '#333333',
-              backgroundColor: 'white'
-            }}
-          >
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-sm font-medium text-gray-700">Game Title</label>
+            {filters.gamesTitles.length > 0 && (
+              <button
+                onClick={() => onFilterChange('gamesTitles', [])}
+                className="text-xs text-red-600 hover:text-red-800 underline"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+          <div className="border border-gray-300 rounded-md p-3 bg-white max-h-24 overflow-y-auto">
             {gameList.map(game => (
-              <option key={game} value={game} style={{ color: '#333333', backgroundColor: 'white' }}>{game}</option>
+              <label key={game} className="flex items-center mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                <input
+                  type="checkbox"
+                  checked={filters.gamesTitles.includes(game)}
+                  onChange={(e) => {
+                    const currentGames = filters.gamesTitles;
+                    if (e.target.checked) {
+                      onFilterChange('gamesTitles', [...currentGames, game]);
+                    } else {
+                      onFilterChange('gamesTitles', currentGames.filter(g => g !== game));
+                    }
+                  }}
+                  className="mr-2 w-3 h-3 text-[#00a389] border-gray-300 rounded focus:ring-[#00a389] focus:ring-2"
+                />
+                <span className="text-sm text-gray-700">{game}</span>
+              </label>
             ))}
-          </select>
+          </div>
         </div>
 
         {/* Advertiser */}
@@ -379,7 +406,22 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
               </tr>
             </thead>
             <tbody>
-              {data.map((row, index) => (
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="text-gray-400 mb-2">
+                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.219 0-4.207.906-5.662 2.372A2 2 0 014 19.5V21a1 1 0 002 2h12a1 1 0 002-2v-1.5a2 2 0 00-2.338-1.968z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">No results found</h3>
+                      <p className="text-sm text-gray-500">Try adjusting your search or filter criteria</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                data.map((row, index) => (
                 <tr
                   key={index}
                   className="h-[66px] border-b [border-bottom-style:solid] border-[#d0d6e7] hover:bg-gray-50 cursor-pointer transition-colors"
@@ -430,7 +472,8 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -452,6 +495,8 @@ export default function AnalyticsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const { registerSearchHandler, searchTerm } = useSearch();
   const [filters, setFilters] = useState({
     acquisitionSources: [],
     gamesTitles: [],
@@ -464,6 +509,19 @@ export default function AnalyticsPage() {
       end: new Date().toISOString().split('T')[0]
     }
   });
+
+  // Register search handler
+  useEffect(() => {
+    registerSearchHandler((query) => {
+      setSearchQuery(query);
+      setCurrentPage(1); // Reset to first page when searching
+    });
+  }, [registerSearchHandler]);
+
+  // Update local search query when search term changes
+  useEffect(() => {
+    setSearchQuery(searchTerm);
+  }, [searchTerm]);
 
   // Mock data that matches requirements
   const mockData = [
@@ -609,8 +667,26 @@ export default function AnalyticsPage() {
     }
   ];
 
-  // Filter data based on current filters
+  // Filter data based on current filters and search query
   const filteredData = mockData.filter(row => {
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        row.gameTitle.toLowerCase().includes(query) ||
+        row.acquisitionSource.toLowerCase().includes(query) ||
+        row.advertiser.toLowerCase().includes(query) ||
+        row.platform.toLowerCase().includes(query) ||
+        row.country.toLowerCase().includes(query) ||
+        row.installs.toString().includes(query) ||
+        row.revenue.toString().includes(query);
+      
+      if (!matchesSearch) {
+        return false;
+      }
+    }
+    
+    // Apply other filters
     if (filters.acquisitionSources.length > 0 && !filters.acquisitionSources.includes(row.acquisitionSource)) {
       return false;
     }
