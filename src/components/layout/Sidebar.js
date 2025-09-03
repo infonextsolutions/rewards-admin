@@ -17,7 +17,7 @@ const menuItems = [
   { id: 'support', label: 'Support', icon: '/support.png', href: '/support' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState(() => {
     const currentItem = menuItems.find(item => item.href === pathname);
@@ -25,7 +25,21 @@ export default function Sidebar() {
   });
 
   return (
-    <div className="w-64 h-screen bg-white border-r border-gray-100 flex flex-col fixed left-0 top-0 z-30">
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`
+        w-64 h-screen bg-white border-r border-gray-100 flex flex-col fixed left-0 top-0 z-50 
+        transition-transform duration-300 ease-in-out shadow-lg lg:shadow-none
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
       {/* Logo */}
       <div className="p-6 pb-6">
         <h1 className="text-4xl  font-extrabold text-gray-800">
@@ -43,7 +57,10 @@ export default function Sidebar() {
               <li key={item.id}>
                 <Link
                   href={item.href}
-                  onClick={() => setActiveItem(item.id)}
+                  onClick={() => {
+                    setActiveItem(item.id);
+                    onClose?.();
+                  }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                     isActive
                       ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-500'
@@ -64,6 +81,7 @@ export default function Sidebar() {
           })}
         </ul>
       </nav>
-    </div>
+      </div>
+    </>
   );
 }

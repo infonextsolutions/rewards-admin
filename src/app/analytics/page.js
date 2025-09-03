@@ -13,7 +13,7 @@ const Frame = ({ onExportCSV }) => {
     >
       <div className="relative">
         <h1 className="[font-family:'DM_Sans',Helvetica] font-semibold text-black text-[25.6px] tracking-[0] leading-[normal]">
-          Marketing Atrribution &amp;  Analytics
+          Marketing Attribution &amp; Analytics
         </h1>
         <p className="[font-family:'DM_Sans',Helvetica] font-medium text-gray-500 text-[14.4px] tracking-[0] leading-[normal] mt-2">
           Analyze acquisition sources, game performance, and marketing attribution
@@ -65,7 +65,7 @@ const FiltersSection = ({ filters, onFilterChange }) => {
 
   return (
     <div className="bg-white rounded-[10px] p-6 mb-6 w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {/* Acquisition Source */}
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-2">
@@ -221,9 +221,9 @@ const FiltersSection = ({ filters, onFilterChange }) => {
         </div>
 
         {/* Date Range */}
-        <div className="flex flex-col sm:col-span-2 md:col-span-2 lg:col-span-1 xl:col-span-1 2xl:col-span-1">
+        <div className="flex flex-col xl:col-span-2">
           <label className="text-sm font-medium text-gray-700 mb-2">Date Range</label>
-          <div className="flex flex-col gap-2 lg:flex-row lg:gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
             <input
               type="date"
               value={filters.dateRange.start}
@@ -348,7 +348,7 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
     <div className="flex flex-col w-full items-end justify-end gap-[30px] p-6 relative bg-white rounded-[10px]">
       <div className="flex-col items-start gap-8 w-full flex-[0_0_auto] flex relative self-stretch">
         <div className="flex-col items-start w-full flex-[0_0_auto] flex relative self-stretch overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr className="h-16 bg-[#ecf8f1] rounded-[10px]">
                 <th className="text-left px-4 py-4">
@@ -791,7 +791,7 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="w-full space-y-6 px-4 md:px-0">
+    <div className="w-full max-w-full space-y-6 overflow-hidden">
       <Frame onExportCSV={exportToCSV} />
       <FiltersSection 
         filters={filters} 

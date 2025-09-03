@@ -14,10 +14,10 @@ export default function UsersTable({
   return (
     <div className={`bg-white rounded-[10px] border border-gray-200 w-full ${className}`}>
       <div className="overflow-x-auto">
-        <table className="w-full" style={{ minWidth: '1000px' }}>
+        <table className="w-full min-w-full lg:min-w-[1000px]">
           <thead>
             <tr className="bg-[#ecf8f1]">
-              <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '50px'}}>
+              <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] w-12">
                 <input
                   type="checkbox"
                   checked={selectedUsers.length === users.length && users.length > 0}
@@ -25,34 +25,34 @@ export default function UsersTable({
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
               </th>
-              <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '140px'}}>
+              <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[140px]">
                 Name
               </th>
-              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '80px'}}>
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden xl:table-cell min-w-[80px]">
                 User ID
               </th>
-              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '160px'}}>
+              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[160px]">
                 Email ID
               </th>
-              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden md:table-cell" style={{minWidth: '110px'}}>
+              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell min-w-[110px]">
                 Phone
               </th>
-              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '60px'}}>
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden xl:table-cell min-w-[60px]">
                 Gender
               </th>
-              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell" style={{minWidth: '60px'}}>
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden xl:table-cell min-w-[60px]">
                 Age
               </th>
-              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden sm:table-cell" style={{minWidth: '120px'}}>
+              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden md:table-cell min-w-[120px]">
                 Location
               </th>
-              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '80px'}}>
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[80px]">
                 Tier
               </th>
-              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '80px'}}>
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[80px]">
                 Status
               </th>
-              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '140px'}}>
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[120px]">
                 Actions
               </th>
             </tr>
@@ -97,7 +97,7 @@ export default function UsersTable({
                 </td>
 
                 {/* User ID Column */}
-                <td className="py-4 px-2 text-center hidden lg:table-cell">
+                <td className="py-4 px-2 text-center hidden xl:table-cell">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate">
                     {row.userId}
                   </div>
@@ -111,28 +111,28 @@ export default function UsersTable({
                 </td>
 
                 {/* Phone Column */}
-                <td className="py-4 px-2 hidden md:table-cell">
+                <td className="py-4 px-2 hidden lg:table-cell">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.phone}>
                     {row.phone}
                   </div>
                 </td>
 
                 {/* Gender Column */}
-                <td className="py-4 px-2 text-center hidden lg:table-cell">
+                <td className="py-4 px-2 text-center hidden xl:table-cell">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5">
                     {row.gender}
                   </div>
                 </td>
 
                 {/* Age Column */}
-                <td className="py-4 px-2 text-center hidden lg:table-cell">
+                <td className="py-4 px-2 text-center hidden xl:table-cell">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5">
                     {row.age}
                   </div>
                 </td>
 
                 {/* Location Column */}
-                <td className="py-4 px-2 hidden sm:table-cell">
+                <td className="py-4 px-2 hidden md:table-cell">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.location}>
                     {row.location}
                   </div>
@@ -203,7 +203,7 @@ export default function UsersTable({
                     {row.status === "Active" && (
                       <button
                         onClick={() => onSuspendUser(row)}
-                        className=" items-center justify-center gap-1 px-2 py-1.5 bg-[#f40202] rounded-full hover:bg-[#d10000] transition-colors cursor-pointer text-xs hidden sm:flex"
+                        className="items-center justify-center gap-1 px-2 py-1.5 bg-[#f40202] rounded-full hover:bg-[#d10000] transition-colors cursor-pointer text-xs hidden md:flex"
                       >
                         <div className="font-medium text-white text-xs tracking-[0] leading-4">
                           Suspend

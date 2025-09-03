@@ -6,20 +6,35 @@ import { SearchProvider, useSearch } from '../contexts/SearchContext';
 
 const AdminLayoutContent = ({ children }) => {
   const { searchTerm, handleSearch, searchConfig } = useSearch();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className="ml-64 min-h-screen">
+      <div className="lg:ml-64 min-h-screen transition-all duration-300">
         {/* Header */}
-        <header className="w-full bg- border-b border-gray-200 px-4 lg:px-6 py-4" role="banner">
+        <header className="w-full bg-white border-b border-gray-200 px-4 lg:px-6 py-4" role="banner">
           <div className="flex items-center justify-between w-full h-full">
             
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="w-10 h-10 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                aria-label="Open sidebar"
+                type="button"
+              >
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+            
             {/* Left Section - Search */}
-            <div className="flex-1 max-w-2xl">
+            <div className="flex-1 max-w-2xl lg:ml-0 ml-4">
               <div className="relative w-full max-w-[549px] h-[45px] bg-[#fcfcfc] rounded-[6.4px] border-[0.8px] border-solid border-[#ebebeb]">
                 <form
                   onSubmit={(e) => {
@@ -95,24 +110,12 @@ const AdminLayoutContent = ({ children }) => {
                 </button>
               </div>
 
-              {/* Mobile Menu Button */}
-              <div className="sm:hidden">
-                <button
-                  className="w-10 h-10 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
-                  aria-label="Mobile menu"
-                  type="button"
-                >
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-              </div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-6">
+        <main className="p-4 lg:p-6 max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>
