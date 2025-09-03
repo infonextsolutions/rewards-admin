@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSearch } from "../../contexts/SearchContext";
+import Pagination from "../../components/ui/Pagination";
 
 const Frame = ({ filters, setFilters, onFilterChange }) => {
   const [dateRangeOpen, setDateRangeOpen] = useState(false);
@@ -263,95 +264,8 @@ const getStatusStyles = (status) => {
   }
 };
 
-const Pagination = ({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) => {
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  const getPageNumbers = () => {
-    const pages = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 4) {
-        for (let i = 1; i <= 5; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1);
-        pages.push("...");
-        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      }
-    }
-    return pages;
-  };
-
-  return (
-    <div className="flex justify-between items-center p-6 border-t border-gray-200">
-      <div className="text-sm text-gray-600">
-        Showing {startItem}-{endItem} of {totalItems} payments
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          disabled={currentPage === 1}
-          onClick={() => onPageChange(currentPage - 1)}
-          className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium ${
-            currentPage === 1
-              ? "cursor-not-allowed text-gray-400 bg-gray-50"
-              : "cursor-pointer hover:bg-gray-50 text-gray-700"
-          }`}
-        >
-          Prev
-        </button>
-
-        {getPageNumbers().map((page, index) => {
-          if (page === "...") {
-            return (
-              <div key={index} className="flex w-9 h-9 items-center justify-center text-sm text-gray-400">
-                ...
-              </div>
-            );
-          }
-
-          return (
-            <button
-              key={index}
-              onClick={() => onPageChange(page)}
-              className={`flex w-9 h-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                currentPage === page
-                  ? "bg-[#d0fee4] text-[#333333] border border-green-300"
-                  : "border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-[#333333]"
-              }`}
-            >
-              {page}
-            </button>
-          );
-        })}
-
-        <button
-          disabled={currentPage === totalPages}
-          onClick={() => onPageChange(currentPage + 1)}
-          className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium ${
-            currentPage === totalPages
-              ? "cursor-not-allowed text-gray-400 bg-gray-50"
-              : "cursor-pointer hover:bg-gray-50 text-gray-700"
-          }`}
-        >
-          Next
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const Table = ({ data, onApprove, currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) => {
+const Table = ({ data, onApprove, currentPage, totalPages, totalItems, onPageChange }) => {
   return (
     <div className="bg-white rounded-[10px] border border-gray-200 w-full">
       <div className="overflow-x-auto">
@@ -458,7 +372,6 @@ const Table = ({ data, onApprove, currentPage, totalPages, totalItems, itemsPerP
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
         onPageChange={onPageChange}
       />
     </div>
@@ -534,7 +447,6 @@ export default function PaymentsPage() {
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
       />
     </div>

@@ -8,12 +8,12 @@ const AdminLayoutContent = ({ children }) => {
   const { searchTerm, handleSearch, searchConfig } = useSearch();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content */}
-      <div className="w-full ml-64 flex-1">
+      <div className="ml-64 min-h-screen">
         {/* Header */}
         <header className="w-full bg- border-b border-gray-200 px-4 lg:px-6 py-4" role="banner">
           <div className="flex items-center justify-between w-full h-full">

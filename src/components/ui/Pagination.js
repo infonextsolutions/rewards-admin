@@ -3,8 +3,109 @@ export default function Pagination({
   totalPages,
   totalItems,
   onPageChange,
-  className = ""
+  className = "",
+  variant = "default"
 }) {
+  if (variant === "compact") {
+    const paginationItems = [
+      { type: "prev", label: "Prev", disabled: currentPage === 1 },
+      { type: "page", label: "1", active: currentPage === 1 },
+      { type: "page", label: "2", active: currentPage === 2 },
+      { type: "page", label: "3", active: currentPage === 3 },
+      { type: "ellipsis", label: "...", active: false },
+      { type: "page", label: totalPages.toString(), active: currentPage === totalPages },
+      { type: "next", label: "Next", disabled: currentPage === totalPages },
+    ];
+
+    return (
+      <nav
+        className={`inline-flex items-start gap-[5.32px] relative flex-[0_0_auto] ${className}`}
+        aria-label="Pagination"
+      >
+        {paginationItems.map((item, index) => {
+          if (item.type === "prev") {
+            return (
+              <button
+                key={index}
+                disabled={item.disabled}
+                onClick={() => !item.disabled && onPageChange(currentPage - 1)}
+                className="inline-flex flex-col h-[34.07px] items-center justify-center gap-[10.65px] px-[4.26px] py-[10.65px] relative flex-[0_0_auto] bg-white rounded-[8.52px] disabled:cursor-not-allowed"
+                aria-label="Previous page"
+              >
+                <span className="relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[#cccccc] text-[13.8px] tracking-[0] leading-[normal]">
+                  {item.label}
+                </span>
+              </button>
+            );
+          }
+
+          if (item.type === "next") {
+            return (
+              <button
+                key={index}
+                disabled={item.disabled}
+                onClick={() => !item.disabled && onPageChange(currentPage + 1)}
+                className="inline-flex flex-col h-[34.07px] items-center justify-center gap-[10.65px] px-[4.26px] py-[10.65px] relative flex-[0_0_auto] bg-white rounded-[8.52px] disabled:cursor-not-allowed"
+                aria-label="Next page"
+              >
+                <span className="relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[13.8px] tracking-[0] leading-[normal]">
+                  {item.label}
+                </span>
+              </button>
+            );
+          }
+
+          if (item.type === "ellipsis") {
+            return (
+              <div
+                key={index}
+                className="bg-white flex flex-col w-[34.07px] h-[34.07px] items-center justify-center gap-[10.65px] p-[10.65px] relative rounded-[8.52px]"
+              >
+                <span className="relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[13.8px] tracking-[0] leading-[normal]">
+                  {item.label}
+                </span>
+              </div>
+            );
+          }
+
+          if (item.type === "page") {
+            if (item.active) {
+              return (
+                <button
+                  key={index}
+                  className="bg-[#d0fee4] flex flex-col w-[34.07px] h-[34.07px] items-center justify-center gap-[10.65px] p-[10.65px] relative rounded-[8.52px]"
+                  aria-label={`Page ${item.label}`}
+                  aria-current="page"
+                  onClick={() => onPageChange(parseInt(item.label))}
+                >
+                  <span className="relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[13.8px] tracking-[0] leading-[normal]">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            } else {
+              return (
+                <button
+                  key={index}
+                  className={`flex flex-col w-[34.07px] h-[34.07px] items-center justify-center gap-[10.65px] p-[10.65px] relative bg-white rounded-[8.52px] border-[1.06px] border-solid border-[#f1f1f1] ${item.label === totalPages.toString() ? "ml-[-1.61px] mr-[-1.61px]" : ""}`}
+                  aria-label={`Page ${item.label}`}
+                  onClick={() => onPageChange(parseInt(item.label))}
+                >
+                  <span className="relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[13.8px] tracking-[0] leading-[normal]">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            }
+          }
+
+          return null;
+        })}
+      </nav>
+    );
+  }
+
+  // Default variant (existing implementation)
   return (
     <div className={`flex justify-between items-center p-6 border-t border-gray-200 ${className}`}>
       <div className="text-sm text-gray-600">
