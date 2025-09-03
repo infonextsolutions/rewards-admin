@@ -8,6 +8,7 @@ const menuItems = [
   { id: 'users', label: 'Users', icon: '/Users (2).png', href: '/users' },
   { id: 'offers', label: 'Offers', icon: '/Offers.png', href: '/offers' },
   { id: 'analytics', label: 'Marketing Attribution and Analytics', icon: '/Analytics and Reports.png', href: '/analytics' },
+  { id: 'creative-management', label: 'Creative Management', icon: '/Analytics and Reports.png', href: '/creative-management' },
   { id: 'transactions', label: 'Transactions', icon: '/Transactions.png', href: '/transactions' },
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
