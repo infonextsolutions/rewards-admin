@@ -56,6 +56,12 @@ export const SearchProvider = ({ children }) => {
           ariaLabel: 'Search analytics data',
           description: 'Enter keywords to search marketing attribution data'
         };
+      case '/remote-config':
+        return {
+          placeholder: 'Search by config title, key name, or segment...',
+          ariaLabel: 'Search remote configs',
+          description: 'Enter keywords to search for remote configurations'
+        };
       default:
         return {
           placeholder: 'Search for games or users....',

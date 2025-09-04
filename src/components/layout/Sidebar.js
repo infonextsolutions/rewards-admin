@@ -13,6 +13,7 @@ const menuItems = [
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
   { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
+  { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
   { id: 'settings', label: 'Settings', icon: '/Settings.png', href: '/settings' },
   { id: 'integrations', label: 'Integrations', icon: '/Integrations.png', href: '/integrations' },
   { id: 'support', label: 'Support', icon: '/support.png', href: '/support' },
