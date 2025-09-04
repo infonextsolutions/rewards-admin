@@ -2,13 +2,15 @@
 
 import { useEffect, useCallback } from 'react';
 import { useSearch } from '../../contexts/SearchContext';
+import { SEGMENTS } from '../../data/remoteConfig';
 
 export default function RemoteConfigHeader({ 
   totalConfigs, 
   activeConfigs, 
   onCreateNew,
   filters,
-  onFiltersChange 
+  onFiltersChange,
+  activeTab
 }) {
   const { searchTerm, registerSearchHandler } = useSearch();
 
@@ -29,15 +31,17 @@ export default function RemoteConfigHeader({
             Manage app features, toggles, and personalized configurations
           </p>
         </div>
-        <button
-          onClick={onCreateNew}
-          className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Config
-        </button>
+        {activeTab === 'configs' && (
+          <button
+            onClick={onCreateNew}
+            className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Config
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -114,13 +118,9 @@ export default function RemoteConfigHeader({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
               >
                 <option value="" className="text-gray-900">All Segments</option>
-                <option value="All Users" className="text-gray-900">All Users</option>
-                <option value="New Users" className="text-gray-900">New Users</option>
-                <option value="Beta Group" className="text-gray-900">Beta Group</option>
-                <option value="Gold Tier" className="text-gray-900">Gold Tier</option>
-                <option value="Silver Tier" className="text-gray-900">Silver Tier</option>
-                <option value="Bronze Tier" className="text-gray-900">Bronze Tier</option>
-                <option value="VIP Users" className="text-gray-900">VIP Users</option>
+                {SEGMENTS.map(segment => (
+                  <option key={segment} value={segment} className="text-gray-900">{segment}</option>
+                ))}
               </select>
             </div>
 

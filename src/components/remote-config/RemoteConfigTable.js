@@ -84,16 +84,17 @@ export default function RemoteConfigTable({
     });
   };
 
-  const getStatusBadge = (status) => {
-    const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
+  const getStatusBadge = (status, isClickable = false) => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[70px] justify-center";
+    const interactiveClasses = isClickable ? "cursor-pointer hover:shadow-sm transition-all duration-200" : "";
     if (status === 'Active') {
-      return `${baseClasses} bg-green-100 text-green-800`;
+      return `${baseClasses} ${interactiveClasses} bg-green-100 text-green-800 ${isClickable ? 'hover:bg-green-200' : ''}`;
     }
-    return `${baseClasses} bg-gray-100 text-gray-800`;
+    return `${baseClasses} ${interactiveClasses} bg-gray-100 text-gray-800 ${isClickable ? 'hover:bg-gray-200' : ''}`;
   };
 
   const getTypeBadge = (type) => {
-    const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[70px] justify-center";
     const typeColors = {
       'Toggle': 'bg-blue-100 text-blue-800',
       'Text': 'bg-purple-100 text-purple-800',
@@ -101,6 +102,23 @@ export default function RemoteConfigTable({
       'Enum': 'bg-indigo-100 text-indigo-800'
     };
     return `${baseClasses} ${typeColors[type] || 'bg-gray-100 text-gray-800'}`;
+  };
+
+  const getSegmentBadge = (segment, context = 'display') => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[90px] justify-center";
+    const segmentColors = {
+      'All Users': 'bg-blue-100 text-blue-800',
+      'New Users': 'bg-green-100 text-green-800', 
+      'Beta Group': 'bg-purple-100 text-purple-800',
+      'Gold Tier': 'bg-yellow-100 text-yellow-800',
+      'Silver Tier': 'bg-gray-100 text-gray-800',
+      'Bronze Tier': 'bg-orange-100 text-orange-800',
+      'VIP Users': 'bg-pink-100 text-pink-800'
+    };
+    const colorClass = segmentColors[segment] || 'bg-emerald-100 text-emerald-800';
+    const interactiveClass = context === 'clickable' ? 'cursor-pointer hover:shadow-sm transition-all duration-200' : '';
+    
+    return `${baseClasses} ${colorClass} ${interactiveClass}`;
   };
 
   if (loading) {
@@ -204,7 +222,7 @@ export default function RemoteConfigTable({
                   <div className="text-sm text-gray-500 font-mono">{config.configId}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                  <span className={getSegmentBadge(config.segment)}>
                     {config.segment}
                   </span>
                 </td>

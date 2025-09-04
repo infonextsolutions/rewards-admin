@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import Pagination from '../ui/Pagination';
+import { SEGMENTS } from '../../data/remoteConfig';
 
 export default function PidRewardModifiers({ 
   pidRewards, 
   loading,
   onEdit,
+  onDelete,
   filters,
   onFiltersChange
 }) {
@@ -84,12 +86,30 @@ export default function PidRewardModifiers({
     });
   };
 
-  const getStatusBadge = (status) => {
-    const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
+  const getStatusBadge = (status, isClickable = false) => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[70px] justify-center";
+    const interactiveClasses = isClickable ? "cursor-pointer hover:shadow-sm transition-all duration-200" : "";
     if (status === 'Active') {
-      return `${baseClasses} bg-green-100 text-green-800`;
+      return `${baseClasses} ${interactiveClasses} bg-green-100 text-green-800 ${isClickable ? 'hover:bg-green-200' : ''}`;
     }
-    return `${baseClasses} bg-gray-100 text-gray-800`;
+    return `${baseClasses} ${interactiveClasses} bg-gray-100 text-gray-800 ${isClickable ? 'hover:bg-gray-200' : ''}`;
+  };
+
+  const getSegmentBadge = (segment, context = 'display') => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[90px] justify-center";
+    const segmentColors = {
+      'All Users': 'bg-blue-100 text-blue-800',
+      'New Users': 'bg-green-100 text-green-800', 
+      'Beta Group': 'bg-purple-100 text-purple-800',
+      'Gold Tier': 'bg-yellow-100 text-yellow-800',
+      'Silver Tier': 'bg-gray-100 text-gray-800',
+      'Bronze Tier': 'bg-orange-100 text-orange-800',
+      'VIP Users': 'bg-pink-100 text-pink-800'
+    };
+    const colorClass = segmentColors[segment] || 'bg-emerald-100 text-emerald-800';
+    const interactiveClass = context === 'clickable' ? 'cursor-pointer hover:shadow-sm transition-all duration-200' : '';
+    
+    return `${baseClasses} ${colorClass} ${interactiveClass}`;
   };
 
   const handleEdit = (pid) => {
@@ -132,47 +152,98 @@ export default function PidRewardModifiers({
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Campaign ID</label>
-            <input
-              type="text"
-              value={filters.searchTerm || ''}
-              onChange={(e) => onFiltersChange({ ...filters, searchTerm: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-              placeholder="Search by PID Campaign ID..."
-            />
-          </div>
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <h3 className="text-sm font-medium text-gray-900">Filters</h3>
+          <p className="text-xs text-gray-500 mt-1">Filter PID reward modifiers by campaign, segment, and status</p>
+        </div>
+        <div className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <svg className="w-4 h-4 inline-block mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Campaign ID
+              </label>
+              <input
+                type="text"
+                value={filters.searchTerm || ''}
+                onChange={(e) => onFiltersChange({ ...filters, searchTerm: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors duration-200"
+                placeholder="Search by PID Campaign ID..."
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Segment</label>
-            <select
-              value={filters.segment || ''}
-              onChange={(e) => onFiltersChange({ ...filters, segment: e.target.value || null })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
-            >
-              <option value="" className="text-gray-900">All Segments</option>
-              <option value="Gold Tier" className="text-gray-900">Gold Tier</option>
-              <option value="Silver Tier" className="text-gray-900">Silver Tier</option>
-              <option value="Bronze Tier" className="text-gray-900">Bronze Tier</option>
-              <option value="VIP Users" className="text-gray-900">VIP Users</option>
-              <option value="New Users" className="text-gray-900">New Users</option>
-            </select>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <svg className="w-4 h-4 inline-block mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                User Segment
+              </label>
+              <select
+                value={filters.segment || ''}
+                onChange={(e) => onFiltersChange({ ...filters, segment: e.target.value || null })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white transition-colors duration-200"
+              >
+                <option value="" className="text-gray-900">All Segments</option>
+                {SEGMENTS.map(segment => (
+                  <option key={segment} value={segment} className="text-gray-900">{segment}</option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              value={filters.status || ''}
-              onChange={(e) => onFiltersChange({ ...filters, status: e.target.value || null })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
-            >
-              <option value="" className="text-gray-900">All Status</option>
-              <option value="Active" className="text-gray-900">Active</option>
-              <option value="Inactive" className="text-gray-900">Inactive</option>
-            </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <svg className="w-4 h-4 inline-block mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Status
+              </label>
+              <select
+                value={filters.status || ''}
+                onChange={(e) => onFiltersChange({ ...filters, status: e.target.value || null })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white transition-colors duration-200"
+              >
+                <option value="" className="text-gray-900">All Status</option>
+                <option value="Active" className="text-gray-900">Active</option>
+                <option value="Inactive" className="text-gray-900">Inactive</option>
+              </select>
+            </div>
           </div>
+          
+          {/* Filter Summary */}
+          {(filters.searchTerm || filters.segment || filters.status) && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-gray-500">Active filters:</span>
+                  {filters.searchTerm && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                      Campaign: {filters.searchTerm}
+                    </span>
+                  )}
+                  {filters.segment && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Segment: {filters.segment}
+                    </span>
+                  )}
+                  {filters.status && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Status: {filters.status}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => onFiltersChange({})}
+                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                >
+                  Clear all
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -248,7 +319,7 @@ export default function PidRewardModifiers({
                     <div className="text-sm font-medium text-gray-900">{pid.pidCampaignId}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    <span className={getSegmentBadge(pid.segment)}>
                       {pid.segment}
                     </span>
                   </td>
@@ -312,15 +383,28 @@ export default function PidRewardModifiers({
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleEdit(pid)}
-                        className="text-emerald-600 hover:text-emerald-900"
-                        title="Edit"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => handleEdit(pid)}
+                          className="text-emerald-600 hover:text-emerald-900"
+                          title="Edit"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        {onDelete && (
+                          <button
+                            onClick={() => onDelete(pid.pidCampaignId)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

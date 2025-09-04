@@ -8,6 +8,7 @@ export default function RemoteConfigRules({
   loading,
   onToggleStatus,
   onQuickEdit,
+  onDelete,
   filters,
   onFiltersChange
 }) {
@@ -85,12 +86,74 @@ export default function RemoteConfigRules({
     });
   };
 
-  const getStatusBadge = (status) => {
-    const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer";
+  const getStatusBadge = (status, isClickable = true) => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[70px] justify-center";
+    const interactiveClasses = isClickable ? "cursor-pointer hover:shadow-sm transition-all duration-200" : "";
     if (status === 'Active') {
-      return `${baseClasses} bg-green-100 text-green-800 hover:bg-green-200`;
+      return `${baseClasses} ${interactiveClasses} bg-green-100 text-green-800 ${isClickable ? 'hover:bg-green-200' : ''}`;
     }
-    return `${baseClasses} bg-gray-100 text-gray-800 hover:bg-gray-200`;
+    return `${baseClasses} ${interactiveClasses} bg-gray-100 text-gray-800 ${isClickable ? 'hover:bg-gray-200' : ''}`;
+  };
+
+  const getTypeBadge = (type) => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[70px] justify-center";
+    const typeColors = {
+      'Toggle': 'bg-blue-100 text-blue-800',
+      'Text': 'bg-purple-100 text-purple-800',
+      'Numeric': 'bg-orange-100 text-orange-800',
+      'Enum': 'bg-indigo-100 text-indigo-800'
+    };
+    return `${baseClasses} ${typeColors[type] || 'bg-gray-100 text-gray-800'}`;
+  };
+
+  const getSegmentBadge = (segment, context = 'display') => {
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium min-w-[90px] justify-center";
+    const segmentColors = {
+      'All Users': 'bg-blue-100 text-blue-800',
+      'New Users': 'bg-green-100 text-green-800', 
+      'Beta Group': 'bg-purple-100 text-purple-800',
+      'Gold Tier': 'bg-yellow-100 text-yellow-800',
+      'Silver Tier': 'bg-gray-100 text-gray-800',
+      'Bronze Tier': 'bg-orange-100 text-orange-800',
+      'VIP Users': 'bg-pink-100 text-pink-800'
+    };
+    const colorClass = segmentColors[segment] || 'bg-emerald-100 text-emerald-800';
+    const interactiveClass = context === 'clickable' ? 'cursor-pointer hover:shadow-sm transition-all duration-200' : '';
+    
+    return `${baseClasses} ${colorClass} ${interactiveClass}`;
+  };
+
+  const renderToggleSwitch = (isActive, onChange, disabled = false) => {
+    const handleClick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled && onChange) {
+        onChange();
+      }
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={disabled}
+        className={`relative inline-flex items-center h-5 rounded-full w-9 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+          disabled 
+            ? 'opacity-50 cursor-not-allowed bg-gray-300' 
+            : isActive 
+              ? 'bg-emerald-600 hover:bg-emerald-700' 
+              : 'bg-gray-300 hover:bg-gray-400'
+        }`}
+        title={disabled ? 'Status change disabled during edit' : `Click to toggle status (currently ${isActive ? 'Active' : 'Inactive'})`}
+      >
+        <span className="sr-only">Toggle status</span>
+        <span
+          className={`inline-block w-3 h-3 transform transition-transform bg-white rounded-full shadow-sm ${
+            isActive ? 'translate-x-5' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    );
   };
 
   const handleEdit = (config) => {
@@ -183,10 +246,10 @@ export default function RemoteConfigRules({
                     {getSortIcon('value')}
                   </button>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <button 
                     onClick={() => handleSort('status')}
-                    className="flex items-center hover:text-gray-700"
+                    className="flex items-center hover:text-gray-700 mx-auto"
                   >
                     Status
                     {getSortIcon('status')}
@@ -212,7 +275,11 @@ export default function RemoteConfigRules({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{config.title}</div>
-                      <div className="text-xs text-gray-500">{config.segment}</div>
+                      <div className="mt-1">
+                        <span className={getSegmentBadge(config.segment)}>
+                          {config.segment}
+                        </span>
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -249,24 +316,23 @@ export default function RemoteConfigRules({
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingRule === config.configId ? (
-                      <select
-                        value={editForm.status}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
-                        className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    ) : (
-                      <button
-                        onClick={() => handleStatusClick(config.configId, config.status)}
-                        className={getStatusBadge(config.status)}
-                        title={`Click to toggle status (currently ${config.status})`}
-                      >
-                        {config.status}
-                      </button>
-                    )}
+                    <div className="flex items-center justify-center">
+                      {editingRule === config.configId ? (
+                        <select
+                          value={editForm.status}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                          className="px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      ) : (
+                        renderToggleSwitch(
+                          config.status === 'Active',
+                          () => handleStatusClick(config.configId, config.status)
+                        )
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(config.updatedAt)}
@@ -294,15 +360,28 @@ export default function RemoteConfigRules({
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleEdit(config)}
-                        className="text-emerald-600 hover:text-emerald-900"
-                        title="Quick edit rule"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => handleEdit(config)}
+                          className="text-emerald-600 hover:text-emerald-900"
+                          title="Quick edit rule"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        {onDelete && (
+                          <button
+                            onClick={() => onDelete(config.configId)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete rule"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -346,7 +425,7 @@ export default function RemoteConfigRules({
             <h3 className="text-sm font-medium text-blue-800">Quick Operations</h3>
             <div className="mt-1 text-sm text-blue-700">
               <ul className="list-disc list-inside space-y-1">
-                <li>Click status badges to quickly toggle Active/Inactive</li>
+                <li>Use toggle switches to quickly change Active/Inactive status</li>
                 <li>Use the edit button for quick value and status changes</li>
                 <li>Changes are logged in audit trail automatically</li>
               </ul>

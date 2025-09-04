@@ -145,6 +145,24 @@ export default function RemoteConfigPage() {
     }
   };
 
+  const handlePidRewardDelete = async (pidId) => {
+    try {
+      // TODO: Implement deletePidReward in useRemoteConfig hook
+      // const result = await deletePidReward(pidId);
+      // if (result.success) {
+      //   showNotification('PID reward modifier deleted successfully');
+      // }
+      
+      // Placeholder confirmation for now
+      const confirmed = window.confirm(`Are you sure you want to delete PID Campaign ${pidId}? This action cannot be undone.`);
+      if (confirmed) {
+        showNotification(`Delete functionality for PID ${pidId} will be implemented when backend is ready`);
+      }
+    } catch (error) {
+      showNotification('Failed to delete PID reward modifier');
+    }
+  };
+
   const handleQuickEdit = async (configId, configData) => {
     try {
       const result = await updateConfig(configId, configData);
@@ -187,6 +205,7 @@ export default function RemoteConfigPage() {
             setFilters(newFilters);
           }
         }, [])}
+        activeTab={activeTab}
       />
 
       {/* Tabs */}
@@ -259,6 +278,7 @@ export default function RemoteConfigPage() {
               loading={loading}
               onToggleStatus={handleToggleStatus}
               onQuickEdit={handleQuickEdit}
+              onDelete={handleDeleteConfig}
               filters={rulesFilters}
               onFiltersChange={setRulesFilters}
             />
@@ -269,6 +289,7 @@ export default function RemoteConfigPage() {
               pidRewards={filteredPidRewards}
               loading={loading}
               onEdit={handlePidRewardUpdate}
+              onDelete={handlePidRewardDelete}
               filters={pidFilters}
               onFiltersChange={setPidFilters}
             />
