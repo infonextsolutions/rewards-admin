@@ -87,7 +87,7 @@ export const ActivitySummarySection = ({ user }) => {
       {/* Activity Data - First Column */}
       <div className="space-y-[30px]">
         {activityData.slice(0, 5).map((item, index) => (
-          <div key={index} className="flex items-start gap-24">
+          <div key={index} className="flex items-start gap-8">
             <dt className="w-[280px] flex-shrink-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
               {item.label}
             </dt>
@@ -132,7 +132,7 @@ export const ActivitySummarySection = ({ user }) => {
       {/* Activity Data - Second Column */}
       <div className="space-y-[30px]">
         {activityData.slice(5).map((item, index) => (
-          <div key={index + 5} className="flex items-start gap-24">
+          <div key={index + 5} className="flex items-start gap-8">
             <dt className="w-[280px] flex-shrink-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
               {item.label}
             </dt>

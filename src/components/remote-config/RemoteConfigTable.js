@@ -122,8 +122,17 @@ export default function RemoteConfigTable({
                   onClick={() => handleSort('title')}
                   className="flex items-center hover:text-gray-700"
                 >
-                  Config Details
+                  Title
                   {getSortIcon('title')}
+                </button>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <button 
+                  onClick={() => handleSort('configId')}
+                  className="flex items-center hover:text-gray-700"
+                >
+                  Config ID
+                  {getSortIcon('configId')}
                 </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -140,8 +149,17 @@ export default function RemoteConfigTable({
                   onClick={() => handleSort('keyName')}
                   className="flex items-center hover:text-gray-700"
                 >
-                  Key & Value
+                  Key Name
                   {getSortIcon('keyName')}
+                </button>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <button 
+                  onClick={() => handleSort('value')}
+                  className="flex items-center hover:text-gray-700"
+                >
+                  Value
+                  {getSortIcon('value')}
                 </button>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -180,10 +198,10 @@ export default function RemoteConfigTable({
             {currentConfigs.map((config) => (
               <tr key={config.configId} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{config.title}</div>
-                    <div className="text-sm text-gray-500">{config.configId}</div>
-                  </div>
+                  <div className="text-sm font-medium text-gray-900">{config.title}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500 font-mono">{config.configId}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
@@ -191,12 +209,12 @@ export default function RemoteConfigTable({
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{config.keyName}</div>
-                    <div className="text-sm text-gray-500">
-                      {config.type === 'Toggle' ? (config.value === 'true' ? '✅ True' : '❌ False') : 
-                       config.type === 'Enum' ? `📋 ${config.value}` : config.value}
-                    </div>
+                  <div className="text-sm font-medium text-gray-900 font-mono">{config.keyName}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {config.type === 'Toggle' ? (config.value === 'true' ? '✅ True' : '❌ False') : 
+                     config.type === 'Enum' ? `📋 ${config.value}` : config.value}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

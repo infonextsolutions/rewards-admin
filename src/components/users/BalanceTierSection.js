@@ -22,7 +22,7 @@ export const BalanceTierSection = ({ user }) => {
 
   return (
     <div className="inline-flex flex-col items-start gap-[30px] relative flex-[0_0_auto]">
-      <div className="flex items-start gap-24 relative self-stretch w-full flex-[0_0_auto]">
+      <div className="flex items-start gap-8 relative self-stretch w-full flex-[0_0_auto]">
         <div className="flex flex-col items-start justify-between relative flex-1 self-stretch grow">
           {balanceAndTierData.map((item, index) => (
             <div

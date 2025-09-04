@@ -285,7 +285,9 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
     segment: 'All Users',
     keyName: '',
     value: '',
-    type: 'Toggle'
+    type: 'Toggle',
+    status: 'Active',
+    enumOptions: []
   });
 
   const [errors, setErrors] = useState({});
@@ -298,6 +300,7 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
         keyName: config.keyName || '',
         value: config.value || '',
         type: config.type || 'Toggle',
+        status: config.status || 'Active',
         enumOptions: config.enumOptions || []
       });
       setErrors({});
@@ -317,6 +320,17 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
       newErrors.value = 'Toggle value must be true or false';
     } else if (formData.type === 'Numeric' && isNaN(formData.value)) {
       newErrors.value = 'Numeric value must be a number';
+    } else if (formData.type === 'Enum' && !formData.enumOptions.includes(formData.value)) {
+      newErrors.value = 'Value must be one of the defined enum options';
+    }
+
+    // Validate Enum options
+    if (formData.type === 'Enum') {
+      if (formData.enumOptions.length === 0) {
+        newErrors.enumOptions = 'At least one enum option is required';
+      } else if (formData.enumOptions.some(opt => !opt.trim())) {
+        newErrors.enumOptions = 'All enum options must have values';
+      }
     }
 
     setErrors(newErrors);
@@ -328,6 +342,33 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
     if (validateForm()) {
       onSave(config.configId, formData);
     }
+  };
+
+  const handleTypeChange = (type) => {
+    setFormData(prev => ({
+      ...prev,
+      type,
+      value: type === 'Toggle' ? 'true' : '',
+      enumOptions: type === 'Enum' ? (prev.enumOptions.length > 0 ? prev.enumOptions : ['option1', 'option2']) : []
+    }));
+  };
+
+  const handleEnumOptionChange = (index, value) => {
+    const newOptions = [...formData.enumOptions];
+    newOptions[index] = value;
+    setFormData(prev => ({ ...prev, enumOptions: newOptions }));
+  };
+
+  const addEnumOption = () => {
+    setFormData(prev => ({ 
+      ...prev, 
+      enumOptions: [...prev.enumOptions, ''] 
+    }));
+  };
+
+  const removeEnumOption = (index) => {
+    const newOptions = formData.enumOptions.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, enumOptions: newOptions }));
   };
 
   if (!isOpen || !config) return null;
@@ -373,7 +414,7 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
             {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Segment</label>
               <select
@@ -389,12 +430,27 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <input
-                type="text"
+              <select
                 value={formData.type}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-              />
+                onChange={(e) => handleTypeChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
+              >
+                {CONFIG_TYPES.map(type => (
+                  <option key={type} value={type} className="text-gray-900">{type}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
+              >
+                <option value="Active" className="text-gray-900">Active</option>
+                <option value="Inactive" className="text-gray-900">Inactive</option>
+              </select>
             </div>
           </div>
 
@@ -407,6 +463,44 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
             />
           </div>
+
+          {formData.type === 'Enum' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Enum Options <span className="text-red-500">*</span>
+              </label>
+              <div className="space-y-2">
+                {formData.enumOptions.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={option}
+                      onChange={(e) => handleEnumOptionChange(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeEnumOption(index)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addEnumOption}
+                  className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                >
+                  + Add Option
+                </button>
+              </div>
+              {errors.enumOptions && <p className="mt-1 text-sm text-red-600">{errors.enumOptions}</p>}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -428,7 +522,7 @@ export function EditConfigModal({ isOpen, onClose, onSave, config }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
               >
                 <option value="" className="text-gray-500">Select an option</option>
-                {formData.enumOptions.map((option, index) => (
+                {formData.enumOptions.filter(opt => opt.trim()).map((option, index) => (
                   <option key={index} value={option} className="text-gray-900">{option}</option>
                 ))}
               </select>

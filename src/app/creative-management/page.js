@@ -211,8 +211,9 @@ const Frame = ({ activeTab, setActiveTab, filters, onFilterChange, onAddNew }) =
 
   return (
     <div>
-      <header className="flex flex-col lg:flex-row w-full items-start lg:items-end justify-between gap-6 mb-6" role="banner">
-        <div className="flex-shrink-0">
+      <header className="w-full mb-6" role="banner">
+        {/* Title Section */}
+        <div className="mb-6">
           <h1 className="[font-family:'DM_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[25.6px] tracking-[0] leading-[normal]">
             Creative Management
           </h1>
@@ -221,9 +222,10 @@ const Frame = ({ activeTab, setActiveTab, filters, onFilterChange, onAddNew }) =
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col gap-2 w-full lg:w-auto lg:max-w-4xl">
-            <div className="flex flex-wrap items-center gap-2 justify-end">
+        {/* Filters and Actions Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2 flex-1 lg:max-w-4xl order-2 lg:order-1">
+            <span className="text-sm font-medium text-[#333333] mr-2 hidden sm:inline">Filters:</span>
               {filterOptions.map((filter) => (
                 <div key={filter.id} className="relative min-w-[150px] flex-shrink-0">
                   <div className="relative h-[42px] bg-white rounded-[9.6px] border border-gray-200">
@@ -303,15 +305,16 @@ const Frame = ({ activeTab, setActiveTab, filters, onFilterChange, onAddNew }) =
                   )}
                 </div>
               ))}
-            </div>
           </div>
-
-          <button
-            onClick={onAddNew}
-            className="px-4 py-2 bg-[#00a389] text-white rounded-[9.6px] font-medium text-[14.4px] whitespace-nowrap"
-          >
-            Add New Creative
-          </button>
+          
+          <div className="flex-shrink-0 order-1 lg:order-2">
+            <button
+              onClick={onAddNew}
+              className="w-full sm:w-auto px-6 py-2.5 bg-[#00a389] text-white rounded-[9.6px] font-medium text-[14.4px] whitespace-nowrap hover:bg-[#008a73] transition-colors duration-200 shadow-sm"
+            >
+              + Add New Creative
+            </button>
+          </div>
         </div>
       </header>
 
@@ -406,8 +409,8 @@ const UploadTable = ({ data, onEdit, onDelete, onToggle, onPreview, currentPage,
                 </td>
 
                 <td className="py-4 px-2 text-center">
-                  <div className={`inline-flex items-center justify-center px-2 py-1.5 rounded-full min-w-0 ${getStatusStyles(row.status)}`}>
-                    <div className="font-medium text-sm tracking-[0.1px] leading-4 whitespace-nowrap">
+                  <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full min-w-[80px] ${getStatusStyles(row.status)}`}>
+                    <div className="font-medium text-[14px] tracking-[0.1px] leading-[18px] whitespace-nowrap">
                       {row.status}
                     </div>
                   </div>
@@ -421,34 +424,47 @@ const UploadTable = ({ data, onEdit, onDelete, onToggle, onPreview, currentPage,
 
 
                 <td className="py-4 px-2">
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-1">
                     <button
                       onClick={() => onPreview(row)}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded"
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                      title="Preview"
                     >
-                      Preview
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
                     </button>
                     <button
                       onClick={() => onEdit(row)}
-                      className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
+                      className="p-2 text-gray-600 hover:bg-gray-50 rounded-md transition-colors duration-200"
+                      title="Edit"
                     >
-                      Edit
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
                     </button>
                     <button
                       onClick={() => onDelete(row)}
-                      className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded"
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200"
+                      title="Delete"
                     >
-                      Delete
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                     <button
                       onClick={() => onToggle(row)}
-                      className={`px-2 py-1 text-xs rounded ${
+                      className={`p-2 rounded-md transition-colors duration-200 ${
                         row.status === "Active" 
-                          ? "bg-orange-100 text-orange-700" 
-                          : "bg-green-100 text-green-700"
+                          ? "text-orange-600 hover:bg-orange-50" 
+                          : "text-green-600 hover:bg-green-50"
                       }`}
+                      title={row.status === "Active" ? "Deactivate" : "Activate"}
                     >
-                      {row.status === "Active" ? "Deactivate" : "Activate"}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                      </svg>
                     </button>
                   </div>
                 </td>
@@ -541,8 +557,8 @@ const TrackerTable = ({ data, onView, currentPage, totalPages, totalItems, onPag
                 </td>
 
                 <td className="py-4 px-2 text-center">
-                  <div className={`inline-flex items-center justify-center px-2 py-1.5 rounded-full min-w-0 ${getStatusStyles(row.status)}`}>
-                    <div className="font-medium text-sm tracking-[0.1px] leading-4 whitespace-nowrap">
+                  <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full min-w-[80px] ${getStatusStyles(row.status)}`}>
+                    <div className="font-medium text-[14px] tracking-[0.1px] leading-[18px] whitespace-nowrap">
                       {row.status}
                     </div>
                   </div>
@@ -747,7 +763,7 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
                 setFormData(prev => ({ ...prev, file: e.target.files[0] }));
                 if (errors.file) setErrors(prev => ({ ...prev, file: null }));
               }}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent ${
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent file:mr-4 file:py-1 file:px-2 file:border-0 file:text-sm file:bg-[#00a389] file:text-white hover:file:bg-[#008a73] ${
                 errors.file ? 'border-red-500' : 'border-gray-300'
               }`}
             />
