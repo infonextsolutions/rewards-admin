@@ -15,8 +15,7 @@ const menuItems = [
   { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
   { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
   { id: 'security-compliance', label: 'Security & Compliance', icon: '/Settings.png', href: '/security-compliance' },
-  { id: 'settings', label: 'Settings', icon: '/Settings.png', href: '/settings' },
-  { id: 'integrations', label: 'Integrations', icon: '/Integrations.png', href: '/integrations' },
+  { id: 'settings-integrations', label: 'Settings & Integrations', icon: '/Integrations.png', href: '/settings-integrations' },
   { id: 'support', label: 'Support', icon: '/support.png', href: '/support' },
 ];
 
