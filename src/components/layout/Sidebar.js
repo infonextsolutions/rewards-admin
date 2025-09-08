@@ -7,6 +7,7 @@ const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: '/dashboard.png', href: '/' },
   { id: 'users', label: 'Users', icon: '/Users (2).png', href: '/users' },
   { id: 'offers', label: 'Offers', icon: '/Offers.png', href: '/offers' },
+  { id: 'surveys-offers', label: 'Surveys & Non-Gaming Offers', icon: '/Offers.png', href: '/surveys-offers' },
   { id: 'analytics', label: 'Marketing Attribution and Analytics', icon: '/Analytics and Reports.png', href: '/analytics' },
   { id: 'creative-management', label: 'Creative Management', icon: '/Fraud Monitoring.png', href: '/creative-management' },
   // { id: 'transactions', label: 'Transactions', icon: '/Transactions.png', href: '/transactions' },

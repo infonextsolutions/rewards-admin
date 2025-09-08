@@ -1,12 +1,35 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from './layout/Sidebar';
+import AuthGuard from './AuthGuard';
 import { SearchProvider, useSearch } from '../contexts/SearchContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const AdminLayoutContent = ({ children }) => {
   const { searchTerm, handleSearch, searchConfig } = useSearch();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const pathname = usePathname();
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+  };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -93,21 +116,42 @@ const AdminLayoutContent = ({ children }) => {
               <div className="hidden lg:block w-px h-10 bg-[#d0d5de] rounded-[6.4px]" aria-hidden="true" />
 
               {/* User Profile */}
-              <div className="hidden sm:flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-3 user-menu-container relative">
                 <div className="text-right">
                   <p className="text-[#464154] text-base [font-family:'Barlow-Regular',Helvetica] font-normal">
                     <span className="font-normal">Hello, </span>
-                    <span className="[font-family:'Barlow-SemiBold',Helvetica] font-semibold">Sam!</span>
+                    <span className="[font-family:'Barlow-SemiBold',Helvetica] font-semibold">
+                      {user?.firstName || 'Admin'}!
+                    </span>
                   </p>
                 </div>
                 
                 <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
                   className="w-12 h-12 bg-gray-300 rounded-full hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center text-white font-semibold text-base"
                   aria-label="User profile menu"
                   type="button"
                 >
-                  S
+                  {user?.firstName?.charAt(0) || 'A'}
                 </button>
+
+                {/* User Menu Dropdown */}
+                {showUserMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -125,6 +169,7 @@ const AdminLayoutContent = ({ children }) => {
 
 export default function AdminLayout({ children }) {
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -134,9 +179,19 @@ export default function AdminLayout({ children }) {
     return null;
   }
 
+  // Public routes that should not use admin layout
+  const publicRoutes = ['/login'];
+  const isPublicRoute = publicRoutes.includes(pathname);
+
+  if (isPublicRoute) {
+    return <AuthGuard>{children}</AuthGuard>;
+  }
+
   return (
-    <SearchProvider>
-      <AdminLayoutContent>{children}</AdminLayoutContent>
-    </SearchProvider>
+    <AuthGuard>
+      <SearchProvider>
+        <AdminLayoutContent>{children}</AdminLayoutContent>
+      </SearchProvider>
+    </AuthGuard>
   );
 }
