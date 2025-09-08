@@ -72,39 +72,53 @@ export const usePushNotifications = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Validate campaign data
-      if (!campaignData.name || !campaignData.title || !campaignData.body) {
-        throw new Error('Missing required fields: name, title, and body are mandatory');
+      // Validate campaign data - relaxed validation for drafts
+      if (!campaignData.name) {
+        throw new Error('Campaign name is required');
       }
 
-      if (!campaignData.targetSegment || campaignData.targetSegment.length === 0) {
-        throw new Error('Target segment is required');
-      }
+      // Full validation only for non-draft campaigns
+      if (!campaignData.isDraft) {
+        if (!campaignData.title || !campaignData.body) {
+          throw new Error('Missing required fields: title and body are mandatory for publishing');
+        }
 
-      if (!campaignData.frequencyRule) {
-        throw new Error('Frequency rule is required');
-      }
+        if (!campaignData.targetSegment || campaignData.targetSegment.length === 0) {
+          throw new Error('Target segment is required for publishing');
+        }
 
-      if (!campaignData.ctaAction) {
-        throw new Error('CTA action is required');
-      }
+        if (!campaignData.frequencyRule) {
+          throw new Error('Frequency rule is required for publishing');
+        }
 
-      // Calculate estimated audience size
-      const estimatedAudience = calculateAudienceSize(campaignData.targetSegment);
-      
-      if (estimatedAudience < SEGMENT_SIZE_LIMITS.minimum) {
-        throw new Error(`Audience size too small (${estimatedAudience}). Minimum ${SEGMENT_SIZE_LIMITS.minimum} users required.`);
+        if (!campaignData.ctaAction) {
+          throw new Error('CTA action is required for publishing');
+        }
+
+        // Calculate estimated audience size only for complete campaigns
+        const estimatedAudience = calculateAudienceSize(campaignData.targetSegment);
+        
+        if (estimatedAudience < SEGMENT_SIZE_LIMITS.minimum) {
+          throw new Error(`Audience size too small (${estimatedAudience}). Minimum ${SEGMENT_SIZE_LIMITS.minimum} users required.`);
+        }
       }
 
       const newCampaign = {
         id: `campaign-${Date.now()}`,
         ...campaignData,
         type: 'standard',
-        status: campaignData.scheduleTime ? 'Scheduled' : 'Draft',
+        status: campaignData.isDraft ? 'Draft' : (campaignData.scheduleTime ? 'Scheduled' : 'Draft'),
         createdBy: 'admin@jackson.com', // In real app, get from auth
         createdAt: new Date().toISOString(),
         sentAt: null,
-        stats: null
+        stats: null,
+        // Set default values for draft campaigns
+        title: campaignData.title || '',
+        body: campaignData.body || '',
+        targetSegment: campaignData.targetSegment || [],
+        frequencyRule: campaignData.frequencyRule || '1 per user/day',
+        ctaAction: campaignData.ctaAction || 'app_home',
+        trackInFirebase: campaignData.trackInFirebase !== undefined ? campaignData.trackInFirebase : true
       };
 
       setCampaigns(prev => [newCampaign, ...prev]);

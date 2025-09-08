@@ -73,47 +73,66 @@ export default function CreateCampaignModal({
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, saveAsDraft = false) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Validate form data
+      // Basic validation for both draft and full submission
       if (!formData.name.trim()) {
         throw new Error('Campaign name is required');
       }
-      if (!formData.title.trim()) {
-        throw new Error('Push title is required');
-      }
-      if (!formData.body.trim()) {
-        throw new Error('Message body is required');
-      }
-      if (formData.targetSegment.length === 0) {
-        throw new Error('At least one target segment is required');
-      }
+      
+      // Full validation only for non-draft submissions
+      if (!saveAsDraft) {
+        if (!formData.title.trim()) {
+          throw new Error('Push title is required');
+        }
+        if (!formData.body.trim()) {
+          throw new Error('Message body is required');
+        }
+        if (formData.targetSegment.length === 0) {
+          throw new Error('At least one target segment is required');
+        }
 
-      // Validate schedule time if provided
-      if (formData.scheduleTime) {
-        const scheduleDate = new Date(formData.scheduleTime);
-        const now = new Date();
-        if (scheduleDate <= now) {
-          throw new Error('Schedule time must be in the future');
+        // Validate schedule time if provided
+        if (formData.scheduleTime) {
+          const scheduleDate = new Date(formData.scheduleTime);
+          const now = new Date();
+          if (scheduleDate <= now) {
+            throw new Error('Schedule time must be in the future');
+          }
         }
       }
 
-      const result = await onCreateCampaign(formData);
+      // Prepare data with draft status
+      const campaignData = {
+        ...formData,
+        status: saveAsDraft ? 'Draft' : (formData.scheduleTime ? 'Scheduled' : 'Draft'),
+        isDraft: saveAsDraft
+      };
+
+      const result = await onCreateCampaign(campaignData);
       
       if (result.success) {
-        onShowNotification('Campaign created successfully!', 'success');
+        const message = saveAsDraft 
+          ? 'Campaign saved as draft successfully!' 
+          : 'Campaign created successfully!';
+        onShowNotification(message, 'success');
         handleClose();
       } else {
-        onShowNotification(result.error || 'Failed to create campaign', 'error');
+        onShowNotification(result.error || 'Failed to save campaign', 'error');
       }
     } catch (error) {
       onShowNotification(error.message, 'error');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle save as draft
+  const handleSaveAsDraft = (e) => {
+    handleSubmit(e, true);
   };
 
   // Handle modal close
@@ -351,7 +370,7 @@ export default function CreateCampaignModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-between">
           <button
             onClick={handleClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -359,16 +378,29 @@ export default function CreateCampaignModal({
           >
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading || formData.targetSegment.length === 0}
-            className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading 
-              ? (initialData ? 'Updating...' : 'Creating...') 
-              : (initialData ? 'Update Campaign' : 'Create Campaign')
-            }
-          </button>
+          
+          <div className="flex space-x-3">
+            {!initialData && (
+              <button
+                onClick={handleSaveAsDraft}
+                disabled={isLoading || !formData.name.trim()}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Saving...' : 'Save As Draft'}
+              </button>
+            )}
+            
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || (!initialData && formData.targetSegment.length === 0)}
+              className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading 
+                ? (initialData ? 'Updating...' : 'Creating...') 
+                : (initialData ? 'Update Campaign' : (formData.scheduleTime ? 'Schedule Campaign' : 'Send Now'))
+              }
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -14,14 +14,16 @@ export default function CreateAbTestModal({
     name: '',
     baseMessage: '',
     variants: {
-      A: { title: '', body: '' },
-      B: { title: '', body: '' }
+      A: { title: '', body: '', isAiGenerated: false },
+      B: { title: '', body: '', isAiGenerated: false }
     },
     targetSegment: [],
     audienceSplit: 50
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
   const [audienceSize, setAudienceSize] = useState(0);
+  const [hasGeneratedVariants, setHasGeneratedVariants] = useState(false);
 
   if (!isOpen) return null;
 

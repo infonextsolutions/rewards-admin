@@ -87,11 +87,11 @@ export default function CampaignManager({
 
     return (
       <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyle()}`}
+        className={`inline-flex items-center justify-center w-16 py-1 rounded-full text-xs font-medium border ${getStatusStyle()}`}
         title={error || status}
       >
         <span className="mr-1">{getStatusIcon()}</span>
-        {status}
+        <span className="truncate">{status}</span>
       </span>
     );
   };
@@ -340,7 +340,7 @@ export default function CampaignManager({
                         </button>
                       )}
 
-                      {permissions.delete && ['Draft', 'Failed'].includes(campaign.status) && (
+                      {permissions.delete && (
                         <button
                           onClick={() => handleDelete(campaign)}
                           className="p-1 text-gray-400 hover:text-red-600 transition-colors"

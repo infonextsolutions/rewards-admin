@@ -73,10 +73,10 @@ export default function ABTestingInterface({
 
     return (
       <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyle()}`}
+        className={`inline-flex items-center justify-center w-20 py-1 rounded-full text-xs font-medium border ${getStatusStyle()}`}
       >
         <span className="mr-1">{getStatusIcon()}</span>
-        {status}
+        <span className="truncate">{status}</span>
       </span>
     );
   };
