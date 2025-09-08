@@ -139,28 +139,48 @@ export default function NotificationConfigPanel({
             )}
           </div>
 
-          {/* Recipient Group - Multi-select dropdown */}
+          {/* Recipient Group - Checkbox list with clear option */}
           <div>
-            <label htmlFor="recipientRoles" className="block text-sm font-medium text-gray-700 mb-2">
-              Recipient Group
-            </label>
-            <select
-              id="recipientRoles"
-              multiple
-              value={formData.recipientRoles}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, option => option.value);
-                handleFormChange('recipientRoles', selected);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 min-h-24"
-            >
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="publisher">Publisher</option>
-              <option value="qa">QA</option>
-            </select>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Recipient Group
+              </label>
+              {formData.recipientRoles.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleFormChange('recipientRoles', [])}
+                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+            <div className="space-y-2 border border-gray-300 rounded-lg p-3 bg-white">
+              {[
+                { value: 'admin', label: 'Admin' },
+                { value: 'manager', label: 'Manager' },
+                { value: 'publisher', label: 'Publisher' },
+                { value: 'qa', label: 'QA' }
+              ].map(role => (
+                <label
+                  key={role.value}
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.recipientRoles.includes(role.value)}
+                    onChange={() => handleRoleToggle(role.value)}
+                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700">{role.label}</span>
+                </label>
+              ))}
+              {formData.recipientRoles.length === 0 && (
+                <p className="text-xs text-gray-500 italic p-1">No groups selected</p>
+              )}
+            </div>
             <p className="text-xs text-gray-500 mt-1">
-              Hold Ctrl (Cmd on Mac) to select multiple roles
+              Select which user groups should receive notifications
             </p>
           </div>
         </div>

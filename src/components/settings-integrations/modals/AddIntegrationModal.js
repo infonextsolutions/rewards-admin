@@ -11,8 +11,11 @@ export default function AddIntegrationModal({
   const [selectedIntegrationType, setSelectedIntegrationType] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
+    category: '',
     apiKey: '',
-    endpointUrl: ''
+    endpointUrl: '',
+    isActive: true
   });
   const [errors, setErrors] = useState({});
 
@@ -22,8 +25,11 @@ export default function AddIntegrationModal({
       setSelectedIntegrationType(null);
       setFormData({
         name: '',
+        description: '',
+        category: '',
         apiKey: '',
-        endpointUrl: ''
+        endpointUrl: '',
+        isActive: true
       });
       setErrors({});
     }
@@ -35,6 +41,8 @@ export default function AddIntegrationModal({
       setFormData(prev => ({
         ...prev,
         name: selectedIntegrationType.name,
+        description: selectedIntegrationType.description,
+        category: selectedIntegrationType.category,
         endpointUrl: selectedIntegrationType.defaultEndpoint
       }));
     }
@@ -74,11 +82,7 @@ export default function AddIntegrationModal({
 
   const handleSave = () => {
     if (validateForm()) {
-      onSave({
-        ...formData,
-        description: selectedIntegrationType.description,
-        category: selectedIntegrationType.category
-      });
+      onSave(formData);
     }
   };
 
@@ -199,6 +203,37 @@ export default function AddIntegrationModal({
                     {errors.endpointUrl && (
                       <p className="mt-1 text-xs text-red-600">{errors.endpointUrl}</p>
                     )}
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="Optional description for this integration"
+                    />
+                  </div>
+
+                  {/* Status Toggle */}
+                  <div>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.isActive}
+                        onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Active</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      When disabled, this integration will not be used by the application
+                    </p>
                   </div>
                 </div>
               )}

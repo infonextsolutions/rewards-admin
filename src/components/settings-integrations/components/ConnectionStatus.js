@@ -47,12 +47,12 @@ export default function ConnectionStatus({ status, error, size = 'sm' }) {
   };
 
   const config = getStatusConfig();
-  const sizeClass = size === 'lg' ? 'px-3 py-1.5 text-sm' : 'px-2 py-1 text-xs';
+  const sizeClass = size === 'lg' ? 'px-4 py-1.5 text-sm w-24' : 'px-3 py-1 text-xs w-20';
 
   return (
     <div className="group relative">
       <span 
-        className={`inline-flex items-center space-x-1 rounded-full border font-medium ${config.color} ${sizeClass}`}
+        className={`inline-flex items-center justify-center space-x-1 rounded-full border font-medium ${config.color} ${sizeClass}`}
       >
         {config.icon}
         <span>{config.label}</span>
