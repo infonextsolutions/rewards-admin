@@ -75,8 +75,8 @@ export default function DeleteCampaignModal({
                 </div>
                 <h4 className="text-lg font-medium text-gray-900 mb-2">Cannot Delete Campaign</h4>
                 <p className="text-sm text-gray-600">
-                  This campaign cannot be deleted because it has a status of "{campaign.status}". 
-                  Only campaigns with "Draft" or "Failed" status can be deleted.
+                  This campaign cannot be deleted because it has a status of &quot;{campaign.status}&quot;. 
+                  Only campaigns with &quot;Draft&quot; or &quot;Failed&quot; status can be deleted.
                 </p>
               </div>
 
@@ -120,7 +120,7 @@ export default function DeleteCampaignModal({
                         <li>• Edit the campaign to change its schedule or content</li>
                       )}
                       {campaign.status === 'Sent' && (
-                        <li>• Create a new campaign based on this one's content</li>
+                        <li>• Create a new campaign based on this one&apos;s content</li>
                       )}
                       <li>• Archive the campaign instead of deleting it</li>
                     </ul>
