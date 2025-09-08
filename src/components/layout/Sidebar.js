@@ -9,14 +9,16 @@ const menuItems = [
   { id: 'offers', label: 'Offers', icon: '/Offers.png', href: '/offers' },
   { id: 'analytics', label: 'Marketing Attribution and Analytics', icon: '/Analytics and Reports.png', href: '/analytics' },
   { id: 'creative-management', label: 'Creative Management', icon: '/Fraud Monitoring.png', href: '/creative-management' },
-  { id: 'transactions', label: 'Transactions', icon: '/Transactions.png', href: '/transactions' },
+  // { id: 'transactions', label: 'Transactions', icon: '/Transactions.png', href: '/transactions' },
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
   { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
   { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
+   { id: 'push-notifications', label: 'Push Notification Center', icon: '/Settings.png', href: '/push-notifications' },
   { id: 'security-compliance', label: 'Security & Compliance', icon: '/Settings.png', href: '/security-compliance' },
+ 
   { id: 'settings-integrations', label: 'Settings & Integrations', icon: '/Integrations.png', href: '/settings-integrations' },
-  { id: 'support', label: 'Support', icon: '/support.png', href: '/support' },
+  
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
