@@ -73,10 +73,7 @@ export const LIVE_OFFERS = [
       starts: 380,
       completions: 190
     },
-    description: 'Share your thoughts on cryptocurrency investments',
-    difficulty: 'Medium',
-    estimatedTime: '5-7 minutes',
-    targetAudience: 'Adults 25-55'
+    description: 'Share your thoughts on cryptocurrency investments'
   },
   {
     id: 'LO002',
@@ -92,10 +89,7 @@ export const LIVE_OFFERS = [
       starts: 285,
       completions: 180
     },
-    description: 'Tell us about your online shopping preferences',
-    difficulty: 'Easy',
-    estimatedTime: '3-5 minutes',
-    targetAudience: 'Adults 18-45'
+    description: 'Tell us about your online shopping preferences'
   },
   {
     id: 'LO003',
@@ -111,10 +105,7 @@ export const LIVE_OFFERS = [
       starts: 220,
       completions: 72
     },
-    description: 'Your health and wellness routine insights',
-    difficulty: 'Hard',
-    estimatedTime: '7-10 minutes',
-    targetAudience: 'Adults 30-60'
+    description: 'Your health and wellness routine insights'
   },
   {
     id: 'LO004',
@@ -130,10 +121,7 @@ export const LIVE_OFFERS = [
       starts: 460,
       completions: 190
     },
-    description: 'How do you use mobile apps in daily life?',
-    difficulty: 'Easy',
-    estimatedTime: '2-4 minutes',
-    targetAudience: 'Adults 18-65'
+    description: 'How do you use mobile apps in daily life?'
   },
   {
     id: 'LO005',
@@ -149,10 +137,7 @@ export const LIVE_OFFERS = [
       starts: 180,
       completions: 72
     },
-    description: 'Share your travel and vacation preferences',
-    difficulty: 'Medium',
-    estimatedTime: '4-7 minutes',
-    targetAudience: 'Adults 25-55'
+    description: 'Share your travel and vacation preferences'
   }
 ];
 

@@ -17,9 +17,7 @@ const menuItems = [
   { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
    { id: 'push-notifications', label: 'Push Notification Center', icon: '/Settings.png', href: '/push-notifications' },
   { id: 'security-compliance', label: 'Security & Compliance', icon: '/Settings.png', href: '/security-compliance' },
- 
   { id: 'settings-integrations', label: 'Settings & Integrations', icon: '/Integrations.png', href: '/settings-integrations' },
-  
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -53,7 +51,12 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4">
+      <nav className="flex-1 px-4 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <style jsx>{`
+          nav::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;

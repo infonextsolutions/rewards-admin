@@ -7,7 +7,8 @@ import { LIVE_OFFERS } from '../../data/surveys/surveyData';
 
 export default function LiveOffersAnalytics() {
   const [offers, setOffers] = useState(LIVE_OFFERS);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [sdkFilter, setSdkFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
@@ -15,14 +16,12 @@ export default function LiveOffersAnalytics() {
   // Filtered offers
   const filteredOffers = useMemo(() => {
     return offers.filter(offer => {
-      const matchesSearch = !searchTerm || 
-        offer.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSDK = sdkFilter === 'all' || offer.sdkSource === sdkFilter;
+      const matchesStatus = statusFilter === 'all' || offer.status === statusFilter;
       
-      return matchesSearch;
+      return matchesSDK && matchesStatus;
     });
-  }, [offers, searchTerm]);
+  }, [offers, sdkFilter, statusFilter]);
 
   // Analytics calculations
   const analytics = useMemo(() => {
@@ -40,9 +39,22 @@ export default function LiveOffersAnalytics() {
     };
   }, [filteredOffers]);
 
-  const handleSearch = (value) => {
-    setSearchTerm(value);
+  const handleSDKFilter = (value) => {
+    setSdkFilter(value);
   };
+
+  const handleStatusFilter = (value) => {
+    setStatusFilter(value);
+  };
+
+  // Get unique SDK sources for filter dropdown
+  const uniqueSDKs = useMemo(() => {
+    const sdks = [...new Set(offers.map(offer => offer.sdkSource))];
+    return sdks.sort();
+  }, [offers]);
+
+  // Available status options
+  const statusOptions = ['Live', 'Paused', 'Draft'];
 
   const handlePreviewOffer = (offer) => {
     setSelectedOffer(offer);
@@ -127,146 +139,65 @@ export default function LiveOffersAnalytics() {
         </button>
       </div>
 
-      {/* Analytics Dashboard */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{analytics.totalOffers}</div>
-          <div className="text-sm text-gray-600">Total Offers</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-emerald-600">{analytics.liveOffers}</div>
-          <div className="text-sm text-gray-600">Live Offers</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-blue-600">{analytics.totalViews.toLocaleString()}</div>
-          <div className="text-sm text-gray-600">Total Views</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-yellow-600">{analytics.totalStarts.toLocaleString()}</div>
-          <div className="text-sm text-gray-600">Started</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-green-600">{analytics.totalCompletions.toLocaleString()}</div>
-          <div className="text-sm text-gray-600">Completed</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-purple-600">{analytics.avgCompletionRate}%</div>
-          <div className="text-sm text-gray-600">Completion Rate</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-2xl font-bold text-emerald-600">{analytics.totalCoinsIssued.toLocaleString()}</div>
-          <div className="text-sm text-gray-600">Coins Issued</div>
-        </div>
-      </div>
 
-      {/* Engagement Funnel Visualization */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Overall Engagement Funnel</h3>
-        <div className="space-y-4">
-          {/* Views */}
-          <div className="flex items-center">
-            <div className="w-24 text-sm font-medium text-gray-700">Views</div>
-            <div className="flex-1 mx-4">
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div className="bg-blue-600 h-3 rounded-full" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-            <div className="w-20 text-right">
-              <span className="text-lg font-bold text-gray-900">{analytics.totalViews.toLocaleString()}</span>
-              <div className="text-xs text-gray-500">100%</div>
-            </div>
-          </div>
 
-          {/* Starts */}
-          <div className="flex items-center">
-            <div className="w-24 text-sm font-medium text-gray-700">Starts</div>
-            <div className="flex-1 mx-4">
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-yellow-500 h-3 rounded-full" 
-                  style={{ width: `${(analytics.totalStarts / analytics.totalViews) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            <div className="w-20 text-right">
-              <span className="text-lg font-bold text-gray-900">{analytics.totalStarts.toLocaleString()}</span>
-              <div className="text-xs text-gray-500">
-                {Math.round((analytics.totalStarts / analytics.totalViews) * 100)}%
-              </div>
-            </div>
-          </div>
-
-          {/* Completions */}
-          <div className="flex items-center">
-            <div className="w-24 text-sm font-medium text-gray-700">Completions</div>
-            <div className="flex-1 mx-4">
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-green-600 h-3 rounded-full" 
-                  style={{ width: `${(analytics.totalCompletions / analytics.totalViews) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            <div className="w-20 text-right">
-              <span className="text-lg font-bold text-gray-900">{analytics.totalCompletions.toLocaleString()}</span>
-              <div className="text-xs text-gray-500">
-                {Math.round((analytics.totalCompletions / analytics.totalViews) * 100)}%
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search */}
+      {/* Filters */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        <div className="flex-1 max-w-lg">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              type="search"
-              placeholder="Search offers..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-            />
+        <div className="flex gap-4">
+          {/* SDK Filter */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-2">Filter by SDK</label>
+            <select
+              value={sdkFilter}
+              onChange={(e) => handleSDKFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+            >
+              <option value="all">All SDKs</option>
+              {uniqueSDKs.map((sdk) => (
+                <option key={sdk} value={sdk}>
+                  {sdk}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {/* Status Filter */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+            >
+              <option value="all">All Status</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Filter Results Summary */}
+        <div className="text-sm text-gray-600 lg:ml-auto">
+          Showing {filteredOffers.length} of {offers.length} offers
+          {(sdkFilter !== 'all' || statusFilter !== 'all') && (
+            <span className="ml-2 text-emerald-600">
+              (Filtered by {sdkFilter !== 'all' ? sdkFilter : ''}{sdkFilter !== 'all' && statusFilter !== 'all' ? ' + ' : ''}{statusFilter !== 'all' ? statusFilter : ''})
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Results Summary */}
-      <div className="text-sm text-gray-600">
-        Showing {filteredOffers.length} of {offers.length} offers
-        {searchTerm && (
-          <span> matching &quot;{searchTerm}&quot;</span>
-        )}
-      </div>
 
       {/* Offers Table */}
-      {filteredOffers.length === 0 ? (
-        <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No offers found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {searchTerm
-              ? 'Try adjusting your search.'
-              : 'No survey offers are currently available.'
-            }
-          </p>
-        </div>
-      ) : (
-        <OffersTable
-          offers={filteredOffers}
-          onPreview={handlePreviewOffer}
-          onToggleStatus={handleToggleOfferStatus}
-          onExport={handleExportData}
-        />
-      )}
+      <OffersTable
+        offers={filteredOffers}
+        onPreview={handlePreviewOffer}
+        onToggleStatus={handleToggleOfferStatus}
+        onExport={handleExportData}
+      />
 
       {/* Offer Preview Modal */}
       <OfferPreviewModal
