@@ -22,7 +22,7 @@ export default function OffersTable({ offers, onPreview, onToggleStatus, onExpor
     };
     
     return (
-      <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`inline-block min-w-[70px] text-center px-3 py-1.5 rounded-full text-sm font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
         {status}
       </span>
     );
@@ -131,8 +131,8 @@ export default function OffersTable({ offers, onPreview, onToggleStatus, onExpor
                     <div>Completions: {offer.engagementFunnel.completions}</div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
+                <td className="px-4 py-4">
+                  <div className="flex items-start">
                     <button
                       onClick={() => onPreview(offer)}
                       className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200"

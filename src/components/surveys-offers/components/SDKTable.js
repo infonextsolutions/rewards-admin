@@ -103,68 +103,28 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                   <div className="text-sm text-gray-900">{sdk.maxDailyUsers || 'Unlimited'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="space-y-2">
-                    {/* Age Range Dropdown */}
+                  <div className="space-y-2 text-sm text-gray-900">
+                    {/* Age Range - Display Only */}
                     <div>
-                      <select
-                        value={`${sdk.segmentRules.ageRange.min}-${sdk.segmentRules.ageRange.max}`}
-                        onChange={(e) => {
-                          const [min, max] = e.target.value.split('-').map(Number);
-                          onUpdateSegmentRule && onUpdateSegmentRule(sdk.id, {
-                            ...sdk.segmentRules,
-                            ageRange: { min, max }
-                          });
-                        }}
-                        className="text-xs text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      >
-                        {SEGMENT_OPTIONS.ageRanges.map((range) => (
-                          <option key={range.label} value={`${range.value.min}-${range.value.max}`}>
-                            {range.label}
-                          </option>
-                        ))}
-                      </select>
+                      <span className="text-xs text-gray-500">Age: </span>
+                      <span>{sdk.segmentRules.ageRange.min}-{sdk.segmentRules.ageRange.max}</span>
                     </div>
                     
-                    {/* Countries Dropdown */}
+                    {/* Countries - Display Only */}
                     <div>
-                      <select
-                        multiple
-                        value={sdk.segmentRules.countries}
-                        onChange={(e) => {
-                          const selectedCountries = Array.from(e.target.selectedOptions, option => option.value);
-                          onUpdateSegmentRule && onUpdateSegmentRule(sdk.id, {
-                            ...sdk.segmentRules,
-                            countries: selectedCountries
-                          });
-                        }}
-                        className="text-xs text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 h-16"
-                      >
-                        {SEGMENT_OPTIONS.countries.map((country) => (
-                          <option key={country.code} value={country.code}>
-                            {country.label}
-                          </option>
-                        ))}
-                      </select>
+                      <span className="text-xs text-gray-500">Countries: </span>
+                      <span>
+                        {sdk.segmentRules.countries.length > 0 
+                          ? sdk.segmentRules.countries.join(', ')
+                          : 'All'
+                        }
+                      </span>
                     </div>
                     
-                    {/* Gender Dropdown */}
+                    {/* Gender - Display Only */}
                     <div>
-                      <select
-                        value={sdk.segmentRules.gender}
-                        onChange={(e) => {
-                          onUpdateSegmentRule && onUpdateSegmentRule(sdk.id, {
-                            ...sdk.segmentRules,
-                            gender: e.target.value
-                          });
-                        }}
-                        className="text-xs text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                      >
-                        {SEGMENT_OPTIONS.genderOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      <span className="text-xs text-gray-500">Gender: </span>
+                      <span>{sdk.segmentRules.gender || 'All'}</span>
                     </div>
                   </div>
                 </td>

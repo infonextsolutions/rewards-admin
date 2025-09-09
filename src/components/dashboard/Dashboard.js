@@ -28,7 +28,37 @@ const Dashboard = () => {
       avgXPPerUser: 847
     },
     retentionData: [],
-    topGame: null,
+    topGame: {
+      name: 'Match 3 Daily',
+      banner: 'https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png',
+      avgXP: 315,
+      rewardConversion: 68,
+      demographics: {
+        age: [
+          { name: '13-17', value: 8, color: '#ff6b6b' },
+          { name: '18-24', value: 22, color: '#4ecdc4' },
+          { name: '25-34', value: 35, color: '#45b7d1' },
+          { name: '35-44', value: 25, color: '#f9ca24' },
+          { name: '45+', value: 10, color: '#6c5ce7' }
+        ],
+        gender: [
+          { name: 'Female', value: 58, color: '#ff6b9d' },
+          { name: 'Male', value: 24, color: '#4ecdc4' },
+          { name: 'Other', value: 18, color: '#a0a0a0' }
+        ],
+        region: [
+          { name: 'North America', value: 40, color: '#3742fa' },
+          { name: 'Europe', value: 25, color: '#2ed573' },
+          { name: 'Asia', value: 20, color: '#ffa502' },
+          { name: 'Other', value: 15, color: '#6c5ce7' }
+        ],
+        tier: [
+          { name: 'Gold', value: 25, color: '#ffd700' },
+          { name: 'Silver', value: 35, color: '#c0c0c0' },
+          { name: 'Bronze', value: 40, color: '#cd7f32' }
+        ]
+      }
+    },
     revenueData: [],
     attributionData: [],
     loading: false
@@ -79,24 +109,21 @@ const Dashboard = () => {
         loading={dashboardData.loading} 
       />
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-        {/* Retention Trend Graph - Takes 2/3 width */}
-        <div className="xl:col-span-2">
-          <RetentionTrendGraph 
-            data={dashboardData.retentionData}
-            filters={filters}
-            loading={dashboardData.loading}
-          />
-        </div>
-        
-        {/* Top Played Game Snapshot - Takes 1/3 width */}
-        <div className="xl:col-span-1">
-          <TopPlayedGameSnapshot 
-            data={dashboardData.topGame}
-            loading={dashboardData.loading}
-          />
-        </div>
+      {/* Retention Trend Graph Section */}
+      <div className="mb-6">
+        <RetentionTrendGraph 
+          data={dashboardData.retentionData}
+          filters={filters}
+          loading={dashboardData.loading}
+        />
+      </div>
+
+      {/* Top Played Game Section */}
+      <div className="mb-6">
+        <TopPlayedGameSnapshot 
+          data={dashboardData.topGame}
+          loading={dashboardData.loading}
+        />
       </div>
 
       {/* Tables Section */}
