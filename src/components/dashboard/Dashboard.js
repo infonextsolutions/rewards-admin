@@ -63,7 +63,7 @@ const Dashboard = () => {
           Hello, {user?.firstName || 'Admin'}! 👋
         </h1>
         <p className="text-gray-600 mt-1">
-          Welcome to your admin dashboard - here's what's happening today
+          Welcome to your admin dashboard - here&apos;s what&apos;s happening today
         </p>
       </div>
 
