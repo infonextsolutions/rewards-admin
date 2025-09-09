@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    emailOrMobile: '',
+    email: '',
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +31,7 @@ export default function LoginPage() {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.emailOrMobile || !formData.password) {
+    if (!formData.email || !formData.password) {
       setLocalError('Please fill in all fields');
       return;
     }
@@ -70,15 +70,15 @@ export default function LoginPage() {
           <div className="space-y-4">
             {/* Email/Mobile Input */}
             <div>
-              <label htmlFor="emailOrMobile" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email or Mobile
               </label>
               <input
-                id="emailOrMobile"
-                name="emailOrMobile"
+                id="email"
+                name="email"
                 type="text"
                 required
-                value={formData.emailOrMobile}
+                value={formData.email}
                 onChange={handleInputChange}
                 className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Enter your email or mobile number"

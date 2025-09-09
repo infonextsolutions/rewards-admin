@@ -5,7 +5,7 @@ export const authAPI = {
   // Admin login
   async login(credentials) {
     try {
-      const response = await fetch(`${API_BASE}/auth/login`, {
+      const response = await fetch(`${API_BASE}/auth/admin-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
