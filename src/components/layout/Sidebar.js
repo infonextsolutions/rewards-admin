@@ -10,7 +10,7 @@ const menuItems = [
   { id: 'surveys-offers', label: 'Surveys & Non-Gaming Offers', icon: '/Offers.png', href: '/surveys-offers' },
   { id: 'analytics', label: 'Marketing Attribution and Analytics', icon: '/Analytics and Reports.png', href: '/analytics' },
   { id: 'creative-management', label: 'Creative Management', icon: '/Fraud Monitoring.png', href: '/creative-management' },
-  // { id: 'transactions', label: 'Transactions', icon: '/Transactions.png', href: '/transactions' },
+  { id: 'transaction-wallet', label: 'Transaction & Wallet Manager', icon: '/Transactions.png', href: '/transaction-wallet' },
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
   { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
