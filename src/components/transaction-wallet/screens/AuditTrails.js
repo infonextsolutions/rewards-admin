@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import FilterDropdown from '@/components/ui/FilterDropdown';
 import Pagination from '@/components/ui/Pagination';
-import { MagnifyingGlassIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 export default function AuditTrails() {
   const [auditLogs, setAuditLogs] = useState([]);
@@ -17,6 +17,25 @@ export default function AuditTrails() {
 
   // Mock audit trail data
   useEffect(() => {
+    // Generate realistic timestamps for testing date filters
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+    const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+    const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+    
+    const formatTimestamp = (date) => {
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
+
     const mockAuditLogs = [
       {
         id: 'AUD-20102',
@@ -31,7 +50,7 @@ export default function AuditTrails() {
           previousStatus: 'Pending',
           newStatus: 'Approved'
         },
-        timestamp: '2025-05-28 12:01 PM',
+        timestamp: formatTimestamp(oneHourAgo),
         ipAddress: '192.168.1.100',
         userAgent: 'Chrome/91.0'
       },
@@ -49,7 +68,7 @@ export default function AuditTrails() {
           previousBalance: '1250 XP',
           newBalance: '1750 XP'
         },
-        timestamp: '2025-05-28 11:45 AM',
+        timestamp: formatTimestamp(sixHoursAgo),
         ipAddress: '192.168.1.101',
         userAgent: 'Firefox/89.0'
       },
@@ -67,7 +86,7 @@ export default function AuditTrails() {
           previousStatus: 'Pending',
           newStatus: 'Rejected'
         },
-        timestamp: '2025-05-28 10:30 AM',
+        timestamp: formatTimestamp(twoDaysAgo),
         ipAddress: '192.168.1.100',
         userAgent: 'Chrome/91.0'
       },
@@ -85,7 +104,7 @@ export default function AuditTrails() {
           previousStatus: 'Pending',
           newStatus: 'Approved'
         },
-        timestamp: '2025-05-28 09:15 AM',
+        timestamp: formatTimestamp(fiveDaysAgo),
         ipAddress: '192.168.1.101',
         userAgent: 'Firefox/89.0'
       },
@@ -102,7 +121,7 @@ export default function AuditTrails() {
           newRate: '100 XP = ₹1',
           effectiveDate: '2025-06-01'
         },
-        timestamp: '2025-05-27 04:20 PM',
+        timestamp: formatTimestamp(fifteenDaysAgo),
         ipAddress: '192.168.1.102',
         userAgent: 'Edge/91.0'
       }
@@ -121,6 +140,81 @@ export default function AuditTrails() {
     setCurrentPage(1);
   };
 
+  const handleClearFilters = () => {
+    setFilters({
+      admin: '',
+      action: '',
+      dateRange: ''
+    });
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
+  // Helper function to map audit trail user IDs to actual user IDs
+  const mapUserIdForNavigation = (targetUserId) => {
+    // Map USR-XXXXX format to IDOXXXX format for existing user pages
+    const userIdMappings = {
+      'USR-38281': 'IDO9012',
+      'USR-202589': 'IDO9013', 
+      'USR-202590': 'IDO9014',
+      'USR-202591': 'IDO9015',
+      'USR-202592': 'IDO9016'
+    };
+    
+    return userIdMappings[targetUserId] || targetUserId;
+  };
+
+  // Handle Entry ID navigation to audit detail
+  const handleEntryIdClick = (auditLog) => {
+    // For now, show audit details in a simple alert
+    // In a real implementation, this would open an audit detail modal or page
+    const details = `
+Audit Entry: ${auditLog.id}
+Admin: ${auditLog.adminName} (${auditLog.adminId})
+Action: ${auditLog.action}
+Target: ${auditLog.targetUser !== 'SYSTEM' ? auditLog.targetUserName : auditLog.targetUser}
+Time: ${auditLog.timestamp}
+    `.trim();
+    
+    alert(`Audit Details:\n\n${details}`);
+  };
+
+  // Helper function to parse audit trail timestamp format
+  const parseAuditTimestamp = (timestamp) => {
+    try {
+      // Handle format like "2025-05-28 12:01 PM"
+      return new Date(timestamp);
+    } catch (error) {
+      console.error('Error parsing timestamp:', timestamp);
+      return new Date(0); // Return epoch time if parsing fails
+    }
+  };
+
+  // Helper function to filter by date range
+  const matchesDateRange = (log) => {
+    if (!filters.dateRange) return true;
+    
+    const logDate = parseAuditTimestamp(log.timestamp);
+    const now = new Date();
+    let startDate;
+    
+    switch (filters.dateRange) {
+      case 'Last 24 hours':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'Last 7 days':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'Last 30 days':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        return true;
+    }
+    
+    return logDate >= startDate && logDate <= now;
+  };
+
   const getActionBadge = (action) => {
     const styles = {
       'Approved Redemption': 'bg-green-100 text-green-800',
@@ -137,45 +231,6 @@ export default function AuditTrails() {
     );
   };
 
-  const formatDetails = (action, details) => {
-    switch (action) {
-      case 'Approved Redemption':
-      case 'Rejected Redemption':
-        return (
-          <div className="space-y-1">
-            <div className="text-sm text-gray-900"><strong>Redemption:</strong> {details.redemptionId}</div>
-            <div className="text-sm text-gray-900"><strong>Amount:</strong> {details.amount}</div>
-            {details.reason && <div className="text-sm text-gray-900"><strong>Reason:</strong> {details.reason}</div>}
-          </div>
-        );
-      case 'Wallet Adjustment':
-        return (
-          <div className="space-y-1">
-            <div className="text-sm text-gray-900"><strong>Type:</strong> {details.adjustmentType}</div>
-            <div className="text-sm text-gray-900"><strong>Amount:</strong> {details.amount}</div>
-            <div className="text-sm text-gray-900"><strong>Reason:</strong> {details.reason}</div>
-          </div>
-        );
-      case 'Transaction Approval':
-        return (
-          <div className="space-y-1">
-            <div className="text-sm text-gray-900"><strong>Transaction:</strong> {details.transactionId}</div>
-            <div className="text-sm text-gray-900"><strong>Type:</strong> {details.type}</div>
-            <div className="text-sm text-gray-900"><strong>Amount:</strong> {details.amount}</div>
-          </div>
-        );
-      case 'Conversion Rate Update':
-        return (
-          <div className="space-y-1">
-            <div className="text-sm text-gray-900"><strong>Tier:</strong> {details.tier}</div>
-            <div className="text-sm text-gray-900"><strong>New Rate:</strong> {details.newRate}</div>
-            <div className="text-sm text-gray-900"><strong>Effective:</strong> {details.effectiveDate}</div>
-          </div>
-        );
-      default:
-        return <div className="text-sm text-gray-500">No details available</div>;
-    }
-  };
 
   const filteredLogs = auditLogs.filter(log => {
     const matchesSearch = !searchTerm || 
@@ -186,8 +241,9 @@ export default function AuditTrails() {
     
     const matchesAdmin = !filters.admin || log.adminName === filters.admin;
     const matchesAction = !filters.action || log.action === filters.action;
+    const matchesDate = matchesDateRange(log);
     
-    return matchesSearch && matchesAdmin && matchesAction;
+    return matchesSearch && matchesAdmin && matchesAction && matchesDate;
   });
 
   const itemsPerPage = 10;
@@ -249,7 +305,7 @@ export default function AuditTrails() {
                   Entry ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Admin
+                  Admin ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Action
@@ -258,13 +314,7 @@ export default function AuditTrails() {
                   Target User
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Timestamp
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  IP Address
                 </th>
               </tr>
             </thead>
@@ -272,49 +322,41 @@ export default function AuditTrails() {
               {paginatedLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">{log.id}</span>
+                    <button
+                      onClick={() => handleEntryIdClick(log)}
+                      className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
+                      title="View audit details"
+                    >
+                      {log.id}
+                    </button>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{log.adminName}</div>
-                        <div className="text-xs text-gray-500">{log.adminId}</div>
-                      </div>
-                    </div>
+                    <span className="text-sm font-medium text-gray-900">{log.adminId}</span>
                   </td>
                   <td className="px-6 py-4">
                     {getActionBadge(log.action)}
                   </td>
                   <td className="px-6 py-4">
-                    <div>
-                      {log.targetUser !== 'SYSTEM' ? (
-                        <button
-                          onClick={() => window.open(`/users/${log.targetUser}`, '_blank')}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          {log.targetUser}
-                        </button>
-                      ) : (
-                        <span className="font-medium text-gray-900">{log.targetUser}</span>
-                      )}
-                      <div className="text-xs text-gray-500">{log.targetUserName}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="max-w-xs">
-                      {formatDetails(log.action, log.details)}
-                    </div>
+                    {log.targetUser !== 'SYSTEM' ? (
+                      <button
+                        onClick={() => {
+                          const mappedUserId = mapUserIdForNavigation(log.targetUser);
+                          window.open(`/users/${mappedUserId}`, '_blank');
+                        }}
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        title={`View user profile for ${log.targetUser}`}
+                      >
+                        {log.targetUser}
+                      </button>
+                    ) : (
+                      <span className="font-medium text-gray-900">{log.targetUser}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <ClockIcon className="w-4 h-4 text-gray-400 mr-2" />
                       <span className="text-sm text-gray-900">{log.timestamp}</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">{log.ipAddress}</div>
-                    <div className="text-xs text-gray-500">{log.userAgent}</div>
                   </td>
                 </tr>
               ))}

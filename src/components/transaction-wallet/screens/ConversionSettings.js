@@ -16,55 +16,35 @@ export default function ConversionSettings() {
         xpTier: 'Bronze',
         conversionRule: '200 XP = ₹1',
         method: 'Paytm',
-        ruleSource: 'Rewards Config Module',
-        tierRange: '0 - 1,000 XP',
-        status: 'Active',
-        lastModified: '10/06/2025',
-        modifier: '1.0x'
+        ruleSource: 'Rewards Config Module'
       },
       {
         id: 'CONV-002',
         xpTier: 'Silver',
         conversionRule: '150 XP = ₹1',
         method: 'UPI + Paytm',
-        ruleSource: 'Rewards Config Module',
-        tierRange: '1,001 - 5,000 XP',
-        status: 'Active',
-        lastModified: '08/06/2025',
-        modifier: '1.33x'
+        ruleSource: 'Rewards Config Module'
       },
       {
         id: 'CONV-003',
         xpTier: 'Gold',
         conversionRule: '100 XP = ₹1',
         method: 'UPI + Paytm + Gift Card',
-        ruleSource: 'Rewards Config Module',
-        tierRange: '5,001 - 15,000 XP',
-        status: 'Active',
-        lastModified: '08/06/2025',
-        modifier: '2.0x'
+        ruleSource: 'Rewards Config Module'
       },
       {
         id: 'CONV-004',
         xpTier: 'Platinum',
         conversionRule: '75 XP = ₹1',
         method: 'UPI + Paytm + Gift Card + Bank Transfer',
-        ruleSource: 'Rewards Config Module',
-        tierRange: '15,001+ XP',
-        status: 'Active',
-        lastModified: '05/06/2025',
-        modifier: '2.67x'
+        ruleSource: 'Rewards Config Module'
       },
       {
         id: 'CONV-005',
         xpTier: 'VIP',
         conversionRule: '50 XP = ₹1',
         method: 'All Methods + Priority Processing',
-        ruleSource: 'Rewards Config Module',
-        tierRange: '50,001+ XP',
-        status: 'Beta',
-        lastModified: '12/06/2025',
-        modifier: '4.0x'
+        ruleSource: 'Rewards Config Module'
       }
     ];
     
@@ -117,19 +97,10 @@ export default function ConversionSettings() {
                   XP Tier
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tier Range
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Conversion Rule
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rate Modifier
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Redemption Methods
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Method
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rule Source
@@ -143,23 +114,12 @@ export default function ConversionSettings() {
                     <span className="text-sm font-medium text-gray-900">{rule.xpTier}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-gray-900">{rule.tierRange}</span>
-                  </td>
-                  <td className="px-6 py-4">
                     <div className="text-sm font-medium text-emerald-600">
                       {rule.conversionRule}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-blue-600">
-                      {rule.modifier}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
                     <span className="text-sm text-gray-900">{rule.method}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{rule.status}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">

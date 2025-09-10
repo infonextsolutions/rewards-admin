@@ -146,8 +146,25 @@ export default function RedemptionQueue({ onSneakPeek }) {
     };
     
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${styles[status]}`}>
+      <span className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full min-w-[80px] ${styles[status]}`}>
         {status}
+      </span>
+    );
+  };
+
+  const getVerificationBadge = (verification) => {
+    const isVerified = verification.includes('Face Verified');
+    const isPending = verification.includes('Pending');
+    
+    const styles = isVerified 
+      ? 'bg-green-100 text-green-800'
+      : isPending 
+        ? 'bg-yellow-100 text-yellow-800'
+        : 'bg-red-100 text-red-800';
+    
+    return (
+      <span className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full min-w-[120px] ${styles}`}>
+        {verification}
       </span>
     );
   };
@@ -236,28 +253,37 @@ export default function RedemptionQueue({ onSneakPeek }) {
                     {getStatusBadge(redemption.status)}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{redemption.verification}</span>
+                    {getVerificationBadge(redemption.verification)}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">{redemption.offerCompletion}</div>
                     <div className="text-xs text-gray-500">{redemption.createdAt}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       {redemption.status === 'Pending' && (
                         <>
                           <button
                             onClick={() => handleApprove(redemption.id)}
                             disabled={loading[redemption.id]}
-                            className="flex items-center px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] h-9"
                           >
-                            <CheckIcon className="w-4 h-4 mr-1" />
-                            {loading[redemption.id] ? 'Processing...' : 'Approve'}
+                            {loading[redemption.id] ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>Processing</span>
+                              </div>
+                            ) : (
+                              <>
+                                <CheckIcon className="w-4 h-4 mr-1" />
+                                Approve
+                              </>
+                            )}
                           </button>
                           
                           <button
                             onClick={() => setShowRejectModal(redemption.id)}
-                            className="flex items-center px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 min-w-[100px] h-9"
                           >
                             <XMarkIcon className="w-4 h-4 mr-1" />
                             Reject
@@ -267,7 +293,7 @@ export default function RedemptionQueue({ onSneakPeek }) {
                       
                       <button
                         onClick={() => handleSneakPeek(redemption)}
-                        className="flex items-center px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                        className="flex items-center justify-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 min-w-[120px] h-9"
                       >
                         <EyeIcon className="w-4 h-4 mr-1" />
                         Sneak Peek
