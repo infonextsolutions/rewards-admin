@@ -91,7 +91,7 @@ export default function TransactionDetails({ transactionId }) {
         <div className="text-center">
           <XCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Transaction Not Found</h2>
-          <p className="text-gray-600 mb-6">The transaction ID "{decodedTransactionId}" could not be found.</p>
+          <p className="text-gray-600 mb-6">The transaction ID &quot;{decodedTransactionId}&quot; could not be found.</p>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
