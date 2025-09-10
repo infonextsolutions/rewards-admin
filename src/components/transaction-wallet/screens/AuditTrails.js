@@ -281,6 +281,18 @@ Time: ${auditLog.timestamp}
             value={filters.dateRange}
             onChange={handleFilterChange}
           />
+
+          {/* Clear Filters Button */}
+          {(filters.admin || filters.action || filters.dateRange || searchTerm) && (
+            <button
+              onClick={handleClearFilters}
+              className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Clear all filters"
+            >
+              <XMarkIcon className="w-4 h-4" />
+              Clear Filters
+            </button>
+          )}
         </div>
         
         <div className="relative">
