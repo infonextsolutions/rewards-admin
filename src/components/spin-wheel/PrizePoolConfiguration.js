@@ -46,7 +46,7 @@ export default function PrizePoolConfiguration({
   }, [rewards, searchTerm, statusFilter, typeFilter]);
 
   const rewardTypes = ['Coins', 'XP', 'Coupons'];
-  const tierOptions = ['All Tiers', 'Bronze', 'Silver', 'Gold', 'Platinum'];
+  const tierOptions = ['All Tiers', 'Bronze', 'Silver', 'Gold'];
 
   const handleAddReward = async (rewardData) => {
     try {
@@ -219,7 +219,7 @@ export default function PrizePoolConfiguration({
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Order
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -269,8 +269,9 @@ export default function PrizePoolConfiguration({
                     onDrop={(e) => handleDrop(e, reward)}
                     onDragEnd={handleDragEnd}
                   >
-                    <td className="px-2 py-4 whitespace-nowrap">
-                      <div className="flex items-center justify-center">
+                    <td className="px-6
+                     py-4 whitespace-nowrap">
+                      <div className="flex items-center">
                         <Bars3Icon className="h-5 w-5 text-gray-400 cursor-move" title="Drag to reorder" />
                       </div>
                     </td>
@@ -293,7 +294,7 @@ export default function PrizePoolConfiguration({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 min-w-[70px]">
                         {reward.type}
                       </span>
                     </td>
@@ -308,7 +309,7 @@ export default function PrizePoolConfiguration({
                         {reward.tierVisibility.map((tier) => (
                           <span
                             key={tier}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                            className="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 min-w-[60px]"
                           >
                             {tier}
                           </span>
@@ -316,7 +317,7 @@ export default function PrizePoolConfiguration({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium min-w-[70px] ${
                         reward.active 
                           ? 'bg-emerald-100 text-emerald-800' 
                           : 'bg-gray-100 text-gray-800'

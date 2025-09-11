@@ -32,7 +32,7 @@ const mockRewards = [
     type: 'Coupons',
     amount: 10,
     probability: 15,
-    tierVisibility: ['Gold', 'Platinum'],
+    tierVisibility: ['Gold'],
     icon: null,
     active: true,
     order: 3
@@ -43,7 +43,7 @@ const mockRewards = [
     type: 'Coins',
     amount: 500,
     probability: 5,
-    tierVisibility: ['Platinum'],
+    tierVisibility: ['Gold'],
     icon: null,
     active: false,
     order: 4
@@ -52,7 +52,7 @@ const mockRewards = [
 
 const mockSettings = {
   spinMode: 'free',
-  cooldownPeriod: 360, // in minutes (6 hours = 360 minutes)
+  cooldownPeriod: 6, // in hours
   maxSpinsPerDay: 3,
   eligibleTiers: ['All Tiers'],
   startDate: '',

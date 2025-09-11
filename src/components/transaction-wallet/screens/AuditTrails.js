@@ -225,7 +225,7 @@ Time: ${auditLog.timestamp}
     };
     
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${styles[action] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full w-[140px] ${styles[action] || 'bg-gray-100 text-gray-800'}`}>
         {action}
       </span>
     );

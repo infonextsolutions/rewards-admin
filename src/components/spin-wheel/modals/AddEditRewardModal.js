@@ -288,9 +288,10 @@ export default function AddEditRewardModal({
 
           {/* Tier Visibility */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Tier Visibility *
             </label>
+            <p className="text-xs text-gray-500 mb-3">Select one or more tiers that can see this reward</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {tierOptions.map((tier) => (
                 <label key={tier} className="flex items-center">

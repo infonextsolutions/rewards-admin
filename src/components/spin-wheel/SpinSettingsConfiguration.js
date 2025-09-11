@@ -6,7 +6,7 @@ import { CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 export default function SpinSettingsConfiguration({ settings = {}, onUpdateSettings, loading }) {
   const [formData, setFormData] = useState({
     spinMode: 'free',
-    cooldownPeriod: 360, // in minutes
+    cooldownPeriod: 6, // in hours
     maxSpinsPerDay: 3,
     eligibleTiers: ['All Tiers'],
     startDate: '',
@@ -32,16 +32,15 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
     'All Tiers',
     'Bronze',
     'Silver', 
-    'Gold',
-    'Platinum'
+    'Gold'
   ];
 
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (formData.cooldownPeriod < 1 || formData.cooldownPeriod > 1440) {
-      newErrors.cooldownPeriod = 'Cooldown period must be between 1-1440 minutes (24 hours)';
+    if (formData.cooldownPeriod < 1 || formData.cooldownPeriod > 24) {
+      newErrors.cooldownPeriod = 'Cooldown period must be between 1-24 hours';
     }
 
     if (formData.maxSpinsPerDay && (formData.maxSpinsPerDay < 1 || formData.maxSpinsPerDay > 50)) {
@@ -107,7 +106,15 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
   };
 
   const handleReset = () => {
-    setFormData({ ...formData, ...settings });
+    setFormData({
+      spinMode: 'free',
+      cooldownPeriod: 6, // in hours
+      maxSpinsPerDay: 3,
+      eligibleTiers: ['All Tiers'],
+      startDate: '',
+      endDate: '',
+      ...settings
+    });
     setHasChanges(false);
     setErrors({});
     setSaveSuccess(false);
@@ -172,25 +179,22 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cooldown Period (minutes) *
+                    Cooldown Period (hours) *
                   </label>
                   <input
                     type="number"
                     min="1"
-                    max="1440"
+                    max="24"
                     value={formData.cooldownPeriod}
                     onChange={(e) => handleInputChange('cooldownPeriod', parseInt(e.target.value))}
                     className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
                       errors.cooldownPeriod ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="360"
+                    placeholder="6"
                   />
                   {errors.cooldownPeriod && (
                     <p className="mt-1 text-sm text-red-600">{errors.cooldownPeriod}</p>
                   )}
-                  <p className="mt-1 text-xs text-gray-500">
-                    Enter time in minutes (e.g., 30 for 30 minutes, 360 for 6 hours)
-                  </p>
                 </div>
 
                 <div>
@@ -218,7 +222,8 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
 
           {/* Eligibility Settings */}
           <div>
-            <h3 className="text-base font-medium text-gray-900 mb-4">Eligible XP Tiers</h3>
+            <h3 className="text-base font-medium text-gray-900 mb-1">Eligible XP Tiers</h3>
+            <p className="text-xs text-gray-500 mb-4">Select one or more tiers that can access the spin wheel</p>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {tierOptions.map((tier) => (
                 <label key={tier} className="flex items-center">
