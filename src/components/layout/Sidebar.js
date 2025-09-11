@@ -12,6 +12,7 @@ const menuItems = [
   { id: 'creative-management', label: 'Creative Management', icon: '/Fraud Monitoring.png', href: '/creative-management' },
   { id: 'transaction-wallet', label: 'Transaction & Wallet Manager', icon: '/Transactions.png', href: '/transaction-wallet' },
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
+  { id: 'spin-wheel', label: 'Spin Wheel Manager', icon: '/Rewards.png', href: '/spin-wheel' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
   { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
   { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
