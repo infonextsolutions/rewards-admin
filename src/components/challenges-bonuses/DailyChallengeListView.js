@@ -66,7 +66,7 @@ export default function DailyChallengeListView({
     };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[actualStatus]}`}>
+      <span className={`inline-flex items-center justify-center min-w-[80px] px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[actualStatus]}`}>
         {actualStatus}
       </span>
     );
@@ -104,7 +104,7 @@ export default function DailyChallengeListView({
             </div>
             <div className="flex items-center space-x-3">
               <button
-                onClick={onAddChallenge}
+                onClick={() => onAddChallenge()}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
@@ -214,7 +214,7 @@ export default function DailyChallengeListView({
                       <div className="text-sm font-medium text-gray-900">{challenge.title}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center justify-center min-w-[80px] px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {challenge.type}
                       </span>
                     </td>
@@ -231,7 +231,7 @@ export default function DailyChallengeListView({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <span className="inline-flex items-center justify-center min-w-[80px] px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         {challenge.claimType}
                       </span>
                     </td>

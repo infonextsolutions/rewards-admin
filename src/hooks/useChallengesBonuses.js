@@ -90,7 +90,7 @@ export function useChallengesBonuses() {
     setError(null);
     
     try {
-      const updatedChallenge = await challengesBonusesAPI.updateChallenge(id, { visibility });
+      const updatedChallenge = await challengesBonusesAPI.toggleChallengeVisibility(id, visibility);
       setChallenges(prev => 
         prev.map(challenge => 
           challenge.id === id ? updatedChallenge : challenge

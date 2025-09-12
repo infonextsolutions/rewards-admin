@@ -207,35 +207,31 @@ export default function ChallengesBonusesModule() {
       </div>
 
       {/* Modals */}
-      {showChallengeModal && (
-        <AddEditChallengeModal
-          isOpen={showChallengeModal}
-          onClose={() => {
-            setShowChallengeModal(false);
-            setEditingChallenge(null);
-          }}
-          onSave={handleSaveChallenge}
-          challenge={editingChallenge}
-          selectedDate={selectedDate}
-          existingChallenges={challenges}
-          loading={loading}
-        />
-      )}
+      <AddEditChallengeModal
+        isOpen={showChallengeModal}
+        onClose={() => {
+          setShowChallengeModal(false);
+          setEditingChallenge(null);
+        }}
+        onSave={handleSaveChallenge}
+        challenge={editingChallenge}
+        selectedDate={selectedDate}
+        existingChallenges={challenges}
+        loading={loading}
+      />
 
-      {showDeleteModal && deletingChallenge && (
-        <DeleteConfirmationModal
-          isOpen={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setDeletingChallenge(null);
-          }}
-          onConfirm={handleConfirmDelete}
-          title="Delete Challenge"
-          message={`Are you sure you want to delete "${deletingChallenge.title}"? This action cannot be undone.`}
-          confirmButtonText="Delete Challenge"
-          loading={loading}
-        />
-      )}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDeletingChallenge(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Challenge"
+        message={deletingChallenge ? `Are you sure you want to delete "${deletingChallenge.title}"? This action cannot be undone.` : ''}
+        confirmButtonText="Delete Challenge"
+        loading={loading}
+      />
     </div>
   );
 }

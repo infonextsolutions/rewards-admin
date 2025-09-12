@@ -384,7 +384,7 @@ export default function XPMultiplierSetup({
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center justify-center min-w-[60px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             multiplier.vipBonusApplied
                               ? 'bg-purple-100 text-purple-800'
                               : 'bg-gray-100 text-gray-800'
@@ -395,7 +395,7 @@ export default function XPMultiplierSetup({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button
                             onClick={() => handleToggleActive(multiplier.id, multiplier.active)}
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                            className={`inline-flex items-center justify-center min-w-[80px] px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
                               multiplier.active
                                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                 : 'bg-red-100 text-red-800 hover:bg-red-200'

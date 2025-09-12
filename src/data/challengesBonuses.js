@@ -170,6 +170,20 @@ export const challengesBonusesAPI = {
     return true;
   },
 
+  async toggleChallengeVisibility(id, visibility) {
+    await delay(300);
+    const index = mockChallenges.findIndex(c => c.id === id);
+    if (index === -1) throw new Error('Challenge not found');
+    
+    const updatedChallenge = {
+      ...mockChallenges[index],
+      visibility,
+      updatedAt: new Date().toISOString()
+    };
+    mockChallenges[index] = updatedChallenge;
+    return updatedChallenge;
+  },
+
 
   // Multiplier operations
   async getMultipliers() {
