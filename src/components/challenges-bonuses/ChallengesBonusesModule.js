@@ -43,7 +43,7 @@ export default function ChallengesBonusesModule() {
     refreshData();
   }, [refreshData]);
 
-  const handleAddChallenge = (challengeData) => {
+  const handleAddChallenge = () => {
     setEditingChallenge(null);
     setShowChallengeModal(true);
   };

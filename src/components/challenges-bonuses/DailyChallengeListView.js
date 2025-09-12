@@ -22,7 +22,6 @@ export default function DailyChallengeListView({
   const [typeFilter, setTypeFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState(null);
   const [deletingChallenge, setDeletingChallenge] = useState(null);
 
@@ -81,32 +80,7 @@ export default function DailyChallengeListView({
     });
   };
 
-  const handleAddChallenge = async (challengeData) => {
-    try {
-      await onAddChallenge(challengeData);
-      setShowAddModal(false);
-    } catch (error) {
-      console.error('Error adding challenge:', error);
-    }
-  };
 
-  const handleUpdateChallenge = async (id, challengeData) => {
-    try {
-      await onUpdateChallenge(id, challengeData);
-      setEditingChallenge(null);
-    } catch (error) {
-      console.error('Error updating challenge:', error);
-    }
-  };
-
-  const handleDeleteChallenge = async (id) => {
-    try {
-      await onDeleteChallenge(id);
-      setDeletingChallenge(null);
-    } catch (error) {
-      console.error('Error deleting challenge:', error);
-    }
-  };
 
   const handleToggleVisibility = async (id, currentVisibility) => {
     try {
@@ -130,7 +104,7 @@ export default function DailyChallengeListView({
             </div>
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={onAddChallenge}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
@@ -280,14 +254,14 @@ export default function DailyChallengeListView({
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => setEditingChallenge(challenge)}
+                          onClick={() => onUpdateChallenge(challenge)}
                           className="text-emerald-600 hover:text-emerald-900 p-1 rounded-md hover:bg-emerald-50"
                           title="Edit challenge"
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => setDeletingChallenge(challenge)}
+                          onClick={() => onDeleteChallenge(challenge)}
                           className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
                           title="Delete challenge"
                         >
