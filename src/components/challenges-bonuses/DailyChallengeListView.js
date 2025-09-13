@@ -176,7 +176,10 @@ export default function DailyChallengeListView({
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rewards
+                  Coins 
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  XP 
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Claim Type
@@ -195,7 +198,7 @@ export default function DailyChallengeListView({
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedChallenges.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                       ? 'No challenges match your current filters.'
                       : 'No challenges configured yet. Add your first challenge to get started.'}
@@ -219,15 +222,15 @@ export default function DailyChallengeListView({
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center">
-                          <span className="text-yellow-600 mr-1">🪙</span>
-                          <span>{challenge.coinReward}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-purple-600 mr-1">⭐</span>
-                          <span>{challenge.xpReward}</span>
-                        </div>
+                      <div className="flex items-center">
+                        <span className="text-yellow-600 mr-1">🪙</span>
+                        <span className="font-medium">{challenge.coinReward}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="flex items-center">
+                        <span className="text-purple-600 mr-1">⭐</span>
+                        <span className="font-medium">{challenge.xpReward}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

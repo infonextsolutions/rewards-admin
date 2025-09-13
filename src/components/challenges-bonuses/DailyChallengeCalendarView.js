@@ -171,8 +171,13 @@ export default function DailyChallengeCalendarView({
     
     // If there are no challenges for this date, open add modal
     if (dayData.challenges.length === 0) {
-      setShowChallengeModal(true);
+      onAddChallenge();
     }
+  };
+
+  const handleChallengeClick = (challenge, event) => {
+    event.stopPropagation(); // Prevent day click event
+    onUpdateChallenge(challenge);
   };
 
   // Generate week view days
@@ -339,7 +344,7 @@ export default function DailyChallengeCalendarView({
                 <CalendarDaysIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                 <p>No challenges scheduled for this day</p>
                 <button
-                  onClick={() => handleDateClick(dayData)}
+                  onClick={() => onAddChallenge()}
                   className="mt-2 text-emerald-600 hover:text-emerald-700 text-sm font-medium"
                 >
                   Add Challenge
@@ -349,7 +354,9 @@ export default function DailyChallengeCalendarView({
               dayData.challenges.map((challenge, idx) => (
                 <div
                   key={challenge.id}
-                  className={`p-4 rounded-lg border-l-4 ${getStatusColor(challenge.status, challenge.date)}`}
+                  className={`p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition-all duration-200 ${getStatusColor(challenge.status, challenge.date)}`}
+                  onClick={() => handleChallengeClick(challenge, { stopPropagation: () => {} })}
+                  title={`Click to edit ${challenge.title}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -401,8 +408,9 @@ export default function DailyChallengeCalendarView({
         {dayData.challenges.slice(0, 3).map((challenge, idx) => (
           <div
             key={challenge.id}
-            className={`px-2 py-1 rounded text-xs border ${getStatusColor(challenge.status, challenge.date)}`}
-            title={`${challenge.title} - ${challenge.type} (${challenge.claimType})`}
+            className={`px-2 py-1 rounded text-xs border cursor-pointer hover:shadow-sm transition-all duration-200 ${getStatusColor(challenge.status, challenge.date)}`}
+            title={`${challenge.title} - ${challenge.type} (${challenge.claimType}) - Click to edit`}
+            onClick={(e) => handleChallengeClick(challenge, e)}
           >
             <div className="flex items-center justify-between">
               <div className="truncate flex-1">

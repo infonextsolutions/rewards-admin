@@ -108,23 +108,23 @@ export default function AuditTrails() {
         ipAddress: '192.168.1.101',
         userAgent: 'Firefox/89.0'
       },
-      {
-        id: 'AUD-20106',
-        adminId: 'ADM-12',
-        adminName: 'Tom Supervisor',
-        action: 'Conversion Rate Update',
-        targetUser: 'SYSTEM',
-        targetUserName: 'System Configuration',
-        details: {
-          tier: 'Gold',
-          previousRate: '120 XP = ₹1',
-          newRate: '100 XP = ₹1',
-          effectiveDate: '2025-06-01'
-        },
-        timestamp: formatTimestamp(fifteenDaysAgo),
-        ipAddress: '192.168.1.102',
-        userAgent: 'Edge/91.0'
-      }
+      // {
+      //   id: 'AUD-20106',
+      //   adminId: 'ADM-12',
+      //   adminName: 'Tom Supervisor',
+      //   action: 'Conversion Rate Update',
+      //   targetUser: 'SYSTEM',
+      //   targetUserName: 'System Configuration',
+      //   details: {
+      //     tier: 'Gold',
+      //     previousRate: '120 XP = ₹1',
+      //     newRate: '100 XP = ₹1',
+      //     effectiveDate: '2025-06-01'
+      //   },
+      //   timestamp: formatTimestamp(fifteenDaysAgo),
+      //   ipAddress: '192.168.1.102',
+      //   userAgent: 'Edge/91.0'
+      // }
     ];
     
     setAuditLogs(mockAuditLogs);
