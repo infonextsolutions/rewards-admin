@@ -1,68 +1,165 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useRef } from 'react';
+import { XMarkIcon, CloudArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
-const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
-const TIERS = ['Bronze', 'Silver', 'Gold'];
+const SDK_OFFERS = [
+  'WELCOME_001', 'DAILY_002', 'SURVEY_003', 'APP_DOWNLOAD_004', 'TRIAL_005',
+  'SOCIAL_006', 'GAMING_007', 'PREMIUM_008', 'BONUS_009', 'REWARD_010'
+];
+
+const REWARD_TYPES = ['Coins', 'XP'];
+
+const AGE_GROUPS = [
+  '13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'
+];
+
+const GENDERS = ['Male', 'Female', 'Other', 'Any'];
+
+const COUNTRIES = [
+  'US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE',
+  'BR', 'IN', 'JP', 'KR', 'MX', 'AR', 'CL', 'CO', 'PE', 'VE'
+];
+
+const CITIES = {
+  'US': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
+  'CA': ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa'],
+  'UK': ['London', 'Manchester', 'Birmingham', 'Glasgow', 'Liverpool'],
+  'AU': ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
+  // Add more cities as needed
+};
+
+const GAME_PREFERENCES = [
+  'Puzzle', 'Trivia', 'Casual', 'Strategy', 'Action', 'Adventure', 'Sports', 'Racing'
+];
+
+const MARKETING_CHANNELS = [
+  'Facebook', 'TikTok', 'Organic', 'Paid', 'Google', 'Instagram', 'Twitter', 'YouTube'
+];
+
+const CREATIVE_SECTIONS = {
+  raceSection: {
+    name: 'Race Section',
+    previewLabel: 'Small Square',
+    recommendedSize: '200x200px'
+  },
+  mostPlayedSection: {
+    name: 'Most Played Section',
+    previewLabel: 'Circle',
+    recommendedSize: '150x150px'
+  },
+  highestEarningSection: {
+    name: 'Highest Earning Section',
+    previewLabel: 'Banner',
+    recommendedSize: '320x100px'
+  }
+};
 
 export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
   const [formData, setFormData] = useState({
-    name: '',
-    sdk: '',
-    expiry: '',
-    status: 'Active',
-    tierAccess: [],
-    countries: [],
-    xptrRules: '',
-    adOffer: false,
-    rewardXP: 0,
-    rewardCoins: 0,
-    estimatedCompletion: ''
+    sdkOfferId: '',
+    offerName: '',
+    rewardType: '',
+    rewardValue: '',
+    startDate: '',
+    endDate: '',
+    active: true,
+    defaultFallback: false,
+    segments: {
+      ageGroups: [],
+      gender: '',
+      country: '',
+      city: '',
+      gamePreferences: [],
+      marketingChannel: '',
+      campaignName: ''
+    },
+    creatives: {
+      raceSection: null,
+      mostPlayedSection: null,
+      highestEarningSection: null
+    }
   });
 
   const [errors, setErrors] = useState({});
+  const [dragStates, setDragStates] = useState({});
+  const fileInputRefs = useRef({});
 
   useEffect(() => {
     if (offer) {
+      // Edit mode - populate with existing offer data
       setFormData({
-        name: offer.name || '',
-        sdk: offer.sdk || '',
-        expiry: offer.expiry || '',
-        status: offer.status || 'Active',
-        tierAccess: offer.tierAccess || [],
-        countries: offer.countries || [],
-        xptrRules: offer.xptrRules || '',
-        adOffer: offer.adOffer || false,
-        rewardXP: offer.rewardXP || 0,
-        rewardCoins: offer.rewardCoins || 0,
-        estimatedCompletion: offer.estimatedCompletion || ''
+        sdkOfferId: offer.sdkOffer || '',
+        offerName: offer.offerName || '',
+        rewardType: offer.rewardType || '',
+        rewardValue: offer.rewardValue || '',
+        startDate: offer.startDate || '',
+        endDate: offer.endDate || '',
+        active: offer.status === 'Active',
+        defaultFallback: offer.defaultFallback || false,
+        segments: {
+          ageGroups: offer.segments?.ageGroups || [],
+          gender: offer.segments?.gender || '',
+          country: offer.segments?.country || '',
+          city: offer.segments?.city || '',
+          gamePreferences: offer.segments?.gamePreferences || [],
+          marketingChannel: offer.marketingChannel || '',
+          campaignName: offer.campaign || ''
+        },
+        creatives: offer.creatives || {
+          raceSection: null,
+          mostPlayedSection: null,
+          highestEarningSection: null
+        }
       });
     } else {
       // Reset form for new offer
       setFormData({
-        name: '',
-        sdk: '',
-        expiry: '',
-        status: 'Active',
-        tierAccess: [],
-        countries: [],
-        xptrRules: '',
-        adOffer: false,
-        rewardXP: 0,
-        rewardCoins: 0,
-        estimatedCompletion: ''
+        sdkOfferId: '',
+        offerName: '',
+        rewardType: '',
+        rewardValue: '',
+        startDate: '',
+        endDate: '',
+        active: true,
+        defaultFallback: false,
+        segments: {
+          ageGroups: [],
+          gender: '',
+          country: '',
+          city: '',
+          gamePreferences: [],
+          marketingChannel: '',
+          campaignName: ''
+        },
+        creatives: {
+          raceSection: null,
+          mostPlayedSection: null,
+          highestEarningSection: null
+        }
       });
     }
     setErrors({});
+    setDragStates({});
   }, [offer, isOpen]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field.includes('.')) {
+      const [section, subField] = field.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [subField]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -73,66 +170,163 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
   };
 
   const handleMultiSelectChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter(item => item !== value)
-        : [...prev[field], value]
-    }));
+    const [section, subField] = field.split('.');
+    setFormData(prev => {
+      const currentArray = prev[section][subField];
+      const updatedArray = currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value];
+
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [subField]: updatedArray
+        }
+      };
+    });
+  };
+
+  const handleCountryChange = (country) => {
+    handleInputChange('segments.country', country);
+    // Reset city when country changes
+    handleInputChange('segments.city', '');
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Offer name is required';
+    // Required fields
+    if (!formData.sdkOfferId) {
+      newErrors.sdkOfferId = 'SDK Offer is required';
     }
-    if (!formData.sdk) {
-      newErrors.sdk = 'SDK selection is required';
+    if (!formData.offerName.trim()) {
+      newErrors.offerName = 'Offer name is required';
+    } else if (formData.offerName.length > 100) {
+      newErrors.offerName = 'Offer name must be 100 characters or less';
     }
-    if (!formData.expiry) {
-      newErrors.expiry = 'Expiry date is required';
+    if (!formData.rewardType) {
+      newErrors.rewardType = 'Reward type is required';
     }
-    if (!formData.xptrRules.trim()) {
-      newErrors.xptrRules = 'XPTR rules are required';
+    if (!formData.rewardValue || formData.rewardValue < 1) {
+      newErrors.rewardValue = 'Reward value must be at least 1';
     }
-    if (formData.tierAccess.length === 0) {
-      newErrors.tierAccess = 'At least one tier must be selected';
-    }
-    if (formData.countries.length === 0) {
-      newErrors.countries = 'At least one country must be selected';
-    }
-    if (formData.rewardXP < 0 || formData.rewardCoins < 0) {
-      newErrors.rewards = 'Rewards cannot be negative';
+
+    // Date validation
+    if (formData.startDate && formData.endDate) {
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(formData.endDate);
+      if (endDate <= startDate) {
+        newErrors.endDate = 'End date must be after start date';
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleFileUpload = (sectionKey, files) => {
+    const file = files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload only PNG, JPG, JPEG, or WebP images');
+      return;
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File size must be less than 2MB');
+      return;
+    }
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+
+    setFormData(prev => ({
+      ...prev,
+      creatives: {
+        ...prev.creatives,
+        [sectionKey]: {
+          file: file,
+          filename: file.name,
+          url: previewUrl,
+          previewUrl: previewUrl
+        }
+      }
+    }));
+  };
+
+  const handleDragOver = (e, sectionKey) => {
+    e.preventDefault();
+    setDragStates(prev => ({ ...prev, [sectionKey]: true }));
+  };
+
+  const handleDragLeave = (e, sectionKey) => {
+    e.preventDefault();
+    setDragStates(prev => ({ ...prev, [sectionKey]: false }));
+  };
+
+  const handleDrop = (e, sectionKey) => {
+    e.preventDefault();
+    setDragStates(prev => ({ ...prev, [sectionKey]: false }));
+    const files = Array.from(e.dataTransfer.files);
+    handleFileUpload(sectionKey, files);
+  };
+
+  const removeCreative = (sectionKey) => {
+    if (formData.creatives[sectionKey]?.previewUrl) {
+      URL.revokeObjectURL(formData.creatives[sectionKey].previewUrl);
+    }
+    setFormData(prev => ({
+      ...prev,
+      creatives: {
+        ...prev.creatives,
+        [sectionKey]: null
+      }
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSave({
-        id: offer?.id || `OFF${Date.now()}`,
-        ...formData
-      });
+      // Convert form data to the specified JSON format
+      const payload = {
+        ...formData,
+        id: offer?.id || `${formData.sdkOfferId}_${Date.now()}`,
+        status: formData.active ? 'Active' : 'Inactive',
+        // Map to existing table structure
+        offerName: formData.offerName,
+        sdkOffer: formData.sdkOfferId,
+        marketingChannel: formData.segments.marketingChannel,
+        campaign: formData.segments.campaignName,
+        retentionRate: offer?.retentionRate || '0%',
+        clickRate: offer?.clickRate || '0%',
+        installRate: offer?.installRate || '0%',
+        roas: offer?.roas || '0%'
+      };
+
+      onSave(payload);
       onClose();
     }
   };
 
   if (!isOpen) return null;
 
+  const availableCities = formData.segments.country ? CITIES[formData.segments.country] || [] : [];
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
 
-        <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full z-50">
+        <div className="relative inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all max-w-5xl w-full z-50">
           <div className="bg-white px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900">
-                {offer ? 'Edit Offer' : 'Create New Offer'}
+                {offer ? 'Edit Offer' : 'Add New Offer'}
               </h3>
               <button
                 onClick={onClose}
@@ -143,196 +337,335 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Basic Information */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-8 max-h-[80vh] overflow-y-auto">
+            {/* SECTION 1: Basic Details */}
             <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-4">Basic Information</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-4">Basic Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Offer Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                      errors.name ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                    }`}
-                    placeholder="Enter offer name"
-                  />
-                  {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SDK Provider *
+                    Select SDK Offer *
                   </label>
                   <select
-                    value={formData.sdk}
-                    onChange={(e) => handleInputChange('sdk', e.target.value)}
+                    value={formData.sdkOfferId}
+                    onChange={(e) => handleInputChange('sdkOfferId', e.target.value)}
                     className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                      errors.sdk ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                      errors.sdkOfferId ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                     }`}
+                    aria-label="Select SDK Offer"
                   >
-                    <option value="">Select SDK</option>
-                    {SDK_PROVIDERS.map(sdk => (
+                    <option value="">Choose SDK Offer...</option>
+                    {SDK_OFFERS.map(sdk => (
                       <option key={sdk} value={sdk}>{sdk}</option>
                     ))}
                   </select>
-                  {errors.sdk && <p className="mt-1 text-xs text-red-600">{errors.sdk}</p>}
+                  {errors.sdkOfferId && <p className="mt-1 text-xs text-red-600">{errors.sdkOfferId}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Expiry Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.expiry}
-                    onChange={(e) => handleInputChange('expiry', e.target.value)}
-                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                      errors.expiry ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                    }`}
-                  />
-                  {errors.expiry && <p className="mt-1 text-xs text-red-600">{errors.expiry}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Expired">Expired</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* XPTR Rules */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                XPTR Rules *
-              </label>
-              <textarea
-                value={formData.xptrRules}
-                onChange={(e) => handleInputChange('xptrRules', e.target.value)}
-                rows={3}
-                className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  errors.xptrRules ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                }`}
-                placeholder="Describe the completion rules and requirements"
-              />
-              {errors.xptrRules && <p className="mt-1 text-xs text-red-600">{errors.xptrRules}</p>}
-            </div>
-
-            {/* Tier Access */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tier Access *
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {TIERS.map(tier => (
-                  <label key={tier} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.tierAccess.includes(tier)}
-                      onChange={() => handleMultiSelectChange('tierAccess', tier)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{tier}</span>
-                  </label>
-                ))}
-              </div>
-              {errors.tierAccess && <p className="mt-1 text-xs text-red-600">{errors.tierAccess}</p>}
-            </div>
-
-            {/* Countries */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Countries *
-              </label>
-              <div className="grid grid-cols-5 gap-2">
-                {COUNTRIES.map(country => (
-                  <label key={country} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.countries.includes(country)}
-                      onChange={() => handleMultiSelectChange('countries', country)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{country}</span>
-                  </label>
-                ))}
-              </div>
-              {errors.countries && <p className="mt-1 text-xs text-red-600">{errors.countries}</p>}
-            </div>
-
-            {/* Rewards */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-4">Rewards</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    XP Reward
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.rewardXP}
-                    onChange={(e) => handleInputChange('rewardXP', parseInt(e.target.value) || 0)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Coins Reward
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.rewardCoins}
-                    onChange={(e) => handleInputChange('rewardCoins', parseInt(e.target.value) || 0)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Completion
+                    Offer Name/Title *
                   </label>
                   <input
                     type="text"
-                    value={formData.estimatedCompletion}
-                    onChange={(e) => handleInputChange('estimatedCompletion', e.target.value)}
+                    maxLength={100}
+                    value={formData.offerName}
+                    onChange={(e) => handleInputChange('offerName', e.target.value)}
+                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                      errors.offerName ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    placeholder="Enter offer name"
+                    aria-label="Offer Name"
+                  />
+                  {errors.offerName && <p className="mt-1 text-xs text-red-600">{errors.offerName}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reward Type *
+                  </label>
+                  <select
+                    value={formData.rewardType}
+                    onChange={(e) => handleInputChange('rewardType', e.target.value)}
+                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                      errors.rewardType ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    aria-label="Reward Type"
+                  >
+                    <option value="">Select reward type</option>
+                    {REWARD_TYPES.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  {errors.rewardType && <p className="mt-1 text-xs text-red-600">{errors.rewardType}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reward Value *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.rewardValue}
+                    onChange={(e) => handleInputChange('rewardValue', parseInt(e.target.value) || '')}
+                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                      errors.rewardValue ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    placeholder="Enter reward value"
+                    aria-label="Reward Value"
+                  />
+                  {errors.rewardValue && <p className="mt-1 text-xs text-red-600">{errors.rewardValue}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.startDate}
+                    onChange={(e) => handleInputChange('startDate', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="e.g., 15 min"
+                    aria-label="Start Date"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.endDate}
+                    onChange={(e) => handleInputChange('endDate', e.target.value)}
+                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                      errors.endDate ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
+                    aria-label="End Date"
+                  />
+                  {errors.endDate && <p className="mt-1 text-xs text-red-600">{errors.endDate}</p>}
+                </div>
+
+                <div className="flex items-center space-x-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.active}
+                      onChange={(e) => handleInputChange('active', e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Active/Visible</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.defaultFallback}
+                      onChange={(e) => handleInputChange('defaultFallback', e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Default Fallback Offer</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 2: Targeting & Segmentation */}
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-sm font-medium text-gray-900 mb-4">Targeting & Segmentation</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Age Group
+                  </label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+                    {AGE_GROUPS.map(age => (
+                      <label key={age} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.segments.ageGroups.includes(age)}
+                          onChange={() => handleMultiSelectChange('segments.ageGroups', age)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{age}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gender
+                  </label>
+                  <select
+                    value={formData.segments.gender}
+                    onChange={(e) => handleInputChange('segments.gender', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    aria-label="Gender"
+                  >
+                    <option value="">Select gender...</option>
+                    {GENDERS.map(gender => (
+                      <option key={gender} value={gender}>{gender}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Country
+                  </label>
+                  <select
+                    value={formData.segments.country}
+                    onChange={(e) => handleCountryChange(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    aria-label="Country"
+                  >
+                    <option value="">Select Country...</option>
+                    {COUNTRIES.map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    City
+                  </label>
+                  <select
+                    value={formData.segments.city}
+                    onChange={(e) => handleInputChange('segments.city', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    disabled={!formData.segments.country}
+                    aria-label="City"
+                  >
+                    <option value="">Select City...</option>
+                    {availableCities.map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Game Preferences
+                  </label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+                    {GAME_PREFERENCES.map(pref => (
+                      <label key={pref} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.segments.gamePreferences.includes(pref)}
+                          onChange={() => handleMultiSelectChange('segments.gamePreferences', pref)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{pref}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marketing Channel
+                  </label>
+                  <select
+                    value={formData.segments.marketingChannel}
+                    onChange={(e) => handleInputChange('segments.marketingChannel', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    aria-label="Marketing Channel"
+                  >
+                    <option value="">Select Channel...</option>
+                    {MARKETING_CHANNELS.map(channel => (
+                      <option key={channel} value={channel}>{channel}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Campaign Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.segments.campaignName}
+                    onChange={(e) => handleInputChange('segments.campaignName', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Enter campaign name"
+                    aria-label="Campaign Name"
                   />
                 </div>
               </div>
-              {errors.rewards && <p className="mt-1 text-xs text-red-600">{errors.rewards}</p>}
             </div>
 
-            {/* Ad Support */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="adOffer"
-                checked={formData.adOffer}
-                onChange={(e) => handleInputChange('adOffer', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="adOffer" className="ml-2 text-sm text-gray-700">
-                This is an ad-supported offer
-              </label>
+            {/* SECTION 3: Placement & Creative Management */}
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-sm font-medium text-gray-900 mb-4">Placement & Creative Management</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Object.entries(CREATIVE_SECTIONS).map(([key, section], index) => {
+                  const creative = formData.creatives[key];
+                  const isDragging = dragStates[key];
+                  const isWideSection = key === 'highestEarningSection' && index === 2;
+
+                  return (
+                    <div key={key} className={isWideSection ? 'md:col-span-1' : ''}>
+                      <div className="border border-gray-200 rounded-lg p-4">
+                        <h5 className="text-sm font-medium text-gray-800 mb-3">{section.name}</h5>
+
+                        {/* Preview Area */}
+                        <div className="text-center mb-3">
+                          <div className="inline-block bg-gray-100 rounded-md px-3 py-2 text-xs text-gray-600 mb-2">
+                            {section.previewLabel}
+                          </div>
+                          {creative?.previewUrl && (
+                            <div className="relative inline-block">
+                              <img
+                                src={creative.previewUrl}
+                                alt="Preview"
+                                className="max-w-full max-h-20 rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeCreative(key)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <TrashIcon className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Upload Area */}
+                        <div
+                          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                            isDragging
+                              ? 'border-blue-400 bg-blue-50'
+                              : 'border-gray-300 hover:border-blue-400'
+                          }`}
+                          onDragOver={(e) => handleDragOver(e, key)}
+                          onDragLeave={(e) => handleDragLeave(e, key)}
+                          onDrop={(e) => handleDrop(e, key)}
+                          onClick={() => fileInputRefs.current[key]?.click()}
+                        >
+                          <CloudArrowUpIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                          <p className="text-sm font-medium text-gray-700 mb-1">Upload Creative</p>
+                          <p className="text-xs text-gray-500">Recommended: {section.recommendedSize}</p>
+                          <input
+                            ref={(el) => fileInputRefs.current[key] = el}
+                            type="file"
+                            accept=".png,.jpg,.jpeg,.webp"
+                            onChange={(e) => handleFileUpload(key, e.target.files)}
+                            className="hidden"
+                            aria-label={`Upload ${section.name} Creative`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Form Actions */}
@@ -348,7 +681,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                 type="submit"
                 className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                {offer ? 'Update Offer' : 'Create Offer'}
+                {offer ? 'Update Offer' : 'Save Offer'}
               </button>
             </div>
           </form>

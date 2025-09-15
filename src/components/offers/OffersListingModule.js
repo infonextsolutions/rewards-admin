@@ -5,51 +5,40 @@ import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, FunnelIcon } from '@heroicons
 import FilterDropdown from '../ui/FilterDropdown';
 import Pagination from '../ui/Pagination';
 import EditOfferModal from './modals/EditOfferModal';
+import ConfirmationModal from './modals/ConfirmationModal';
+import ManageSegmentsModal from './modals/ManageSegmentsModal';
 
-const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
-const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
-const TIERS = ['Bronze', 'Silver', 'Gold'];
-const STATUS_TYPES = ['Active', 'Inactive', 'Pending', 'Expired'];
+const STATUS_TYPES = ['Active', 'Inactive'];
+const MARKETING_CHANNELS = ['Facebook', 'TikTok', 'Google', 'Instagram', 'Twitter'];
 
 const mockOffers = [
   {
-    id: 'OFF001',
-    name: 'Survey Completion Offer',
-    sdk: 'BitLabs',
-    expiry: '2024-12-31',
-    status: 'Active',
-    tierAccess: ['Bronze', 'Silver', 'Gold'],
-    countries: ['US', 'CA', 'UK'],
-    xptrRules: 'Complete survey worth 150+ points',
-    adOffer: true,
-    rewardXP: 500,
-    rewardCoins: 100
+    id: 'WELCOME_001',
+    offerName: 'Welcome Bonus',
+    sdkOffer: 'WELCOME_001',
+    rewardType: 'Coins',
+    rewardValue: 500,
+    retentionRate: '85%',
+    clickRate: '12%',
+    installRate: '8.5%',
+    roas: '245%',
+    marketingChannel: 'Facebook',
+    campaign: 'Holiday Campaign',
+    status: 'Active'
   },
   {
-    id: 'OFF002',
-    name: 'App Download Challenge',
-    sdk: 'AdGem',
-    expiry: '2024-11-30',
-    status: 'Active',
-    tierAccess: ['Silver', 'Gold'],
-    countries: ['US', 'AU', 'UK'],
-    xptrRules: 'Download and open app 3 times',
-    adOffer: false,
-    rewardXP: 750,
-    rewardCoins: 150
-  },
-  {
-    id: 'OFF003',
-    name: 'Premium Trial Signup',
-    sdk: 'OfferToro',
-    expiry: '2024-10-15',
-    status: 'Pending',
-    tierAccess: ['Gold'],
-    countries: ['US', 'CA'],
-    xptrRules: 'Sign up for premium trial',
-    adOffer: true,
-    rewardXP: 1000,
-    rewardCoins: 250
+    id: 'DAILY_002',
+    offerName: 'Daily Login Bonus',
+    sdkOffer: 'DAILY_002',
+    rewardType: 'XP',
+    rewardValue: 100,
+    retentionRate: '72%',
+    clickRate: '18%',
+    installRate: '6.8%',
+    roas: '180%',
+    marketingChannel: 'TikTok',
+    campaign: 'Daily Engagement',
+    status: 'Active'
   }
 ];
 
@@ -57,33 +46,29 @@ export default function OffersListingModule() {
   const [offers, setOffers] = useState(mockOffers);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
-    country: 'all',
-    sdk: 'all',
-    xptr: 'all',
-    adOffer: 'all',
-    status: 'all'
+    status: 'all',
+    channel: 'all'
   });
+  const [activeTab, setActiveTab] = useState('offer');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSegmentsModal, setShowSegmentsModal] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
 
   // Filter offers
   const filteredOffers = useMemo(() => {
     return offers.filter(offer => {
       const matchesSearch =
-        offer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.sdk.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.id.toLowerCase().includes(searchTerm.toLowerCase());
+        offer.offerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        offer.sdkOffer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        offer.campaign.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesCountry = filters.country === 'all' || offer.countries.includes(filters.country);
-      const matchesSdk = filters.sdk === 'all' || offer.sdk === filters.sdk;
       const matchesStatus = filters.status === 'all' || offer.status === filters.status;
-      const matchesAdOffer = filters.adOffer === 'all' ||
-        (filters.adOffer === 'yes' && offer.adOffer) ||
-        (filters.adOffer === 'no' && !offer.adOffer);
+      const matchesChannel = filters.channel === 'all' || offer.marketingChannel === filters.channel;
 
-      return matchesSearch && matchesCountry && matchesSdk && matchesStatus && matchesAdOffer;
+      return matchesSearch && matchesStatus && matchesChannel;
     });
   }, [offers, searchTerm, filters]);
 
@@ -92,57 +77,41 @@ export default function OffersListingModule() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedOffers = filteredOffers.slice(startIndex, startIndex + itemsPerPage);
 
+  // Get metric chip styling based on value
+  const getMetricChipStyle = (value, type) => {
+    const numValue = parseFloat(value.replace('%', ''));
+
+    if (type === 'retention') {
+      return numValue >= 80 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
+    } else if (type === 'click') {
+      return numValue >= 15 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
+    } else if (type === 'install') {
+      return numValue >= 8 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
+    } else if (type === 'roas') {
+      return numValue >= 200 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
+    }
+    return 'bg-[#FFF7E6] text-[#B66A00]';
+  };
+
+  const getMetricChip = (value, type) => {
+    const chipStyle = getMetricChipStyle(value, type);
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${chipStyle}`}>
+        {value}
+      </span>
+    );
+  };
+
   const getStatusBadge = (status) => {
     const statusStyles = {
-      'Active': 'bg-green-100 text-green-800',
-      'Inactive': 'bg-gray-100 text-gray-800',
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Expired': 'bg-red-100 text-red-800'
+      'Active': 'bg-[#E9F7EF] text-[#0F8A3B]',
+      'Inactive': 'bg-gray-100 text-gray-800'
     };
 
     return (
       <span className={`inline-flex items-center justify-center min-w-[70px] px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status]}`}>
         {status}
       </span>
-    );
-  };
-
-  const getTierBadges = (tiers) => {
-    const tierColors = {
-      'Bronze': 'bg-orange-100 text-orange-800',
-      'Silver': 'bg-gray-100 text-gray-800',
-      'Gold': 'bg-yellow-100 text-yellow-800'
-    };
-
-    return (
-      <div className="flex flex-wrap gap-1">
-        {tiers.map(tier => (
-          <span key={tier} className={`px-2 py-0.5 rounded text-xs font-medium ${tierColors[tier]}`}>
-            {tier}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
-  const getCountryFlags = (countries) => {
-    const countryFlags = {
-      'US': '🇺🇸', 'CA': '🇨🇦', 'UK': '🇬🇧', 'AU': '🇦🇺',
-      'DE': '🇩🇪', 'FR': '🇫🇷', 'ES': '🇪🇸', 'IT': '🇮🇹',
-      'NL': '🇳🇱', 'SE': '🇸🇪'
-    };
-
-    return (
-      <div className="flex flex-wrap gap-1">
-        {countries.slice(0, 3).map(country => (
-          <span key={country} className="text-sm text-gray-800" title={country}>
-            {countryFlags[country] || country}
-          </span>
-        ))}
-        {countries.length > 3 && (
-          <span className="text-xs text-gray-700 ml-1">+{countries.length - 3}</span>
-        )}
-      </div>
     );
   };
 
@@ -154,6 +123,32 @@ export default function OffersListingModule() {
   const handleCreateOffer = () => {
     setSelectedOffer(null);
     setShowEditModal(true);
+  };
+
+  const handleSegmentsOffer = (offer) => {
+    setSelectedOffer(offer);
+    setShowSegmentsModal(true);
+  };
+
+  const handleSaveSegments = (segmentData) => {
+    console.log('Applying segment changes:', segmentData);
+    // TODO: Implement API call to save segment changes
+    // For now, just close the modal
+    setShowSegmentsModal(false);
+    setSelectedOffer(null);
+  };
+
+  const handleDeleteOffer = (offer) => {
+    setSelectedOffer(offer);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteOffer = () => {
+    if (selectedOffer) {
+      setOffers(prev => prev.filter(offer => offer.id !== selectedOffer.id));
+      setShowDeleteModal(false);
+      setSelectedOffer(null);
+    }
   };
 
   const handleSaveOffer = (offerData) => {
@@ -168,12 +163,6 @@ export default function OffersListingModule() {
     }
     setShowEditModal(false);
     setSelectedOffer(null);
-  };
-
-  const handleDeleteOffer = (offerId) => {
-    if (confirm('Are you sure you want to delete this offer?')) {
-      setOffers(prev => prev.filter(offer => offer.id !== offerId));
-    }
   };
 
   return (
@@ -193,10 +182,10 @@ export default function OffersListingModule() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={handleCreateOffer}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
-                Add Offer
+                Add New Offer
               </button>
             </div>
           </div>
@@ -210,10 +199,11 @@ export default function OffersListingModule() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search offers by name, SDK, or ID..."
+                  placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  aria-label="Search offers"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,45 +221,26 @@ export default function OffersListingModule() {
               </div>
 
               <select
-                value={filters.country}
-                onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Countries</option>
-                {COUNTRIES.map(country => (
-                  <option key={country} value={country}>{country}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.sdk}
-                onChange={(e) => setFilters(prev => ({ ...prev, sdk: e.target.value }))}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All SDKs</option>
-                {SDK_PROVIDERS.map(sdk => (
-                  <option key={sdk} value={sdk}>{sdk}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.adOffer}
-                onChange={(e) => setFilters(prev => ({ ...prev, adOffer: e.target.value }))}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">Ad Offers</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-
-              <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                aria-label="Filter by status"
               >
                 <option value="all">All Status</option>
                 {STATUS_TYPES.map(status => (
                   <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+
+              <select
+                value={filters.channel}
+                onChange={(e) => setFilters(prev => ({ ...prev, channel: e.target.value }))}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                aria-label="Filter by channel"
+              >
+                <option value="all">All Channels</option>
+                {MARKETING_CHANNELS.map(channel => (
+                  <option key={channel} value={channel}>{channel}</option>
                 ))}
               </select>
             </div>
@@ -285,16 +256,31 @@ export default function OffersListingModule() {
                   Offer Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SDK
+                  SDK Offer
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Expiry
+                  Reward Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tier Access
+                  Reward Value
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Countries
+                  Retention Rate
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Click Rate
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Install Rate
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ROAS
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Marketing Channel
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Campaign
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -307,7 +293,7 @@ export default function OffersListingModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedOffers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="12" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || Object.values(filters).some(f => f !== 'all')
                       ? 'No offers match your current filters.'
                       : 'No offers configured yet. Add your first offer to get started.'}
@@ -317,22 +303,34 @@ export default function OffersListingModule() {
                 paginatedOffers.map((offer) => (
                   <tr key={offer.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{offer.name}</div>
-                        <div className="text-xs text-gray-700">{offer.id}</div>
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{offer.offerName}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{offer.sdk}</div>
+                      <div className="text-sm text-gray-900">{offer.sdkOffer}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{new Date(offer.expiry).toLocaleDateString()}</div>
+                      <div className="text-sm text-gray-900">{offer.rewardType}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getTierBadges(offer.tierAccess)}
+                      <div className="text-sm font-medium text-gray-900">{offer.rewardValue}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getCountryFlags(offer.countries)}
+                      {getMetricChip(offer.retentionRate, 'retention')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getMetricChip(offer.clickRate, 'click')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getMetricChip(offer.installRate, 'install')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getMetricChip(offer.roas, 'roas')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{offer.marketingChannel}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{offer.campaign}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(offer.status)}
@@ -341,17 +339,24 @@ export default function OffersListingModule() {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleEditOffer(offer)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50"
+                          className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
                           title="Edit offer"
                         >
-                          <PencilIcon className="h-4 w-4" />
+                          Edit
                         </button>
                         <button
-                          onClick={() => handleDeleteOffer(offer.id)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
+                          onClick={() => handleSegmentsOffer(offer)}
+                          className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                          title="Segments"
+                        >
+                          Segments
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOffer(offer)}
+                          className="px-3 py-1 text-xs font-medium bg-[#FFEBEC] text-[#C0392B] hover:bg-red-200 rounded-md"
                           title="Delete offer"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -385,6 +390,31 @@ export default function OffersListingModule() {
         }}
         offer={selectedOffer}
         onSave={handleSaveOffer}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedOffer(null);
+        }}
+        onConfirm={confirmDeleteOffer}
+        title="Delete Offer"
+        message={`Are you sure you want to delete the offer "${selectedOffer?.offerName}"? This action cannot be undone.`}
+        confirmText="Delete Offer"
+        type="warning"
+      />
+
+      {/* Manage Segments Modal */}
+      <ManageSegmentsModal
+        isOpen={showSegmentsModal}
+        onClose={() => {
+          setShowSegmentsModal(false);
+          setSelectedOffer(null);
+        }}
+        offer={selectedOffer}
+        onSave={handleSaveSegments}
       />
     </div>
   );
