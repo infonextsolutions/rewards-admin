@@ -30,8 +30,8 @@ const menuItems = [
   { id: 'spin-wheel', label: 'Spin Wheel Manager', icon: '/Rewards.png', href: '/spin-wheel' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
   // { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
-  { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
-   { id: 'push-notifications', label: 'Push Notification Center', icon: '/Settings.png', href: '/push-notifications' },
+  // { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
+  //  { id: 'push-notifications', label: 'Push Notification Center', icon: '/Settings.png', href: '/push-notifications' },
   { id: 'security-compliance', label: 'Security & Compliance', icon: '/Settings.png', href: '/security-compliance' },
   { id: 'settings-integrations', label: 'Settings & Integrations', icon: '/Integrations.png', href: '/settings-integrations' },
 ];
