@@ -2,11 +2,25 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: '/dashboard.png', href: '/' },
   { id: 'users', label: 'Users', icon: '/Users (2).png', href: '/users' },
-  { id: 'offers', label: 'Offers', icon: '/Offers.png', href: '/offers' },
+  {
+    id: 'offers',
+    label: 'Game & Offer Management',
+    icon: '/Offers.png',
+    href: '/offers',
+    subItems: [
+      { id: 'offers-listing', label: 'Offers Listing', href: '/offers' },
+      { id: 'games-listing', label: 'Games Listing', href: '/offers/games' },
+      { id: 'view-tasks', label: 'View Tasks', href: '/offers/tasks' },
+      { id: 'display-rules', label: 'Game Display Rules', href: '/offers/display-rules' },
+      { id: 'progression-rules', label: 'Task Progression Rules', href: '/offers/progression-rules' },
+      { id: 'gameplay-settings', label: 'Gameplay Logic Settings', href: '/offers/gameplay-settings' }
+    ]
+  },
   { id: 'surveys-offers', label: 'Surveys & Non-Gaming Offers', icon: '/Offers.png', href: '/surveys-offers' },
   { id: 'challenges-bonuses', label: 'Daily Challenges & Bonuses', icon: '/Rewards.png', href: '/challenges-bonuses' },
   { id: 'analytics', label: 'Marketing Attribution and Analytics', icon: '/Analytics and Reports.png', href: '/analytics' },
@@ -15,7 +29,7 @@ const menuItems = [
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
   { id: 'spin-wheel', label: 'Spin Wheel Manager', icon: '/Rewards.png', href: '/spin-wheel' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
-  { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
+  // { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
   { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
    { id: 'push-notifications', label: 'Push Notification Center', icon: '/Settings.png', href: '/push-notifications' },
   { id: 'security-compliance', label: 'Security & Compliance', icon: '/Settings.png', href: '/security-compliance' },
@@ -25,9 +39,46 @@ const menuItems = [
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState(() => {
-    const currentItem = menuItems.find(item => item.href === pathname);
-    return currentItem ? currentItem.id : 'dashboard';
+    // Check for main items and sub-items
+    for (const item of menuItems) {
+      if (item.href === pathname) {
+        return item.id;
+      }
+      if (item.subItems) {
+        const subItem = item.subItems.find(sub => sub.href === pathname);
+        if (subItem) {
+          return item.id;
+        }
+      }
+    }
+    return 'dashboard';
   });
+
+  const [expandedItems, setExpandedItems] = useState(() => {
+    // Auto-expand parent if current path matches a sub-item
+    const expandedSet = new Set();
+    for (const item of menuItems) {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(sub => sub.href === pathname);
+        if (hasActiveSubItem) {
+          expandedSet.add(item.id);
+        }
+      }
+    }
+    return expandedSet;
+  });
+
+  const toggleExpanded = (itemId) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <>
@@ -61,31 +112,83 @@ export default function Sidebar({ isOpen, onClose }) {
         `}</style>
         <ul className="space-y-1">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href;
-            
+            const isMainActive = pathname === item.href;
+            const hasActiveSubItem = item.subItems?.some(sub => sub.href === pathname);
+            const isParentActive = isMainActive || hasActiveSubItem;
+            const isExpanded = expandedItems.has(item.id);
+
             return (
               <li key={item.id}>
-                <Link
-                  href={item.href}
-                  onClick={() => {
-                    setActiveItem(item.id);
-                    onClose?.();
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
-                    isActive
-                      ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-500'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                  }`}
-                >
-                  <Image
-                    src={item.icon}
-                    alt={`${item.label} icon`}
-                    width={20}
-                    height={20}
-                    className="flex-shrink-0"
-                  />
-                  <span className="font-medium">{item.label}</span>
-                </Link>
+                {/* Main Item */}
+                <div className="flex items-center">
+                  <Link
+                    href={item.href}
+                    onClick={() => {
+                      setActiveItem(item.id);
+                      if (!item.subItems) {
+                        onClose?.();
+                      }
+                    }}
+                    className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                      isMainActive
+                        ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-500'
+                        : isParentActive
+                        ? 'bg-emerald-25 text-emerald-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                    }`}
+                  >
+                    <Image
+                      src={item.icon}
+                      alt={`${item.label} icon`}
+                      width={20}
+                      height={20}
+                      className="flex-shrink-0"
+                    />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+
+                  {/* Expand/Collapse Button */}
+                  {item.subItems && (
+                    <button
+                      onClick={() => toggleExpanded(item.id)}
+                      className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {isExpanded ? (
+                        <ChevronDownIcon className="h-4 w-4" />
+                      ) : (
+                        <ChevronRightIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Sub Items */}
+                {item.subItems && isExpanded && (
+                  <ul className="mt-1 ml-6 space-y-1">
+                    {item.subItems.map((subItem) => {
+                      const isSubActive = pathname === subItem.href;
+
+                      return (
+                        <li key={subItem.id}>
+                          <Link
+                            href={subItem.href}
+                            onClick={() => {
+                              setActiveItem(item.id);
+                              onClose?.();
+                            }}
+                            className={`block px-4 py-2 rounded-md text-sm transition-all duration-200 ${
+                              isSubActive
+                                ? 'bg-emerald-100 text-emerald-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                            }`}
+                          >
+                            {subItem.label}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </li>
             );
           })}
