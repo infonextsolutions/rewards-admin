@@ -5,6 +5,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const REWARD_TYPES = ['XP', 'Coins', 'XP + Coins', 'XP Boost', 'Coins + XP Boost'];
 const REPEAT_FREQ = ['Once', 'Daily', 'Weekly', 'Monthly'];
+const TIER_RESTRICTIONS = ['Bronze', 'Silver', 'Gold', 'All Tiers'];
 
 export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
     milestoneLogic: '',
     rewardType: 'XP',
     rewardValue: 0,
+    tierRestriction: 'All Tiers',
     startDate: '',
     endDate: '',
     repeatFrequency: 'Once',
@@ -28,6 +30,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
         rewardType: task.rewardType || 'XP',
         // if older tasks had separate xp/coins keep numeric fallback
         rewardValue: task.rewardValue ?? (task.rewardXP ?? 0) ?? 0,
+        tierRestriction: task.tierRestriction || 'All Tiers',
         startDate: task.startDate ? toDatetimeLocal(task.startDate) : '',
         endDate: task.endDate ? toDatetimeLocal(task.endDate) : '',
         repeatFrequency: task.repeatFrequency || 'Once',
@@ -40,6 +43,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
         milestoneLogic: '',
         rewardType: 'XP',
         rewardValue: 0,
+        tierRestriction: 'All Tiers',
         startDate: '',
         endDate: '',
         repeatFrequency: 'Once',
@@ -95,6 +99,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
       milestoneLogic: formData.milestoneLogic.trim(),
       rewardType: formData.rewardType,
       rewardValue: Number(formData.rewardValue),
+      tierRestriction: formData.tierRestriction,
       startDate: fromDatetimeLocal(formData.startDate),
       endDate: fromDatetimeLocal(formData.endDate),
       repeatFrequency: formData.repeatFrequency,
@@ -158,7 +163,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
                 {errors.milestoneLogic && <p className="mt-1 text-xs text-red-600">{errors.milestoneLogic}</p>}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Reward Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reward Type</label>
@@ -183,6 +188,18 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
                     className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${errors.rewardValue ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
                   />
                   {errors.rewardValue && <p className="mt-1 text-xs text-red-600">{errors.rewardValue}</p>}
+                </div>
+
+                {/* Tier Restriction */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tier Restriction</label>
+                  <select
+                    value={formData.tierRestriction}
+                    onChange={(e) => handleInputChange('tierRestriction', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                  >
+                    {TIER_RESTRICTIONS.map(tier => <option key={tier} value={tier}>{tier}</option>)}
+                  </select>
                 </div>
               </div>
 

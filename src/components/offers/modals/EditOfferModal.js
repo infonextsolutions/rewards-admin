@@ -37,21 +37,14 @@ const MARKETING_CHANNELS = [
   'Facebook', 'TikTok', 'Organic', 'Paid', 'Google', 'Instagram', 'Twitter', 'YouTube'
 ];
 
+const TIERS = ['Gold', 'Silver', 'Bronze', 'All'];
+
 const CREATIVE_SECTIONS = {
-  raceSection: {
-    name: 'Race Section',
-    previewLabel: 'Small Square',
-    recommendedSize: '200x200px'
-  },
-  mostPlayedSection: {
-    name: 'Most Played Section',
-    previewLabel: 'Circle',
-    recommendedSize: '150x150px'
-  },
-  highestEarningSection: {
-    name: 'Highest Earning Section',
-    previewLabel: 'Banner',
-    recommendedSize: '320x100px'
+  offerCard: {
+    name: 'Offer Card',
+    previewLabel: 'Card Layout',
+    recommendedSize: '320x180px',
+    description: 'Main visual for the offer display'
   }
 };
 
@@ -74,10 +67,9 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
       marketingChannel: '',
       campaignName: ''
     },
+    tiers: [],
     creatives: {
-      raceSection: null,
-      mostPlayedSection: null,
-      highestEarningSection: null
+      offerCard: []
     }
   });
 
@@ -106,10 +98,9 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
           marketingChannel: offer.marketingChannel || '',
           campaignName: offer.campaign || ''
         },
+        tiers: offer.tiers || [],
         creatives: offer.creatives || {
-          raceSection: null,
-          mostPlayedSection: null,
-          highestEarningSection: null
+          offerCard: []
         }
       });
     } else {
@@ -132,10 +123,9 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
           marketingChannel: '',
           campaignName: ''
         },
+        tiers: [],
         creatives: {
-          raceSection: null,
-          mostPlayedSection: null,
-          highestEarningSection: null
+          offerCard: []
         }
       });
     }
@@ -170,21 +160,45 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
   };
 
   const handleMultiSelectChange = (field, value) => {
-    const [section, subField] = field.split('.');
-    setFormData(prev => {
-      const currentArray = prev[section][subField];
-      const updatedArray = currentArray.includes(value)
-        ? currentArray.filter(item => item !== value)
-        : [...currentArray, value];
+    if (field === 'tiers') {
+      // Handle tiers directly (not nested in segments)
+      setFormData(prev => {
+        const currentArray = prev.tiers;
+        const updatedArray = currentArray.includes(value)
+          ? currentArray.filter(item => item !== value)
+          : [...currentArray, value];
 
-      return {
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [subField]: updatedArray
-        }
-      };
-    });
+        return {
+          ...prev,
+          tiers: updatedArray
+        };
+      });
+
+      // Clear tier error when user interacts
+      if (errors.tiers) {
+        setErrors(prev => ({
+          ...prev,
+          tiers: ''
+        }));
+      }
+    } else {
+      // Handle nested segments fields
+      const [section, subField] = field.split('.');
+      setFormData(prev => {
+        const currentArray = prev[section][subField];
+        const updatedArray = currentArray.includes(value)
+          ? currentArray.filter(item => item !== value)
+          : [...currentArray, value];
+
+        return {
+          ...prev,
+          [section]: {
+            ...prev[section],
+            [subField]: updatedArray
+          }
+        };
+      });
+    }
   };
 
   const handleCountryChange = (country) => {
@@ -211,6 +225,9 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
     if (!formData.rewardValue || formData.rewardValue < 1) {
       newErrors.rewardValue = 'Reward value must be at least 1';
     }
+    if (!formData.tiers || formData.tiers.length === 0) {
+      newErrors.tiers = 'At least one tier must be selected';
+    }
 
     // Date validation
     if (formData.startDate && formData.endDate) {
@@ -226,37 +243,45 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
   };
 
   const handleFileUpload = (sectionKey, files) => {
-    const file = files[0];
-    if (!file) return;
+    const uploadedFiles = Array.from(files);
+    if (uploadedFiles.length === 0) return;
 
-    // Validate file type
+    const validFiles = [];
     const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      alert('Please upload only PNG, JPG, JPEG, or WebP images');
-      return;
-    }
 
-    // Validate file size (2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('File size must be less than 2MB');
-      return;
-    }
-
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-
-    setFormData(prev => ({
-      ...prev,
-      creatives: {
-        ...prev.creatives,
-        [sectionKey]: {
-          file: file,
-          filename: file.name,
-          url: previewUrl,
-          previewUrl: previewUrl
-        }
+    for (const file of uploadedFiles) {
+      // Validate file type
+      if (!allowedTypes.includes(file.type)) {
+        alert(`${file.name}: Please upload only PNG, JPG, JPEG, or WebP images`);
+        continue;
       }
-    }));
+
+      // Validate file size (2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert(`${file.name}: File size must be less than 2MB`);
+        continue;
+      }
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      validFiles.push({
+        file: file,
+        filename: file.name,
+        url: previewUrl,
+        previewUrl: previewUrl,
+        id: `${file.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      });
+    }
+
+    if (validFiles.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        creatives: {
+          ...prev.creatives,
+          [sectionKey]: [...prev.creatives[sectionKey], ...validFiles]
+        }
+      }));
+    }
   };
 
   const handleDragOver = (e, sectionKey) => {
@@ -276,17 +301,35 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
     handleFileUpload(sectionKey, files);
   };
 
-  const removeCreative = (sectionKey) => {
-    if (formData.creatives[sectionKey]?.previewUrl) {
-      URL.revokeObjectURL(formData.creatives[sectionKey].previewUrl);
-    }
-    setFormData(prev => ({
-      ...prev,
-      creatives: {
-        ...prev.creatives,
-        [sectionKey]: null
+  const removeCreative = (sectionKey, creativeId = null) => {
+    if (creativeId) {
+      // Remove specific creative from array
+      const creativeToRemove = formData.creatives[sectionKey].find(c => c.id === creativeId);
+      if (creativeToRemove?.previewUrl) {
+        URL.revokeObjectURL(creativeToRemove.previewUrl);
       }
-    }));
+      setFormData(prev => ({
+        ...prev,
+        creatives: {
+          ...prev.creatives,
+          [sectionKey]: prev.creatives[sectionKey].filter(c => c.id !== creativeId)
+        }
+      }));
+    } else {
+      // Remove all creatives (legacy support)
+      formData.creatives[sectionKey].forEach(creative => {
+        if (creative?.previewUrl) {
+          URL.revokeObjectURL(creative.previewUrl);
+        }
+      });
+      setFormData(prev => ({
+        ...prev,
+        creatives: {
+          ...prev.creatives,
+          [sectionKey]: []
+        }
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -597,45 +640,113 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                     aria-label="Campaign Name"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tier Access *
+                  </label>
+                  <div className={`space-y-2 max-h-32 overflow-y-auto border rounded-md p-3 ${
+                    errors.tiers ? 'border-red-300' : 'border-gray-200'
+                  }`}>
+                    {TIERS.map(tier => {
+                      const getTierBadgeStyle = (tier) => {
+                        switch (tier) {
+                          case 'Gold': return 'bg-yellow-100 text-yellow-800';
+                          case 'Silver': return 'bg-gray-100 text-gray-800';
+                          case 'Bronze': return 'bg-amber-100 text-amber-800';
+                          case 'All': return 'bg-blue-100 text-blue-800';
+                          default: return 'bg-gray-100 text-gray-800';
+                        }
+                      };
+
+                      const getTierIcon = (tier) => {
+                        switch (tier) {
+                          case 'Gold': return '🟡';
+                          case 'Silver': return '⚪';
+                          case 'Bronze': return '🟤';
+                          case 'All': return '🔵';
+                          default: return '⚫';
+                        }
+                      };
+
+                      return (
+                        <label key={tier} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.tiers.includes(tier)}
+                              onChange={() => handleMultiSelectChange('tiers', tier)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{tier}</span>
+                          </div>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTierBadgeStyle(tier)}`}>
+                            <span className="mr-1">{getTierIcon(tier)}</span>
+                            {tier}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {errors.tiers && <p className="mt-1 text-xs text-red-600">{errors.tiers}</p>}
+                  <p className="mt-1 text-xs text-gray-500">Select which user tiers can access this offer</p>
+                </div>
               </div>
             </div>
 
-            {/* SECTION 3: Placement & Creative Management */}
+            {/* SECTION 3: Offer Card Creative Management */}
             <div className="border-t border-gray-200 pt-6">
-              <h4 className="text-sm font-medium text-gray-900 mb-4">Placement & Creative Management</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Object.entries(CREATIVE_SECTIONS).map(([key, section], index) => {
-                  const creative = formData.creatives[key];
+              <h4 className="text-sm font-medium text-gray-900 mb-4">Offer Card Creative Management</h4>
+              <div className="space-y-4">
+                {Object.entries(CREATIVE_SECTIONS).map(([key, section]) => {
+                  const creatives = formData.creatives[key] || [];
                   const isDragging = dragStates[key];
-                  const isWideSection = key === 'highestEarningSection' && index === 2;
 
                   return (
-                    <div key={key} className={isWideSection ? 'md:col-span-1' : ''}>
+                    <div key={key}>
                       <div className="border border-gray-200 rounded-lg p-4">
-                        <h5 className="text-sm font-medium text-gray-800 mb-3">{section.name}</h5>
-
-                        {/* Preview Area */}
-                        <div className="text-center mb-3">
-                          <div className="inline-block bg-gray-100 rounded-md px-3 py-2 text-xs text-gray-600 mb-2">
-                            {section.previewLabel}
+                        <div className="flex justify-between items-center mb-3">
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-800">{section.name}</h5>
+                            <p className="text-xs text-gray-500 mt-1">{section.description}</p>
                           </div>
-                          {creative?.previewUrl && (
-                            <div className="relative inline-block">
-                              <img
-                                src={creative.previewUrl}
-                                alt="Preview"
-                                className="max-w-full max-h-20 rounded border"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeCreative(key)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                              >
-                                <TrashIcon className="h-3 w-3" />
-                              </button>
+                          <div className="text-right">
+                            <div className="inline-block bg-gray-100 rounded-md px-3 py-2 text-xs text-gray-600">
+                              {section.previewLabel}
                             </div>
-                          )}
+                          </div>
                         </div>
+
+                        {/* Existing Creatives Grid */}
+                        {creatives.length > 0 && (
+                          <div className="mb-4">
+                            <h6 className="text-xs font-medium text-gray-700 mb-2">Uploaded Creatives ({creatives.length})</h6>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                              {creatives.map((creative) => (
+                                <div key={creative.id} className="relative group">
+                                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                                    <img
+                                      src={creative.previewUrl}
+                                      alt={creative.filename}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeCreative(key, creative.id)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Remove creative"
+                                  >
+                                    <TrashIcon className="h-3 w-3" />
+                                  </button>
+                                  <p className="text-xs text-gray-600 mt-1 truncate" title={creative.filename}>
+                                    {creative.filename}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Upload Area */}
                         <div
@@ -650,12 +761,16 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                           onClick={() => fileInputRefs.current[key]?.click()}
                         >
                           <CloudArrowUpIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                          <p className="text-sm font-medium text-gray-700 mb-1">Upload Creative</p>
-                          <p className="text-xs text-gray-500">Recommended: {section.recommendedSize}</p>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-gray-700">Add Creatives</p>
+                            <p className="text-xs text-gray-500">Recommended: {section.recommendedSize}</p>
+                            <p className="text-xs text-gray-400">Drag & drop multiple files or click to browse</p>
+                          </div>
                           <input
                             ref={(el) => fileInputRefs.current[key] = el}
                             type="file"
                             accept=".png,.jpg,.jpeg,.webp"
+                            multiple
                             onChange={(e) => handleFileUpload(key, e.target.files)}
                             className="hidden"
                             aria-label={`Upload ${section.name} Creative`}

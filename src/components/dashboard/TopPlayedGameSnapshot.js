@@ -193,7 +193,7 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
         </div>
 
         {/* Filter Controls */}
-        <div className="flex gap-4">
+        {/* <div className="flex gap-4">
           <button className="inline-flex h-[30px] items-center gap-1.5 px-3 py-1.5 bg-[#fff2ab33] rounded-[20px] border border-solid border-[#ffde5b]">
             <span className="font-semibold text-[#fff2ab] text-sm">
               Age &amp; Gender
@@ -208,7 +208,7 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
               Region &amp; Tier
             </span>
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Donut Charts for Demographics */}

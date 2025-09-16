@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
+const XP_TIERS = ['Bronze', 'Silver', 'Gold', 'All'];
+const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
 
 export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const [formData, setFormData] = useState({
@@ -14,7 +16,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     taskCount: 0,
     activeVisible: true,
     fallbackGame: false,
-    thumbnail: null
+    thumbnail: null,
+    xpTier: '',
+    countries: []
   });
 
   useEffect(() => {
@@ -27,7 +31,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         taskCount: game.taskCount || 0,
         activeVisible: game.activeVisible ?? true,
         fallbackGame: game.fallbackGame ?? false,
-        thumbnail: game.thumbnail || null
+        thumbnail: game.thumbnail || null,
+        xpTier: game.xpTier || '',
+        countries: game.countries || []
       });
     } else {
       setFormData({
@@ -38,13 +44,24 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         taskCount: 0,
         activeVisible: true,
         fallbackGame: false,
-        thumbnail: null
+        thumbnail: null,
+        xpTier: '',
+        countries: []
       });
     }
   }, [game, isOpen]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCountryToggle = (country) => {
+    setFormData(prev => ({
+      ...prev,
+      countries: prev.countries.includes(country)
+        ? prev.countries.filter(c => c !== country)
+        : [...prev.countries, country]
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -155,15 +172,51 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   />
                 </div>
 
-                <div className="flex items-center mt-6">
-                  <input
-                    type="checkbox"
-                    checked={formData.activeVisible}
-                    onChange={(e) => handleInputChange('activeVisible', e.target.checked)}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Active/Visible</span>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    XP Tier
+                  </label>
+                  <select
+                    value={formData.xpTier}
+                    onChange={(e) => handleInputChange('xpTier', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">Choose XP Tier...</option>
+                    {XP_TIERS.map(tier => (
+                      <option key={tier} value={tier}>{tier}</option>
+                    ))}
+                  </select>
                 </div>
+              </div>
+
+              {/* Target Countries */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Target Countries
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+                  {COUNTRIES.map(country => (
+                    <label key={country} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={formData.countries.includes(country)}
+                        onChange={() => handleCountryToggle(country)}
+                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{country}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center mt-6">
+                <input
+                  type="checkbox"
+                  checked={formData.activeVisible}
+                  onChange={(e) => handleInputChange('activeVisible', e.target.checked)}
+                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Active/Visible</span>
               </div>
 
               <div className="flex items-center mt-4">

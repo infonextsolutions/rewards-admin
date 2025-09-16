@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, FunnelIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, FunnelIcon, ArrowLeftIcon, CogIcon } from '@heroicons/react/24/outline';
 import FilterDropdown from '../ui/FilterDropdown';
 import Pagination from '../ui/Pagination';
 import Link from 'next/link';
@@ -28,7 +28,8 @@ const mockTasks = [
     completionCount: 8500,
     successRate: '78.2%',
     avgCompletionTime: '12 min',
-    lastCompleted: '2024-03-15T10:30:00Z'
+    lastCompleted: '2024-03-15T10:30:00Z',
+    overrideActive: false
   },
   {
     id: 'TASK002',
@@ -44,7 +45,8 @@ const mockTasks = [
     completionCount: 3200,
     successRate: '45.6%',
     avgCompletionTime: '7 days',
-    lastCompleted: '2024-03-15T08:45:00Z'
+    lastCompleted: '2024-03-15T08:45:00Z',
+    overrideActive: false
   },
   {
     id: 'TASK003',
@@ -60,7 +62,8 @@ const mockTasks = [
     completionCount: 6750,
     successRate: '65.3%',
     avgCompletionTime: '8 min',
-    lastCompleted: '2024-03-15T14:20:00Z'
+    lastCompleted: '2024-03-15T14:20:00Z',
+    overrideActive: false
   },
   {
     id: 'TASK004',
@@ -76,7 +79,8 @@ const mockTasks = [
     completionCount: 120,
     successRate: '25.8%',
     avgCompletionTime: '3 days',
-    lastCompleted: '2024-03-14T16:10:00Z'
+    lastCompleted: '2024-03-14T16:10:00Z',
+    overrideActive: true
   },
   {
     id: 'TASK005',
@@ -92,7 +96,8 @@ const mockTasks = [
     completionCount: 14250,
     successRate: '82.1%',
     avgCompletionTime: '5 min',
-    lastCompleted: '2024-03-15T11:55:00Z'
+    lastCompleted: '2024-03-15T11:55:00Z',
+    overrideActive: false
   }
 ];
 
@@ -166,15 +171,33 @@ export default function ViewTasksModule() {
   };
 
   const getTierBadge = (tier) => {
-    const tierColors = {
-      'Bronze': 'bg-orange-100 text-orange-800',
-      'Silver': 'bg-gray-100 text-gray-800',
-      'Gold': 'bg-yellow-100 text-yellow-800',
-      'All Tiers': 'bg-blue-100 text-blue-800'
+    if (!tier) return null;
+
+    const getTierStyle = (tier) => {
+      switch (tier) {
+        case 'Gold': return 'bg-yellow-100 text-yellow-800';
+        case 'Silver': return 'bg-gray-100 text-gray-800';
+        case 'Bronze': return 'bg-amber-100 text-amber-800';
+        case 'All Tiers': return 'bg-blue-100 text-blue-800';
+        case 'All': return 'bg-blue-100 text-blue-800';
+        default: return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    const getTierIcon = (tier) => {
+      switch (tier) {
+        case 'Gold': return '🟡';
+        case 'Silver': return '⚪';
+        case 'Bronze': return '🟤';
+        case 'All Tiers': return '🔵';
+        case 'All': return '🔵';
+        default: return '⚫';
+      }
     };
 
     return (
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${tierColors[tier]}`}>
+      <span className={`inline-flex items-center justify-center min-w-[70px] px-2 py-0.5 rounded-full text-xs font-medium ${getTierStyle(tier)}`}>
+        <span className="mr-1">{getTierIcon(tier)}</span>
         {tier}
       </span>
     );
@@ -223,6 +246,17 @@ export default function ViewTasksModule() {
   const handleDeleteTask = (taskId) => {
     if (confirm('Are you sure you want to delete this task?')) {
       setTasks(prev => prev.filter(task => task.id !== taskId));
+    }
+  };
+
+  const handleToggleOverride = (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    const action = task?.overrideActive ? 'disable' : 'enable';
+
+    if (confirm(`Are you sure you want to ${action} override for this task? This will ${action === 'enable' ? 'bypass normal completion rules and allow manual completion control' : 'restore normal completion rule validation'}.`)) {
+      setTasks(prev => prev.map(task =>
+        task.id === taskId ? { ...task, overrideActive: !task.overrideActive } : task
+      ));
     }
   };
 
@@ -364,6 +398,9 @@ export default function ViewTasksModule() {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Override
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -371,7 +408,7 @@ export default function ViewTasksModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || Object.values(filters).some(f => f !== 'all')
                       ? 'No tasks match your current filters.'
                       : 'No tasks configured yet. Add your first task to get started.'}
@@ -404,6 +441,20 @@ export default function ViewTasksModule() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(task.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => handleToggleOverride(task.id)}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                            task.overrideActive
+                              ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200'
+                              : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                          }`}
+                          title={task.overrideActive ? 'Override is active - Click to disable' : 'Override is disabled - Click to enable'}
+                        >
+                          <CogIcon className="h-3 w-3 mr-1" />
+                          {task.overrideActive ? 'ON' : 'OFF'}
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center space-x-2">

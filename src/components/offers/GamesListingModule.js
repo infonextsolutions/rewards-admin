@@ -6,10 +6,12 @@ import Pagination from '../ui/Pagination';
 import Link from 'next/link';
 import EditGameModal from './modals/EditGameModal';
 import ManageSegmentsModal from './modals/ManageSegmentsModal';
+import GamePreviewModal from './modals/GamePreviewModal';
 
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
 const STATUS_TYPES = ['Active', 'Inactive', 'Testing', 'Paused'];
+const XP_TIERS = ['Bronze', 'Silver', 'Gold', 'All'];
 
 // mock data (includes fields used in screenshot)
 const mockGames = [
@@ -30,7 +32,8 @@ const mockGames = [
     clickRate: 15,
     installRate: 9.2,
     marketingChannel: 'TikTok',
-    campaign: 'Gaming Promo'
+    campaign: 'Gaming Promo',
+    xpTier: 'Gold'
   },
   {
     id: 'GAME002',
@@ -46,7 +49,8 @@ const mockGames = [
     clickRate: 10,
     installRate: 6.5,
     marketingChannel: 'Facebook',
-    campaign: 'Survey Boost'
+    campaign: 'Survey Boost',
+    xpTier: 'Silver'
   }
 ];
 
@@ -55,6 +59,7 @@ export default function GamesListingModule() {
   const columns = [
     { key: 'title', label: 'Game Title' },
     { key: 'sdk', label: 'SDK Game' },
+    { key: 'xptrRules', label: 'XPTR Rules' },
     { key: 'defaultTasks', label: 'Default Tasks' },
     { key: 'engagementTime', label: 'Engagement Time' },
     { key: 'retentionRate', label: 'Retention Rate' },
@@ -62,6 +67,8 @@ export default function GamesListingModule() {
     { key: 'installRate', label: 'Install Rate' },
     { key: 'marketingChannel', label: 'Marketing Channel' },
     { key: 'campaign', label: 'Campaign' },
+    { key: 'countries', label: 'Countries' },
+    { key: 'xpTier', label: 'XP Tier' },
     { key: 'status', label: 'Status' },
     { key: 'actions', label: 'Actions' }
   ];
@@ -72,13 +79,15 @@ export default function GamesListingModule() {
     country: 'all',
     sdk: 'all',
     adGame: 'all',
-    status: 'all'
+    status: 'all',
+    xpTier: 'all'
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showSegmentsModal, setShowSegmentsModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const filteredGames = useMemo(() => {
     return games.filter(game => {
@@ -95,8 +104,9 @@ export default function GamesListingModule() {
       const matchesAdGame = filters.adGame === 'all' ||
         (filters.adGame === 'yes' && game.adSupported) ||
         (filters.adGame === 'no' && !game.adSupported);
+      const matchesXpTier = filters.xpTier === 'all' || game.xpTier === filters.xpTier;
 
-      return matchesSearch && matchesCountry && matchesSdk && matchesStatus && matchesAdGame;
+      return matchesSearch && matchesCountry && matchesSdk && matchesStatus && matchesAdGame && matchesXpTier;
     });
   }, [games, searchTerm, filters]);
 
@@ -136,6 +146,37 @@ export default function GamesListingModule() {
     );
   };
 
+  const getTierBadge = (tier) => {
+    if (!tier) return null;
+
+    const getTierStyle = (tier) => {
+      switch (tier) {
+        case 'Gold': return 'bg-yellow-100 text-yellow-800';
+        case 'Silver': return 'bg-gray-100 text-gray-800';
+        case 'Bronze': return 'bg-amber-100 text-amber-800';
+        case 'All': return 'bg-blue-100 text-blue-800';
+        default: return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    const getTierIcon = (tier) => {
+      switch (tier) {
+        case 'Gold': return '🟡';
+        case 'Silver': return '⚪';
+        case 'Bronze': return '🟤';
+        case 'All': return '🔵';
+        default: return '⚫';
+      }
+    };
+
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTierStyle(tier)}`}>
+        <span className="mr-1">{getTierIcon(tier)}</span>
+        {tier}
+      </span>
+    );
+  };
+
   const handleEditGame = (game) => {
     setSelectedGame(game);
     setShowEditModal(true);
@@ -167,6 +208,11 @@ export default function GamesListingModule() {
     setShowSegmentsModal(true);
   };
 
+  const handleViewGame = (game) => {
+    setSelectedGame(game);
+    setShowPreviewModal(true);
+  };
+
   const handleSegmentSave = (segmentData) => {
     console.log('Segment data saved:', segmentData);
     // Handle segment save logic here
@@ -183,6 +229,10 @@ export default function GamesListingModule() {
         );
       case 'sdk':
         return <div className="text-sm text-gray-900">{game.sdk}</div>;
+      case 'xptrRules':
+        return <div className="text-sm text-gray-700 max-w-xs truncate" title={game.xptrRules}>{game.xptrRules}</div>;
+      case 'countries':
+        return getCountryFlags(game.countries);
       case 'defaultTasks':
         return (
           <div>
@@ -203,25 +253,36 @@ export default function GamesListingModule() {
         return <div className="text-sm text-gray-900">{game.marketingChannel}</div>;
       case 'campaign':
         return <div className="text-sm text-gray-900">{game.campaign}</div>;
+      case 'xpTier':
+        return getTierBadge(game.xpTier);
       case 'status':
         return getStatusBadge(game.status);
       case 'actions':
   return (
     <div className="flex items-center justify-end space-x-2">
+      {/* View button */}
+      <button
+        onClick={() => handleViewGame(game)}
+        className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md"
+        title="View game details"
+      >
+        <EyeIcon className="h-4 w-4" />
+      </button>
+
       {/* Edit button */}
       <button
         onClick={() => handleEditGame(game)}
-        className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
-        title="Edit"
+        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md"
+        title="Edit game"
       >
-        Edit
+        <PencilIcon className="h-4 w-4" />
       </button>
 
       {/* Tasks button (link) */}
       <Link
         href={`/offers/tasks?game=${encodeURIComponent(game.id)}`}
         className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 text-green-700 hover:bg-green-50"
-        title="Tasks"
+        title="View Tasks"
       >
         Tasks
       </Link>
@@ -238,10 +299,10 @@ export default function GamesListingModule() {
       {/* Delete button */}
       <button
         onClick={() => handleDeleteGame(game.id)}
-        className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
-        title="Delete"
+        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md"
+        title="Delete game"
       >
-        Delete
+        <TrashIcon className="h-4 w-4" />
       </button>
     </div>
   );
@@ -280,7 +341,7 @@ export default function GamesListingModule() {
                   placeholder="Search games by title, SDK, or XPTR rules..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-10 pr-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md placeholder-gray-500 focus:ring-green-500 focus:border-green-500 focus:outline-none"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -312,6 +373,11 @@ export default function GamesListingModule() {
               <select value={filters.status} onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))} className="border border-gray-300 rounded-md px-3 py-1 text-sm">
                 <option value="all">All Status</option>
                 {STATUS_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              <select value={filters.xpTier} onChange={(e) => setFilters(prev => ({ ...prev, xpTier: e.target.value }))} className="border border-gray-300 rounded-md px-3 py-1 text-sm">
+                <option value="all">All XP Tiers</option>
+                {XP_TIERS.map(tier => <option key={tier} value={tier}>{tier}</option>)}
               </select>
             </div>
           </div>
@@ -370,6 +436,12 @@ export default function GamesListingModule() {
         onClose={() => { setShowSegmentsModal(false); setSelectedGame(null); }}
         offer={selectedGame}
         onSave={handleSegmentSave}
+      />
+
+      <GamePreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => { setShowPreviewModal(false); setSelectedGame(null); }}
+        game={selectedGame}
       />
     </div>
   );
