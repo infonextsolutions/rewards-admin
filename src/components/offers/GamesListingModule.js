@@ -288,13 +288,13 @@ export default function GamesListingModule() {
       </Link>
 
       {/* Segments button */}
-      <button
+      {/* <button
         onClick={() => handleOpenSegments(game)}
         className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 text-indigo-700 hover:bg-indigo-50"
         title="Segments"
       >
         Segments
-      </button>
+      </button> */}
 
       {/* Delete button */}
       <button

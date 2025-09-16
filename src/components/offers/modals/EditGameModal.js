@@ -7,6 +7,24 @@ const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniver
 const XP_TIERS = ['Bronze', 'Silver', 'Gold', 'All'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
 
+const AGE_GROUPS = [
+  '13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'
+];
+
+const GENDERS = ['Male', 'Female', 'Other', 'Any'];
+
+const CITIES = {
+  'US': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
+  'CA': ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa'],
+  'UK': ['London', 'Manchester', 'Birmingham', 'Glasgow', 'Liverpool'],
+  'AU': ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
+  // Add more cities as needed
+};
+
+const MARKETING_CHANNELS = [
+  'Facebook', 'TikTok', 'Organic', 'Paid', 'Google', 'Instagram', 'Twitter', 'YouTube'
+];
+
 export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const [formData, setFormData] = useState({
     title: '',
@@ -18,7 +36,15 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     fallbackGame: false,
     thumbnail: null,
     xpTier: '',
-    countries: []
+    countries: [],
+    segments: {
+      ageGroups: [],
+      gender: '',
+      country: '',
+      city: '',
+      marketingChannel: '',
+      campaignName: ''
+    }
   });
 
   useEffect(() => {
@@ -33,7 +59,15 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         fallbackGame: game.fallbackGame ?? false,
         thumbnail: game.thumbnail || null,
         xpTier: game.xpTier || '',
-        countries: game.countries || []
+        countries: game.countries || [],
+        segments: {
+          ageGroups: game.segments?.ageGroups || [],
+          gender: game.segments?.gender || '',
+          country: game.segments?.country || '',
+          city: game.segments?.city || '',
+          marketingChannel: game.segments?.marketingChannel || '',
+          campaignName: game.segments?.campaignName || ''
+        }
       });
     } else {
       setFormData({
@@ -46,13 +80,32 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         fallbackGame: false,
         thumbnail: null,
         xpTier: '',
-        countries: []
+        countries: [],
+        segments: {
+          ageGroups: [],
+          gender: '',
+          country: '',
+          city: '',
+          marketingChannel: '',
+          campaignName: ''
+        }
       });
     }
   }, [game, isOpen]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field.includes('.')) {
+      const [section, subField] = field.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [subField]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleCountryToggle = (country) => {
@@ -62,6 +115,30 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         ? prev.countries.filter(c => c !== country)
         : [...prev.countries, country]
     }));
+  };
+
+  const handleMultiSelectChange = (field, value) => {
+    const [section, subField] = field.split('.');
+    setFormData(prev => {
+      const currentArray = prev[section][subField];
+      const updatedArray = currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value];
+
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [subField]: updatedArray
+        }
+      };
+    });
+  };
+
+  const handleSegmentCountryChange = (country) => {
+    handleInputChange('segments.country', country);
+    // Reset city when country changes
+    handleInputChange('segments.city', '');
   };
 
   const handleFileChange = (e) => {
@@ -227,6 +304,114 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                 />
                 <span className="ml-2 text-sm text-gray-700">Default Fallback Game</span>
+              </div>
+            </div>
+
+            {/* SECTION 2: Targeting & Segmentation */}
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-sm font-semibold text-gray-800 mb-4">Targeting & Segmentation</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Age Group
+                  </label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+                    {AGE_GROUPS.map(age => (
+                      <label key={age} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.segments.ageGroups.includes(age)}
+                          onChange={() => handleMultiSelectChange('segments.ageGroups', age)}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{age}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gender
+                  </label>
+                  <select
+                    value={formData.segments.gender}
+                    onChange={(e) => handleInputChange('segments.gender', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    aria-label="Gender"
+                  >
+                    <option value="">Select gender...</option>
+                    {GENDERS.map(gender => (
+                      <option key={gender} value={gender}>{gender}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Country
+                  </label>
+                  <select
+                    value={formData.segments.country}
+                    onChange={(e) => handleSegmentCountryChange(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    aria-label="Country"
+                  >
+                    <option value="">Select Country...</option>
+                    {COUNTRIES.map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    City
+                  </label>
+                  <select
+                    value={formData.segments.city}
+                    onChange={(e) => handleInputChange('segments.city', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    disabled={!formData.segments.country}
+                    aria-label="City"
+                  >
+                    <option value="">Select City...</option>
+                    {(formData.segments.country ? CITIES[formData.segments.country] || [] : []).map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marketing Channel
+                  </label>
+                  <select
+                    value={formData.segments.marketingChannel}
+                    onChange={(e) => handleInputChange('segments.marketingChannel', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    aria-label="Marketing Channel"
+                  >
+                    <option value="">Select Channel...</option>
+                    {MARKETING_CHANNELS.map(channel => (
+                      <option key={channel} value={channel}>{channel}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Campaign Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.segments.campaignName}
+                    onChange={(e) => handleInputChange('segments.campaignName', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    placeholder="Enter campaign name"
+                    aria-label="Campaign Name"
+                  />
+                </div>
               </div>
             </div>
 

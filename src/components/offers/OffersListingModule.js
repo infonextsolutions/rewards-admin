@@ -612,13 +612,13 @@ export default function OffersListingModule() {
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
-                        <button
+                        {/* <button
                           onClick={() => handleSegmentsOffer(offer)}
                           className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
                           title="Segments"
                         >
                           Segments
-                        </button>
+                        </button> */}
                         <button
                           onClick={() => handleDeleteOffer(offer)}
                           className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md"
