@@ -121,6 +121,71 @@ const mockMultipliers = [
   }
 ];
 
+// Mock data for bonus days
+const mockBonusDays = [
+  {
+    id: '1',
+    bonusDay: 7,
+    rewardType: 'Coins',
+    rewardValue: 1000,
+    resetRule: true,
+    createdAt: '2025-01-05T10:00:00Z',
+    updatedAt: '2025-01-05T10:00:00Z'
+  },
+  {
+    id: '2',
+    bonusDay: 30,
+    rewardType: 'XP',
+    rewardValue: 2500,
+    resetRule: true,
+    createdAt: '2025-01-05T10:00:00Z',
+    updatedAt: '2025-01-05T10:00:00Z'
+  },
+  {
+    id: '3',
+    bonusDay: 14,
+    rewardType: 'Giftcard',
+    rewardValue: 5,
+    resetRule: false,
+    createdAt: '2025-01-05T10:00:00Z',
+    updatedAt: '2025-01-05T10:00:00Z'
+  }
+];
+
+// Mock data for pause rules
+const mockPauseRules = [
+  {
+    id: '1',
+    ruleName: 'Standard Pause Rule',
+    actionOnMiss: 'Pause Streak',
+    graceDays: 1,
+    impactOnXP: true,
+    resetCoins: false,
+    createdAt: '2025-01-05T10:00:00Z',
+    updatedAt: '2025-01-05T10:00:00Z'
+  },
+  {
+    id: '2',
+    ruleName: 'Strict Reset Rule',
+    actionOnMiss: 'Reset Streak',
+    graceDays: 0,
+    impactOnXP: true,
+    resetCoins: true,
+    createdAt: '2025-01-05T10:00:00Z',
+    updatedAt: '2025-01-05T10:00:00Z'
+  },
+  {
+    id: '3',
+    ruleName: 'Lenient Continue Rule',
+    actionOnMiss: 'Continue Streak',
+    graceDays: 3,
+    impactOnXP: false,
+    resetCoins: false,
+    createdAt: '2025-01-05T10:00:00Z',
+    updatedAt: '2025-01-05T10:00:00Z'
+  }
+];
+
 // Utility functions
 const generateId = () => {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -207,7 +272,7 @@ export const challengesBonusesAPI = {
     await delay(500);
     const index = mockMultipliers.findIndex(m => m.id === id);
     if (index === -1) throw new Error('Multiplier not found');
-    
+
     const updatedMultiplier = {
       ...mockMultipliers[index],
       ...multiplierData,
@@ -225,7 +290,87 @@ export const challengesBonusesAPI = {
     return true;
   },
 
+  // Bonus day operations
+  async getBonusDays() {
+    await delay(400);
+    return [...mockBonusDays];
+  },
+
+  async createBonusDay(bonusDayData) {
+    await delay(700);
+    const newBonusDay = {
+      ...bonusDayData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    mockBonusDays.push(newBonusDay);
+    return newBonusDay;
+  },
+
+  async updateBonusDay(id, bonusDayData) {
+    await delay(500);
+    const index = mockBonusDays.findIndex(b => b.id === id);
+    if (index === -1) throw new Error('Bonus day not found');
+
+    const updatedBonusDay = {
+      ...mockBonusDays[index],
+      ...bonusDayData,
+      updatedAt: new Date().toISOString()
+    };
+    mockBonusDays[index] = updatedBonusDay;
+    return updatedBonusDay;
+  },
+
+  async deleteBonusDay(id) {
+    await delay(400);
+    const index = mockBonusDays.findIndex(b => b.id === id);
+    if (index === -1) throw new Error('Bonus day not found');
+    mockBonusDays.splice(index, 1);
+    return true;
+  },
+
+  // Pause rule operations
+  async getPauseRules() {
+    await delay(400);
+    return [...mockPauseRules];
+  },
+
+  async createPauseRule(pauseRuleData) {
+    await delay(700);
+    const newPauseRule = {
+      ...pauseRuleData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    mockPauseRules.push(newPauseRule);
+    return newPauseRule;
+  },
+
+  async updatePauseRule(id, pauseRuleData) {
+    await delay(500);
+    const index = mockPauseRules.findIndex(p => p.id === id);
+    if (index === -1) throw new Error('Pause rule not found');
+
+    const updatedPauseRule = {
+      ...mockPauseRules[index],
+      ...pauseRuleData,
+      updatedAt: new Date().toISOString()
+    };
+    mockPauseRules[index] = updatedPauseRule;
+    return updatedPauseRule;
+  },
+
+  async deletePauseRule(id) {
+    await delay(400);
+    const index = mockPauseRules.findIndex(p => p.id === id);
+    if (index === -1) throw new Error('Pause rule not found');
+    mockPauseRules.splice(index, 1);
+    return true;
+  },
+
 };
 
 // Export mock data for testing
-export { mockChallenges, mockMultipliers };
+export { mockChallenges, mockMultipliers, mockBonusDays, mockPauseRules };

@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CalendarDaysIcon, ListBulletIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { CalendarDaysIcon, ListBulletIcon, ChartBarIcon, GiftIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import DailyChallengeListView from './DailyChallengeListView';
 import DailyChallengeCalendarView from './DailyChallengeCalendarView';
 import XPMultiplierSetup from './XPMultiplierSetup';
+import BonusDayConfiguration from './BonusDayConfiguration';
+import ChallengePauseRules from './ChallengePauseRules';
 import AddEditChallengeModal from './modals/AddEditChallengeModal';
 import DeleteConfirmationModal from './modals/DeleteConfirmationModal';
 import { useChallengesBonuses } from '../../hooks/useChallengesBonuses';
@@ -12,7 +14,9 @@ import { useChallengesBonuses } from '../../hooks/useChallengesBonuses';
 const VIEW_MODES = {
   LIST: 'list',
   CALENDAR: 'calendar',
-  XP_MULTIPLIER: 'xp-multiplier'
+  XP_MULTIPLIER: 'xp-multiplier',
+  BONUS_DAY: 'bonus-day',
+  PAUSE_RULES: 'pause-rules'
 };
 
 export default function ChallengesBonusesModule() {
@@ -26,6 +30,8 @@ export default function ChallengesBonusesModule() {
   const {
     challenges,
     multipliers,
+    bonusDays,
+    pauseRules,
     loading,
     error,
     addChallenge,
@@ -36,6 +42,12 @@ export default function ChallengesBonusesModule() {
     updateMultiplier,
     deleteMultiplier,
     toggleMultiplierActive,
+    addBonusDay,
+    updateBonusDay,
+    deleteBonusDay,
+    addPauseRule,
+    updatePauseRule,
+    deletePauseRule,
     refreshData
   } = useChallengesBonuses();
 
@@ -124,6 +136,26 @@ export default function ChallengesBonusesModule() {
             loading={loading}
           />
         );
+      case VIEW_MODES.BONUS_DAY:
+        return (
+          <BonusDayConfiguration
+            bonusDays={bonusDays}
+            onAddBonusDay={addBonusDay}
+            onUpdateBonusDay={updateBonusDay}
+            onDeleteBonusDay={deleteBonusDay}
+            loading={loading}
+          />
+        );
+      case VIEW_MODES.PAUSE_RULES:
+        return (
+          <ChallengePauseRules
+            pauseRules={pauseRules}
+            onAddPauseRule={addPauseRule}
+            onUpdatePauseRule={updatePauseRule}
+            onDeletePauseRule={deletePauseRule}
+            loading={loading}
+          />
+        );
       default:
         return null;
     }
@@ -176,6 +208,28 @@ export default function ChallengesBonusesModule() {
               >
                 <ChartBarIcon className="h-4 w-4 mr-2" />
                 XP Multipliers
+              </button>
+              <button
+                onClick={() => setActiveView(VIEW_MODES.BONUS_DAY)}
+                className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeView === VIEW_MODES.BONUS_DAY
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <GiftIcon className="h-4 w-4 mr-2" />
+                Bonus Days
+              </button>
+              <button
+                onClick={() => setActiveView(VIEW_MODES.PAUSE_RULES)}
+                className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeView === VIEW_MODES.PAUSE_RULES
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <ShieldCheckIcon className="h-4 w-4 mr-2" />
+                Pause Rules
               </button>
             </div>
           </div>
