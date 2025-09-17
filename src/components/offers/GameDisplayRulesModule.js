@@ -23,7 +23,9 @@ const mockDisplayRules = [
     targetSegment: 'New Users',
     appliedCount: 12450,
     conversionRate: '78.5%',
-    lastModified: '2024-03-10'
+    lastModified: '2024-03-10',
+    createdBy: 'admin@jackson.com',
+    createdAt: '2024-03-10T08:30:00Z'
   },
   {
     id: 'RULE002',
@@ -40,7 +42,9 @@ const mockDisplayRules = [
     targetSegment: 'Engaged Users',
     appliedCount: 8750,
     conversionRate: '65.2%',
-    lastModified: '2024-03-12'
+    lastModified: '2024-03-12',
+    createdBy: 'sam.admin@jackson.com',
+    createdAt: '2024-03-12T14:15:00Z'
   },
   {
     id: 'RULE003',
@@ -57,7 +61,9 @@ const mockDisplayRules = [
     targetSegment: 'Bronze Tier',
     appliedCount: 15200,
     conversionRate: '42.8%',
-    lastModified: '2024-03-08'
+    lastModified: '2024-03-08',
+    createdBy: 'admin@jackson.com',
+    createdAt: '2024-03-08T11:45:00Z'
   },
   {
     id: 'RULE004',
@@ -74,7 +80,9 @@ const mockDisplayRules = [
     targetSegment: 'Platinum Tier',
     appliedCount: 6800,
     conversionRate: '58.3%',
-    lastModified: '2024-03-14'
+    lastModified: '2024-03-14',
+    createdBy: 'manager@jackson.com',
+    createdAt: '2024-03-14T09:20:00Z'
   },
   {
     id: 'RULE005',
@@ -92,7 +100,9 @@ const mockDisplayRules = [
     targetSegment: 'Gold Tier',
     appliedCount: 2150,
     conversionRate: '85.7%',
-    lastModified: '2024-03-15'
+    lastModified: '2024-03-15',
+    createdBy: 'sam.admin@jackson.com',
+    createdAt: '2024-03-15T16:10:00Z'
   },
   {
     id: 'RULE006',
@@ -109,7 +119,9 @@ const mockDisplayRules = [
     targetSegment: 'All Users',
     appliedCount: 0,
     conversionRate: '0%',
-    lastModified: '2024-03-05'
+    lastModified: '2024-03-05',
+    createdBy: 'admin@jackson.com',
+    createdAt: '2024-03-05T13:25:00Z'
   }
 ];
 
@@ -179,13 +191,25 @@ export default function GameDisplayRulesModule() {
 
   const handleSaveRule = (ruleData) => {
     if (selectedRule) {
-      // Edit existing rule
+      // Edit existing rule - preserve original created by data, update last modified
+      const updatedRule = {
+        ...ruleData,
+        createdBy: selectedRule.createdBy,
+        createdAt: selectedRule.createdAt,
+        lastModified: new Date().toISOString().split('T')[0]
+      };
       setRules(prev => prev.map(rule =>
-        rule.id === selectedRule.id ? ruleData : rule
+        rule.id === selectedRule.id ? updatedRule : rule
       ));
     } else {
-      // Add new rule
-      setRules(prev => [...prev, ruleData]);
+      // Add new rule - add created by metadata
+      const newRule = {
+        ...ruleData,
+        createdBy: 'admin@jackson.com', // In real app, this would come from auth context
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString().split('T')[0]
+      };
+      setRules(prev => [...prev, newRule]);
     }
     setShowEditModal(false);
     setSelectedRule(null);
@@ -206,6 +230,21 @@ export default function GameDisplayRulesModule() {
     if (maxGames === 999) return 'Unlimited';
     if (typeof maxGames === 'string' && maxGames.startsWith('+')) return `Base ${maxGames}`;
     return `${maxGames} Games`;
+  };
+
+  const formatCreatedBy = (createdBy, createdAt) => {
+    const userName = createdBy.split('@')[0].replace('.', ' ').split(' ').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+
+    const date = new Date(createdAt);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    return { userName, formattedDate, email: createdBy };
   };
 
   return (
@@ -310,6 +349,9 @@ export default function GameDisplayRulesModule() {
                   Max Games
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created By
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -320,7 +362,7 @@ export default function GameDisplayRulesModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRules.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || filterEnabled !== 'all' || filterMilestone !== 'all'
                       ? 'No display rules match your current filters.'
                       : 'No display rules configured yet. Add your first rule to get started.'}
@@ -350,6 +392,19 @@ export default function GameDisplayRulesModule() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {formatMaxGames(rule.maxGames)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatCreatedBy(rule.createdBy, rule.createdAt).userName}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatCreatedBy(rule.createdBy, rule.createdAt).formattedDate}
+                        </div>
+                        <div className="text-xs text-gray-400" title={rule.createdBy}>
+                          {formatCreatedBy(rule.createdBy, rule.createdAt).email}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

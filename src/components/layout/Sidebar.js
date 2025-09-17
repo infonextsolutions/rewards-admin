@@ -18,7 +18,7 @@ const menuItems = [
       { id: 'view-tasks', label: 'View Tasks', href: '/offers/tasks' },
       { id: 'display-rules', label: 'Game Display Rules', href: '/offers/display-rules' },
       { id: 'progression-rules', label: 'Task Progression Rules', href: '/offers/progression-rules' },
-      { id: 'gameplay-settings', label: 'Gameplay Logic Settings', href: '/offers/gameplay-settings' }
+      { id: 'gameplay-settings', label: 'Welcome Bonus Timer Rules', href: '/offers/gameplay-settings' }
     ]
   },
   { id: 'surveys-offers', label: 'Surveys & Non-Gaming Offers', icon: '/Offers.png', href: '/surveys-offers' },

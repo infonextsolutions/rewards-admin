@@ -1,7 +1,7 @@
 'use client';
 
-import GameplayLogicSettingsModule from '@/components/offers/GameplayLogicSettingsModule';
+import WelcomeBonusTimerRules from '@/components/offers/WelcomeBonusTimerRules';
 
 export default function GameplayLogicSettingsPage() {
-  return <GameplayLogicSettingsModule />;
+  return <WelcomeBonusTimerRules />;
 }
