@@ -61,7 +61,7 @@ export const creativesData = [
     placement: "Offers Top",
     campaignPID: "weekend_special_101",
     status: "Inactive",
-    segment: "Bronze Tier, Silver Tier",
+    segment: "Bronze Tier, Platinum Tier",
     views: 7500,
     clicks: 900,
     ctr: "12.0%",
@@ -120,7 +120,7 @@ export const placementOptions = [
 ];
 
 export const segmentOptions = [
-  "All Users", "New Users", "VIP Users", "Gold Tier", "Silver Tier", "Bronze Tier",
+  "All Users", "New Users", "VIP Users", "Gold Tier", "Platinum Tier", "Bronze Tier",
   "India", "USA", "UK", "High Spenders", "Active Players"
 ];
 

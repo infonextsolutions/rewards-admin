@@ -9,7 +9,7 @@ const mockUsers = {
     id: 1,
     name: "Neil Jackson",
     userId: "IDO9012",
-    tier: "Silver",
+    tier: "Platinum",
     email: "neil.jackson@gmail.com",
     status: "Active",
     avatar: "https://c.animaapp.com/t66hdvJZ/img/avatar.svg",

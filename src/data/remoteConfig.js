@@ -35,7 +35,7 @@ export const MOCK_REMOTE_CONFIGS = [
   {
     configId: 'RC-004',
     title: 'Daily Login Bonus',
-    segment: 'Silver Tier',
+    segment: 'Platinum Tier',
     keyName: 'dailyBonusAmount',
     value: '50',
     type: 'Numeric',
@@ -125,7 +125,7 @@ export const MOCK_PID_REWARDS = [
   },
   {
     pidCampaignId: 'PID-124',
-    segment: 'Silver Tier',
+    segment: 'Platinum Tier',
     rewardMultiplier: 1.2,
     userCount: 2340,
     status: 'Active',
@@ -166,7 +166,7 @@ export const SEGMENTS = [
   'New Users',
   'Beta Group',
   'Gold Tier',
-  'Silver Tier',
+  'Platinum Tier',
   'Bronze Tier',
   'VIP Users'
 ];

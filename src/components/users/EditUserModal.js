@@ -25,7 +25,7 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
 
   const genderOptions = ['Male', 'Female', 'Other'];
   const countryOptions = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Spain', 'Italy', 'India', 'Japan', 'Other'];
-  const tierOptions = ['Bronze', 'Silver', 'Gold', 'Premium'];
+  const tierOptions = ['Bronze', 'Gold', 'Platinum', 'Premium'];
   const redemptionOptions = ['Cash', 'PayPal', 'Gift Card', 'Crypto'];
 
   // Initialize form data when user prop changes

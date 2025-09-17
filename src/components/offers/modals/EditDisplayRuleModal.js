@@ -7,7 +7,7 @@ const milestoneOptions = [
   'First Game',
   'After 1 Game',
   'Bronze Tier',
-  'Silver Tier',
+  'Platinum Tier',
   'Gold Tier',
   'Weekend Special',
   'Custom Milestone'
@@ -17,7 +17,7 @@ const targetSegmentOptions = [
   'New Users',
   'Engaged Users',
   'Bronze Tier',
-  'Silver Tier',
+  'Platinum Tier',
   'Gold Tier',
   'All Users',
   'Premium Users'

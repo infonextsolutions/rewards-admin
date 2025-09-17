@@ -21,7 +21,7 @@ const mockRewards = [
     type: 'XP',
     amount: 50,
     probability: 30,
-    tierVisibility: ['Bronze', 'Silver'],
+    tierVisibility: ['Bronze', 'Platinum'],
     icon: null,
     active: true,
     order: 2

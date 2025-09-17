@@ -168,7 +168,7 @@ export function AddEditModal({
                     type="text"
                     value={formData.tierName}
                     onChange={(e) => setFormData(prev => ({ ...prev, tierName: e.target.value }))}
-                    placeholder="e.g., Bronze, Silver, Gold"
+                    placeholder="e.g., Bronze, Platinum, Gold"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                   {formErrors.tierName && <p className="text-red-500 text-xs mt-1">{formErrors.tierName}</p>}
@@ -251,7 +251,7 @@ export function AddEditModal({
                     type="text"
                     value={formData.tierName}
                     onChange={(e) => setFormData(prev => ({ ...prev, tierName: e.target.value }))}
-                    placeholder="Bronze, Silver, Gold..."
+                    placeholder="Bronze, Platinum, Gold..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                 </div>
@@ -374,7 +374,7 @@ export function AddEditModal({
                   >
                     <option value="">Select Tier</option>
                     <option value="Bronze">Bronze</option>
-                    <option value="Silver">Silver</option>
+                    <option value="Platinum">Platinum</option>
                     <option value="Gold">Gold</option>
                     <option value="Platinum">Platinum</option>
                   </select>

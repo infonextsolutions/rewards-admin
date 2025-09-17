@@ -6,7 +6,7 @@ export default function GamePreviewModal({ isOpen, onClose, game }) {
   const getTierIcon = (tier) => {
     switch (tier) {
       case 'Gold': return '🟡';
-      case 'Silver': return '⚪';
+      case 'Platinum': return '🟣';
       case 'Bronze': return '🟤';
       case 'All': return '🔵';
       default: return '⚫';

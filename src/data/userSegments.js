@@ -10,12 +10,12 @@ export const USER_SEGMENTS = [
     criteria: { tier: 'gold' }
   },
   {
-    id: 'silver',
-    name: 'Silver',
+    id: 'platinum',
+    name: 'Platinum',
     category: 'Tier',
-    description: 'Users with Silver tier status',
+    description: 'Users with Platinum tier status',
     userCount: 8920,
-    criteria: { tier: 'silver' }
+    criteria: { tier: 'platinum' }
   },
   {
     id: 'bronze',

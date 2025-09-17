@@ -29,7 +29,7 @@ export const MOCK_CAMPAIGNS = [
     name: 'New User Welcome',
     title: 'Welcome to Jackson!',
     body: 'Complete your profile to start earning.',
-    targetSegment: ['Silver'],
+    targetSegment: ['Platinum'],
     scheduleTime: '2025-01-16T09:00:00Z',
     frequencyRule: '1 per user/week',
     ctaAction: 'app_home',
@@ -84,7 +84,7 @@ export const MOCK_AB_TESTS = [
         body: 'Login to claim 2x your daily reward points!'
       }
     },
-    targetSegment: ['Gold', 'Silver'],
+    targetSegment: ['Gold', 'Platinum'],
     audienceSplit: 50,
     status: 'Running',
     launchedAt: '2025-01-14T10:00:00Z',

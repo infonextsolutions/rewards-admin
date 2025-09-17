@@ -60,17 +60,17 @@ const mockDisplayRules = [
   },
   {
     id: 'RULE004',
-    name: 'Silver Tier Games',
-    milestone: 'Silver Tier',
-    description: 'Show up to 6 games for Silver tier users',
+    name: 'Platinum Tier Games',
+    milestone: 'Platinum Tier',
+    description: 'Show up to 6 games for Platinum tier users',
     maxGames: 6,
     conditions: [
-      'User tier = Silver',
+      'User tier = Platinum',
       'XP >= 1000 points'
     ],
     enabled: true,
     priority: 4,
-    targetSegment: 'Silver Tier',
+    targetSegment: 'Platinum Tier',
     appliedCount: 6800,
     conversionRate: '58.3%',
     lastModified: '2024-03-14'
@@ -116,7 +116,7 @@ const milestoneOptions = [
   'First Game',
   'After 1 Game',
   'Bronze Tier',
-  'Silver Tier',
+  'Platinum Tier',
   'Gold Tier',
   'Weekend Special',
   'Custom Milestone'
@@ -205,7 +205,7 @@ export default function GameDisplayRulesModule() {
       'First Game': 'bg-blue-100 text-blue-800',
       'After 1 Game': 'bg-green-100 text-green-800',
       'Bronze Tier': 'bg-orange-100 text-orange-800',
-      'Silver Tier': 'bg-gray-100 text-gray-800',
+      'Platinum Tier': 'bg-gray-100 text-gray-800',
       'Gold Tier': 'bg-yellow-100 text-yellow-800',
       'Weekend Special': 'bg-purple-100 text-purple-800',
       'Custom Milestone': 'bg-indigo-100 text-indigo-800'

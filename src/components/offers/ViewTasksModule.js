@@ -7,9 +7,10 @@ import Pagination from '../ui/Pagination';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import EditTaskModal from './modals/EditTaskModal';
+import TierBadge from '../ui/TierBadge';
 
 const REWARD_TYPES = ['XP', 'Coins', 'XP + Coins', 'XP Boost', 'Coins + XP Boost'];
-const TIER_RESTRICTIONS = ['Bronze', 'Silver', 'Gold', 'All Tiers'];
+const TIER_RESTRICTIONS = ['Bronze', 'Gold', 'Platinum', 'All Tiers'];
 const TASK_TYPES = ['Achievement', 'Recurring', 'Challenge', 'Milestone'];
 const STATUS_TYPES = ['Active', 'Inactive', 'Testing', 'Paused'];
 
@@ -38,7 +39,7 @@ const mockTasks = [
     rewardType: 'Coins',
     rewardXP: 0,
     rewardCoins: 250,
-    tierRestriction: 'Silver',
+    tierRestriction: 'Platinum',
     status: 'Active',
     gameId: 'GAME001',
     gameName: 'Survey Master Pro',
@@ -170,38 +171,6 @@ export default function ViewTasksModule() {
     );
   };
 
-  const getTierBadge = (tier) => {
-    if (!tier) return null;
-
-    const getTierStyle = (tier) => {
-      switch (tier) {
-        case 'Gold': return 'bg-yellow-100 text-yellow-800';
-        case 'Silver': return 'bg-gray-100 text-gray-800';
-        case 'Bronze': return 'bg-amber-100 text-amber-800';
-        case 'All Tiers': return 'bg-blue-100 text-blue-800';
-        case 'All': return 'bg-blue-100 text-blue-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    };
-
-    const getTierIcon = (tier) => {
-      switch (tier) {
-        case 'Gold': return '🟡';
-        case 'Silver': return '⚪';
-        case 'Bronze': return '🟤';
-        case 'All Tiers': return '🔵';
-        case 'All': return '🔵';
-        default: return '⚫';
-      }
-    };
-
-    return (
-      <span className={`inline-flex items-center justify-center min-w-[70px] px-2 py-0.5 rounded-full text-xs font-medium ${getTierStyle(tier)}`}>
-        <span className="mr-1">{getTierIcon(tier)}</span>
-        {tier}
-      </span>
-    );
-  };
 
   const formatReward = (task) => {
     const parts = [];
@@ -437,7 +406,7 @@ export default function ViewTasksModule() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getTierBadge(task.tierRestriction)}
+                        <TierBadge tier={task.tierRestriction} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(task.status)}

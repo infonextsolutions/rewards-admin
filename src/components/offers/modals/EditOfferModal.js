@@ -37,7 +37,7 @@ const MARKETING_CHANNELS = [
   'Facebook', 'TikTok', 'Organic', 'Paid', 'Google', 'Instagram', 'Twitter', 'YouTube'
 ];
 
-const TIERS = ['Gold', 'Silver', 'Bronze', 'All'];
+const TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
 
 const CREATIVE_SECTIONS = {
   offerCard: {
@@ -652,7 +652,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                       const getTierBadgeStyle = (tier) => {
                         switch (tier) {
                           case 'Gold': return 'bg-yellow-100 text-yellow-800';
-                          case 'Silver': return 'bg-gray-100 text-gray-800';
+                          case 'Platinum': return 'bg-purple-100 text-purple-800';
                           case 'Bronze': return 'bg-amber-100 text-amber-800';
                           case 'All': return 'bg-blue-100 text-blue-800';
                           default: return 'bg-gray-100 text-gray-800';
@@ -662,7 +662,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                       const getTierIcon = (tier) => {
                         switch (tier) {
                           case 'Gold': return '🟡';
-                          case 'Silver': return '⚪';
+                          case 'Platinum': return '🟣';
                           case 'Bronze': return '🟤';
                           case 'All': return '🔵';
                           default: return '⚫';

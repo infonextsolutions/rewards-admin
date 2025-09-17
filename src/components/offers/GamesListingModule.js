@@ -7,11 +7,13 @@ import Link from 'next/link';
 import EditGameModal from './modals/EditGameModal';
 import ManageSegmentsModal from './modals/ManageSegmentsModal';
 import GamePreviewModal from './modals/GamePreviewModal';
+import ConfirmationModal from './modals/ConfirmationModal';
+import TierBadge from '../ui/TierBadge';
 
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
 const STATUS_TYPES = ['Active', 'Inactive', 'Testing', 'Paused'];
-const XP_TIERS = ['Bronze', 'Silver', 'Gold', 'All'];
+const XP_TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
 
 // mock data (includes fields used in screenshot)
 const mockGames = [
@@ -50,7 +52,7 @@ const mockGames = [
     installRate: 6.5,
     marketingChannel: 'Facebook',
     campaign: 'Survey Boost',
-    xpTier: 'Silver'
+    xpTier: 'Platinum'
   }
 ];
 
@@ -88,6 +90,7 @@ export default function GamesListingModule() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showSegmentsModal, setShowSegmentsModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const filteredGames = useMemo(() => {
     return games.filter(game => {
@@ -146,36 +149,6 @@ export default function GamesListingModule() {
     );
   };
 
-  const getTierBadge = (tier) => {
-    if (!tier) return null;
-
-    const getTierStyle = (tier) => {
-      switch (tier) {
-        case 'Gold': return 'bg-yellow-100 text-yellow-800';
-        case 'Silver': return 'bg-gray-100 text-gray-800';
-        case 'Bronze': return 'bg-amber-100 text-amber-800';
-        case 'All': return 'bg-blue-100 text-blue-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    };
-
-    const getTierIcon = (tier) => {
-      switch (tier) {
-        case 'Gold': return '🟡';
-        case 'Silver': return '⚪';
-        case 'Bronze': return '🟤';
-        case 'All': return '🔵';
-        default: return '⚫';
-      }
-    };
-
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTierStyle(tier)}`}>
-        <span className="mr-1">{getTierIcon(tier)}</span>
-        {tier}
-      </span>
-    );
-  };
 
   const handleEditGame = (game) => {
     setSelectedGame(game);
@@ -197,9 +170,16 @@ export default function GamesListingModule() {
     setSelectedGame(null);
   };
 
-  const handleDeleteGame = (gameId) => {
-    if (confirm('Are you sure you want to delete this game?')) {
-      setGames(prev => prev.filter(g => g.id !== gameId));
+  const handleDeleteGame = (game) => {
+    setSelectedGame(game);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteGame = () => {
+    if (selectedGame) {
+      setGames(prev => prev.filter(g => g.id !== selectedGame.id));
+      setShowDeleteModal(false);
+      setSelectedGame(null);
     }
   };
 
@@ -254,7 +234,7 @@ export default function GamesListingModule() {
       case 'campaign':
         return <div className="text-sm text-gray-900">{game.campaign}</div>;
       case 'xpTier':
-        return getTierBadge(game.xpTier);
+        return <TierBadge tier={game.xpTier} />;
       case 'status':
         return getStatusBadge(game.status);
       case 'actions':
@@ -298,7 +278,7 @@ export default function GamesListingModule() {
 
       {/* Delete button */}
       <button
-        onClick={() => handleDeleteGame(game.id)}
+        onClick={() => handleDeleteGame(game)}
         className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md"
         title="Delete game"
       >
@@ -442,6 +422,16 @@ export default function GamesListingModule() {
         isOpen={showPreviewModal}
         onClose={() => { setShowPreviewModal(false); setSelectedGame(null); }}
         game={selectedGame}
+      />
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setSelectedGame(null); }}
+        onConfirm={confirmDeleteGame}
+        title="Delete Game"
+        message={`Are you sure you want to delete the game "${selectedGame?.title}"? This action cannot be undone.`}
+        confirmText="Delete Game"
+        type="warning"
       />
     </div>
   );

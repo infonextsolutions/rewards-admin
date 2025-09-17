@@ -46,7 +46,7 @@ export default function PrizePoolConfiguration({
   }, [rewards, searchTerm, statusFilter, typeFilter]);
 
   const rewardTypes = ['Coins', 'XP', 'Coupons'];
-  const tierOptions = ['All Tiers', 'Bronze', 'Silver', 'Gold'];
+  const tierOptions = ['All Tiers', 'Bronze', 'Gold', 'Platinum'];
 
   const handleAddReward = async (rewardData) => {
     try {

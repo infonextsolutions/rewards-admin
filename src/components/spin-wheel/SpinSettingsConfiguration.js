@@ -31,8 +31,8 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
   const tierOptions = [
     'All Tiers',
     'Bronze',
-    'Silver', 
-    'Gold'
+    'Gold',
+    'Platinum'
   ];
 
 

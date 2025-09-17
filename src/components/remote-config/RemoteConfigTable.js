@@ -111,7 +111,7 @@ export default function RemoteConfigTable({
       'New Users': 'bg-green-100 text-green-800', 
       'Beta Group': 'bg-purple-100 text-purple-800',
       'Gold Tier': 'bg-yellow-100 text-yellow-800',
-      'Silver Tier': 'bg-gray-100 text-gray-800',
+      'Platinum Tier': 'bg-gray-100 text-gray-800',
       'Bronze Tier': 'bg-orange-100 text-orange-800',
       'VIP Users': 'bg-pink-100 text-pink-800'
     };

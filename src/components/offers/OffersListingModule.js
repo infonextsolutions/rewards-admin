@@ -8,6 +8,7 @@ import EditOfferModal from './modals/EditOfferModal';
 import ConfirmationModal from './modals/ConfirmationModal';
 import ManageSegmentsModal from './modals/ManageSegmentsModal';
 import OfferPreviewModal from '../surveys-offers/modals/OfferPreviewModal';
+import TierBadge from '../ui/TierBadge';
 
 const STATUS_TYPES = ['Active', 'Inactive'];
 const MARKETING_CHANNELS = ['Facebook', 'TikTok', 'Google', 'Instagram', 'Twitter'];
@@ -30,7 +31,7 @@ const mockOffers = [
     marketingChannel: 'Facebook',
     campaign: 'Holiday Campaign',
     status: 'Active',
-    tiers: ['Gold', 'Silver'],
+    tiers: ['Gold', 'Platinum'],
     expiryDate: '2024-12-31',
     countries: ['US', 'CA', 'UK'],
     sdkProvider: 'BitLabs',
@@ -86,7 +87,7 @@ const mockOffers = [
     marketingChannel: 'Google',
     campaign: 'Survey Engagement',
     status: 'Inactive',
-    tiers: ['Bronze', 'Silver'],
+    tiers: ['Bronze', 'Platinum'],
     expiryDate: '2024-10-15',
     countries: ['IN', 'BR', 'MX'],
     sdkProvider: 'OfferWalls',
@@ -188,36 +189,10 @@ export default function OffersListingModule() {
   const getTierBadges = (tiers) => {
     if (!tiers || tiers.length === 0) return null;
 
-    const getTierStyle = (tier) => {
-      switch (tier) {
-        case 'Gold': return 'bg-yellow-100 text-yellow-800';
-        case 'Silver': return 'bg-gray-100 text-gray-800';
-        case 'Bronze': return 'bg-amber-100 text-amber-800';
-        case 'All': return 'bg-blue-100 text-blue-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    };
-
-    const getTierIcon = (tier) => {
-      switch (tier) {
-        case 'Gold': return '🟡';
-        case 'Silver': return '⚪';
-        case 'Bronze': return '🟤';
-        case 'All': return '🔵';
-        default: return '⚫';
-      }
-    };
-
     return (
       <div className="flex flex-wrap gap-1">
         {tiers.map(tier => (
-          <span
-            key={tier}
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTierStyle(tier)}`}
-          >
-            <span className="mr-1">{getTierIcon(tier)}</span>
-            {tier}
-          </span>
+          <TierBadge key={tier} tier={tier} />
         ))}
       </div>
     );

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
-const XP_TIERS = ['Bronze', 'Silver', 'Gold', 'All'];
+const XP_TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
 
 const AGE_GROUPS = [

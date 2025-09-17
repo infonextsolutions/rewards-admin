@@ -45,7 +45,7 @@ export default function RedemptionQueue({ onSneakPeek }) {
         userProfile: {
           name: 'Jane Smith',
           email: 'jane@example.com',
-          tier: 'Silver',
+          tier: 'Platinum',
           totalRedemptions: 2
         }
       },

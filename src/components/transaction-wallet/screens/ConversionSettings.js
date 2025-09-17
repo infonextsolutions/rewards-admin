@@ -20,7 +20,7 @@ export default function ConversionSettings() {
       },
       {
         id: 'CONV-002',
-        xpTier: 'Silver',
+        xpTier: 'Platinum',
         conversionRule: '150 XP = ₹1',
         method: 'UPI + Paytm',
         ruleSource: 'Rewards Config Module'

@@ -37,7 +37,7 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
       ],
       tier: [
         { name: 'Gold', value: 25, color: '#ffd700' },
-        { name: 'Silver', value: 35, color: '#c0c0c0' },
+        { name: 'Platinum', value: 35, color: '#e5e5e5' },
         { name: 'Bronze', value: 40, color: '#cd7f32' }
       ]
     }

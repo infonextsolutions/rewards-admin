@@ -5,7 +5,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const REWARD_TYPES = ['XP', 'Coins', 'XP + Coins', 'XP Boost', 'Coins + XP Boost'];
 const REPEAT_FREQ = ['Once', 'Daily', 'Weekly', 'Monthly'];
-const TIER_RESTRICTIONS = ['Bronze', 'Silver', 'Gold', 'All Tiers'];
+const TIER_RESTRICTIONS = ['Bronze', 'Gold', 'Platinum', 'All Tiers'];
 
 export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
   const [formData, setFormData] = useState({
