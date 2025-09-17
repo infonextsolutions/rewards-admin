@@ -140,18 +140,12 @@ export default function GamesListingModule() {
   };
 
   const getCountryFlags = (countries) => {
-    const countryFlags = {
-      'US': '🇺🇸', 'CA': '🇨🇦', 'UK': '🇬🇧', 'AU': '🇦🇺',
-      'DE': '🇩🇪', 'FR': '🇫🇷', 'ES': '🇪🇸', 'IT': '🇮🇹',
-      'NL': '🇳🇱', 'SE': '🇸🇪'
-    };
-
     return (
       <div className="flex flex-wrap gap-1">
         {(countries || []).slice(0, 3).map(c => (
-          <span key={c} className="text-sm" title={c}>{countryFlags[c] || c}</span>
+          <span key={c} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md" title={c}>{c}</span>
         ))}
-        {(countries || []).length > 3 && <span className="text-xs ml-1">+{countries.length - 3}</span>}
+        {(countries || []).length > 3 && <span className="text-xs ml-1 text-gray-500">+{countries.length - 3}</span>}
       </div>
     );
   };
@@ -248,11 +242,11 @@ export default function GamesListingModule() {
         return getStatusBadge(game.status);
       case 'actions':
   return (
-    <div className="flex items-center justify-end space-x-2">
+    <div className="flex items-center justify-center space-x-2">
       {/* View button */}
       <button
         onClick={() => handleViewGame(game)}
-        className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md"
+        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
         title="View game details"
       >
         <EyeIcon className="h-4 w-4" />
@@ -261,7 +255,7 @@ export default function GamesListingModule() {
       {/* Edit button */}
       <button
         onClick={() => handleEditGame(game)}
-        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md"
+        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
         title="Edit game"
       >
         <PencilIcon className="h-4 w-4" />
@@ -270,25 +264,16 @@ export default function GamesListingModule() {
       {/* Tasks button (link) */}
       <Link
         href={`/offers/tasks?game=${encodeURIComponent(game.id)}`}
-        className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 text-green-700 hover:bg-green-50"
+        className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors"
         title="View Tasks"
       >
         Tasks
       </Link>
 
-      {/* Segments button */}
-      {/* <button
-        onClick={() => handleOpenSegments(game)}
-        className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 text-indigo-700 hover:bg-indigo-50"
-        title="Segments"
-      >
-        Segments
-      </button> */}
-
       {/* Delete button */}
       <button
         onClick={() => handleDeleteGame(game)}
-        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md"
+        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
         title="Delete game"
       >
         <TrashIcon className="h-4 w-4" />
@@ -313,7 +298,7 @@ export default function GamesListingModule() {
               <p className="mt-1 text-sm text-gray-600">Displays games pushed via SDK with XP rules, country visibility, and task linkage</p>
             </div>
             <div className="flex items-center space-x-3">
-              <button onClick={handleCreateGame} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+              <button onClick={handleCreateGame} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                 <PlusIcon className="h-4 w-4 mr-2" /> Add Game
               </button>
             </div>

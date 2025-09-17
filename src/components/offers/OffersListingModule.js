@@ -202,32 +202,11 @@ export default function OffersListingModule() {
   const getCountryFlags = (countries) => {
     if (!countries || countries.length === 0) return null;
 
-    const getCountryFlag = (countryCode) => {
-      const flags = {
-        'US': '🇺🇸',
-        'CA': '🇨🇦',
-        'UK': '🇬🇧',
-        'AU': '🇦🇺',
-        'DE': '🇩🇪',
-        'FR': '🇫🇷',
-        'ES': '🇪🇸',
-        'IT': '🇮🇹',
-        'NL': '🇳🇱',
-        'SE': '🇸🇪',
-        'BR': '🇧🇷',
-        'IN': '🇮🇳',
-        'JP': '🇯🇵',
-        'KR': '🇰🇷',
-        'MX': '🇲🇽'
-      };
-      return flags[countryCode] || '🌍';
-    };
-
     return (
       <div className="flex flex-wrap gap-1">
         {countries.slice(0, 3).map(country => (
-          <span key={country} className="inline-flex items-center text-sm" title={country}>
-            {getCountryFlag(country)}
+          <span key={country} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md" title={country}>
+            {country}
           </span>
         ))}
         {countries.length > 3 && (
@@ -327,7 +306,7 @@ export default function OffersListingModule() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={handleCreateOffer}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Add New Offer
@@ -570,32 +549,25 @@ export default function OffersListingModule() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(offer.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center space-x-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => handleViewOffer(offer)}
-                          className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md"
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                           title="View offer details"
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleEditOffer(offer)}
-                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md"
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                           title="Edit offer"
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
-                        {/* <button
-                          onClick={() => handleSegmentsOffer(offer)}
-                          className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                          title="Segments"
-                        >
-                          Segments
-                        </button> */}
                         <button
                           onClick={() => handleDeleteOffer(offer)}
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md"
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                           title="Delete offer"
                         >
                           <TrashIcon className="h-4 w-4" />

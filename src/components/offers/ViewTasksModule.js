@@ -8,9 +8,11 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import EditTaskModal from './modals/EditTaskModal';
 import TierBadge from '../ui/TierBadge';
+import XPTierBadge from '../ui/XPTierBadge';
 
 const REWARD_TYPES = ['XP', 'Coins', 'XP + Coins', 'XP Boost', 'Coins + XP Boost'];
 const TIER_RESTRICTIONS = ['Bronze', 'Gold', 'Platinum', 'All Tiers'];
+const XP_TIER_RESTRICTIONS = ['Junior', 'Mid', 'Senior', 'All'];
 const TASK_TYPES = ['Achievement', 'Recurring', 'Challenge', 'Milestone'];
 const STATUS_TYPES = ['Active', 'Inactive', 'Testing', 'Paused'];
 
@@ -23,6 +25,7 @@ const mockTasks = [
     rewardXP: 500,
     rewardCoins: 100,
     tierRestriction: 'All Tiers',
+    xpTierRestriction: 'Senior',
     status: 'Active',
     gameId: 'GAME001',
     gameName: 'Survey Master Pro',
@@ -40,6 +43,7 @@ const mockTasks = [
     rewardXP: 0,
     rewardCoins: 250,
     tierRestriction: 'Platinum',
+    xpTierRestriction: 'Mid',
     status: 'Active',
     gameId: 'GAME001',
     gameName: 'Survey Master Pro',
@@ -57,6 +61,7 @@ const mockTasks = [
     rewardXP: 750,
     rewardCoins: 0,
     tierRestriction: 'All Tiers',
+    xpTierRestriction: 'Junior',
     status: 'Active',
     gameId: 'GAME002',
     gameName: 'Download & Play Challenge',
@@ -74,6 +79,7 @@ const mockTasks = [
     rewardXP: 1000,
     rewardCoins: 500,
     tierRestriction: 'Gold',
+    xpTierRestriction: 'Senior',
     status: 'Testing',
     gameId: 'GAME003',
     gameName: 'Premium Trial Signup',
@@ -91,6 +97,7 @@ const mockTasks = [
     rewardXP: 300,
     rewardCoins: 75,
     tierRestriction: 'Bronze',
+    xpTierRestriction: 'All',
     status: 'Active',
     gameId: 'GAME004',
     gameName: 'Social Media Follow',
@@ -119,6 +126,7 @@ export default function ViewTasksModule() {
     gameId: gameFilter || 'all',
     rewardType: 'all',
     tierRestriction: 'all',
+    xpTierRestriction: 'all',
     status: 'all'
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -145,9 +153,10 @@ export default function ViewTasksModule() {
       const matchesGame = filters.gameId === 'all' || task.gameId === filters.gameId;
       const matchesRewardType = filters.rewardType === 'all' || task.rewardType === filters.rewardType;
       const matchesTierRestriction = filters.tierRestriction === 'all' || task.tierRestriction === filters.tierRestriction;
+      const matchesXPTierRestriction = filters.xpTierRestriction === 'all' || task.xpTierRestriction === filters.xpTierRestriction;
       const matchesStatus = filters.status === 'all' || task.status === filters.status;
 
-      return matchesSearch && matchesGame && matchesRewardType && matchesTierRestriction && matchesStatus;
+      return matchesSearch && matchesGame && matchesRewardType && matchesTierRestriction && matchesXPTierRestriction && matchesStatus;
     });
   }, [tasks, searchTerm, filters]);
 
@@ -262,7 +271,7 @@ export default function ViewTasksModule() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={handleCreateTask}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Add Task
@@ -333,6 +342,17 @@ export default function ViewTasksModule() {
               </select>
 
               <select
+                value={filters.xpTierRestriction}
+                onChange={(e) => setFilters(prev => ({ ...prev, xpTierRestriction: e.target.value }))}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="all">All XP Tiers</option>
+                {XP_TIER_RESTRICTIONS.map(xpTier => (
+                  <option key={xpTier} value={xpTier}>{xpTier}</option>
+                ))}
+              </select>
+
+              <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-purple-500 focus:border-purple-500"
@@ -364,6 +384,9 @@ export default function ViewTasksModule() {
                   Tier Restriction
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  XP Tier
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -377,7 +400,7 @@ export default function ViewTasksModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || Object.values(filters).some(f => f !== 'all')
                       ? 'No tasks match your current filters.'
                       : 'No tasks configured yet. Add your first task to get started.'}
@@ -409,12 +432,15 @@ export default function ViewTasksModule() {
                         <TierBadge tier={task.tierRestriction} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <XPTierBadge xpTier={task.xpTierRestriction} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(task.status)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleOverride(task.id)}
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                             task.overrideActive
                               ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200'
                               : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
@@ -425,18 +451,18 @@ export default function ViewTasksModule() {
                           {task.overrideActive ? 'ON' : 'OFF'}
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <div className="flex items-center justify-center space-x-2">
                           <button
                             onClick={() => handleEditTask(task)}
-                            className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50"
+                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                             title="Edit task"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteTask(task.id)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             title="Delete task"
                           >
                             <TrashIcon className="h-4 w-4" />

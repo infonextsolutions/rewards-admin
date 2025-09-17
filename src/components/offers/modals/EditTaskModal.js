@@ -6,6 +6,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 const REWARD_TYPES = ['XP', 'Coins', 'XP + Coins', 'XP Boost', 'Coins + XP Boost'];
 const REPEAT_FREQ = ['Once', 'Daily', 'Weekly', 'Monthly'];
 const TIER_RESTRICTIONS = ['Bronze', 'Gold', 'Platinum', 'All Tiers'];
+const XP_TIER_RESTRICTIONS = ['Junior', 'Mid', 'Senior', 'All'];
 
 export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
     rewardType: 'XP',
     rewardValue: 0,
     tierRestriction: 'All Tiers',
+    xpTierRestriction: 'All',
     startDate: '',
     endDate: '',
     repeatFrequency: 'Once',
@@ -31,6 +33,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
         // if older tasks had separate xp/coins keep numeric fallback
         rewardValue: task.rewardValue ?? (task.rewardXP ?? 0) ?? 0,
         tierRestriction: task.tierRestriction || 'All Tiers',
+        xpTierRestriction: task.xpTierRestriction || 'All',
         startDate: task.startDate ? toDatetimeLocal(task.startDate) : '',
         endDate: task.endDate ? toDatetimeLocal(task.endDate) : '',
         repeatFrequency: task.repeatFrequency || 'Once',
@@ -44,6 +47,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
         rewardType: 'XP',
         rewardValue: 0,
         tierRestriction: 'All Tiers',
+        xpTierRestriction: 'All',
         startDate: '',
         endDate: '',
         repeatFrequency: 'Once',
@@ -100,6 +104,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
       rewardType: formData.rewardType,
       rewardValue: Number(formData.rewardValue),
       tierRestriction: formData.tierRestriction,
+      xpTierRestriction: formData.xpTierRestriction,
       startDate: fromDatetimeLocal(formData.startDate),
       endDate: fromDatetimeLocal(formData.endDate),
       repeatFrequency: formData.repeatFrequency,
@@ -163,7 +168,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
                 {errors.milestoneLogic && <p className="mt-1 text-xs text-red-600">{errors.milestoneLogic}</p>}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Reward Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Reward Type</label>
@@ -199,6 +204,18 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
                   >
                     {TIER_RESTRICTIONS.map(tier => <option key={tier} value={tier}>{tier}</option>)}
+                  </select>
+                </div>
+
+                {/* XP Tier Restriction */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">XP Tier Restriction</label>
+                  <select
+                    value={formData.xpTierRestriction}
+                    onChange={(e) => handleInputChange('xpTierRestriction', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                  >
+                    {XP_TIER_RESTRICTIONS.map(xpTier => <option key={xpTier} value={xpTier}>{xpTier}</option>)}
                   </select>
                 </div>
               </div>
@@ -268,7 +285,7 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               >
                 Save Task
               </button>

@@ -329,9 +329,9 @@ export default function ManageSegmentsModal({ isOpen, onClose, offer, onSave }) 
               <button
                 type="submit"
                 disabled={!isFormValid()}
-                className={`px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 ${
+                className={`px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors ${
                   isFormValid()
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    ? 'bg-green-600 hover:bg-green-700'
                     : 'bg-gray-400 cursor-not-allowed'
                 }`}
               >
