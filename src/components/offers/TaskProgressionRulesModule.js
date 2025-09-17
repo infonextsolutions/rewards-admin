@@ -11,106 +11,130 @@ const mockProgressionRules = [
     id: 'PROG001',
     name: 'Survey to Download Flow',
     description: 'Unlock download tasks after completing 2 surveys',
+    unlockCondition: 'Complete 2 surveys in sequence',
     dependencies: [
       { fromTask: 'Complete Survey A', toTask: 'Download App X' },
       { fromTask: 'Complete Survey B', toTask: 'Download App Y' }
     ],
     lockType: 'Sequential',
+    minimumEventToUnlock: '2 Survey Completions in 24 hours',
     eventThreshold: {
       type: 'Survey Completions',
       count: 2,
       timeWindow: '24 hours'
     },
+    rewardTriggerRule: 'Complete download within 10 minutes',
     rewardTrigger: {
       condition: 'Complete download within 10 minutes',
       reward: '250 Coins + 500 XP'
     },
     enabled: true,
+    override: false,
+    overrideByGameId: null,
     gameId: 'GAME001',
     gameName: 'Survey Master Pro',
     affectedUsers: 8500,
     completionRate: '68.2%',
     avgUnlockTime: '45 minutes',
-    lastModified: '2024-03-15'
+    lastModified: '2024-03-15',
+    createdBy: '2024-03-10 14:30:00'
   },
   {
     id: 'PROG002',
     name: 'Trial Signup Progression',
     description: 'Sequential unlock: Social Follow → Trial Signup → Premium Upgrade',
+    unlockCondition: 'Follow 3 social accounts then signup for trial',
     dependencies: [
       { fromTask: 'Follow Social Media', toTask: 'Sign up for Trial' },
       { fromTask: 'Sign up for Trial', toTask: 'Upgrade to Premium' }
     ],
     lockType: 'Timed',
+    minimumEventToUnlock: '3 Social Follows in 12 hours',
     eventThreshold: {
       type: 'Social Follows',
       count: 3,
       timeWindow: '12 hours'
     },
+    rewardTriggerRule: 'Complete full sequence within 3 days',
     rewardTrigger: {
       condition: 'Complete full sequence within 3 days',
       reward: '1000 Coins + 2x XP Boost'
     },
     enabled: true,
+    override: false,
+    overrideByGameId: null,
     gameId: 'GAME003',
     gameName: 'Premium Trial Signup',
     affectedUsers: 3200,
     completionRate: '34.5%',
     avgUnlockTime: '2.5 hours',
-    lastModified: '2024-03-12'
+    lastModified: '2024-03-12',
+    createdBy: '2024-03-08 09:15:00'
   },
   {
     id: 'PROG003',
     name: 'Install and Engage Chain',
     description: 'Manual unlock sequence for high-value app installs',
+    unlockCondition: 'Manual admin approval required',
     dependencies: [
       { fromTask: 'Download Gaming App', toTask: 'Play for 30 minutes' },
       { fromTask: 'Play for 30 minutes', toTask: 'Make In-App Purchase' }
     ],
     lockType: 'Manual',
+    minimumEventToUnlock: '1 App Install in 1 hour',
     eventThreshold: {
       type: 'App Installs',
       count: 1,
       timeWindow: '1 hour'
     },
+    rewardTriggerRule: 'Admin approval + Purchase completion',
     rewardTrigger: {
       condition: 'Admin approval + Purchase completion',
       reward: '500 Coins per milestone'
     },
     enabled: false,
+    override: true,
+    overrideByGameId: 'GAME002',
     gameId: 'GAME002',
     gameName: 'Download & Play Challenge',
     affectedUsers: 0,
     completionRate: '0%',
     avgUnlockTime: 'Manual',
-    lastModified: '2024-03-08'
+    lastModified: '2024-03-08',
+    createdBy: '2024-03-05 16:45:00'
   },
   {
     id: 'PROG004',
     name: 'Social Engagement Ladder',
     description: 'Progressive social media engagement tasks',
+    unlockCondition: 'Complete social interactions in sequence',
     dependencies: [
       { fromTask: 'Follow 1 Account', toTask: 'Follow 5 Accounts' },
       { fromTask: 'Follow 5 Accounts', toTask: 'Share Content' },
       { fromTask: 'Share Content', toTask: 'Invite Friends' }
     ],
     lockType: 'Sequential',
+    minimumEventToUnlock: '5 Social Interactions in 6 hours',
     eventThreshold: {
       type: 'Social Interactions',
       count: 5,
       timeWindow: '6 hours'
     },
+    rewardTriggerRule: 'Each milestone unlocks next + bonus',
     rewardTrigger: {
       condition: 'Each milestone unlocks next + bonus',
       reward: '100 Coins per unlock + 50 XP'
     },
     enabled: true,
+    override: false,
+    overrideByGameId: null,
     gameId: 'GAME004',
     gameName: 'Social Media Follow',
     affectedUsers: 12750,
     completionRate: '76.8%',
     avgUnlockTime: '3.2 hours',
-    lastModified: '2024-03-14'
+    lastModified: '2024-03-14',
+    createdBy: '2024-03-12 11:20:00'
   }
 ];
 
@@ -144,7 +168,7 @@ export default function TaskProgressionRulesModule() {
 
   const handleToggleRule = (ruleId) => {
     setRules(prev => prev.map(rule =>
-      rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule
+      rule.id === ruleId ? { ...rule, override: !rule.override } : rule
     ));
   };
 
@@ -315,19 +339,28 @@ export default function TaskProgressionRulesModule() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rule Details
+                  Task ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Dependencies
+                  Unlock Condition
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Lock Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Event Threshold
+                  Minimum Event to Unlock
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Reward Trigger Rule
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Override
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Override by Game ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created By
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -337,7 +370,7 @@ export default function TaskProgressionRulesModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRules.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || filterEnabled !== 'all' || filterLockType !== 'all'
                       ? 'No progression rules match your current filters.'
                       : 'No progression rules configured yet. Add your first rule to get started.'}
@@ -347,50 +380,35 @@ export default function TaskProgressionRulesModule() {
                 filteredRules.map((rule) => (
                   <React.Fragment key={rule.id}>
                     <tr className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{rule.name}</div>
-                          <div className="text-xs text-gray-700">{rule.id}</div>
-                          <div className="text-xs text-gray-600 mt-1">{rule.gameName}</div>
-                          <div className="text-xs text-gray-600 mt-1 max-w-xs">{rule.description}</div>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{rule.id}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="max-w-xs">
-                          {renderDependencyChain(rule.dependencies.slice(0, 2))}
-                          {rule.dependencies.length > 2 && (
-                            <div className="text-xs text-gray-700 mt-1">
-                              +{rule.dependencies.length - 2} more
-                            </div>
-                          )}
-                        </div>
+                        <div className="text-sm text-gray-900 max-w-xs">{rule.unlockCondition}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getLockTypeBadge(rule.lockType)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {rule.eventThreshold.count} {rule.eventThreshold.type}
-                          </div>
-                          <div className="text-xs text-gray-700">in {rule.eventThreshold.timeWindow}</div>
-                        </div>
+                        <div className="text-sm text-gray-900">{rule.minimumEventToUnlock}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900 max-w-xs">{rule.rewardTriggerRule}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
-                          {getStatusBadge(rule.enabled)}
-                          <button
-                            onClick={() => handleToggleRule(rule.id)}
-                            className={`p-1 rounded-md ${rule.enabled ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-50'}`}
-                            title={rule.enabled ? 'Disable rule' : 'Enable rule'}
-                          >
-                            {rule.enabled ? (
-                              <EyeIcon className="h-4 w-4" />
-                            ) : (
-                              <EyeSlashIcon className="h-4 w-4" />
-                            )}
-                          </button>
+                          <span className={`inline-flex items-center justify-center min-w-[50px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            rule.override ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {rule.override ? 'Yes' : 'No'}
+                          </span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{rule.overrideByGameId || '-'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{rule.createdBy}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center space-x-2">

@@ -37,6 +37,7 @@ const MARKETING_CHANNELS = [
   'Facebook', 'TikTok', 'Organic', 'Paid', 'Google', 'Instagram', 'Twitter', 'YouTube'
 ];
 
+const XP_TIERS = ['Junior', 'Mid', 'Senior', 'All'];
 const TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
 
 const CREATIVE_SECTIONS = {
@@ -67,6 +68,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
       marketingChannel: '',
       campaignName: ''
     },
+    xpTier: '',
     tiers: [],
     creatives: {
       offerCard: []
@@ -98,6 +100,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
           marketingChannel: offer.marketingChannel || '',
           campaignName: offer.campaign || ''
         },
+        xpTier: offer.xpTier || '',
         tiers: offer.tiers || [],
         creatives: offer.creatives || {
           offerCard: []
@@ -123,6 +126,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
           marketingChannel: '',
           campaignName: ''
         },
+        xpTier: '',
         tiers: [],
         creatives: {
           offerCard: []
@@ -639,6 +643,23 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                     placeholder="Enter campaign name"
                     aria-label="Campaign Name"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    XP Tier
+                  </label>
+                  <select
+                    value={formData.xpTier}
+                    onChange={(e) => handleInputChange('xpTier', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    aria-label="XP Tier"
+                  >
+                    <option value="">Select XP Tier...</option>
+                    {XP_TIERS.map(tier => (
+                      <option key={tier} value={tier}>{tier}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

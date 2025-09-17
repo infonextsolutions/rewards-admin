@@ -1,7 +1,7 @@
 export const MOCK_XP_TIERS = [
   {
     id: 1,
-    tierName: "Bronze",
+    tierName: "Junior",
     tierColor: "#f68d2b",
     bgColor: "#ffefda",
     borderColor: "#c77023",
@@ -16,7 +16,7 @@ export const MOCK_XP_TIERS = [
   },
   {
     id: 2,
-    tierName: "Platinum",
+    tierName: "Middle Level",
     tierColor: "#6f85a4",
     bgColor: "#f4f4f4",
     borderColor: "#9aa7b8",
@@ -31,7 +31,7 @@ export const MOCK_XP_TIERS = [
   },
   {
     id: 3,
-    tierName: "Gold",
+    tierName: "Senior",
     tierColor: "#c7a20f",
     bgColor: "#fffddf",
     borderColor: "#f0c92e",
@@ -49,7 +49,7 @@ export const MOCK_XP_TIERS = [
 export const MOCK_XP_DECAY_SETTINGS = [
   {
     id: 1,
-    tierName: "Bronze",
+    tierName: "Junior",
     xpRange: "0 - 999 XP",
     decayRuleType: "Fixed",
     inactivityDuration: "7 Days",
@@ -60,7 +60,7 @@ export const MOCK_XP_DECAY_SETTINGS = [
   },
   {
     id: 2,
-    tierName: "Platinum", 
+    tierName: "Middle Level", 
     xpRange: "1000 - 2999 XP",
     decayRuleType: "Stepwise",
     inactivityDuration: "10 Days",
@@ -71,7 +71,7 @@ export const MOCK_XP_DECAY_SETTINGS = [
   },
   {
     id: 3,
-    tierName: "Gold",
+    tierName: "Senior",
     xpRange: "3000 - 9999 XP", 
     decayRuleType: "Fixed",
     inactivityDuration: "14 Days",
@@ -85,7 +85,7 @@ export const MOCK_XP_DECAY_SETTINGS = [
 export const MOCK_XP_CONVERSIONS = [
   {
     id: 1,
-    tierName: "Bronze",
+    tierName: "Junior",
     xpRange: "0 - 999 XP",
     conversionRatio: "100 XP = 1 Point",
     enabled: true,
@@ -94,7 +94,7 @@ export const MOCK_XP_CONVERSIONS = [
   },
   {
     id: 2,
-    tierName: "Platinum",
+    tierName: "Middle Level",
     xpRange: "1000 - 2999 XP", 
     conversionRatio: "90 XP = 1 Point",
     enabled: true,
@@ -103,7 +103,7 @@ export const MOCK_XP_CONVERSIONS = [
   },
   {
     id: 3,
-    tierName: "Gold",
+    tierName: "Senior",
     xpRange: "3000 - 9999 XP",
     conversionRatio: "80 XP = 1 Point",
     enabled: true,
@@ -167,8 +167,8 @@ export const REWARDS_FILTER_OPTIONS = {
   "XP Tiers": [
     {
       id: "type",
-      label: "Tier Level", 
-      options: ["Tier Level", "All Tiers", "Bronze", "Platinum", "Gold", "Platinum"],
+      label: "Tier Level",
+      options: ["Tier Level", "All Tiers", "Junior", "Middle Level", "Senior"],
     },
     {
       id: "xpRange",
@@ -195,9 +195,9 @@ export const REWARDS_FILTER_OPTIONS = {
   ],
   "XP Conversion": [
     {
-      id: "type", 
+      id: "type",
       label: "Tier Level",
-      options: ["Tier Level", "All Tiers", "Bronze", "Platinum", "Gold", "Platinum"],
+      options: ["Tier Level", "All Tiers", "Junior", "Middle Level", "Senior"],
     },
     {
       id: "enabled",

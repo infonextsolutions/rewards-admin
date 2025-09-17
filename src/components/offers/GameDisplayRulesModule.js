@@ -5,6 +5,7 @@ import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, ArrowLeftIcon }
 import Link from 'next/link';
 import EditDisplayRuleModal from './modals/EditDisplayRuleModal';
 import ConfirmationModal from './modals/ConfirmationModal';
+import MilestoneBadge from '../ui/MilestoneBadge';
 
 const mockDisplayRules = [
   {
@@ -200,23 +201,6 @@ export default function GameDisplayRulesModule() {
     );
   };
 
-  const getMilestoneBadge = (milestone) => {
-    const milestoneColors = {
-      'First Game': 'bg-blue-100 text-blue-800',
-      'After 1 Game': 'bg-green-100 text-green-800',
-      'Bronze Tier': 'bg-orange-100 text-orange-800',
-      'Platinum Tier': 'bg-gray-100 text-gray-800',
-      'Gold Tier': 'bg-yellow-100 text-yellow-800',
-      'Weekend Special': 'bg-purple-100 text-purple-800',
-      'Custom Milestone': 'bg-indigo-100 text-indigo-800'
-    };
-
-    return (
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${milestoneColors[milestone] || 'bg-gray-100 text-gray-800'}`}>
-        {milestone}
-      </span>
-    );
-  };
 
   const formatMaxGames = (maxGames) => {
     if (maxGames === 999) return 'Unlimited';
@@ -358,7 +342,7 @@ export default function GameDisplayRulesModule() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getMilestoneBadge(rule.milestone)}
+                      <MilestoneBadge milestone={rule.milestone} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-xs text-gray-600">{rule.targetSegment}</div>

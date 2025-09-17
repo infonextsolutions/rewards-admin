@@ -111,7 +111,7 @@ export default function RewardsTable({
       case "XP Tiers":
         return (
           <tr className="bg-[#ecf8f1]">
-            <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">Tier Name</th>
+            <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">XP Tier</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">XP Range</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Badge</th>
             <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm">Access Benefits</th>
@@ -122,7 +122,7 @@ export default function RewardsTable({
       case "XP Decay Settings":
         return (
           <tr className="bg-[#ecf8f1]">
-            <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">Tier Name</th>
+            <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">XP Tier</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">XP Range</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Decay Rule</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Inactivity Duration</th>
@@ -135,7 +135,7 @@ export default function RewardsTable({
       case "XP Conversion":
         return (
           <tr className="bg-[#ecf8f1]">
-            <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">Tier Name</th>
+            <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">XP Tier</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Conversion Ratio</th>
             <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm">Redemption Channels</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Enabled</th>

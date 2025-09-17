@@ -15,6 +15,7 @@ export default function BonusDayConfiguration({
     bonusDay: '',
     rewardType: 'Coins',
     rewardValue: '',
+    alternateReward: '',
     resetRule: true
   });
   const [showAddForm, setShowAddForm] = useState(false);
@@ -27,6 +28,7 @@ export default function BonusDayConfiguration({
       bonusDay: '',
       rewardType: 'Coins',
       rewardValue: '',
+      alternateReward: '',
       resetRule: true
     });
     setErrors({});
@@ -41,6 +43,11 @@ export default function BonusDayConfiguration({
 
     if (!formData.rewardValue || formData.rewardValue < 1) {
       newErrors.rewardValue = 'Reward value must be at least 1';
+    }
+
+    // Validate alternate reward if provided (optional field)
+    if (formData.alternateReward && (isNaN(formData.alternateReward) || formData.alternateReward < 0)) {
+      newErrors.alternateReward = 'Alternate reward must be a valid number >= 0';
     }
 
     // Check for duplicate bonus days (excluding currently editing item)
@@ -63,6 +70,7 @@ export default function BonusDayConfiguration({
       bonusDay: parseInt(formData.bonusDay),
       rewardType: formData.rewardType,
       rewardValue: parseInt(formData.rewardValue),
+      alternateReward: formData.alternateReward ? parseInt(formData.alternateReward) : null,
       resetRule: formData.resetRule
     };
 
@@ -85,6 +93,7 @@ export default function BonusDayConfiguration({
       bonusDay: bonusDay.bonusDay.toString(),
       rewardType: bonusDay.rewardType,
       rewardValue: bonusDay.rewardValue.toString(),
+      alternateReward: bonusDay.alternateReward ? bonusDay.alternateReward.toString() : '',
       resetRule: bonusDay.resetRule
     });
     setEditingId(bonusDay.id);
@@ -151,7 +160,7 @@ export default function BonusDayConfiguration({
             <div className="space-y-4">
               <h3 className="text-md font-medium text-blue-900">Add New Bonus Day</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Bonus Day *
@@ -191,16 +200,44 @@ export default function BonusDayConfiguration({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Reward Value *
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.rewardValue}
-                    onChange={(e) => setFormData({...formData, rewardValue: e.target.value})}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.rewardValue ? 'border-red-300' : 'border-gray-300'}`}
-                    placeholder="100"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.rewardValue}
+                      onChange={(e) => setFormData({...formData, rewardValue: e.target.value})}
+                      className={`w-full px-3 py-2 pr-12 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.rewardValue ? 'border-red-300' : 'border-gray-300'}`}
+                      placeholder="100"
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs text-gray-500">
+                      {formData.rewardType.toLowerCase()}
+                    </span>
+                  </div>
                   {errors.rewardValue && (
                     <p className="mt-1 text-sm text-red-600">{errors.rewardValue}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Alternate Reward
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.alternateReward}
+                      onChange={(e) => setFormData({...formData, alternateReward: e.target.value})}
+                      className={`w-full px-3 py-2 pr-12 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.alternateReward ? 'border-red-300' : 'border-gray-300'}`}
+                      placeholder="Enter Value"
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs text-gray-500">
+                      {formData.rewardType.toLowerCase()}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">Optional — backup reward if primary missed</p>
+                  {errors.alternateReward && (
+                    <p className="mt-1 text-sm text-red-600">{errors.alternateReward}</p>
                   )}
                 </div>
 
@@ -254,6 +291,9 @@ export default function BonusDayConfiguration({
                   Reward Value
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Alternate Reward
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Reset Rule
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -264,7 +304,7 @@ export default function BonusDayConfiguration({
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedBonusDays.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                     No bonus days configured yet. Add your first bonus day to get started.
                   </td>
                 </tr>
@@ -304,6 +344,16 @@ export default function BonusDayConfiguration({
                             value={formData.rewardValue}
                             onChange={(e) => setFormData({...formData, rewardValue: e.target.value})}
                             className={`w-20 px-2 py-1 border rounded text-sm ${errors.rewardValue ? 'border-red-300' : 'border-gray-300'}`}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="number"
+                            min="0"
+                            value={formData.alternateReward}
+                            onChange={(e) => setFormData({...formData, alternateReward: e.target.value})}
+                            className={`w-20 px-2 py-1 border rounded text-sm ${errors.alternateReward ? 'border-red-300' : 'border-gray-300'}`}
+                            placeholder="Alt"
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -360,6 +410,18 @@ export default function BonusDayConfiguration({
                           >
                             {bonusDay.rewardValue.toLocaleString()}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {bonusDay.alternateReward ? (
+                            <span
+                              className="font-medium text-orange-600"
+                              title={`${bonusDay.alternateReward} ${bonusDay.rewardType.toLowerCase()} (fallback)`}
+                            >
+                              {bonusDay.alternateReward.toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 italic">None</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center justify-center min-w-[60px] px-2.5 py-0.5 rounded-full text-xs font-medium ${

@@ -9,11 +9,13 @@ import ManageSegmentsModal from './modals/ManageSegmentsModal';
 import GamePreviewModal from './modals/GamePreviewModal';
 import ConfirmationModal from './modals/ConfirmationModal';
 import TierBadge from '../ui/TierBadge';
+import XPTierBadge from '../ui/XPTierBadge';
 
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
 const STATUS_TYPES = ['Active', 'Inactive', 'Testing', 'Paused'];
-const XP_TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
+const XP_TIERS = ['Junior', 'Mid', 'Senior', 'All'];
+const TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
 
 // mock data (includes fields used in screenshot)
 const mockGames = [
@@ -35,7 +37,8 @@ const mockGames = [
     installRate: 9.2,
     marketingChannel: 'TikTok',
     campaign: 'Gaming Promo',
-    xpTier: 'Gold'
+    xpTier: 'Senior',
+    tier: 'Gold'
   },
   {
     id: 'GAME002',
@@ -52,7 +55,8 @@ const mockGames = [
     installRate: 6.5,
     marketingChannel: 'Facebook',
     campaign: 'Survey Boost',
-    xpTier: 'Platinum'
+    xpTier: 'Mid',
+    tier: 'Platinum'
   }
 ];
 
@@ -71,6 +75,7 @@ export default function GamesListingModule() {
     { key: 'campaign', label: 'Campaign' },
     { key: 'countries', label: 'Countries' },
     { key: 'xpTier', label: 'XP Tier' },
+    { key: 'tier', label: 'Tier' },
     { key: 'status', label: 'Status' },
     { key: 'actions', label: 'Actions' }
   ];
@@ -82,7 +87,8 @@ export default function GamesListingModule() {
     sdk: 'all',
     adGame: 'all',
     status: 'all',
-    xpTier: 'all'
+    xpTier: 'all',
+    tier: 'all'
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -108,8 +114,9 @@ export default function GamesListingModule() {
         (filters.adGame === 'yes' && game.adSupported) ||
         (filters.adGame === 'no' && !game.adSupported);
       const matchesXpTier = filters.xpTier === 'all' || game.xpTier === filters.xpTier;
+      const matchesTier = filters.tier === 'all' || game.tier === filters.tier;
 
-      return matchesSearch && matchesCountry && matchesSdk && matchesStatus && matchesAdGame && matchesXpTier;
+      return matchesSearch && matchesCountry && matchesSdk && matchesStatus && matchesAdGame && matchesXpTier && matchesTier;
     });
   }, [games, searchTerm, filters]);
 
@@ -234,7 +241,9 @@ export default function GamesListingModule() {
       case 'campaign':
         return <div className="text-sm text-gray-900">{game.campaign}</div>;
       case 'xpTier':
-        return <TierBadge tier={game.xpTier} />;
+        return <XPTierBadge xpTier={game.xpTier} />;
+      case 'tier':
+        return <TierBadge tier={game.tier} />;
       case 'status':
         return getStatusBadge(game.status);
       case 'actions':
@@ -358,6 +367,11 @@ export default function GamesListingModule() {
               <select value={filters.xpTier} onChange={(e) => setFilters(prev => ({ ...prev, xpTier: e.target.value }))} className="border border-gray-300 rounded-md px-3 py-1 text-sm">
                 <option value="all">All XP Tiers</option>
                 {XP_TIERS.map(tier => <option key={tier} value={tier}>{tier}</option>)}
+              </select>
+
+              <select value={filters.tier} onChange={(e) => setFilters(prev => ({ ...prev, tier: e.target.value }))} className="border border-gray-300 rounded-md px-3 py-1 text-sm">
+                <option value="all">All Tiers</option>
+                {TIERS.map(tier => <option key={tier} value={tier}>{tier}</option>)}
               </select>
             </div>
           </div>

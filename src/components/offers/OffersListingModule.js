@@ -9,12 +9,13 @@ import ConfirmationModal from './modals/ConfirmationModal';
 import ManageSegmentsModal from './modals/ManageSegmentsModal';
 import OfferPreviewModal from '../surveys-offers/modals/OfferPreviewModal';
 import TierBadge from '../ui/TierBadge';
+import XPTierBadge from '../ui/XPTierBadge';
 
 const STATUS_TYPES = ['Active', 'Inactive'];
 const MARKETING_CHANNELS = ['Facebook', 'TikTok', 'Google', 'Instagram', 'Twitter'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE', 'BR', 'IN', 'JP', 'KR', 'MX'];
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferWalls', 'AdScend', 'RewardMob', 'MoneyWalls', 'Internal'];
-const XPTR_TYPES = ['Tier 1', 'Tier 2', 'Tier 3', 'All Tiers'];
+const XP_TIER_TYPES = ['Junior', 'Mid', 'Senior', 'All'];
 const AD_OFFER_TYPES = ['Ad-Based', 'Non-Ad', 'Hybrid'];
 
 const mockOffers = [
@@ -35,7 +36,7 @@ const mockOffers = [
     expiryDate: '2024-12-31',
     countries: ['US', 'CA', 'UK'],
     sdkProvider: 'BitLabs',
-    xptr: 'Tier 2',
+    xpTier: 'Senior',
     adOffer: 'Non-Ad',
     // Preview modal compatible fields
     title: 'Welcome Bonus',
@@ -63,7 +64,7 @@ const mockOffers = [
     expiryDate: '2024-11-30',
     countries: ['US', 'AU', 'DE', 'FR'],
     sdkProvider: 'AdGem',
-    xptr: 'Tier 1',
+    xpTier: 'Mid',
     adOffer: 'Ad-Based',
     // Preview modal compatible fields
     title: 'Daily Login Bonus',
@@ -91,7 +92,7 @@ const mockOffers = [
     expiryDate: '2024-10-15',
     countries: ['IN', 'BR', 'MX'],
     sdkProvider: 'OfferWalls',
-    xptr: 'Tier 3',
+    xpTier: 'Junior',
     adOffer: 'Hybrid',
     // Preview modal compatible fields
     title: 'Quick Survey Rewards',
@@ -112,7 +113,7 @@ export default function OffersListingModule() {
     channel: 'all',
     country: 'all',
     sdkProvider: 'all',
-    xptr: 'all',
+    xpTier: 'all',
     adOffer: 'all'
   });
   const [activeTab, setActiveTab] = useState('offer');
@@ -136,10 +137,10 @@ export default function OffersListingModule() {
       const matchesChannel = filters.channel === 'all' || offer.marketingChannel === filters.channel;
       const matchesCountry = filters.country === 'all' || (offer.countries && offer.countries.includes(filters.country));
       const matchesSDK = filters.sdkProvider === 'all' || offer.sdkProvider === filters.sdkProvider;
-      const matchesXPTR = filters.xptr === 'all' || offer.xptr === filters.xptr;
+      const matchesXPTier = filters.xpTier === 'all' || offer.xpTier === filters.xpTier;
       const matchesAdOffer = filters.adOffer === 'all' || offer.adOffer === filters.adOffer;
 
-      return matchesSearch && matchesStatus && matchesChannel && matchesCountry && matchesSDK && matchesXPTR && matchesAdOffer;
+      return matchesSearch && matchesStatus && matchesChannel && matchesCountry && matchesSDK && matchesXPTier && matchesAdOffer;
     });
   }, [offers, searchTerm, filters]);
 
@@ -401,14 +402,14 @@ export default function OffersListingModule() {
               </select>
 
               <select
-                value={filters.xptr}
-                onChange={(e) => setFilters(prev => ({ ...prev, xptr: e.target.value }))}
+                value={filters.xpTier}
+                onChange={(e) => setFilters(prev => ({ ...prev, xpTier: e.target.value }))}
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
-                aria-label="Filter by XPTR"
+                aria-label="Filter by XP Tier"
               >
-                <option value="all">All XPTR</option>
-                {XPTR_TYPES.map(xptr => (
-                  <option key={xptr} value={xptr}>{xptr}</option>
+                <option value="all">All XP Tiers</option>
+                {XP_TIER_TYPES.map(xpTier => (
+                  <option key={xpTier} value={xpTier}>{xpTier}</option>
                 ))}
               </select>
 
@@ -472,7 +473,7 @@ export default function OffersListingModule() {
                   SDK Provider
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  XPTR
+                  XP Tier
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ad Type
@@ -540,9 +541,7 @@ export default function OffersListingModule() {
                       <div className="text-sm text-gray-900">{offer.sdkProvider}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {offer.xptr}
-                      </span>
+                      <XPTierBadge xpTier={offer.xpTier} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

@@ -162,13 +162,13 @@ export function AddEditModal({
               <>
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">
-                    Tier Name <span className="text-red-500">*</span>
+                    XP Tier <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.tierName}
                     onChange={(e) => setFormData(prev => ({ ...prev, tierName: e.target.value }))}
-                    placeholder="e.g., Bronze, Platinum, Gold"
+                    placeholder="e.g., Junior, Middle Level, Senior"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                   {formErrors.tierName && <p className="text-red-500 text-xs mt-1">{formErrors.tierName}</p>}
@@ -246,12 +246,12 @@ export function AddEditModal({
             {activeTab === 'XP Decay Settings' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Tier Name</label>
+                  <label className="block text-sm font-medium text-black mb-1">XP Tier</label>
                   <input
                     type="text"
                     value={formData.tierName}
                     onChange={(e) => setFormData(prev => ({ ...prev, tierName: e.target.value }))}
-                    placeholder="Bronze, Platinum, Gold..."
+                    placeholder="Junior, Middle Level, Senior..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                 </div>
@@ -373,10 +373,9 @@ export function AddEditModal({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   >
                     <option value="">Select Tier</option>
-                    <option value="Bronze">Bronze</option>
-                    <option value="Platinum">Platinum</option>
-                    <option value="Gold">Gold</option>
-                    <option value="Platinum">Platinum</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Middle Level">Middle Level</option>
+                    <option value="Senior">Senior</option>
                   </select>
                 </div>
 

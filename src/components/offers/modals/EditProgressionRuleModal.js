@@ -25,18 +25,23 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    unlockCondition: '',
     dependencies: [{ fromTask: '', toTask: '' }],
     lockType: 'Sequential',
+    minimumEventToUnlock: '',
     eventThreshold: {
       type: 'Survey Completions',
       count: 1,
       timeWindow: '24 hours'
     },
+    rewardTriggerRule: '',
     rewardTrigger: {
       condition: '',
       reward: ''
     },
     enabled: true,
+    override: false,
+    overrideByGameId: '',
     gameId: '',
     gameName: ''
   });
@@ -48,18 +53,23 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
       setFormData({
         name: rule.name || '',
         description: rule.description || '',
+        unlockCondition: rule.unlockCondition || '',
         dependencies: rule.dependencies || [{ fromTask: '', toTask: '' }],
         lockType: rule.lockType || 'Sequential',
+        minimumEventToUnlock: rule.minimumEventToUnlock || '',
         eventThreshold: rule.eventThreshold || {
           type: 'Survey Completions',
           count: 1,
           timeWindow: '24 hours'
         },
+        rewardTriggerRule: rule.rewardTriggerRule || '',
         rewardTrigger: rule.rewardTrigger || {
           condition: '',
           reward: ''
         },
         enabled: rule.enabled !== undefined ? rule.enabled : true,
+        override: rule.override !== undefined ? rule.override : false,
+        overrideByGameId: rule.overrideByGameId || '',
         gameId: rule.gameId || '',
         gameName: rule.gameName || ''
       });
@@ -68,18 +78,23 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
       setFormData({
         name: '',
         description: '',
+        unlockCondition: '',
         dependencies: [{ fromTask: '', toTask: '' }],
         lockType: 'Sequential',
+        minimumEventToUnlock: '',
         eventThreshold: {
           type: 'Survey Completions',
           count: 1,
           timeWindow: '24 hours'
         },
+        rewardTriggerRule: '',
         rewardTrigger: {
           condition: '',
           reward: ''
         },
         enabled: true,
+        override: false,
+        overrideByGameId: '',
         gameId: '',
         gameName: ''
       });
@@ -165,6 +180,15 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
+    if (!formData.unlockCondition.trim()) {
+      newErrors.unlockCondition = 'Unlock condition is required';
+    }
+    if (!formData.minimumEventToUnlock.trim()) {
+      newErrors.minimumEventToUnlock = 'Minimum event to unlock is required';
+    }
+    if (!formData.rewardTriggerRule.trim()) {
+      newErrors.rewardTriggerRule = 'Reward trigger rule is required';
+    }
     if (!formData.gameId) {
       newErrors.gameId = 'Game selection is required';
     }
@@ -194,7 +218,8 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
         affectedUsers: rule?.affectedUsers || 0,
         completionRate: rule?.completionRate || '0%',
         avgUnlockTime: rule?.avgUnlockTime || '0 minutes',
-        lastModified: new Date().toISOString().split('T')[0]
+        lastModified: new Date().toISOString().split('T')[0],
+        createdBy: rule?.createdBy || new Date().toISOString().replace('T', ' ').substring(0, 19)
       });
       onClose();
     }
@@ -276,6 +301,38 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                     placeholder="Describe the progression rule and its purpose"
                   />
                   {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Unlock Condition *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.unlockCondition}
+                    onChange={(e) => handleInputChange('unlockCondition', e.target.value)}
+                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                      errors.unlockCondition ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
+                    }`}
+                    placeholder="e.g., Complete 2 surveys in sequence"
+                  />
+                  {errors.unlockCondition && <p className="mt-1 text-xs text-red-600">{errors.unlockCondition}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Minimum Event to Unlock *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.minimumEventToUnlock}
+                    onChange={(e) => handleInputChange('minimumEventToUnlock', e.target.value)}
+                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                      errors.minimumEventToUnlock ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
+                    }`}
+                    placeholder="e.g., 2 Survey Completions in 24 hours"
+                  />
+                  {errors.minimumEventToUnlock && <p className="mt-1 text-xs text-red-600">{errors.minimumEventToUnlock}</p>}
                 </div>
               </div>
             </div>
@@ -366,20 +423,60 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                   </p>
                 </div>
 
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="enabled"
-                    checked={formData.enabled}
-                    onChange={(e) => handleInputChange('enabled', e.target.checked)}
-                    className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="enabled" className="ml-2 text-sm text-gray-700">
-                    Enable this rule immediately
-                  </label>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="enabled"
+                      checked={formData.enabled}
+                      onChange={(e) => handleInputChange('enabled', e.target.checked)}
+                      className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="enabled" className="ml-2 text-sm text-gray-700">
+                      Enable this rule immediately
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="override"
+                      checked={formData.override}
+                      onChange={(e) => handleInputChange('override', e.target.checked)}
+                      className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="override" className="ml-2 text-sm text-gray-700">
+                      Override default behavior
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Override Configuration */}
+            {formData.override && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-4">Override Configuration</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Override by Game ID
+                  </label>
+                  <select
+                    value={formData.overrideByGameId}
+                    onChange={(e) => handleInputChange('overrideByGameId', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="">Select Game to Override</option>
+                    {mockGames.map(game => (
+                      <option key={game.id} value={game.id}>{game.name} ({game.id})</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select a specific game to override its default progression rules
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Event Threshold */}
             <div>
@@ -437,37 +534,55 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
             {/* Reward Trigger */}
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-4">Reward Trigger</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Trigger Condition *
+                    Reward Trigger Rule *
                   </label>
                   <input
                     type="text"
-                    value={formData.rewardTrigger.condition}
-                    onChange={(e) => handleRewardTriggerChange('condition', e.target.value)}
+                    value={formData.rewardTriggerRule}
+                    onChange={(e) => handleInputChange('rewardTriggerRule', e.target.value)}
                     className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                      errors.rewardCondition ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
+                      errors.rewardTriggerRule ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
                     }`}
                     placeholder="e.g., Complete download within 10 minutes"
                   />
-                  {errors.rewardCondition && <p className="mt-1 text-xs text-red-600">{errors.rewardCondition}</p>}
+                  {errors.rewardTriggerRule && <p className="mt-1 text-xs text-red-600">{errors.rewardTriggerRule}</p>}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Reward Value *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.rewardTrigger.reward}
-                    onChange={(e) => handleRewardTriggerChange('reward', e.target.value)}
-                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                      errors.rewardValue ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
-                    }`}
-                    placeholder="e.g., 250 Coins + 500 XP"
-                  />
-                  {errors.rewardValue && <p className="mt-1 text-xs text-red-600">{errors.rewardValue}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trigger Condition *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.rewardTrigger.condition}
+                      onChange={(e) => handleRewardTriggerChange('condition', e.target.value)}
+                      className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                        errors.rewardCondition ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
+                      }`}
+                      placeholder="e.g., Complete download within 10 minutes"
+                    />
+                    {errors.rewardCondition && <p className="mt-1 text-xs text-red-600">{errors.rewardCondition}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Reward Value *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.rewardTrigger.reward}
+                      onChange={(e) => handleRewardTriggerChange('reward', e.target.value)}
+                      className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                        errors.rewardValue ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
+                      }`}
+                      placeholder="e.g., 250 Coins + 500 XP"
+                    />
+                    {errors.rewardValue && <p className="mt-1 text-xs text-red-600">{errors.rewardValue}</p>}
+                  </div>
                 </div>
               </div>
             </div>
@@ -485,19 +600,37 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                   <span className="text-gray-900">{formData.gameName || 'No game selected'}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-gray-600">Unlock Condition:</span>
+                  <span className="text-gray-900">{formData.unlockCondition || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-600">Lock Type:</span>
                   <span className="text-gray-900">{formData.lockType}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Min Event to Unlock:</span>
+                  <span className="text-gray-900">{formData.minimumEventToUnlock || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Reward Trigger Rule:</span>
+                  <span className="text-gray-900">{formData.rewardTriggerRule || 'Not specified'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Dependencies:</span>
                   <span className="text-gray-900">{formData.dependencies.length} task chain(s)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Threshold:</span>
-                  <span className="text-gray-900">
-                    {formData.eventThreshold.count} {formData.eventThreshold.type} in {formData.eventThreshold.timeWindow}
+                  <span className="text-gray-600">Override:</span>
+                  <span className={`font-medium ${formData.override ? 'text-orange-600' : 'text-gray-600'}`}>
+                    {formData.override ? 'Yes' : 'No'}
                   </span>
                 </div>
+                {formData.override && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Override by Game ID:</span>
+                    <span className="text-gray-900">{formData.overrideByGameId || 'Not selected'}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
                   <span className={`font-medium ${formData.enabled ? 'text-green-600' : 'text-red-600'}`}>

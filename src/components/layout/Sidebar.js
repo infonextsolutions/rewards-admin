@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
@@ -38,6 +38,18 @@ const menuItems = [
 
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Helper function to check if a sub-item should be active
+  const isSubItemActive = (subItem) => {
+    // Special case for View Tasks: only highlight when viewing global tasks (no game filter)
+    if (subItem.href === '/offers/tasks') {
+      return pathname === '/offers/tasks' && !searchParams.get('game');
+    }
+    // Default: exact pathname match
+    return pathname === subItem.href;
+  };
+
   const [activeItem, setActiveItem] = useState(() => {
     // Check for main items and sub-items
     for (const item of menuItems) {
@@ -45,7 +57,7 @@ export default function Sidebar({ isOpen, onClose }) {
         return item.id;
       }
       if (item.subItems) {
-        const subItem = item.subItems.find(sub => sub.href === pathname);
+        const subItem = item.subItems.find(sub => isSubItemActive(sub));
         if (subItem) {
           return item.id;
         }
@@ -59,7 +71,7 @@ export default function Sidebar({ isOpen, onClose }) {
     const expandedSet = new Set();
     for (const item of menuItems) {
       if (item.subItems) {
-        const hasActiveSubItem = item.subItems.some(sub => sub.href === pathname);
+        const hasActiveSubItem = item.subItems.some(sub => isSubItemActive(sub));
         if (hasActiveSubItem) {
           expandedSet.add(item.id);
         }
@@ -113,7 +125,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const isMainActive = pathname === item.href;
-            const hasActiveSubItem = item.subItems?.some(sub => sub.href === pathname);
+            const hasActiveSubItem = item.subItems?.some(sub => isSubItemActive(sub));
             const isParentActive = isMainActive || hasActiveSubItem;
             const isExpanded = expandedItems.has(item.id);
 
@@ -166,7 +178,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 {item.subItems && isExpanded && (
                   <ul className="mt-1 ml-6 space-y-1">
                     {item.subItems.map((subItem) => {
-                      const isSubActive = pathname === subItem.href;
+                      const isSubActive = isSubItemActive(subItem);
 
                       return (
                         <li key={subItem.id}>
