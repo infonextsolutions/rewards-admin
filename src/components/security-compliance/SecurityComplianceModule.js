@@ -25,16 +25,15 @@ export default function SecurityComplianceModule({ userData = [] }) {
       // Mock API endpoint: POST /admin/security/update-settings
       console.log('Saving biometric settings:', data);
       
-      // Log to audit trail
-      const auditEntry = {
-        action: 'UPDATE_BIOMETRIC_SETTINGS',
-        userId: 'admin_user', // Should come from auth context
-        timestamp: new Date().toISOString(),
-        changes: data,
-        ipAddress: 'xxx.xxx.xxx.xxx'
-      };
-      
-      console.log('Audit trail entry:', auditEntry);
+      // EXCLUDED: Audit-trail entry for security/legal config changes not supported per requirements
+      // const auditEntry = {
+      //   action: 'UPDATE_BIOMETRIC_SETTINGS',
+      //   userId: 'admin_user', // Should come from auth context
+      //   timestamp: new Date().toISOString(),
+      //   changes: data,
+      //   ipAddress: 'xxx.xxx.xxx.xxx'
+      // };
+      // console.log('Audit trail entry:', auditEntry);
       
       setNotification({
         type: 'success',
@@ -62,16 +61,15 @@ export default function SecurityComplianceModule({ userData = [] }) {
       // Mock API endpoint: POST /admin/legal/update-config
       console.log('Saving GDPR settings:', data);
       
-      // Log to audit trail
-      const auditEntry = {
-        action: 'UPDATE_GDPR_SETTINGS',
-        userId: 'admin_user', // Should come from auth context
-        timestamp: new Date().toISOString(),
-        changes: data,
-        ipAddress: 'xxx.xxx.xxx.xxx'
-      };
-      
-      console.log('Audit trail entry:', auditEntry);
+      // EXCLUDED: Audit-trail entry for security/legal config changes not supported per requirements
+      // const auditEntry = {
+      //   action: 'UPDATE_GDPR_SETTINGS',
+      //   userId: 'admin_user', // Should come from auth context
+      //   timestamp: new Date().toISOString(),
+      //   changes: data,
+      //   ipAddress: 'xxx.xxx.xxx.xxx'
+      // };
+      // console.log('Audit trail entry:', auditEntry);
       
       setNotification({
         type: 'success',

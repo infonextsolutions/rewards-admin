@@ -7,14 +7,15 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
   const [loadingStates, setLoadingStates] = useState({});
   const [editingSegment, setEditingSegment] = useState({});
 
-  const handleToggleStatus = async (sdkId) => {
-    setLoadingStates(prev => ({ ...prev, [sdkId]: true }));
-    try {
-      await onToggleStatus(sdkId);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, [sdkId]: false }));
-    }
-  };
+  // EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
+  // const handleToggleStatus = async (sdkId) => {
+  //   setLoadingStates(prev => ({ ...prev, [sdkId]: true }));
+  //   try {
+  //     await onToggleStatus(sdkId);
+  //   } finally {
+  //     setLoadingStates(prev => ({ ...prev, [sdkId]: false }));
+  //   }
+  // };
 
   const getStatusBadge = (status, isActive) => {
     // Determine actual status based on isActive flag
@@ -75,6 +76,7 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
                     {getStatusBadge(sdk.status, sdk.isActive)}
+                    {/* EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -91,6 +93,7 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                         }`} />
                       </div>
                     </label>
+                    */}
                   </div>
                 </td>
                 <td className="px-6 py-4">

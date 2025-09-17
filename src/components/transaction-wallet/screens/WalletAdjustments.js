@@ -19,6 +19,7 @@ export default function WalletAdjustments({ onSneakPeek }) {
   // Mock recent adjustments
   useEffect(() => {
     const mockAdjustments = [
+      /* EXCLUDED: XP adjustments not allowed per requirements
       {
         id: 'ADJ-001',
         userId: 'USR-202589',
@@ -30,6 +31,7 @@ export default function WalletAdjustments({ onSneakPeek }) {
         timestamp: '12/06/2025 10:30 AM',
         status: 'Completed'
       },
+      */
       {
         id: 'ADJ-002',
         userId: 'USR-202590',
@@ -41,6 +43,7 @@ export default function WalletAdjustments({ onSneakPeek }) {
         timestamp: '11/06/2025 03:15 PM',
         status: 'Completed'
       },
+      /* EXCLUDED: XP adjustments not allowed per requirements
       {
         id: 'ADJ-003',
         userId: 'USR-202591',
@@ -52,6 +55,7 @@ export default function WalletAdjustments({ onSneakPeek }) {
         timestamp: '11/06/2025 11:45 AM',
         status: 'Completed'
       }
+      */
     ];
     setRecentAdjustments(mockAdjustments);
   }, []);
@@ -64,7 +68,7 @@ export default function WalletAdjustments({ onSneakPeek }) {
       // Simulate API call to get user balance
       setTimeout(() => {
         setUserBalance({
-          xp: 1250,
+          // xp: 1250, // EXCLUDED: XP balance adjustments not allowed per requirements
           coins: 500,
           tier: 'Gold'
         });
@@ -175,7 +179,7 @@ export default function WalletAdjustments({ onSneakPeek }) {
               >
                 <option value="">Select Type</option>
                 <option value="Coin">Coin</option>
-                <option value="XP">XP</option>
+                {/* <option value="XP">XP</option> */} {/* EXCLUDED: XP adjustments not allowed per requirements */}
               </select>
             </div>
 

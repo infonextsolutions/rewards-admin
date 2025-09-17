@@ -40,10 +40,12 @@ export const UserDetailsSection = ({ user }) => {
 
   // Action buttons per requirements
   const actionButtons = [
-    { text: "Ban Account", bgColor: "bg-red-600 hover:bg-red-700", action: "ban" },
-    { text: "Restore Account", bgColor: "bg-green-600 hover:bg-green-700", action: "restore" },
+    // EXCLUDED: Ban/Restore Account functionality not supported per requirements - will be handled as DevOps activity
+    // { text: "Ban Account", bgColor: "bg-red-600 hover:bg-red-700", action: "ban" },
+    // { text: "Restore Account", bgColor: "bg-green-600 hover:bg-green-700", action: "restore" },
     { text: "Suspend Account", bgColor: "bg-yellow-600 hover:bg-yellow-700", action: "suspend" },
-    { text: "Delete Account", bgColor: "bg-gray-800 hover:bg-gray-900", action: "delete" },
+    // EXCLUDED: Delete User (hard-delete) not supported per requirements
+    // { text: "Delete Account", bgColor: "bg-gray-800 hover:bg-gray-900", action: "delete" },
     { text: "Adjust Balance", bgColor: "bg-blue-600 hover:bg-blue-700", action: "adjustBalance" },
   ];
 
@@ -53,6 +55,7 @@ export const UserDetailsSection = ({ user }) => {
 
   const handleActionClick = (action) => {
     switch (action) {
+      /* EXCLUDED: Ban/Restore Account functionality not supported per requirements
       case 'ban':
         setConfirmationModal({
           isOpen: true,
@@ -75,9 +78,11 @@ export const UserDetailsSection = ({ user }) => {
           }
         });
         break;
+      */
       case 'suspend':
         setShowSuspendModal(true);
         break;
+      /* EXCLUDED: Delete User (hard-delete) not supported per requirements
       case 'delete':
         setConfirmationModal({
           isOpen: true,
@@ -89,6 +94,7 @@ export const UserDetailsSection = ({ user }) => {
           }
         });
         break;
+      */
       case 'adjustBalance':
         setInputModal({
           isOpen: true,
@@ -109,6 +115,7 @@ export const UserDetailsSection = ({ user }) => {
   const handleConfirmAction = async (action) => {
     try {
       switch (action) {
+        /* EXCLUDED: Ban/Restore/Delete Account functionality not supported per requirements
         case 'ban':
           console.log(`Banning user: ${user?.name || 'user'}`);
           // TODO: API call to ban user
@@ -130,6 +137,7 @@ export const UserDetailsSection = ({ user }) => {
           await new Promise(resolve => setTimeout(resolve, 1500));
           showSuccessNotification(`User ${user?.name || 'account'} has been deleted successfully`);
           break;
+        */
         case 'suspend':
           // This case is now handled by the SuspendUserModal
           break;

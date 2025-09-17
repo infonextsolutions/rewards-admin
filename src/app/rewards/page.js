@@ -169,8 +169,11 @@ export default function RewardsPage() {
     resetPagination();
   };
 
+  // EXCLUDED: Global export function on XP screens not supported per requirements
   const handleExport = () => {
-    exportToCSV(currentData, `${activeTab.toLowerCase().replace(/\s+/g, '-')}-data`);
+    console.log('Export functionality disabled per requirements');
+    alert('Export functionality is not supported per requirements');
+    // exportToCSV(currentData, `${activeTab.toLowerCase().replace(/\s+/g, '-')}-data`);
   };
 
   const handleAdd = () => {

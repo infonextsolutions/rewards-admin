@@ -61,15 +61,16 @@ export default function LiveOffersAnalytics() {
     setShowPreviewModal(true);
   };
 
-  const handleToggleOfferStatus = async (offerId) => {
-    setOffers(prevOffers => 
-      prevOffers.map(offer => 
-        offer.id === offerId 
-          ? { ...offer, status: offer.status === 'Live' ? 'Paused' : 'Live' }
-          : offer
-      )
-    );
-  };
+  // EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
+  // const handleToggleOfferStatus = async (offerId) => {
+  //   setOffers(prevOffers =>
+  //     prevOffers.map(offer =>
+  //       offer.id === offerId
+  //         ? { ...offer, status: offer.status === 'Live' ? 'Paused' : 'Live' }
+  //         : offer
+  //     )
+  //   );
+  // };
 
   const handleExportData = (offersToExport = filteredOffers) => {
     // Create CSV content
@@ -192,10 +193,10 @@ export default function LiveOffersAnalytics() {
 
 
       {/* Offers Table */}
+      {/* EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements */}
       <OffersTable
         offers={filteredOffers}
         onPreview={handlePreviewOffer}
-        onToggleStatus={handleToggleOfferStatus}
         onExport={handleExportData}
       />
 

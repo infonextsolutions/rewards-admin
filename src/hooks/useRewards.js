@@ -32,7 +32,12 @@ export const useRewards = () => {
     }
   };
 
+  // EXCLUDED: Copy of Data KPIs file mapping and audit logging not supported per requirements
   const logAction = (action, activeTab, itemData, itemId = null) => {
+    // Audit logging and KPI mapping disabled per requirements
+    console.log('Audit logging and KPI file mapping disabled per requirements');
+
+    /* ORIGINAL CODE - COMMENTED OUT
     const logEntry = {
       id: Date.now(),
       timestamp: new Date().toISOString(),
@@ -43,6 +48,7 @@ export const useRewards = () => {
       admin: 'Admin User', // This would come from auth context in real app
     };
     setAuditLogs(prev => [logEntry, ...prev]);
+    */
   };
 
   const validateBusinessRules = (activeTab, itemData, itemId = null, currentData = null) => {

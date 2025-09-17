@@ -71,19 +71,20 @@ const Dashboard = () => {
     }));
   };
 
+  // EXCLUDED: Near-real-time auto-refresh functionality not supported per requirements
   // Simulate data loading based on filters
-  useEffect(() => {
-    setDashboardData(prev => ({ ...prev, loading: true }));
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      setDashboardData(prev => ({
-        ...prev,
-        loading: false,
-        // Data would be filtered based on current filters
-      }));
-    }, 500);
-  }, [filters]);
+  // useEffect(() => {
+  //   setDashboardData(prev => ({ ...prev, loading: true }));
+  //
+  //   // Simulate API call delay
+  //   setTimeout(() => {
+  //     setDashboardData(prev => ({
+  //       ...prev,
+  //       loading: false,
+  //       // Data would be filtered based on current filters
+  //     }));
+  //   }, 500);
+  // }, [filters]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">

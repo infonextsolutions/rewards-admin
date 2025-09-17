@@ -91,7 +91,7 @@ export default function NotificationConfigPanel({
 
   return (
     <div className="space-y-8">
-      {/* Notification Configuration Section */}
+      {/* EXCLUDED: Notification recipients & Slack webhook alerts configuration not supported per requirements
       <div className="bg-gray-50 rounded-lg p-6">
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -104,7 +104,6 @@ export default function NotificationConfigPanel({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Notification Type - Dropdown as per requirements */}
           <div className="space-y-4">
             <div>
               <label htmlFor="notificationType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -121,7 +120,6 @@ export default function NotificationConfigPanel({
               </select>
             </div>
 
-            {/* Slack Webhook URL - Conditional */}
             {formData.notificationType === 'slack' && (
               <div>
                 <label htmlFor="slackWebhook" className="block text-sm font-medium text-gray-700 mb-2">
@@ -139,7 +137,6 @@ export default function NotificationConfigPanel({
             )}
           </div>
 
-          {/* Recipient Group - Checkbox list with clear option */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -185,6 +182,7 @@ export default function NotificationConfigPanel({
           </div>
         </div>
       </div>
+      */}
 
       {/* Trigger Events - Simple Dropdown */}
       <div className="bg-gray-50 rounded-lg p-6">
@@ -219,7 +217,7 @@ export default function NotificationConfigPanel({
         </div>
       </div>
 
-      {/* Firebase A/B Testing - Simple Toggle */}
+      {/* EXCLUDED: Firebase A/B-testing flags toggle not supported per requirements
       <div className="bg-gray-50 rounded-lg p-6">
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -250,6 +248,7 @@ export default function NotificationConfigPanel({
           </button>
         </div>
       </div>
+      */}
 
       {/* Save Button */}
       <div className="flex justify-end space-x-3">

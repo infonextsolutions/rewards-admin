@@ -15,12 +15,12 @@ export const VALIDATION_RULES = {
     message: 'Please enter a valid HTTPS URL (e.g., https://api.example.com/v1)'
   },
   
-  // Slack Webhook URL validation - specific format for Slack
-  slackWebhookUrl: {
-    required: false, // Only required when Slack is selected
-    pattern: /^https:\/\/hooks\.slack\.com\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[a-zA-Z0-9]+$/,
-    message: 'Please enter a valid Slack webhook URL'
-  },
+  // EXCLUDED: Slack webhook URL validation not supported per requirements
+  // slackWebhookUrl: {
+  //   required: false, // Only required when Slack is selected
+  //   pattern: /^https:\/\/hooks\.slack\.com\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[a-zA-Z0-9]+$/,
+  //   message: 'Please enter a valid Slack webhook URL'
+  // },
   
   // Integration name validation
   integrationName: {
@@ -85,9 +85,17 @@ export const validateIntegrationForm = (formData) => {
   };
 };
 
+// EXCLUDED: Notification form validation not supported per requirements (Slack webhooks & notification recipients excluded)
 export const validateNotificationForm = (formData) => {
+  // Validation disabled per requirements
+  return {
+    isValid: true,
+    errors: {}
+  };
+
+  /* ORIGINAL CODE - COMMENTED OUT
   const errors = {};
-  
+
   // Validate Slack webhook URL if Slack is selected
   if (formData.notificationType === 'slack') {
     const webhookValidation = validateField('slackWebhookUrl', formData.slackWebhookUrl, true);
@@ -110,4 +118,5 @@ export const validateNotificationForm = (formData) => {
     isValid: Object.keys(errors).length === 0,
     errors
   };
+  */
 };

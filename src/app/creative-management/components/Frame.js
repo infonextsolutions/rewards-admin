@@ -21,27 +21,28 @@ const Frame = ({ activeTab, setActiveTab, filters, onFilterChange, onAddNew }) =
       setOpen: setDateRangeOpen,
       options: null,
     },
-    {
-      id: "placement",
-      label: filters.placement || "Placement",
-      isOpen: placementOpen,
-      setOpen: setPlacementOpen,
-      options: placementFilterOptions,
-    },
-    {
-      id: "pid",
-      label: filters.pid || "Campaign PID",
-      isOpen: pidOpen,
-      setOpen: setPidOpen,
-      options: pidFilterOptions,
-    },
-    {
-      id: "segment",
-      label: filters.segment || "Segment",
-      isOpen: segmentOpen,
-      setOpen: setSegmentOpen,
-      options: segmentFilterOptions,
-    },
+    // EXCLUDED: Placement, Campaign PID, and Segment filters not supported per requirements
+    // {
+    //   id: "placement",
+    //   label: filters.placement || "Placement",
+    //   isOpen: placementOpen,
+    //   setOpen: setPlacementOpen,
+    //   options: placementFilterOptions,
+    // },
+    // {
+    //   id: "pid",
+    //   label: filters.pid || "Campaign PID",
+    //   isOpen: pidOpen,
+    //   setOpen: setPidOpen,
+    //   options: pidFilterOptions,
+    // },
+    // {
+    //   id: "segment",
+    //   label: filters.segment || "Segment",
+    //   isOpen: segmentOpen,
+    //   setOpen: setSegmentOpen,
+    //   options: segmentFilterOptions,
+    // },
     {
       id: "status",
       label: filters.status || "Status",
@@ -192,16 +193,18 @@ const Frame = ({ activeTab, setActiveTab, filters, onFilterChange, onAddNew }) =
         >
           Upload & Assign Creatives
         </button>
+        {/* EXCLUDED: Campaign Tracker tab with drill-down functionality not supported per requirements
         <button
           className={`px-6 py-3 text-sm font-medium border-b-2 ${
-            activeTab === "tracker" 
-              ? "border-[#00a389] text-[#00a389]" 
+            activeTab === "tracker"
+              ? "border-[#00a389] text-[#00a389]"
               : "border-transparent text-gray-500"
           }`}
           onClick={() => setActiveTab("tracker")}
         >
           Creative Campaign Tracker
         </button>
+        */}
       </div>
     </div>
   );

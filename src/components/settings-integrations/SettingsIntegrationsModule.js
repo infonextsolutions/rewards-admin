@@ -12,12 +12,13 @@ const TABS = [
     icon: '🔌',
     description: 'Manage third-party SDK credentials and test connections'
   },
-  { 
-    id: 'notifications', 
-    label: 'Notification & A/B Testing', 
-    icon: '🔔',
-    description: 'Configure alerts, recipients and Firebase features'
-  }
+  // EXCLUDED: Notification & A/B Testing functionality not supported per requirements
+  // {
+  //   id: 'notifications',
+  //   label: 'Notification & A/B Testing',
+  //   icon: '🔔',
+  //   description: 'Configure alerts, recipients and Firebase features'
+  // }
 ];
 
 export default function SettingsIntegrationsModule() {
@@ -82,19 +83,20 @@ export default function SettingsIntegrationsModule() {
             onShowNotification={showNotification}
           />
         );
-      case 'notifications':
-        return (
-          <NotificationConfigPanel
-            notificationSettings={notificationSettings}
-            firebaseFeatures={firebaseFeatures}
-            triggerEvents={triggerEvents}
-            notificationRoles={notificationRoles}
-            loading={loading}
-            onUpdateSettings={updateNotificationSettings}
-            onToggleFirebaseFeature={toggleFirebaseFeature}
-            onShowNotification={showNotification}
-          />
-        );
+      // EXCLUDED: Notification configuration not supported per requirements
+      // case 'notifications':
+      //   return (
+      //     <NotificationConfigPanel
+      //       notificationSettings={notificationSettings}
+      //       firebaseFeatures={firebaseFeatures}
+      //       triggerEvents={triggerEvents}
+      //       notificationRoles={notificationRoles}
+      //       loading={loading}
+      //       onUpdateSettings={updateNotificationSettings}
+      //       onToggleFirebaseFeature={toggleFirebaseFeature}
+      //       onShowNotification={showNotification}
+      //     />
+      //   );
       default:
         return null;
     }

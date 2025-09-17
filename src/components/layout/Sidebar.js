@@ -29,6 +29,7 @@ const menuItems = [
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
   { id: 'spin-wheel', label: 'Spin Wheel Manager', icon: '/Rewards.png', href: '/spin-wheel' },
   { id: 'payments', label: 'Payments', icon: '/Payments.png', href: '/payments' },
+  // EXCLUDED: Fraud monitoring functionality not supported per requirements
   // { id: 'fraud', label: 'Fraud Monitoring', icon: '/Fraud Monitoring.png', href: '/fraud' },
   // { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
   //  { id: 'push-notifications', label: 'Push Notification Center', icon: '/Settings.png', href: '/push-notifications' },

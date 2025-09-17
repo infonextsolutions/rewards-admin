@@ -5,14 +5,15 @@ import { useState } from 'react';
 export default function OffersTable({ offers, onPreview, onToggleStatus, onExport }) {
   const [loadingStates, setLoadingStates] = useState({});
 
-  const handleToggleStatus = async (offerId) => {
-    setLoadingStates(prev => ({ ...prev, [offerId]: true }));
-    try {
-      await onToggleStatus(offerId);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, [offerId]: false }));
-    }
-  };
+  // EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
+  // const handleToggleStatus = async (offerId) => {
+  //   setLoadingStates(prev => ({ ...prev, [offerId]: true }));
+  //   try {
+  //     await onToggleStatus(offerId);
+  //   } finally {
+  //     setLoadingStates(prev => ({ ...prev, [offerId]: false }));
+  //   }
+  // };
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -96,6 +97,7 @@ export default function OffersTable({ offers, onPreview, onToggleStatus, onExpor
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-3">
                     {getStatusBadge(offer.status)}
+                    {/* EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -112,6 +114,7 @@ export default function OffersTable({ offers, onPreview, onToggleStatus, onExpor
                         }`} />
                       </div>
                     </label>
+                    */}
                   </div>
                 </td>
                 <td className="px-6 py-4">

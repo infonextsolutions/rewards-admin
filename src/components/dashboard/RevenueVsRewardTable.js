@@ -74,16 +74,25 @@ const RevenueVsRewardTable = ({ data, loading }) => {
     }).format(amount);
   };
 
+  // EXCLUDED: Red/green visual margin indicators & automatic underperformer flagging not supported per requirements
+  // const getMarginColor = (percent) => {
+  //   if (percent >= 75) return 'text-green-600 bg-green-50';
+  //   if (percent >= 60) return 'text-yellow-600 bg-yellow-50';
+  //   return 'text-red-600 bg-red-50';
+  // };
+  //
+  // const getRetentionColor = (percent) => {
+  //   if (percent >= 50) return 'text-green-600';
+  //   if (percent >= 35) return 'text-yellow-600';
+  //   return 'text-red-600';
+  // };
+
   const getMarginColor = (percent) => {
-    if (percent >= 75) return 'text-green-600 bg-green-50';
-    if (percent >= 60) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    return 'text-gray-600 bg-gray-50';
   };
 
   const getRetentionColor = (percent) => {
-    if (percent >= 50) return 'text-green-600';
-    if (percent >= 35) return 'text-yellow-600';
-    return 'text-red-600';
+    return 'text-gray-600';
   };
 
   if (loading) {
@@ -155,7 +164,7 @@ const RevenueVsRewardTable = ({ data, loading }) => {
                     </span>
                   </td>
                   <td className="py-4 px-2 text-right">
-                    <span className="font-semibold text-green-600 text-sm">
+                    <span className="font-semibold text-gray-600 text-sm">
                       {formatCurrency(game.marginDollar)}
                     </span>
                   </td>

@@ -62,13 +62,15 @@ export default function CreativeManagementPage() {
       creative.placement.toLowerCase().includes(searchTerm.toLowerCase()) ||
       creative.segment.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesPlacement = !filters.placement || filters.placement === "All Placements" || creative.placement === filters.placement;
-    const matchesPID = !filters.pid || filters.pid === "All PIDs" || creative.campaignPID === filters.pid;
-    const matchesSegment = !filters.segment || filters.segment === "All Segments" || 
-      creative.segment.split(', ').some(seg => seg.trim() === filters.segment);
+    // EXCLUDED: Placement, PID, and Segment filtering disabled per requirements
+    // const matchesPlacement = !filters.placement || filters.placement === "All Placements" || creative.placement === filters.placement;
+    // const matchesPID = !filters.pid || filters.pid === "All PIDs" || creative.campaignPID === filters.pid;
+    // const matchesSegment = !filters.segment || filters.segment === "All Segments" ||
+    //   creative.segment.split(', ').some(seg => seg.trim() === filters.segment);
     const matchesStatus = !filters.status || filters.status === "All Status" || creative.status === filters.status;
     
-    return matchesSearch && matchesPlacement && matchesPID && matchesSegment && matchesStatus;
+    // EXCLUDED: Only use search and status filtering per requirements
+    return matchesSearch && matchesStatus;
   });
 
   const totalItems = filteredData.length;
@@ -157,6 +159,20 @@ export default function CreativeManagementPage() {
         onAddNew={() => openModal('addEdit')}
       />
 
+      {/* EXCLUDED: Campaign Tracker functionality not supported per requirements - only show upload table */}
+      <UploadTable
+        data={paginatedData}
+        onEdit={(creative) => openModal('addEdit', creative)}
+        onDelete={(creative) => openModal('delete', creative)}
+        onToggle={handleToggle}
+        onPreview={(creative) => openModal('preview', creative)}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+      />
+
+      {/* EXCLUDED: TrackerTable functionality removed per requirements
       {activeTab === "upload" ? (
         <UploadTable
           data={paginatedData}
@@ -179,6 +195,7 @@ export default function CreativeManagementPage() {
           onPageChange={handlePageChange}
         />
       )}
+      */}
 
       {/* Modals */}
       <AddEditCreativeModal

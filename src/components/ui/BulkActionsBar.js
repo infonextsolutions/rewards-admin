@@ -1,9 +1,15 @@
+// EXCLUDED: Bulk actions not supported per requirements - actions can only be taken on single users
 export default function BulkActionsBar({
   selectedCount,
   onBulkAction,
   onClearSelection,
   className = ""
 }) {
+  // Component disabled - bulk actions not allowed
+  return null;
+
+  /*
+  // ORIGINAL CODE - COMMENTED OUT
   if (selectedCount === 0) return null;
 
   return (
@@ -39,4 +45,5 @@ export default function BulkActionsBar({
       </div>
     </div>
   );
+  */
 }

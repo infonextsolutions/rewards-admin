@@ -5,9 +5,10 @@ import { validateTitle, validateFile, validatePID, validateSegment } from '../va
 const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreatives }) => {
   const [formData, setFormData] = useState({
     title: "",
-    placement: "",
-    campaignPID: "",
-    segment: [],
+    // EXCLUDED: placement, campaignPID, segment fields removed per requirements
+    // placement: "",
+    // campaignPID: "",
+    // segment: [],
     status: "Active",
     file: null
   });
@@ -18,18 +19,20 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
     if (creative) {
       setFormData({
         title: creative.title,
-        placement: creative.placement,
-        campaignPID: creative.campaignPID,
-        segment: creative.segment.split(", "),
+        // EXCLUDED: placement, campaignPID, segment fields removed per requirements
+        // placement: creative.placement,
+        // campaignPID: creative.campaignPID,
+        // segment: creative.segment.split(", "),
         status: creative.status,
         file: null
       });
     } else {
       setFormData({
         title: "",
-        placement: "",
-        campaignPID: "",
-        segment: [],
+        // EXCLUDED: placement, campaignPID, segment fields removed per requirements
+        // placement: "",
+        // campaignPID: "",
+        // segment: [],
         status: "Active",
         file: null
       });
@@ -38,23 +41,24 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     const titleError = validateTitle(formData.title, existingCreatives, creative?.id);
     if (titleError) newErrors.title = titleError;
-    
+
     if (!creative || formData.file) {
       const fileError = validateFile(formData.file);
       if (fileError) newErrors.file = fileError;
     }
-    
-    const pidError = validatePID(formData.campaignPID);
-    if (pidError) newErrors.campaignPID = pidError;
-    
-    const segmentError = validateSegment(formData.segment);
-    if (segmentError) newErrors.segment = segmentError;
-    
-    if (!formData.placement) newErrors.placement = "Placement is required";
-    
+
+    // EXCLUDED: Placement, PID, and Segment validation removed per requirements
+    // const pidError = validatePID(formData.campaignPID);
+    // if (pidError) newErrors.campaignPID = pidError;
+    //
+    // const segmentError = validateSegment(formData.segment);
+    // if (segmentError) newErrors.segment = segmentError;
+    //
+    // if (!formData.placement) newErrors.placement = "Placement is required";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -74,7 +78,8 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
     
     onSave({
       ...formData,
-      segment: formData.segment.join(", "),
+      // EXCLUDED: segment field processing removed per requirements
+      // segment: formData.segment.join(", "),
       id: creative ? creative.id : `CRE-${Date.now()}`,
       isDeleted: false,
       auditLog: creative ? [...(creative.auditLog || []), auditEntry] : [auditEntry],
@@ -151,7 +156,7 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
             {errors.file && <p className="text-red-500 text-xs mt-1">{errors.file}</p>}
           </div>
 
-          {/* Assign Placement */}
+          {/* EXCLUDED: Assign Placement functionality not supported per requirements
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Assign Placement *
@@ -174,8 +179,9 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
             </select>
             {errors.placement && <p className="text-red-500 text-xs mt-1">{errors.placement}</p>}
           </div>
+          */}
 
-          {/* Campaign PID */}
+          {/* EXCLUDED: Campaign PID mapping functionality not supported per requirements
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               PID / Campaign ID *
@@ -196,8 +202,9 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
             <p className="text-xs text-gray-700 mt-1">Must match existing campaign: {validPIDs.join(', ')}</p>
             {errors.campaignPID && <p className="text-red-500 text-xs mt-1">{errors.campaignPID}</p>}
           </div>
+          */}
 
-          {/* Target Segment */}
+          {/* EXCLUDED: Multi-select Target Segment filter not supported per requirements
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Target Segment *
@@ -222,6 +229,7 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
             </div>
             {errors.segment && <p className="text-red-500 text-xs mt-1">{errors.segment}</p>}
           </div>
+          */}
 
           {/* Launch Status */}
           <div>

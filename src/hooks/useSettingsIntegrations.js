@@ -64,9 +64,10 @@ export const useSettingsIntegrations = () => {
       };
 
       setIntegrations(prev => [...prev, newIntegration]);
-      
-      // Log audit trail - removed for security
-      
+
+      // EXCLUDED: Audit-trail logging of Settings actions not supported per requirements
+      // Audit trail logging disabled per requirements
+
       return { success: true, integration: newIntegration };
     } catch (err) {
       setError('Failed to create integration');
@@ -175,8 +176,13 @@ export const useSettingsIntegrations = () => {
     });
   }, [integrations, updateIntegration]);
 
-  // Notification settings operations
+  // EXCLUDED: Notification settings operations not supported per requirements
   const updateNotificationSettings = useCallback(async (settings) => {
+    // Notification settings updates disabled per requirements
+    console.log('Notification settings updates are disabled per requirements');
+    return { success: false, error: 'Notification settings not supported' };
+
+    /* ORIGINAL CODE - COMMENTED OUT
     setLoading(true);
     setError(null);
 
@@ -195,18 +201,24 @@ export const useSettingsIntegrations = () => {
     } finally {
       setLoading(false);
     }
+    */
   }, []);
 
-  // Firebase feature toggles
+  // EXCLUDED: Firebase A/B testing flags toggle not supported per requirements
   const toggleFirebaseFeature = useCallback(async (featureKey) => {
+    // Firebase feature toggles disabled per requirements
+    console.log('Firebase feature toggles are disabled per requirements');
+    return { success: false, error: 'Firebase feature toggles not supported' };
+
+    /* ORIGINAL CODE - COMMENTED OUT
     setLoading(true);
     setError(null);
 
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      setFirebaseFeatures(prev => prev.map(feature => 
-        feature.key === featureKey 
+      setFirebaseFeatures(prev => prev.map(feature =>
+        feature.key === featureKey
           ? { ...feature, enabled: !feature.enabled }
           : feature
       ));
@@ -218,6 +230,7 @@ export const useSettingsIntegrations = () => {
     } finally {
       setLoading(false);
     }
+    */
   }, []);
 
   // Computed values

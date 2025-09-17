@@ -1,24 +1,27 @@
-// Mock data for notification settings - basic as per requirements
+// EXCLUDED: Notification settings with Slack configuration not supported per requirements
 export const MOCK_NOTIFICATION_SETTINGS = {
   email: {
     enabled: true,
     recipients: ['admin@jackson.com'],
     events: ['cashout_failure']
   },
-  slack: {
-    enabled: false,
-    webhookUrl: '',
-    events: ['system_error']
-  },
-  firebase: {
-    abTestingEnabled: true
-  }
+  // EXCLUDED: Slack configuration not supported per requirements
+  // slack: {
+  //   enabled: false,
+  //   webhookUrl: '',
+  //   events: ['system_error']
+  // },
+  // EXCLUDED: Firebase A/B testing not supported per requirements
+  // firebase: {
+  //   abTestingEnabled: true
+  // }
 };
 
-// Notification types - only Email and Slack as per requirements
+// EXCLUDED: Notification types with Slack not supported per requirements
 export const NOTIFICATION_TYPES = [
   { value: 'email', label: 'Email', icon: '📧' },
-  { value: 'slack', label: 'Slack', icon: '💬' }
+  // EXCLUDED: Slack notifications not supported per requirements
+  // { value: 'slack', label: 'Slack', icon: '💬' }
 ];
 
 // Available trigger events - core events as per requirements
@@ -43,38 +46,39 @@ export const TRIGGER_EVENTS = [
   }
 ];
 
-// User roles for notifications
+// EXCLUDED: Notification roles/recipients configuration not supported per requirements
 export const NOTIFICATION_ROLES = [
-  {
-    value: 'super_admin',
-    label: 'Super Admin',
-    description: 'Full access administrators',
-    users: ['admin@jackson.com', 'cto@jackson.com']
-  },
-  {
-    value: 'admin',
-    label: 'Admin',
-    description: 'Standard administrators',
-    users: ['ops@jackson.com', 'manager@jackson.com']
-  },
-  {
-    value: 'qa_tester',
-    label: 'QA Tester',
-    description: 'Quality assurance team',
-    users: ['qa@jackson.com', 'test@jackson.com']
-  },
-  {
-    value: 'analyst',
-    label: 'Analyst',
-    description: 'Data analysts and viewers',
-    users: ['analyst@jackson.com', 'reports@jackson.com']
-  },
-  {
-    value: 'support',
-    label: 'Support Team',
-    description: 'Customer support representatives',
-    users: ['support@jackson.com', 'help@jackson.com']
-  }
+  // Notification recipient configuration disabled per requirements
+  // {
+  //   value: 'super_admin',
+  //   label: 'Super Admin',
+  //   description: 'Full access administrators',
+  //   users: ['admin@jackson.com', 'cto@jackson.com']
+  // },
+  // {
+  //   value: 'admin',
+  //   label: 'Admin',
+  //   description: 'Standard administrators',
+  //   users: ['ops@jackson.com', 'manager@jackson.com']
+  // },
+  // {
+  //   value: 'qa_tester',
+  //   label: 'QA Tester',
+  //   description: 'Quality assurance team',
+  //   users: ['qa@jackson.com', 'test@jackson.com']
+  // },
+  // {
+  //   value: 'analyst',
+  //   label: 'Analyst',
+  //   description: 'Data analysts and viewers',
+  //   users: ['analyst@jackson.com', 'reports@jackson.com']
+  // },
+  // {
+  //   value: 'support',
+  //   label: 'Support Team',
+  //   description: 'Customer support representatives',
+  //   users: ['support@jackson.com', 'help@jackson.com']
+  // }
 ];
 
 // Event categories for grouping
@@ -88,12 +92,13 @@ export const EVENT_CATEGORIES = [
   'Rewards'
 ];
 
-// Firebase feature flags - only A/B testing as per requirements
+// EXCLUDED: Firebase feature flags not supported per requirements
 export const FIREBASE_FEATURES = [
-  {
-    key: 'ab_testing_enabled',
-    label: 'A/B Testing',
-    description: 'Enable Firebase A/B Testing experiments',
-    enabled: true
-  }
+  // Firebase A/B testing feature flags disabled per requirements
+  // {
+  //   key: 'ab_testing_enabled',
+  //   label: 'A/B Testing',
+  //   description: 'Enable Firebase A/B Testing experiments',
+  //   enabled: true
+  // }
 ];

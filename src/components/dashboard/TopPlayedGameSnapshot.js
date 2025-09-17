@@ -6,7 +6,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 const TopPlayedGameSnapshot = ({ data, loading }) => {
   // Data Integration Points (as per requirements):
   // - Game DB: Game name, banner image
-  // - XP Engine: Average XP calculation
+  // EXCLUDED: Real-time XP Engine service linkage not supported per requirements
+  // - XP Engine integration disabled per requirements
   // - Reward DB: Reward conversion percentage
   // - User DB: Demographics (age, gender, region segmentation)
   // - Analytics DB: User behavior and tier distribution

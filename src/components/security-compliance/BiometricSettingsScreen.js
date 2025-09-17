@@ -4,7 +4,8 @@ import { useState } from 'react';
 
 const VERIFICATION_METHODS = ['Native', 'SDK'];
 const RETRY_TYPES = ['OTP', 'PIN'];
-const VERIFICATION_TYPES = ['Face', 'Iris', 'Fingerprint'];
+// EXCLUDED: Biometric subtype selection (Face/Iris) not supported per requirements - default biometric is provided
+// const VERIFICATION_TYPES = ['Face', 'Iris', 'Fingerprint'];
 const USER_ROLES = ['Player', 'VIP', 'Guest', 'Premium'];
 const SDK_PROVIDERS = ['FaceIO', 'RecognitionIO', 'BiometricAuth', 'SecureVision'];
 
@@ -16,9 +17,9 @@ export default function BiometricSettingsScreen({ onSave }) {
     retryType: 'OTP',
     retryLimit: 3,
     lockDuration: 10,
-    verificationType: 'Face',
+    // verificationType: 'Face', // EXCLUDED: Biometric subtype selection not supported
     userRole: 'Player',
-    dataCap: 150
+    // dataCap: 150 // EXCLUDED: Role-based data cap enforcement not supported
   });
 
   const [errors, setErrors] = useState({});
@@ -45,9 +46,10 @@ export default function BiometricSettingsScreen({ onSave }) {
       newErrors.lockDuration = 'Lock duration must be at least 1 minute';
     }
 
-    if (formData.dataCap < 1) {
-      newErrors.dataCap = 'Data cap must be at least 1 MB';
-    }
+    // EXCLUDED: Role-based data cap enforcement not supported
+    // if (formData.dataCap < 1) {
+    //   newErrors.dataCap = 'Data cap must be at least 1 MB';
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -187,11 +189,11 @@ export default function BiometricSettingsScreen({ onSave }) {
           )}
         </div>
 
-        {/* SDK API Key Configuration */}
+        {/* EXCLUDED: Edit SDK credentials (API key, endpoint) functionality not supported per requirements
         {formData.verificationMethod === 'SDK' && (
           <div className="bg-blue-50 rounded-lg p-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">SDK Configuration</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -222,16 +224,15 @@ export default function BiometricSettingsScreen({ onSave }) {
                     <span>{isTestingConnection ? 'Testing...' : 'Test Connection'}</span>
                   </button>
                 </div>
-                
+
                 {errors.providerApiKey && (
                   <p className="mt-1 text-sm text-red-600">{errors.providerApiKey}</p>
                 )}
-                
-                {/* Connection Status */}
+
                 {connectionStatus && (
                   <div className={`mt-2 p-3 rounded-lg border ${
-                    connectionStatus.type === 'success' 
-                      ? 'bg-green-50 border-green-200' 
+                    connectionStatus.type === 'success'
+                      ? 'bg-green-50 border-green-200'
                       : 'bg-red-50 border-red-200'
                   }`}>
                     <div className="flex items-center">
@@ -256,6 +257,7 @@ export default function BiometricSettingsScreen({ onSave }) {
             </div>
           </div>
         )}
+        */}
 
         {/* Retry Configuration */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -320,6 +322,7 @@ export default function BiometricSettingsScreen({ onSave }) {
 
         {/* Biometric & User Configuration */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* EXCLUDED: Biometric subtype selection (Face/Iris) not supported per requirements - default biometric is provided
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Verification Type <span className="text-red-500">*</span>
@@ -334,6 +337,7 @@ export default function BiometricSettingsScreen({ onSave }) {
               ))}
             </select>
           </div>
+          */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -350,6 +354,7 @@ export default function BiometricSettingsScreen({ onSave }) {
             </select>
           </div>
 
+          {/* EXCLUDED: Role-based data cap enforcement not supported per requirements
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Data Cap (MB) <span className="text-red-500">*</span>
@@ -368,6 +373,7 @@ export default function BiometricSettingsScreen({ onSave }) {
               <p className="mt-1 text-sm text-red-600">{errors.dataCap}</p>
             )}
           </div>
+          */}
         </div>
 
         {/* Save Button */}

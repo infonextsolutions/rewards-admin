@@ -55,7 +55,8 @@ export const MOCK_XP_DECAY_SETTINGS = [
     inactivityDuration: "7 Days",
     minimumXpLimit: 100,
     decayPercentage: "25%",
-    notificationToggle: true,
+    // EXCLUDED: User-notification toggle for XP decay warnings not supported per requirements
+    // notificationToggle: true,
     status: true,
   },
   {
@@ -66,7 +67,8 @@ export const MOCK_XP_DECAY_SETTINGS = [
     inactivityDuration: "10 Days",
     minimumXpLimit: 200,
     decayPercentage: "20%",
-    notificationToggle: true,
+    // EXCLUDED: User-notification toggle for XP decay warnings not supported per requirements
+    // notificationToggle: true,
     status: true,
   },
   {
@@ -77,39 +79,42 @@ export const MOCK_XP_DECAY_SETTINGS = [
     inactivityDuration: "14 Days",
     minimumXpLimit: 500,
     decayPercentage: "15%",
-    notificationToggle: false,
+    // EXCLUDED: User-notification toggle for XP decay warnings not supported per requirements
+    // notificationToggle: false,
     status: true,
   },
 ];
 
+// EXCLUDED: Tier-specific XP-to-currency conversion ratios and payout channel mapping not supported per requirements
 export const MOCK_XP_CONVERSIONS = [
-  {
-    id: 1,
-    tierName: "Junior",
-    xpRange: "0 - 999 XP",
-    conversionRatio: "100 XP = 1 Point",
-    enabled: true,
-    redemptionChannels: ["Mobile App", "Web Portal"],
-    status: true,
-  },
-  {
-    id: 2,
-    tierName: "Middle Level",
-    xpRange: "1000 - 2999 XP", 
-    conversionRatio: "90 XP = 1 Point",
-    enabled: true,
-    redemptionChannels: ["Mobile App", "Web Portal", "Partner Stores"],
-    status: true,
-  },
-  {
-    id: 3,
-    tierName: "Senior",
-    xpRange: "3000 - 9999 XP",
-    conversionRatio: "80 XP = 1 Point",
-    enabled: true,
-    redemptionChannels: ["Mobile App", "Web Portal", "Partner Stores", "VIP Support"],
-    status: true,
-  },
+  // XP conversion functionality disabled per requirements
+  // {
+  //   id: 1,
+  //   tierName: "Junior",
+  //   xpRange: "0 - 999 XP",
+  //   conversionRatio: "100 XP = 1 Point",
+  //   enabled: true,
+  //   redemptionChannels: ["Mobile App", "Web Portal"],
+  //   status: true,
+  // },
+  // {
+  //   id: 2,
+  //   tierName: "Middle Level",
+  //   xpRange: "1000 - 2999 XP",
+  //   conversionRatio: "90 XP = 1 Point",
+  //   enabled: true,
+  //   redemptionChannels: ["Mobile App", "Web Portal", "Partner Stores"],
+  //   status: true,
+  // },
+  // {
+  //   id: 3,
+  //   tierName: "Senior",
+  //   xpRange: "3000 - 9999 XP",
+  //   conversionRatio: "80 XP = 1 Point",
+  //   enabled: true,
+  //   redemptionChannels: ["Mobile App", "Web Portal", "Partner Stores", "VIP Support"],
+  //   status: true,
+  // },
 ];
 
 export const MOCK_BONUS_LOGIC = [

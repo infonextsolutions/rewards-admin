@@ -125,7 +125,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* GDPR Consent Toggle */}
+        {/* EXCLUDED: Global GDPR-consent ON/OFF toggle not supported per requirements
         <div className="bg-blue-50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -143,11 +143,12 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
             </label>
           </div>
         </div>
+        */}
 
-        {/* Legal Configuration */}
+        {/* EXCLUDED: Version-tracked legal disclaimer editable by admin not supported per requirements
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Legal Disclosure Configuration</h3>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Legal Version <span className="text-red-500">*</span>
@@ -182,6 +183,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
             )}
           </div>
         </div>
+        */}
 
         {/* Data Export Section */}
         <div className="bg-gray-50 rounded-lg p-4">

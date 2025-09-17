@@ -101,7 +101,7 @@ const FiltersSection = ({ filters, onFilterChange }) => {
           </div>
         </div>
 
-        {/* Game Title */}
+        {/* EXCLUDED: KPIs per Game Title functionality not supported per requirements - display only as per UTM information
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-2">
             <label className="text-sm font-medium text-gray-700">Game Title</label>
@@ -135,6 +135,7 @@ const FiltersSection = ({ filters, onFilterChange }) => {
             ))}
           </div>
         </div>
+        */}
 
         {/* Advertiser */}
         <div className="flex flex-col">
@@ -253,7 +254,12 @@ const FiltersSection = ({ filters, onFilterChange }) => {
   );
 };
 
+// EXCLUDED: Row-click drill-down modal with multi-KPI trendlines not supported per requirements
 const TrendModal = ({ isOpen, onClose, selectedRow }) => {
+  // Drill-down modal functionality disabled per requirements
+  return null;
+
+  /* ORIGINAL CODE - COMMENTED OUT
   if (!isOpen || !selectedRow) return null;
 
   // Prepare chart data
@@ -281,9 +287,8 @@ const TrendModal = ({ isOpen, onClose, selectedRow }) => {
             ×
           </button>
         </div>
-        
+
         <div className="space-y-8">
-          {/* Installs Trend Chart */}
           <div className="bg-gray-50 p-6 rounded-lg">
             <h3 className="font-medium mb-4 text-blue-600 text-lg">Installs Trend</h3>
             <div className="h-64">
@@ -299,7 +304,6 @@ const TrendModal = ({ isOpen, onClose, selectedRow }) => {
             </div>
           </div>
 
-          {/* Revenue Trend Chart */}
           <div className="bg-gray-50 p-6 rounded-lg">
             <h3 className="font-medium mb-4 text-green-600 text-lg">Revenue Trend (₹)</h3>
             <div className="h-64">
@@ -315,7 +319,6 @@ const TrendModal = ({ isOpen, onClose, selectedRow }) => {
             </div>
           </div>
 
-          {/* Retention Trend Chart */}
           <div className="bg-gray-50 p-6 rounded-lg">
             <h3 className="font-medium mb-4 text-purple-600 text-lg">Retention Trend (%)</h3>
             <div className="h-64">
@@ -334,6 +337,7 @@ const TrendModal = ({ isOpen, onClose, selectedRow }) => {
       </div>
     </div>
   );
+  */
 };
 
 const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowClick, sortConfig, onSort }) => {
@@ -351,11 +355,13 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
           <table className="w-full min-w-[900px]">
             <thead>
               <tr className="h-16 bg-[#ecf8f1] rounded-[10px]">
+                {/* EXCLUDED: Game Title KPIs not supported per requirements
                 <th className="text-left px-4 py-4">
                   <div className="font-bold text-[#333333] text-sm">
                     Game Title
                   </div>
                 </th>
+                */}
                 <th className="text-left px-4 py-4">
                   <div className="font-bold text-[#333333] text-sm">
                     Acquisition Source
@@ -376,33 +382,39 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                     Revenue{getSortIcon('revenue')}
                   </div>
                 </th>
+                {/* EXCLUDED: Rewards Issued tracking as marketing KPI not supported per requirements
                 <th className="text-center px-4 py-4 cursor-pointer" onClick={() => onSort('rewards')}>
                   <div className="font-bold text-[#333333] text-sm hover:text-[#00a389]">
                     Rewards Issued{getSortIcon('rewards')}
                   </div>
                 </th>
+                */}
+                {/* EXCLUDED: ROAS % calculation functionality not supported per requirements
                 <th className="text-center px-4 py-4 cursor-pointer" onClick={() => onSort('roas')}>
                   <div className="font-bold text-[#333333] text-sm hover:text-[#00a389] flex items-center justify-center gap-1">
                     ROAS %{getSortIcon('roas')}
-                    <span 
-                      className="text-gray-400 cursor-help" 
+                    <span
+                      className="text-gray-400 cursor-help"
                       title="Return on Ad Spend: (Revenue ÷ Reward Cost) × 100. Shows profitability of campaigns. >100% indicates profitable campaigns."
                     >
                       ℹ️
                     </span>
                   </div>
                 </th>
+                */}
+                {/* EXCLUDED: Quality Score composite metric not supported per requirements
                 <th className="text-center px-4 py-4 cursor-pointer" onClick={() => onSort('qualityScore')}>
                   <div className="font-bold text-[#333333] text-sm hover:text-[#00a389] flex items-center justify-center gap-1">
                     Quality Score{getSortIcon('qualityScore')}
-                    <span 
-                      className="text-gray-400 cursor-help" 
+                    <span
+                      className="text-gray-400 cursor-help"
                       title="Composite score (0-10) evaluating user quality based on retention rates and revenue generation. Higher scores indicate better user quality."
                     >
                       ℹ️
                     </span>
                   </div>
                 </th>
+                */}
               </tr>
             </thead>
             <tbody>
@@ -424,14 +436,17 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                 data.map((row, index) => (
                 <tr
                   key={index}
-                  className="h-[66px] border-b [border-bottom-style:solid] border-[#d0d6e7] hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => onRowClick(row)}
+                  className="h-[66px] border-b [border-bottom-style:solid] border-[#d0d6e7] hover:bg-gray-50 transition-colors"
+                  // EXCLUDED: Row click drill-down disabled per requirements
+                  // onClick={() => onRowClick(row)}
                 >
+                  {/* EXCLUDED: Game Title data not displayed per requirements
                   <td className="px-4 py-4">
                     <div className="font-normal text-[#333333] text-sm">
                       {row.gameTitle}
                     </div>
                   </td>
+                  */}
                   <td className="px-4 py-4">
                     <div className="font-normal text-[#333333] text-sm">
                       {row.acquisitionSource}
@@ -454,11 +469,14 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                       ₹{row.revenue.toLocaleString()}
                     </div>
                   </td>
+                  {/* EXCLUDED: Rewards Issued data not displayed per requirements
                   <td className="px-4 py-4 text-center">
                     <div className="font-normal text-[#333333] text-sm">
                       ₹{row.rewards.toLocaleString()}
                     </div>
                   </td>
+                  */}
+                  {/* EXCLUDED: ROAS % data not displayed per requirements
                   <td className="px-4 py-4 text-center">
                     <div className={`font-normal text-sm ${
                       parseFloat(row.roas) > 100 ? 'text-green-600' : 'text-red-600'
@@ -466,11 +484,14 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                       {row.roas}%
                     </div>
                   </td>
+                  */}
+                  {/* EXCLUDED: Quality Score data not displayed per requirements
                   <td className="px-4 py-4 text-center">
                     <div className="font-normal text-[#333333] text-sm">
                       {row.qualityScore}
                     </div>
                   </td>
+                  */}
                 </tr>
                 ))
               )}
@@ -499,7 +520,8 @@ export default function AnalyticsPage() {
   const { registerSearchHandler, searchTerm } = useSearch();
   const [filters, setFilters] = useState({
     acquisitionSources: [],
-    gamesTitles: [],
+    // EXCLUDED: gamesTitles filter removed per requirements
+    // gamesTitles: [],
     advertiser: '',
     platform: '',
     country: '',
@@ -690,9 +712,10 @@ export default function AnalyticsPage() {
     if (filters.acquisitionSources.length > 0 && !filters.acquisitionSources.includes(row.acquisitionSource)) {
       return false;
     }
-    if (filters.gamesTitles.length > 0 && !filters.gamesTitles.includes(row.gameTitle)) {
-      return false;
-    }
+    // EXCLUDED: Game title filtering disabled per requirements
+    // if (filters.gamesTitles.length > 0 && !filters.gamesTitles.includes(row.gameTitle)) {
+    //   return false;
+    // }
     if (filters.advertiser && row.advertiser !== filters.advertiser) {
       return false;
     }
@@ -755,21 +778,18 @@ export default function AnalyticsPage() {
   };
 
   const exportToCSV = () => {
+    // EXCLUDED: Game Title, Rewards Issued, ROAS %, Quality Score columns removed per requirements
     const headers = [
-      'Game Title', 'Acquisition Source', 'Installs', 'Retention D1%', 'Retention D7%', 
-      'Revenue', 'Rewards Issued', 'ROAS %', 'Quality Score', 'Advertiser', 'Platform', 'Country'
+      'Acquisition Source', 'Installs', 'Retention D1%', 'Retention D7%',
+      'Revenue', 'Advertiser', 'Platform', 'Country'
     ];
-    
+
     const csvData = sortedData.map(row => [
-      row.gameTitle,
       row.acquisitionSource,
       row.installs,
       row.retentionD1,
       row.retentionD7,
       row.revenue,
-      row.rewards,
-      row.roas,
-      row.qualityScore,
       row.advertiser,
       row.platform,
       row.country

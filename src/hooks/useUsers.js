@@ -82,7 +82,12 @@ export const useUsers = () => {
     }
   };
 
+  // EXCLUDED: Bulk actions not supported per requirements - actions can only be taken on single users
   const bulkAction = async (userIds, action) => {
+    console.log('Bulk actions are disabled per requirements');
+    throw new Error('Bulk actions are not supported. Actions can only be taken on individual users.');
+
+    /* ORIGINAL CODE - COMMENTED OUT
     setLoading(true);
     try {
       console.log(`Bulk ${action} for users:`, userIds);
@@ -94,6 +99,7 @@ export const useUsers = () => {
       setLoading(false);
       throw err;
     }
+    */
   };
 
   return {
