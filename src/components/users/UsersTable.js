@@ -17,14 +17,15 @@ export default function UsersTable({
         <table className="w-full min-w-full lg:min-w-[1000px]">
           <thead>
             <tr className="bg-[#ecf8f1]">
-              <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] w-12">
+              {/* Select All checkbox hidden */}
+              {/* <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] w-12">
                 <input
                   type="checkbox"
                   checked={selectedUsers.length === users.length && users.length > 0}
                   onChange={onSelectAll}
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
-              </th>
+              </th> */}
               <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[140px]">
                 Name
               </th>
@@ -63,15 +64,15 @@ export default function UsersTable({
                 key={row.id}
                 className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === users.length - 1 ? "border-b-0" : ""} ${selectedUsers.includes(row.id) ? "bg-blue-50" : ""}`}
               >
-                {/* Select Column */}
-                <td className="py-4 px-3 text-center">
+                {/* Select Column - hidden */}
+                {/* <td className="py-4 px-3 text-center">
                   <input
                     type="checkbox"
                     checked={selectedUsers.includes(row.id)}
                     onChange={() => onSelectUser(row.id)}
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                   />
-                </td>
+                </td> */}
 
                 {/* Name Column */}
                 <td className="py-4 px-3">
