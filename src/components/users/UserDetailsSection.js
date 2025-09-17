@@ -211,8 +211,8 @@ export const UserDetailsSection = ({ user }) => {
   const renderTabContent = () => {
     if (activeTab === "Profile") {
       return (
-        <div className="flex items-start gap-8 relative self-stretch w-full flex-[0_0_auto]">
-          <div className="flex flex-col items-start gap-[30px] relative flex-1">
+        <div className="flex items-start gap-14 relative self-stretch w-full flex-[0_0_auto]">
+          <div className="flex flex-col items-start gap-[30px] relative w-48">
             {userFields.map((field, index) => (
               <div key={`label-${index}`} className="relative w-fit [font-family:'DM_Sans',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
                 {field.label}

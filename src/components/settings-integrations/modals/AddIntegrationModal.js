@@ -6,7 +6,8 @@ export default function AddIntegrationModal({
   isOpen,
   onClose,
   onSave,
-  availableIntegrations
+  availableIntegrations,
+  categories
 }) {
   const [selectedIntegrationType, setSelectedIntegrationType] = useState(null);
   const [formData, setFormData] = useState({
@@ -60,6 +61,10 @@ export default function AddIntegrationModal({
 
     if (!selectedIntegrationType) {
       newErrors.integration = 'Please select an integration type';
+    }
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Integration name is required';
     }
 
     if (!formData.apiKey.trim()) {
@@ -165,6 +170,44 @@ export default function AddIntegrationModal({
               {/* Configuration Fields */}
               {selectedIntegrationType && (
                 <div className="space-y-4">
+                  {/* Integration Name */}
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Integration Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 ${
+                        errors.name ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter a custom name for this integration"
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                    )}
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                      Category
+                    </label>
+                    <select
+                      id="category"
+                      value={formData.category}
+                      onChange={(e) => handleInputChange('category', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="">Select Category</option>
+                      {categories && categories.filter(cat => cat !== 'All Categories').map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* API Key */}
                   <div>
                     <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
