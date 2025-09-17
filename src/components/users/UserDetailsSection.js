@@ -28,13 +28,15 @@ export const UserDetailsSection = ({ user }) => {
     { label: "Gender", value: user?.gender || "Male" },
     { label: "Country/Region (IP Signup)", value: user?.signupCountry || user?.country || "France" },
     { label: "Current Location", value: user?.location || "Lyon, France" },
-    { label: "Device Type", value: user?.device || "Android – Samsung Galaxy M13" },
+    // PHASE 2: Device and Security info temporarily hidden
+    // { label: "Device Type", value: user?.device || "Android – Samsung Galaxy M13" },
     { label: "App Version", value: user?.appVersion || "1.1.3.7" },
     { label: "Current Account Status", value: user?.accountStatus || user?.status || "Active", isBadge: true },
     { label: "Face Verification Status", value: user?.faceVerification || "Verified", isVerification: true },
     { label: "Last Active Timestamp", value: user?.lastActive || "12:08 AM on May 23, 2025" },
-    { label: "Last Login IP Address", value: user?.lastLoginIp || user?.ipAddress || "182.77.56.14" },
-    { label: "Last Login Location", value: user?.lastLoginLocation || "Lyon, France" },
+    // PHASE 2: IP Address info temporarily hidden
+    // { label: "Last Login IP Address", value: user?.lastLoginIp || user?.ipAddress || "182.77.56.14" },
+    // { label: "Last Login Location", value: user?.lastLoginLocation || "Lyon, France" },
     { label: "Member Since", value: user?.memberSince || "January 12, 2025" },
   ];
 
@@ -46,7 +48,8 @@ export const UserDetailsSection = ({ user }) => {
     { text: "Suspend Account", bgColor: "bg-yellow-600 hover:bg-yellow-700", action: "suspend" },
     // EXCLUDED: Delete User (hard-delete) not supported per requirements
     // { text: "Delete Account", bgColor: "bg-gray-800 hover:bg-gray-900", action: "delete" },
-    { text: "Adjust Balance", bgColor: "bg-blue-600 hover:bg-blue-700", action: "adjustBalance" },
+    // PHASE 2: Adjust Balance temporarily hidden
+    // { text: "Adjust Balance", bgColor: "bg-blue-600 hover:bg-blue-700", action: "adjustBalance" },
   ];
 
   const handleTabClick = (tabName) => {

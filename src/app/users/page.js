@@ -157,11 +157,12 @@ export default function UsersPage() {
         onExport={handleExport}
       />
 
-      <BulkActionsBar
+      {/* PHASE 2: Bulk Actions temporarily hidden */}
+      {/* <BulkActionsBar
         selectedCount={selectedUsers.length}
         onBulkAction={handleBulkAction}
         onClearSelection={() => setSelectedUsers([])}
-      />
+      /> */}
 
       <UsersResultsSummary
         startIndex={startIndex}

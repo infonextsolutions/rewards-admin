@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import AddEditRewardModal from './modals/AddEditRewardModal';
 import DeleteConfirmationModal from './modals/DeleteConfirmationModal';
+import TierBadge from '../ui/TierBadge';
 
 export default function PrizePoolConfiguration({ 
   rewards = [], 
@@ -307,12 +308,7 @@ export default function PrizePoolConfiguration({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
                         {reward.tierVisibility.map((tier) => (
-                          <span
-                            key={tier}
-                            className="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 min-w-[60px]"
-                          >
-                            {tier}
-                          </span>
+                          <TierBadge key={tier} tier={tier} />
                         ))}
                       </div>
                     </td>

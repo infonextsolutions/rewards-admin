@@ -164,18 +164,8 @@ export default function RewardsTable({
           <tr key={item.id} className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === data.length - 1 ? "border-b-0" : ""}`}>
             <td className="py-4 px-3">
               <div className="flex items-center gap-2">
-                <div
-                  className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center"
-                  style={{
-                    backgroundColor: item.bgColor,
-                    borderColor: item.borderColor,
-                  }}
-                >
-                  <img className="w-3 h-3 flex-shrink-0" src={item.iconSrc} alt="tier icon" />
-                  <div
-                    className="font-semibold text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap"
-                    style={{ color: item.tierColor }}
-                  >
+                <div className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center bg-gray-50 border-gray-300 min-w-[100px]">
+                  <div className="font-semibold text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap text-gray-700">
                     {item.tierName}
                   </div>
                 </div>
@@ -227,7 +217,7 @@ export default function RewardsTable({
           <tr key={item.id} className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === data.length - 1 ? "border-b-0" : ""}`}>
             <td className="py-4 px-3">
               <div className="flex items-center gap-2">
-                <div className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center bg-gray-50 border-gray-300">
+                <div className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center bg-gray-50 border-gray-300 min-w-[100px]">
                   <div className="font-semibold text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap text-gray-700">
                     {item.tierName}
                   </div>

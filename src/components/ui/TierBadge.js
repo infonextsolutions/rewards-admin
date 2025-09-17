@@ -3,39 +3,71 @@
 const TierBadge = ({ tier, showIcon = true, className = '' }) => {
   if (!tier) return null;
 
-  const getTierStyle = (tier) => {
+  const getTierData = (tier) => {
     switch (tier) {
-      case 'Bronze': return 'bg-amber-100 text-amber-800';
-      case 'Gold': return 'bg-yellow-100 text-yellow-800';
-      case 'Platinum': return 'bg-purple-100 text-purple-800';
-      case 'All Tiers': return 'bg-blue-100 text-blue-800';
-      case 'All': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Bronze':
+        return {
+          bgColor: '#ffefda',
+          borderColor: '#c77023',
+          tierColor: '#f68d2b',
+          iconSrc: 'https://c.animaapp.com/mf180vyvQGfAhJ/img/---icon--star--9@2x.png'
+        };
+      case 'Gold':
+        return {
+          bgColor: '#fffddf',
+          borderColor: '#f0c92e',
+          tierColor: '#c7a20f',
+          iconSrc: 'https://c.animaapp.com/mf180vyvQGfAhJ/img/---icon--star--5@2x.png'
+        };
+      case 'Platinum':
+        return {
+          bgColor: '#f4f4f4',
+          borderColor: '#9aa7b8',
+          tierColor: '#6f85a4',
+          iconSrc: 'https://c.animaapp.com/mf180vyvQGfAhJ/img/---icon--star--1@2x.png'
+        };
+      case 'All Tiers':
+      case 'All':
+        return {
+          bgColor: '#e0f2fe',
+          borderColor: '#0277bd',
+          tierColor: '#01579b',
+          iconSrc: 'https://c.animaapp.com/mf180vyvQGfAhJ/img/---icon--star--5@2x.png'
+        };
+      default:
+        return {
+          bgColor: '#f4f4f4',
+          borderColor: '#9aa7b8',
+          tierColor: '#6f85a4',
+          iconSrc: 'https://c.animaapp.com/mf180vyvQGfAhJ/img/---icon--star--1@2x.png'
+        };
     }
   };
 
-  const getTierIcon = (tier) => {
-    if (!showIcon) return null;
-
-    switch (tier) {
-      case 'Bronze': return '🟤';
-      case 'Gold': return '🟡';
-      case 'Platinum': return '🟣';
-      case 'All Tiers': return '🔵';
-      case 'All': return '🔵';
-      default: return '⚫';
-    }
-  };
-
-  const baseClasses = `inline-flex items-center justify-center w-[80px] px-3 py-1 rounded-full text-xs font-medium`;
-  const tierStyle = getTierStyle(tier);
-  const icon = getTierIcon(tier);
+  const tierData = getTierData(tier);
 
   return (
-    <span className={`${baseClasses} ${tierStyle} ${className}`}>
-      {icon && <span className="mr-1">{icon}</span>}
-      {tier}
-    </span>
+    <div
+      className={`inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center w-[90px] ${className}`}
+      style={{
+        backgroundColor: tierData.bgColor,
+        borderColor: tierData.borderColor,
+      }}
+    >
+      {showIcon && (
+        <img
+          className="w-3 h-3 flex-shrink-0"
+          alt="tier icon"
+          src={tierData.iconSrc}
+        />
+      )}
+      <div
+        className="font-semibold text-xs text-center tracking-[0.10px] leading-4 whitespace-nowrap"
+        style={{ color: tierData.tierColor }}
+      >
+        {tier}
+      </div>
+    </div>
   );
 };
 

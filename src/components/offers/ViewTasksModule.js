@@ -389,9 +389,10 @@ export default function ViewTasksModule() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* PHASE 2: Override column temporarily hidden */}
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Override
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -400,7 +401,7 @@ export default function ViewTasksModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || Object.values(filters).some(f => f !== 'all')
                       ? 'No tasks match your current filters.'
                       : 'No tasks configured yet. Add your first task to get started.'}
@@ -437,7 +438,8 @@ export default function ViewTasksModule() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(task.status)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* PHASE 2: Override switch temporarily hidden */}
+                      {/* <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleOverride(task.id)}
                           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
@@ -450,7 +452,7 @@ export default function ViewTasksModule() {
                           <CogIcon className="h-3 w-3 mr-1" />
                           {task.overrideActive ? 'ON' : 'OFF'}
                         </button>
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div className="flex items-center justify-center space-x-2">
                           <button

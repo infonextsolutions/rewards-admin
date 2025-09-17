@@ -328,7 +328,8 @@ export default function WelcomeBonusTimerRules() {
                     </p>
                   </div>
 
-                  <div>
+                  {/* PHASE 2: Completion Deadline temporarily hidden */}
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Bonus Completion Deadline
                     </label>
@@ -355,14 +356,13 @@ export default function WelcomeBonusTimerRules() {
                     <p className="mt-1 text-xs text-gray-500">
                       Maximum time allowed to complete bonus tasks after unlock
                     </p>
-                  </div>
+                  </div> */}
                 </div>
 
-                {/* Override Settings */}
-                <div className="space-y-6">
+                {/* PHASE 2: Override Settings temporarily hidden */}
+                {/* <div className="space-y-6">
                   <h4 className="text-sm font-medium text-gray-900">Override Settings</h4>
 
-                  {/* Game ID Override */}
                   <div>
                     <div className="flex items-center mb-3">
                       <input
@@ -397,7 +397,6 @@ export default function WelcomeBonusTimerRules() {
                     )}
                   </div>
 
-                  {/* XP Override */}
                   <div>
                     <div className="flex items-center mb-3">
                       <input
@@ -433,7 +432,7 @@ export default function WelcomeBonusTimerRules() {
                       </div>
                     )}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Validation Rules Display */}
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">

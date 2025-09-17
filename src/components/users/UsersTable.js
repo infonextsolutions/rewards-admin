@@ -141,7 +141,7 @@ export default function UsersTable({
                 {/* Tier Column */}
                 <td className="py-4 px-2 text-center">
                   <div
-                    className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center min-w-0"
+                    className="inline-flex justify-center gap-1 px-2 py-1.5 rounded-full border border-solid items-center w-[90px]"
                     style={{
                       backgroundColor: row.tierBg,
                       borderColor: row.tierBorder,
