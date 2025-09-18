@@ -5,8 +5,8 @@ import { validateTitle, validateFile, validatePID, validateSegment } from '../va
 const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreatives }) => {
   const [formData, setFormData] = useState({
     title: "",
-    // EXCLUDED: placement, campaignPID, segment fields removed per requirements
-    // placement: "",
+    placement: "",
+    // EXCLUDED: campaignPID, segment fields removed per requirements
     // campaignPID: "",
     // segment: [],
     status: "Active",
@@ -19,8 +19,8 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
     if (creative) {
       setFormData({
         title: creative.title,
-        // EXCLUDED: placement, campaignPID, segment fields removed per requirements
-        // placement: creative.placement,
+        placement: creative.placement,
+        // EXCLUDED: campaignPID, segment fields removed per requirements
         // campaignPID: creative.campaignPID,
         // segment: creative.segment.split(", "),
         status: creative.status,
@@ -29,8 +29,8 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
     } else {
       setFormData({
         title: "",
-        // EXCLUDED: placement, campaignPID, segment fields removed per requirements
-        // placement: "",
+        placement: "",
+        // EXCLUDED: campaignPID, segment fields removed per requirements
         // campaignPID: "",
         // segment: [],
         status: "Active",
@@ -50,14 +50,14 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
       if (fileError) newErrors.file = fileError;
     }
 
-    // EXCLUDED: Placement, PID, and Segment validation removed per requirements
+    // EXCLUDED: PID, and Segment validation removed per requirements
     // const pidError = validatePID(formData.campaignPID);
     // if (pidError) newErrors.campaignPID = pidError;
     //
     // const segmentError = validateSegment(formData.segment);
     // if (segmentError) newErrors.segment = segmentError;
-    //
-    // if (!formData.placement) newErrors.placement = "Placement is required";
+
+    if (!formData.placement) newErrors.placement = "Placement is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -156,7 +156,7 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
             {errors.file && <p className="text-red-500 text-xs mt-1">{errors.file}</p>}
           </div>
 
-          {/* EXCLUDED: Assign Placement functionality not supported per requirements
+          {/* Assign Placement */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Assign Placement *
@@ -179,7 +179,6 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
             </select>
             {errors.placement && <p className="text-red-500 text-xs mt-1">{errors.placement}</p>}
           </div>
-          */}
 
           {/* EXCLUDED: Campaign PID mapping functionality not supported per requirements
           <div>

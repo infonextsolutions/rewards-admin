@@ -220,7 +220,7 @@ export default function ChallengesBonusesModule() {
                 <GiftIcon className="h-4 w-4 mr-2" />
                 Bonus Days
               </button>
-              <button
+              {/* <button
                 onClick={() => setActiveView(VIEW_MODES.PAUSE_RULES)}
                 className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                   activeView === VIEW_MODES.PAUSE_RULES
@@ -230,7 +230,7 @@ export default function ChallengesBonusesModule() {
               >
                 <ShieldCheckIcon className="h-4 w-4 mr-2" />
                 Pause Rules
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

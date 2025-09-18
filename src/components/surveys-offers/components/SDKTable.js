@@ -57,9 +57,6 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                 Max Daily Users
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Segment Rule
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Preview Audience
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -104,32 +101,6 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900">{sdk.maxDailyUsers || 'Unlimited'}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="space-y-2 text-sm text-gray-900">
-                    {/* Age Range - Display Only */}
-                    <div>
-                      <span className="text-xs text-gray-500">Age: </span>
-                      <span>{sdk.segmentRules.ageRange.min}-{sdk.segmentRules.ageRange.max}</span>
-                    </div>
-                    
-                    {/* Countries - Display Only */}
-                    <div>
-                      <span className="text-xs text-gray-500">Countries: </span>
-                      <span>
-                        {sdk.segmentRules.countries.length > 0 
-                          ? sdk.segmentRules.countries.join(', ')
-                          : 'All'
-                        }
-                      </span>
-                    </div>
-                    
-                    {/* Gender - Display Only */}
-                    <div>
-                      <span className="text-xs text-gray-500">Gender: </span>
-                      <span>{sdk.segmentRules.gender || 'All'}</span>
-                    </div>
-                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <button
