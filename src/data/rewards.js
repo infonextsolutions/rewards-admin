@@ -147,7 +147,7 @@ export const MOCK_BONUS_LOGIC = [
 export const REWARDS_TABS = [
   { name: "XP Tiers" },
   { name: "XP Decay Settings" },
-  { name: "XP Conversion" },
+  // { name: "XP Conversion" },
   { name: "Bonus Logic" },
 ];
 

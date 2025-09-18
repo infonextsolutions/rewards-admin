@@ -127,7 +127,7 @@ export default function RewardsTable({
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Decay Rule</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Inactivity Duration</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Min XP Limit</th>
-            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Notifications</th>
+            {/* <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Notifications</th> */}
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Status</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Actions</th>
           </tr>
@@ -236,14 +236,14 @@ export default function RewardsTable({
             <td className="py-4 px-2 text-center">
               <span className="text-sm text-gray-700">{item.minimumXpLimit}</span>
             </td>
-            <td className="py-4 px-2 text-center">
+            {/* <td className="py-4 px-2 text-center">
               <div className="flex justify-center">
                 {renderToggle(
                   item.notificationToggle,
                   () => onToggleStatus && onToggleStatus({ ...item, notificationToggle: !item.notificationToggle })
                 )}
               </div>
-            </td>
+            </td> */}
             <td className="py-4 px-2 text-center">
               <div className="flex justify-center">
                 {renderToggle(

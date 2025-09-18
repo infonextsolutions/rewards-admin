@@ -202,8 +202,8 @@ const FiltersSection = ({ filters, onFilterChange }) => {
           </select>
         </div>
 
-        {/* Country */}
-        <div className="flex flex-col">
+        {/* Country filter hidden - no corresponding table column */}
+        {/* <div className="flex flex-col">
           <label className="text-sm font-medium text-gray-700 mb-2">Country</label>
           <select
             value={filters.country}
@@ -219,7 +219,7 @@ const FiltersSection = ({ filters, onFilterChange }) => {
               <option key={country} value={country} style={{ color: '#333333', backgroundColor: 'white' }}>{country}</option>
             ))}
           </select>
-        </div>
+        </div> */}
 
         {/* Date Range */}
         <div className="flex flex-col xl:col-span-2">
@@ -382,6 +382,16 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                     Revenue{getSortIcon('revenue')}
                   </div>
                 </th>
+                <th className="text-left px-4 py-4">
+                  <div className="font-bold text-[#333333] text-sm">
+                    Advertiser
+                  </div>
+                </th>
+                <th className="text-left px-4 py-4">
+                  <div className="font-bold text-[#333333] text-sm">
+                    Platform
+                  </div>
+                </th>
                 {/* EXCLUDED: Rewards Issued tracking as marketing KPI not supported per requirements
                 <th className="text-center px-4 py-4 cursor-pointer" onClick={() => onSort('rewards')}>
                   <div className="font-bold text-[#333333] text-sm hover:text-[#00a389]">
@@ -467,6 +477,16 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                   <td className="px-4 py-4 text-center">
                     <div className="font-normal text-[#333333] text-sm">
                       ₹{row.revenue.toLocaleString()}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="font-normal text-[#333333] text-sm">
+                      {row.advertiser}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="font-normal text-[#333333] text-sm">
+                      {row.platform}
                     </div>
                   </td>
                   {/* EXCLUDED: Rewards Issued data not displayed per requirements

@@ -45,10 +45,10 @@ export default function BonusDayConfiguration({
       newErrors.rewardValue = 'Reward value must be at least 1';
     }
 
-    // Validate alternate reward if provided (optional field)
-    if (formData.alternateReward && (isNaN(formData.alternateReward) || formData.alternateReward < 0)) {
-      newErrors.alternateReward = 'Alternate reward must be a valid number >= 0';
-    }
+    // Alternate reward validation hidden
+    // if (formData.alternateReward && (isNaN(formData.alternateReward) || formData.alternateReward < 0)) {
+    //   newErrors.alternateReward = 'Alternate reward must be a valid number >= 0';
+    // }
 
     // Check for duplicate bonus days (excluding currently editing item)
     const existingBonus = bonusDays.find(b =>
@@ -218,7 +218,8 @@ export default function BonusDayConfiguration({
                   )}
                 </div>
 
-                <div>
+                {/* Alternate Reward field hidden */}
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Alternate Reward
                   </label>
@@ -239,7 +240,7 @@ export default function BonusDayConfiguration({
                   {errors.alternateReward && (
                     <p className="mt-1 text-sm text-red-600">{errors.alternateReward}</p>
                   )}
-                </div>
+                </div> */}
 
                 <div className="flex flex-col justify-end">
                   <label className="flex items-center">
@@ -290,9 +291,10 @@ export default function BonusDayConfiguration({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Reward Value
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Alternate Reward column hidden */}
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Alternate Reward
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Reset Rule
                 </th>
@@ -346,7 +348,8 @@ export default function BonusDayConfiguration({
                             className={`w-20 px-2 py-1 border rounded text-sm ${errors.rewardValue ? 'border-red-300' : 'border-gray-300'}`}
                           />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        {/* Alternate Reward input hidden */}
+                        {/* <td className="px-6 py-4 whitespace-nowrap">
                           <input
                             type="number"
                             min="0"
@@ -355,7 +358,7 @@ export default function BonusDayConfiguration({
                             className={`w-20 px-2 py-1 border rounded text-sm ${errors.alternateReward ? 'border-red-300' : 'border-gray-300'}`}
                             placeholder="Alt"
                           />
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <input
                             type="checkbox"
@@ -411,7 +414,8 @@ export default function BonusDayConfiguration({
                             {bonusDay.rewardValue.toLocaleString()}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {/* Alternate Reward data column hidden */}
+                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {bonusDay.alternateReward ? (
                             <span
                               className="font-medium text-orange-600"
@@ -422,7 +426,7 @@ export default function BonusDayConfiguration({
                           ) : (
                             <span className="text-gray-400 italic">None</span>
                           )}
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center justify-center min-w-[60px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             bonusDay.resetRule

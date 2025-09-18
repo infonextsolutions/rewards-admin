@@ -25,9 +25,9 @@ const TrackerTable = ({ data, onView, currentPage, totalPages, totalItems, onPag
               <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '120px'}}>
                 Placement
               </th>
-              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '150px'}}>
+              {/* <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '150px'}}>
                 Campaign PID
-              </th>
+              </th> */}
               <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px]" style={{minWidth: '90px'}}>
                 Status
               </th>
@@ -66,11 +66,11 @@ const TrackerTable = ({ data, onView, currentPage, totalPages, totalItems, onPag
                   </div>
                 </td>
 
-                <td className="py-4 px-2 text-center">
+                {/* <td className="py-4 px-2 text-center">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5">
                     {row.campaignPID}
                   </div>
-                </td>
+                </td> */}
 
                 <td className="py-4 px-2 text-center">
                   <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full min-w-[80px] ${getStatusStyles(row.status)}`}>
