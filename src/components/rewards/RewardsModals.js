@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-export function AddEditModal({ 
-  isOpen, 
-  activeTab, 
-  editingItem, 
-  onClose, 
-  onSave 
+export function AddEditModal({
+  isOpen,
+  activeTab,
+  editingItem,
+  onClose,
+  onSave
 }) {
   const [formData, setFormData] = useState({
     // XP Tiers
@@ -37,6 +37,64 @@ export function AddEditModal({
 
   const [formErrors, setFormErrors] = useState({});
   const fileInputRef = useRef(null);
+
+  // Update form data when editingItem changes
+  useEffect(() => {
+    if (editingItem) {
+      setFormData({
+        // XP Tiers
+        tierName: editingItem?.tierName || '',
+        xpMin: editingItem?.xpMin || '',
+        xpMax: editingItem?.xpMax || '',
+        badge: editingItem?.badge || '',
+        badgeFile: null,
+        accessBenefits: editingItem?.accessBenefits || '',
+        status: editingItem?.status ?? true,
+        // XP Decay Settings
+        decayRuleType: editingItem?.decayRuleType || 'Fixed',
+        inactivityDuration: editingItem?.inactivityDuration || '',
+        minimumXpLimit: editingItem?.minimumXpLimit || '',
+        notificationToggle: editingItem?.notificationToggle ?? true,
+        xpRange: editingItem?.xpRange || '',
+        // XP Conversion
+        tier: editingItem?.tierName || '',
+        conversionRatio: editingItem?.conversionRatio || '',
+        enabled: editingItem?.enabled ?? true,
+        redemptionChannels: editingItem?.redemptionChannels || [],
+        newChannel: '',
+        // Bonus Logic
+        bonusType: editingItem?.bonusType || '',
+        triggerCondition: editingItem?.triggerCondition || '',
+        rewardValue: editingItem?.rewardValue || '',
+        active: editingItem?.active ?? true
+      });
+    } else {
+      // Reset form for add mode
+      setFormData({
+        tierName: '',
+        xpMin: '',
+        xpMax: '',
+        badge: '',
+        badgeFile: null,
+        accessBenefits: '',
+        status: true,
+        decayRuleType: 'Fixed',
+        inactivityDuration: '',
+        minimumXpLimit: '',
+        notificationToggle: true,
+        xpRange: '',
+        tier: '',
+        conversionRatio: '',
+        enabled: true,
+        redemptionChannels: [],
+        newChannel: '',
+        bonusType: '',
+        triggerCondition: '',
+        rewardValue: '',
+        active: true
+      });
+    }
+  }, [editingItem]);
 
   const handleSubmit = () => {
     const errors = {};
@@ -89,11 +147,11 @@ export function AddEditModal({
       } else if (!/^[a-zA-Z\s]+$/.test(formData.bonusType)) {
         errors.bonusType = 'Bonus type must contain only letters and spaces';
       }
-      
+
       if (!formData.triggerCondition) {
         errors.triggerCondition = 'Trigger condition is required';
       }
-      
+
       if (!formData.rewardValue) {
         errors.rewardValue = 'Reward value is required';
       } else if (!/^\+?\d+\s+(XP|Coins?|Points?|₹|\$)$/i.test(formData.rewardValue)) {

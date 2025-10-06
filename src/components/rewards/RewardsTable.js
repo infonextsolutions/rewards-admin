@@ -245,12 +245,11 @@ export default function RewardsTable({
               </div>
             </td> */}
             <td className="py-4 px-2 text-center">
-              <div className="flex justify-center">
-                {renderToggle(
-                  item.status,
-                  () => onToggleStatus && onToggleStatus({ ...item, status: !item.status })
-                )}
-              </div>
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                item.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}>
+                {item.status ? 'Active' : 'Inactive'}
+              </span>
             </td>
             <td className="py-4 px-2">
               <div className="flex items-center justify-center gap-1">
@@ -348,9 +347,9 @@ export default function RewardsTable({
             </td>
             <td className="py-4 px-2 text-center">
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                item.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                item.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
               }`}>
-                {item.status ? 'Active' : 'Inactive'}
+                {item.active ? 'Active' : 'Inactive'}
               </span>
             </td>
             <td className="py-4 px-2">
