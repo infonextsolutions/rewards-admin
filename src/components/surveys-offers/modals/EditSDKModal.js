@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { SEGMENT_OPTIONS } from '../../../data/surveys/surveyData';
 
 export default function EditSDKModal({ isOpen, onClose, onSave, sdk }) {
   const [formData, setFormData] = useState({
@@ -9,7 +10,13 @@ export default function EditSDKModal({ isOpen, onClose, onSave, sdk }) {
     description: '',
     apiKey: '',
     endpointUrl: '',
-    maxDailyUsers: ''
+    maxDailyUsers: '',
+    segmentRules: {
+      age: [],
+      gender: [],
+      countries: [],
+      isEnabled: true
+    }
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -19,10 +26,16 @@ export default function EditSDKModal({ isOpen, onClose, onSave, sdk }) {
       setFormData({
         name: sdk.name || '',
         displayName: sdk.displayName || '',
-        description: sdk.description || '',
+        description: sdk.description || sdk.metadata?.description || '',
         apiKey: sdk.apiKey || '',
-        endpointUrl: sdk.endpointUrl || '',
-        maxDailyUsers: sdk.maxDailyUsers || ''
+        endpointUrl: sdk.baseUrl || sdk.endpointUrl || '',
+        maxDailyUsers: sdk.maxDailyUsers || '',
+        segmentRules: {
+          age: sdk.segmentRules?.age || [],
+          gender: sdk.segmentRules?.gender || [],
+          countries: sdk.segmentRules?.countries || [],
+          isEnabled: sdk.segmentRules?.isEnabled !== undefined ? sdk.segmentRules.isEnabled : true
+        }
       });
       setErrors({});
     }
@@ -36,6 +49,18 @@ export default function EditSDKModal({ isOpen, onClose, onSave, sdk }) {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+  };
+
+  const handleMultiSelectToggle = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      segmentRules: {
+        ...prev.segmentRules,
+        [field]: prev.segmentRules[field].includes(value)
+          ? prev.segmentRules[field].filter(item => item !== value)
+          : [...prev.segmentRules[field], value]
+      }
+    }));
   };
 
 
@@ -53,12 +78,23 @@ export default function EditSDKModal({ isOpen, onClose, onSave, sdk }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      await onSave(sdk.id, formData);
+      // Prepare data with configuration object
+      const updatedData = {
+        ...formData,
+        baseUrl: formData.endpointUrl,
+        configuration: sdk.configuration || {
+          timeout: 30000,
+          retryAttempts: 3,
+          cacheDuration: 300,
+          rewardMultiplier: 1.0
+        }
+      };
+      await onSave(sdk.id, updatedData);
       onClose();
     } catch (error) {
       console.error('Error saving SDK:', error);
@@ -181,6 +217,70 @@ export default function EditSDKModal({ isOpen, onClose, onSave, sdk }) {
             {errors.endpointUrl && <p className="mt-1 text-sm text-red-600">{errors.endpointUrl}</p>}
           </div>
 
+          {/* Segment Rules */}
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-semibold text-gray-900">Segment Rules</h3>
+
+            {/* Age Multi-select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Age Range
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SEGMENT_OPTIONS.ageRanges.map((ageRange) => (
+                  <label key={ageRange.label} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.segmentRules.age.includes(ageRange.label)}
+                      onChange={() => handleMultiSelectToggle('age', ageRange.label)}
+                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-gray-700">{ageRange.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Gender Multi-select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SEGMENT_OPTIONS.genderOptions.map((gender) => (
+                  <label key={gender.value} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.segmentRules.gender.includes(gender.value)}
+                      onChange={() => handleMultiSelectToggle('gender', gender.value)}
+                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-gray-700">{gender.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Countries Multi-select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Countries
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SEGMENT_OPTIONS.countries.map((country) => (
+                  <label key={country.code} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.segmentRules.countries.includes(country.code)}
+                      onChange={() => handleMultiSelectToggle('countries', country.code)}
+                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-gray-700">{country.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-6">

@@ -107,7 +107,7 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                     onClick={() => onPreviewAudience(sdk)}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    View ({sdk.previewAudienceCount.toLocaleString()})
+                    View ({sdk.previewAudienceCount ? sdk.previewAudienceCount.toLocaleString() : '0'})
                   </button>
                 </td>
                 <td className="px-6 py-4">

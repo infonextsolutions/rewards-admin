@@ -24,9 +24,7 @@ apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer your_admin`;
-    } else {
-      config.headers.Authorization = 'Bearer your_admin';
+      config.headers.Authorization = `Bearer ${token}`;
     }
   }
   return config;

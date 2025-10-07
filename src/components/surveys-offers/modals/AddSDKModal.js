@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { SEGMENT_OPTIONS } from '../../../data/surveys/surveyData';
+import surveyAPIs from '../../../data/surveys/surveyAPI';
 
 export default function AddSDKModal({ isOpen, onClose, onAdd }) {
   const [formData, setFormData] = useState({
@@ -10,9 +12,10 @@ export default function AddSDKModal({ isOpen, onClose, onAdd }) {
     apiKey: '',
     maxDailyUsers: '',
     segmentRules: {
-      ageRange: { min: 18, max: 65 },
+      age: [],
+      gender: [],
       countries: [],
-      gender: 'all'
+      isEnabled: true
     }
   });
   const [loading, setLoading] = useState(false);
@@ -28,51 +31,24 @@ export default function AddSDKModal({ isOpen, onClose, onAdd }) {
     }
   };
 
-  const handleSegmentRuleChange = (field, value) => {
+  const handleMultiSelectToggle = (field, value) => {
     setFormData(prev => ({
       ...prev,
       segmentRules: {
         ...prev.segmentRules,
-        [field]: value
-      }
-    }));
-  };
-
-  const handleAgeRangeChange = (type, value) => {
-    setFormData(prev => ({
-      ...prev,
-      segmentRules: {
-        ...prev.segmentRules,
-        ageRange: {
-          ...prev.segmentRules.ageRange,
-          [type]: parseInt(value)
-        }
-      }
-    }));
-  };
-
-  const handleCountryToggle = (countryCode) => {
-    setFormData(prev => ({
-      ...prev,
-      segmentRules: {
-        ...prev.segmentRules,
-        countries: prev.segmentRules.countries.includes(countryCode)
-          ? prev.segmentRules.countries.filter(c => c !== countryCode)
-          : [...prev.segmentRules.countries, countryCode]
+        [field]: prev.segmentRules[field].includes(value)
+          ? prev.segmentRules[field].filter(item => item !== value)
+          : [...prev.segmentRules[field], value]
       }
     }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) newErrors.name = 'SDK name is required';
     if (!formData.displayName.trim()) newErrors.displayName = 'Display name is required';
     if (!formData.apiKey.trim()) newErrors.apiKey = 'API key is required';
-    if (formData.segmentRules.countries.length === 0) newErrors.countries = 'At least one country must be selected';
-    if (formData.segmentRules.ageRange.min >= formData.segmentRules.ageRange.max) {
-      newErrors.ageRange = 'Minimum age must be less than maximum age';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -80,40 +56,69 @@ export default function AddSDKModal({ isOpen, onClose, onAdd }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      const newSDK = {
-        id: `sdk-${Date.now()}`,
-        ...formData,
-        status: 'Active',
-        isActive: true,
-        endpointUrl: '', // Not in requirements
-        lastTested: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        previewAudienceCount: Math.floor(Math.random() * 20000) + 5000 // Mock count
-      };
-      
-      await onAdd(newSDK);
-      
-      // Reset form
-      setFormData({
-        name: '',
-        displayName: '',
-        apiKey: '',
-        maxDailyUsers: '',
+      // Map frontend form data to API format
+      const apiData = {
+        name: formData.name,
+        displayName: formData.displayName,
+        apiKey: formData.apiKey,
+        apiSecret: formData.apiKey, // Using apiKey as apiSecret for now
+        baseUrl: "https://api.bitlabs.ai/v1", // Default value
+        maxDailyUsers: formData.maxDailyUsers ? parseInt(formData.maxDailyUsers) : 1000,
+        configuration: {
+          timeout: 30000,
+          retryAttempts: 3,
+          cacheDuration: 300,
+          rewardMultiplier: 1.0
+        },
+        metadata: {
+          description: `${formData.displayName} integration`,
+          category: "surveys",
+          priority: 10,
+          tags: ["surveys", formData.name.toLowerCase()],
+          notes: "Survey provider"
+        },
         segmentRules: {
-          ageRange: { min: 18, max: 65 },
-          countries: [],
-          gender: 'all'
+          age: formData.segmentRules.age,
+          gender: formData.segmentRules.gender,
+          countries: formData.segmentRules.countries,
+          isEnabled: formData.segmentRules.isEnabled
         }
-      });
-      
-      onClose();
+      };
+
+      const response = await surveyAPIs.createSDK(apiData);
+
+      if (response.success) {
+        toast.success(response.message || 'SDK created successfully!');
+        await onAdd(response.data);
+
+        // Reset form
+        setFormData({
+          name: '',
+          displayName: '',
+          apiKey: '',
+          maxDailyUsers: '',
+          segmentRules: {
+            age: [],
+            gender: [],
+            countries: [],
+            isEnabled: true
+          }
+        });
+
+        onClose();
+      } else {
+        toast.error('Failed to create SDK');
+        setErrors({ submit: 'Failed to create SDK' });
+      }
     } catch (error) {
       console.error('Error adding SDK:', error);
+      toast.error(error.message || 'Failed to create SDK');
+      setErrors({ submit: error.message });
     } finally {
       setLoading(false);
     }
@@ -137,6 +142,13 @@ export default function AddSDKModal({ isOpen, onClose, onAdd }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Error Message */}
+          {errors.submit && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {errors.submit}
+            </div>
+          )}
+
           {/* SDK Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -202,6 +214,70 @@ export default function AddSDKModal({ isOpen, onClose, onAdd }) {
             />
           </div>
 
+          {/* Segment Rules */}
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-semibold text-gray-900">Segment Rules</h3>
+
+            {/* Age Multi-select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Age Range
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SEGMENT_OPTIONS.ageRanges.map((ageRange) => (
+                  <label key={ageRange.label} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.segmentRules.age.includes(ageRange.label)}
+                      onChange={() => handleMultiSelectToggle('age', ageRange.label)}
+                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-gray-700">{ageRange.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Gender Multi-select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SEGMENT_OPTIONS.genderOptions.map((gender) => (
+                  <label key={gender.value} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.segmentRules.gender.includes(gender.value)}
+                      onChange={() => handleMultiSelectToggle('gender', gender.value)}
+                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-gray-700">{gender.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Countries Multi-select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Countries
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SEGMENT_OPTIONS.countries.map((country) => (
+                  <label key={country.code} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.segmentRules.countries.includes(country.code)}
+                      onChange={() => handleMultiSelectToggle('countries', country.code)}
+                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-gray-700">{country.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Actions */}
           <div className="flex justify-end space-x-3 pt-6">

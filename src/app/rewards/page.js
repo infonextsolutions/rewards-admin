@@ -324,11 +324,12 @@ export default function RewardsPage() {
           }
         } else {
           // Create new bonus logic
+          const token = localStorage.getItem('token');
           const response = await fetch(`${API_BASE}/admin/rewards/bonus-logic`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer your_admin`
+              'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(bonusData)
           });

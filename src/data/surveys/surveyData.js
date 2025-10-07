@@ -160,10 +160,8 @@ export const SEGMENT_OPTIONS = {
     { label: 'Japan', code: 'JP' }
   ],
   genderOptions: [
-    { label: 'All Genders', value: 'all' },
     { label: 'Male', value: 'male' },
-    { label: 'Female', value: 'female' },
-    { label: 'Non-binary', value: 'non-binary' }
+    { label: 'Female', value: 'female' }
   ]
 };
 

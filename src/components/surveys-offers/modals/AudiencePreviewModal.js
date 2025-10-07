@@ -1,10 +1,38 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import surveyAPIs from '../../../data/surveys/surveyAPI';
+import toast from 'react-hot-toast';
+
 export default function AudiencePreviewModal({ isOpen, onClose, sdk }) {
+  const [loading, setLoading] = useState(false);
+  const [audienceData, setAudienceData] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && sdk && sdk.segmentRules) {
+      fetchAudiencePreview();
+    }
+  }, [isOpen, sdk]);
+
+  const fetchAudiencePreview = async () => {
+    setLoading(true);
+    try {
+      const response = await surveyAPIs.previewAudience(sdk.segmentRules);
+      if (response.success) {
+        setAudienceData(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching audience preview:', error);
+      toast.error('Failed to load audience preview');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen || !sdk) return null;
 
   const audienceBreakdown = {
-    totalUsers: sdk.previewAudienceCount,
+    totalUsers: audienceData?.matchingUsers || 0,
     byAge: [
       { range: '18-24', count: Math.floor(sdk.previewAudienceCount * 0.25), percentage: '25%' },
       { range: '25-34', count: Math.floor(sdk.previewAudienceCount * 0.35), percentage: '35%' },
@@ -64,38 +92,52 @@ export default function AudiencePreviewModal({ isOpen, onClose, sdk }) {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <span className="text-sm font-medium text-gray-700">Age Range:</span>
-              <p className="text-sm text-gray-900">{sdk.segmentRules.ageRange.min}-{sdk.segmentRules.ageRange.max} years</p>
+              <p className="text-sm text-gray-900">
+                {sdk.segmentRules?.age?.length > 0 ? sdk.segmentRules.age.join(', ') : 'All ages'}
+              </p>
             </div>
             <div>
               <span className="text-sm font-medium text-gray-700">Countries:</span>
-              <p className="text-sm text-gray-900">{sdk.segmentRules.countries.join(', ')}</p>
+              <p className="text-sm text-gray-900">
+                {sdk.segmentRules?.countries?.length > 0 ? sdk.segmentRules.countries.join(', ') : 'All countries'}
+              </p>
             </div>
             <div>
               <span className="text-sm font-medium text-gray-700">Gender:</span>
-              <p className="text-sm text-gray-900 capitalize">{sdk.segmentRules.gender}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Count */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <svg className="w-8 h-8 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <div>
-              <h3 className="text-lg font-semibold text-emerald-900">
-                {audienceBreakdown.totalUsers.toLocaleString()} Matching Users
-              </h3>
-              <p className="text-sm text-emerald-700">
-                Estimated audience size based on current rules
+              <p className="text-sm text-gray-900 capitalize">
+                {sdk.segmentRules?.gender?.length > 0 ? sdk.segmentRules.gender.join(', ') : 'All genders'}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Breakdown Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Total Count */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : (
+          <>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <svg className="w-8 h-8 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-semibold text-emerald-900">
+                    {audienceBreakdown.totalUsers.toLocaleString()} Matching Users
+                  </h3>
+                  <p className="text-sm text-emerald-700">
+                    {audienceData?.percentage ? `${audienceData.percentage}% of total users` : 'Estimated audience size based on current rules'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Breakdown Charts - Hidden until API provides breakdown data */}
+        {false && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Age Breakdown */}
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-4">Age Distribution</h4>
@@ -167,10 +209,10 @@ export default function AudiencePreviewModal({ isOpen, onClose, sdk }) {
               ))}
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Summary */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        {!loading && <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start">
             <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -183,7 +225,7 @@ export default function AudiencePreviewModal({ isOpen, onClose, sdk }) {
               </p>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Actions */}
         <div className="flex justify-end mt-6">
