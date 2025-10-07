@@ -109,16 +109,20 @@ export default function SurveySDKManager() {
     setShowAudienceModal(true);
   };
 
-  // EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
-  // const handleToggleStatus = async (sdkId) => {
-  //   setSdks(prevSDKs =>
-  //     prevSDKs.map(sdk =>
-  //       sdk.id === sdkId
-  //         ? { ...sdk, isActive: !sdk.isActive, status: !sdk.isActive ? 'Active' : 'Inactive' }
-  //         : sdk
-  //     )
-  //   );
-  // };
+  const handleToggleStatus = async (sdkId) => {
+    try {
+      const response = await surveyAPIs.toggleSDKStatus(sdkId);
+
+      if (response.success) {
+        toast.success(response.message || 'SDK status updated successfully');
+        // Refresh the SDK list to get updated status
+        await fetchSDKs();
+      }
+    } catch (error) {
+      console.error('Error toggling SDK status:', error);
+      toast.error(error.message || 'Failed to update SDK status');
+    }
+  };
 
 
   const handleSaveSDK = async (sdkId, updatedData) => {
@@ -219,12 +223,12 @@ export default function SurveySDKManager() {
       ) : (
         <>
           {/* SDK Table */}
-          {/* EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements */}
           <SDKTable
             sdks={sdks}
             onEdit={handleEditSDK}
             onPreviewAudience={handlePreviewAudience}
             onUpdateSegmentRule={handleUpdateSegmentRule}
+            onToggleStatus={handleToggleStatus}
           />
 
           {/* Pagination */}

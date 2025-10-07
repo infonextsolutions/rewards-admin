@@ -164,6 +164,138 @@ const surveyAPIs = {
       console.error('Preview audience error:', error);
       throw error;
     }
+  },
+
+  // Toggle SDK status (activate/deactivate)
+  async toggleSDKStatus(sdkId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/admin/surveys/sdk/${sdkId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Toggle SDK status error:', error);
+      throw error;
+    }
+  },
+
+  // Get live offers with pagination
+  async getLiveOffers({ page = 1, limit = 20 } = {}) {
+    try {
+      const token = localStorage.getItem('token');
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
+
+      const response = await fetch(`${API_BASE}/admin/surveys/offers/live?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Get live offers error:', error);
+      throw error;
+    }
+  },
+
+  // Get offer details by ID
+  async getOfferDetails(offerId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/admin/surveys/offers/${offerId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Get offer details error:', error);
+      throw error;
+    }
+  },
+
+  // Update offer status
+  async updateOfferStatus(offerId, status) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/admin/surveys/offers/${offerId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Update offer status error:', error);
+      throw error;
+    }
+  },
+
+  // Update offer reward
+  async updateOfferReward(offerId, coinReward) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/admin/surveys/offers/${offerId}/reward`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ coinReward })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Update offer reward error:', error);
+      throw error;
+    }
   }
 };
 

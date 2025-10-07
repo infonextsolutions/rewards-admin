@@ -7,15 +7,14 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
   const [loadingStates, setLoadingStates] = useState({});
   const [editingSegment, setEditingSegment] = useState({});
 
-  // EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
-  // const handleToggleStatus = async (sdkId) => {
-  //   setLoadingStates(prev => ({ ...prev, [sdkId]: true }));
-  //   try {
-  //     await onToggleStatus(sdkId);
-  //   } finally {
-  //     setLoadingStates(prev => ({ ...prev, [sdkId]: false }));
-  //   }
-  // };
+  const handleToggleStatus = async (sdkId) => {
+    setLoadingStates(prev => ({ ...prev, [sdkId]: true }));
+    try {
+      await onToggleStatus(sdkId);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [sdkId]: false }));
+    }
+  };
 
   const getStatusBadge = (status, isActive) => {
     // Determine actual status based on isActive flag
@@ -48,6 +47,9 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                 SDK Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Toggle Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Display Name (FE)
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -73,25 +75,25 @@ export default function SDKTable({ sdks, onEdit, onToggleStatus, onPreviewAudien
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-2">
                     {getStatusBadge(sdk.status, sdk.isActive)}
-                    {/* EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={sdk.isActive}
-                        onChange={() => handleToggleStatus(sdk.id)}
-                        disabled={loadingStates[sdk.id]}
-                        className="sr-only"
-                      />
-                      <div className={`w-11 h-6 rounded-full shadow-inner transition-colors relative ${
-                        sdk.isActive ? 'bg-emerald-500' : 'bg-gray-300'
-                      } ${loadingStates[sdk.id] ? 'opacity-50' : ''}`}>
-                        <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform duration-200 ease-in-out ${
-                          sdk.isActive ? 'translate-x-5 bg-white' : 'translate-x-0.5 bg-white'
-                        }`} />
-                      </div>
-                    </label>
-                    */}
                   </div>
+                </td>
+                <td className="px-6 py-4">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sdk.isActive}
+                      onChange={() => handleToggleStatus(sdk.id)}
+                      disabled={loadingStates[sdk.id]}
+                      className="sr-only"
+                    />
+                    <div className={`w-11 h-6 rounded-full shadow-inner transition-colors relative ${
+                      sdk.isActive ? 'bg-emerald-500' : 'bg-gray-300'
+                    } ${loadingStates[sdk.id] ? 'opacity-50' : ''}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform duration-200 ease-in-out ${
+                        sdk.isActive ? 'translate-x-5 bg-white' : 'translate-x-0.5 bg-white'
+                      }`} />
+                    </div>
+                  </label>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900">{sdk.displayName}</div>

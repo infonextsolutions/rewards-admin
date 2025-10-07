@@ -1,24 +1,89 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import OffersTable from './components/OffersTable';
 import OfferPreviewModal from './modals/OfferPreviewModal';
-import { LIVE_OFFERS } from '../../data/surveys/surveyData';
+import Pagination from '../ui/Pagination';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import surveyAPIs from '../../data/surveys/surveyAPI';
+import toast from 'react-hot-toast';
 
 export default function LiveOffersAnalytics() {
-  const [offers, setOffers] = useState(LIVE_OFFERS);
+  const [offers, setOffers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
+
   const [sdkFilter, setSdkFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  
+
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
+
+  // Fetch offers
+  const fetchOffers = async (page = pagination.currentPage) => {
+    setLoading(true);
+    try {
+      const response = await surveyAPIs.getLiveOffers({
+        page,
+        limit: pagination.itemsPerPage
+      });
+
+      if (response.success) {
+        // Map API response to component structure
+        const mappedOffers = response.data.offers.map(offer => ({
+          id: offer._id,
+          title: offer.title,
+          sdkSource: offer.sdkId?.displayName || offer.sdkId?.name || 'Unknown',
+          sdkId: offer.sdkId?._id,
+          category: offer.category,
+          coinReward: offer.coinReward,
+          status: offer.status.charAt(0).toUpperCase() + offer.status.slice(1), // Capitalize first letter
+          avgCompletionTime: offer.analytics?.avgCompletionTime || 0,
+          coinsIssued: offer.analytics?.coinsIssued || 0,
+          engagementFunnel: {
+            views: offer.analytics?.views || offer.engagementFunnel?.views || 0,
+            starts: offer.analytics?.starts || offer.engagementFunnel?.starts || 0,
+            completions: offer.analytics?.completions || offer.engagementFunnel?.completions || 0,
+            conversionRate: offer.analytics?.conversionRate || offer.engagementFunnel?.conversionRate || 0
+          },
+          description: offer.content?.description || ''
+        }));
+
+        setOffers(mappedOffers);
+        setPagination({
+          currentPage: response.data.pagination.currentPage,
+          totalPages: response.data.pagination.totalPages,
+          totalItems: response.data.pagination.totalItems,
+          itemsPerPage: response.data.pagination.itemsPerPage
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+      toast.error('Failed to load offers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOffers();
+  }, []);
+
+  const handlePageChange = (newPage) => {
+    fetchOffers(newPage);
+  };
 
   // Filtered offers
   const filteredOffers = useMemo(() => {
     return offers.filter(offer => {
       const matchesSDK = sdkFilter === 'all' || offer.sdkSource === sdkFilter;
       const matchesStatus = statusFilter === 'all' || offer.status === statusFilter;
-      
+
       return matchesSDK && matchesStatus;
     });
   }, [offers, sdkFilter, statusFilter]);
@@ -56,21 +121,51 @@ export default function LiveOffersAnalytics() {
   // Available status options
   const statusOptions = ['Live', 'Paused', 'Draft'];
 
-  const handlePreviewOffer = (offer) => {
-    setSelectedOffer(offer);
-    setShowPreviewModal(true);
+  const handlePreviewOffer = async (offer) => {
+    try {
+      // Fetch full offer details
+      const response = await surveyAPIs.getOfferDetails(offer.id);
+      if (response.success) {
+        setSelectedOffer(response.data);
+        setShowPreviewModal(true);
+      }
+    } catch (error) {
+      console.error('Error fetching offer details:', error);
+      toast.error('Failed to load offer details');
+    }
   };
 
-  // EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
-  // const handleToggleOfferStatus = async (offerId) => {
-  //   setOffers(prevOffers =>
-  //     prevOffers.map(offer =>
-  //       offer.id === offerId
-  //         ? { ...offer, status: offer.status === 'Live' ? 'Paused' : 'Live' }
-  //         : offer
-  //     )
-  //   );
-  // };
+  const handleToggleOfferStatus = async (offerId, currentStatus) => {
+    try {
+      // Toggle between Live and Paused
+      const newStatus = currentStatus.toLowerCase() === 'live' ? 'paused' : 'live';
+      const response = await surveyAPIs.updateOfferStatus(offerId, newStatus);
+
+      if (response.success) {
+        toast.success(response.message || 'Offer status updated successfully');
+        // Refresh the offers list
+        await fetchOffers();
+      }
+    } catch (error) {
+      console.error('Error toggling offer status:', error);
+      toast.error(error.message || 'Failed to update offer status');
+    }
+  };
+
+  const handleUpdateOfferReward = async (offerId, newReward) => {
+    try {
+      const response = await surveyAPIs.updateOfferReward(offerId, newReward);
+
+      if (response.success) {
+        toast.success(response.message || 'Offer reward updated successfully');
+        // Refresh the offers list
+        await fetchOffers();
+      }
+    } catch (error) {
+      console.error('Error updating offer reward:', error);
+      toast.error(error.message || 'Failed to update offer reward');
+    }
+  };
 
   const handleExportData = (offersToExport = filteredOffers) => {
     // Create CSV content
@@ -192,13 +287,31 @@ export default function LiveOffersAnalytics() {
       </div>
 
 
-      {/* Offers Table */}
-      {/* EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements */}
-      <OffersTable
-        offers={filteredOffers}
-        onPreview={handlePreviewOffer}
-        onExport={handleExportData}
-      />
+      {/* Loading State */}
+      {loading ? (
+        <LoadingSpinner message="Loading offers..." />
+      ) : (
+        <>
+          {/* Offers Table */}
+          <OffersTable
+            offers={filteredOffers}
+            onPreview={handlePreviewOffer}
+            onExport={handleExportData}
+            onToggleStatus={handleToggleOfferStatus}
+            onUpdateReward={handleUpdateOfferReward}
+          />
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
+      )}
 
       {/* Offer Preview Modal */}
       <OfferPreviewModal

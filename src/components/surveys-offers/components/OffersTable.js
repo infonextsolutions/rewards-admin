@@ -2,18 +2,44 @@
 
 import { useState } from 'react';
 
-export default function OffersTable({ offers, onPreview, onToggleStatus, onExport }) {
+export default function OffersTable({ offers, onPreview, onToggleStatus, onUpdateReward, onExport }) {
   const [loadingStates, setLoadingStates] = useState({});
+  const [editingReward, setEditingReward] = useState({});
+  const [rewardValues, setRewardValues] = useState({});
 
-  // EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
-  // const handleToggleStatus = async (offerId) => {
-  //   setLoadingStates(prev => ({ ...prev, [offerId]: true }));
-  //   try {
-  //     await onToggleStatus(offerId);
-  //   } finally {
-  //     setLoadingStates(prev => ({ ...prev, [offerId]: false }));
-  //   }
-  // };
+  const handleToggleStatus = async (offerId, currentStatus) => {
+    setLoadingStates(prev => ({ ...prev, [offerId]: true }));
+    try {
+      await onToggleStatus(offerId, currentStatus);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [offerId]: false }));
+    }
+  };
+
+  const handleRewardEdit = (offerId, currentReward) => {
+    setEditingReward(prev => ({ ...prev, [offerId]: true }));
+    setRewardValues(prev => ({ ...prev, [offerId]: currentReward }));
+  };
+
+  const handleRewardSave = async (offerId) => {
+    const newReward = parseInt(rewardValues[offerId]);
+    if (isNaN(newReward) || newReward < 0) {
+      return;
+    }
+
+    setLoadingStates(prev => ({ ...prev, [`reward_${offerId}`]: true }));
+    try {
+      await onUpdateReward(offerId, newReward);
+      setEditingReward(prev => ({ ...prev, [offerId]: false }));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [`reward_${offerId}`]: false }));
+    }
+  };
+
+  const handleRewardCancel = (offerId) => {
+    setEditingReward(prev => ({ ...prev, [offerId]: false }));
+    setRewardValues(prev => ({ ...prev, [offerId]: undefined }));
+  };
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -90,19 +116,56 @@ export default function OffersTable({ offers, onPreview, onToggleStatus, onExpor
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <div className="text-sm font-medium text-emerald-600">{offer.coinReward}</div>
-                  </div>
+                  {editingReward[offer.id] ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        value={rewardValues[offer.id]}
+                        onChange={(e) => setRewardValues(prev => ({ ...prev, [offer.id]: e.target.value }))}
+                        className="w-20 px-2 py-1 text-sm border border-emerald-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        disabled={loadingStates[`reward_${offer.id}`]}
+                      />
+                      <button
+                        onClick={() => handleRewardSave(offer.id)}
+                        disabled={loadingStates[`reward_${offer.id}`]}
+                        className="text-green-600 hover:text-green-800 disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleRewardCancel(offer.id)}
+                        disabled={loadingStates[`reward_${offer.id}`]}
+                        className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <div className="text-sm font-medium text-emerald-600">{offer.coinReward}</div>
+                      <button
+                        onClick={() => handleRewardEdit(offer.id, offer.coinReward)}
+                        className="text-gray-400 hover:text-emerald-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-3">
                     {getStatusBadge(offer.status)}
-                    {/* EXCLUDED: Toggle Live/Paused functionality via API not supported per requirements
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         checked={offer.status === 'Live'}
-                        onChange={() => handleToggleStatus(offer.id)}
+                        onChange={() => handleToggleStatus(offer.id, offer.status)}
                         disabled={loadingStates[offer.id]}
                         className="sr-only"
                       />
@@ -114,7 +177,6 @@ export default function OffersTable({ offers, onPreview, onToggleStatus, onExpor
                         }`} />
                       </div>
                     </label>
-                    */}
                   </div>
                 </td>
                 <td className="px-6 py-4">
