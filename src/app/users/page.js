@@ -26,6 +26,7 @@ export default function UsersPage() {
     suspendUser,
     bulkAction,
     handlePageChange: apiHandlePageChange,
+    handleItemsPerPageChange,
     applyFilters
   } = useUsers();
 
@@ -38,6 +39,8 @@ export default function UsersPage() {
     ageRange: "",
   });
 
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
+
   const [editingUser, setEditingUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [suspendingUser, setSuspendingUser] = useState(null);
@@ -49,8 +52,16 @@ export default function UsersPage() {
 
   // Apply filters when search term or filters change
   useEffect(() => {
-    applyFilters(searchTerm, selectedFilters);
-  }, [searchTerm, selectedFilters]);
+    applyFilters(localSearchTerm, selectedFilters);
+  }, [
+    localSearchTerm,
+    selectedFilters.tierLevel,
+    selectedFilters.location,
+    selectedFilters.memberSince,
+    selectedFilters.status,
+    selectedFilters.gender,
+    selectedFilters.ageRange
+  ]);
 
   const handleFilterChange = (filterId, value) => {
     setSelectedFilters((prev) => ({
@@ -71,6 +82,7 @@ export default function UsersPage() {
   };
 
   const handleClearFilters = () => {
+    setLocalSearchTerm('');
     setSelectedFilters({
       tierLevel: "",
       location: "",
@@ -106,7 +118,7 @@ export default function UsersPage() {
         setShowEditModal(false);
         setEditingUser(null);
         // Refresh users list
-        await applyFilters(searchTerm, selectedFilters);
+        await applyFilters(localSearchTerm, selectedFilters);
       }
     } catch (error) {
       console.error('Error saving user:', error);
@@ -175,6 +187,8 @@ export default function UsersPage() {
         selectedFilters={selectedFilters}
         onFilterChange={handleFilterChange}
         onExport={handleExport}
+        searchValue={localSearchTerm}
+        onSearchChange={setLocalSearchTerm}
       />
 
       {/* PHASE 2: Bulk Actions temporarily hidden */}
@@ -189,9 +203,9 @@ export default function UsersPage() {
         itemsPerPage={pagination.itemsPerPage}
         filteredCount={pagination.totalItems}
         totalCount={pagination.totalItems}
-        searchTerm={searchTerm}
+        searchTerm={localSearchTerm}
         selectedFilters={selectedFilters}
-        onItemsPerPageChange={() => {}} // Not supported with API pagination
+        onItemsPerPageChange={handleItemsPerPageChange}
         onClearFilters={handleClearFilters}
       />
 

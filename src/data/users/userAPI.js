@@ -31,7 +31,8 @@ const userAPIs = {
     status = '',
     gender = '',
     ageRange = '',
-    memberSince = ''
+    memberSince = '',
+    location = ''
   } = {}) {
     try {
       const params = {
@@ -42,7 +43,8 @@ const userAPIs = {
         ...(status && { status }),
         ...(gender && { gender }),
         ...(ageRange && { ageRange }),
-        ...(memberSince && { memberSince })
+        ...(memberSince && { memberSince }),
+        ...(location && { location })
       };
 
       const response = await apiClient.get('/admin/users', { params });

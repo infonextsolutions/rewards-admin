@@ -20,16 +20,17 @@ export const useUsers = () => {
     status: '',
     gender: '',
     ageRange: '',
-    memberSince: ''
+    memberSince: '',
+    location: ''
   });
 
   // Fetch users from API
-  const fetchUsers = async (page = pagination.currentPage, filters = apiFilters) => {
+  const fetchUsers = async (page = pagination.currentPage, filters = apiFilters, limit = null) => {
     setLoading(true);
     try {
       const response = await userAPIs.getUsers({
         page,
-        limit: pagination.itemsPerPage,
+        limit: limit || pagination.itemsPerPage,
         ...filters
       });
 
@@ -63,7 +64,8 @@ export const useUsers = () => {
       status: filters.status || '',
       gender: filters.gender || '',
       ageRange: filters.ageRange || '',
-      memberSince: filters.memberSince || ''
+      memberSince: filters.memberSince || '',
+      location: filters.location || ''
     };
 
     setApiFilters(newFilters);
@@ -79,7 +81,8 @@ export const useUsers = () => {
           filters.status !== apiFilters.status ||
           filters.gender !== apiFilters.gender ||
           filters.ageRange !== apiFilters.ageRange ||
-          filters.memberSince !== apiFilters.memberSince) {
+          filters.memberSince !== apiFilters.memberSince ||
+          filters.location !== apiFilters.location) {
         applyFilters(searchTerm, filters);
       }
       // Return current users (API already filtered)
@@ -90,6 +93,16 @@ export const useUsers = () => {
   // Handle page change
   const handlePageChange = (newPage) => {
     fetchUsers(newPage, apiFilters);
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setPagination(prev => ({
+      ...prev,
+      itemsPerPage: newItemsPerPage,
+      currentPage: 1 // Reset to page 1 when changing items per page
+    }));
+    fetchUsers(1, apiFilters, newItemsPerPage); // Fetch with new limit
   };
 
   const updateUser = async (userId, userData) => {
@@ -161,6 +174,7 @@ export const useUsers = () => {
     suspendUser,
     bulkAction,
     handlePageChange,
+    handleItemsPerPageChange,
     fetchUsers,
     applyFilters
   };

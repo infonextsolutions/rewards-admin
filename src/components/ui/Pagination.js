@@ -53,9 +53,11 @@ export default function Pagination({
     };
 
     const paginationItems = [
+      { type: "first", label: "First", disabled: currentPage === 1 },
       { type: "prev", label: "Prev", disabled: currentPage === 1 },
       ...getVisiblePages(),
       { type: "next", label: "Next", disabled: currentPage === totalPages },
+      { type: "last", label: "Last", disabled: currentPage === totalPages },
     ];
 
     return (
@@ -64,6 +66,23 @@ export default function Pagination({
         aria-label="Pagination"
       >
         {paginationItems.map((item, index) => {
+          if (item.type === "first") {
+            return (
+              <button
+                key={index}
+                disabled={item.disabled}
+                onClick={() => !item.disabled && onPageChange(1)}
+                className="inline-flex flex-col h-[34.07px] items-center justify-center gap-[10.65px] px-[4.26px] py-[10.65px] relative flex-[0_0_auto] bg-white rounded-[8.52px] disabled:cursor-not-allowed"
+                aria-label="First page"
+                title="First page"
+              >
+                <span className={`relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[13.8px] tracking-[0] leading-[normal] ${item.disabled ? 'text-[#cccccc]' : 'text-[#333333]'}`}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          }
+
           if (item.type === "prev") {
             return (
               <button
@@ -90,6 +109,23 @@ export default function Pagination({
                 aria-label="Next page"
               >
                 <span className="relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[#333333] text-[13.8px] tracking-[0] leading-[normal]">
+                  {item.label}
+                </span>
+              </button>
+            );
+          }
+
+          if (item.type === "last") {
+            return (
+              <button
+                key={index}
+                disabled={item.disabled}
+                onClick={() => !item.disabled && onPageChange(totalPages)}
+                className="inline-flex flex-col h-[34.07px] items-center justify-center gap-[10.65px] px-[4.26px] py-[10.65px] relative flex-[0_0_auto] bg-white rounded-[8.52px] disabled:cursor-not-allowed"
+                aria-label="Last page"
+                title="Last page"
+              >
+                <span className={`relative w-fit mt-[-4.18px] mb-[-2.05px] [font-family:'Open_Sans-SemiBold',Helvetica] font-semibold text-[13.8px] tracking-[0] leading-[normal] ${item.disabled ? 'text-[#cccccc]' : 'text-[#333333]'}`}>
                   {item.label}
                 </span>
               </button>
@@ -154,11 +190,26 @@ export default function Pagination({
       </div>
       <div className="flex items-center gap-2">
         <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          className={`inline-flex px-3 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium transition-colors ${
+            currentPage === 1
+              ? "cursor-not-allowed text-gray-400 bg-gray-50"
+              : "cursor-pointer hover:bg-gray-50 text-gray-700"
+          }`}
+          title="First page"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium transition-colors ${
-            currentPage === 1 
-              ? "cursor-not-allowed text-gray-400 bg-gray-50" 
+            currentPage === 1
+              ? "cursor-not-allowed text-gray-400 bg-gray-50"
               : "cursor-pointer hover:bg-gray-50 text-gray-700"
           }`}
         >
@@ -211,12 +262,27 @@ export default function Pagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className={`inline-flex px-4 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium transition-colors ${
-            currentPage === totalPages 
-              ? "cursor-not-allowed text-gray-400 bg-gray-50" 
+            currentPage === totalPages
+              ? "cursor-not-allowed text-gray-400 bg-gray-50"
               : "cursor-pointer hover:bg-gray-50 text-gray-700"
           }`}
         >
           Next
+        </button>
+
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          className={`inline-flex px-3 py-2 items-center justify-center rounded-lg border border-gray-200 text-sm font-medium transition-colors ${
+            currentPage === totalPages
+              ? "cursor-not-allowed text-gray-400 bg-gray-50"
+              : "cursor-pointer hover:bg-gray-50 text-gray-700"
+          }`}
+          title="Last page"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
     </div>
