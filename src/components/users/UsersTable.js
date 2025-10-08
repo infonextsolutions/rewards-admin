@@ -192,8 +192,8 @@ export default function UsersTable({
                       />
                     </button>
 
-                    <button 
-                      onClick={() => router.push(`/users/${row.userId}`)}
+                    <button
+                      onClick={() => router.push(`/users/${row.id}`)}
                       className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-[#00a389] rounded-full hover:bg-[#008a73] transition-colors cursor-pointer text-xs"
                     >
                       <div className="font-medium text-white text-xs tracking-[0] leading-4">

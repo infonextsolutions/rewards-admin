@@ -5,7 +5,6 @@ import { useSearch } from '../../contexts/SearchContext';
 import { useUsers } from '../../hooks/useUsers';
 import { usePagination } from '../../hooks/usePagination';
 import { USER_FILTER_OPTIONS } from '../../data/users';
-import { exportToCSV } from '../../utils/export';
 import UsersHeader from '../../components/users/UsersHeader';
 import UsersResultsSummary from '../../components/users/UsersResultsSummary';
 import BulkActionsBar from '../../components/ui/BulkActionsBar';
@@ -13,11 +12,23 @@ import UsersTable from '../../components/users/UsersTable';
 import Pagination from '../../components/ui/Pagination';
 import EditUserModal from '../../components/users/EditUserModal';
 import SuspendUserModal from '../../components/users/SuspendUserModal';
+import toast from 'react-hot-toast';
+import userAPIs from '../../data/users/userAPI';
 
 export default function UsersPage() {
   const { searchTerm, registerSearchHandler } = useSearch();
-  const { users, filterUsers, updateUser, suspendUser, bulkAction } = useUsers();
-  
+  const {
+    users,
+    loading,
+    pagination,
+    filterUsers,
+    updateUser,
+    suspendUser,
+    bulkAction,
+    handlePageChange: apiHandlePageChange,
+    applyFilters
+  } = useUsers();
+
   const [selectedFilters, setSelectedFilters] = useState({
     tierLevel: "",
     location: "",
@@ -33,36 +44,30 @@ export default function UsersPage() {
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
 
-  const filteredUsers = filterUsers(searchTerm, selectedFilters);
-  const {
-    items: paginatedUsers,
-    totalPages,
-    currentPage,
-    itemsPerPage,
-    startIndex,
-    totalItems,
-    handlePageChange,
-    handleItemsPerPageChange,
-    resetPagination
-  } = usePagination(filteredUsers);
+  // API handles filtering, use users directly
+  const paginatedUsers = users;
 
+  // Apply filters when search term or filters change
   useEffect(() => {
-    const handleSearchChange = () => {
-      resetPagination();
-    };
-    registerSearchHandler(handleSearchChange);
-  }, [registerSearchHandler, resetPagination]);
+    applyFilters(searchTerm, selectedFilters);
+  }, [searchTerm, selectedFilters]);
 
   const handleFilterChange = (filterId, value) => {
     setSelectedFilters((prev) => ({
       ...prev,
       [filterId]: value,
     }));
-    resetPagination();
   };
 
-  const handleExport = () => {
-    exportToCSV(filteredUsers, 'users');
+  const handleExport = async () => {
+    try {
+      toast.loading('Exporting users...', { id: 'export-users' });
+      await userAPIs.exportUsers('csv');
+      toast.success('Users exported successfully!', { id: 'export-users' });
+    } catch (error) {
+      console.error('Error exporting users:', error);
+      toast.error(error.message || 'Failed to export users', { id: 'export-users' });
+    }
   };
 
   const handleClearFilters = () => {
@@ -74,7 +79,6 @@ export default function UsersPage() {
       gender: "",
       ageRange: "",
     });
-    resetPagination();
   };
 
   const handleEditUser = (user) => {
@@ -84,12 +88,29 @@ export default function UsersPage() {
 
   const handleSaveUser = async (updatedUserData) => {
     try {
-      await updateUser(editingUser.id, updatedUserData);
-      alert('User profile updated successfully!');
-      setShowEditModal(false);
-      setEditingUser(null);
+      // Check if account status changed
+      const statusChanged = editingUser.status !== updatedUserData.accountStatus;
+
+      // Update user profile (without status)
+      const { accountStatus, ...userDataWithoutStatus } = updatedUserData;
+      const response = await userAPIs.updateUser(editingUser.id, userDataWithoutStatus);
+
+      // If status changed, call the status API separately
+      if (statusChanged && accountStatus) {
+        const newStatus = accountStatus === 'Active' ? 'active' : 'inactive';
+        await userAPIs.updateUserStatus(editingUser.id, newStatus, '');
+      }
+
+      if (response.success) {
+        toast.success('User profile updated successfully!');
+        setShowEditModal(false);
+        setEditingUser(null);
+        // Refresh users list
+        await applyFilters(searchTerm, selectedFilters);
+      }
     } catch (error) {
       console.error('Error saving user:', error);
+      toast.error(error.message || 'Failed to update user profile');
       throw error;
     }
   };
@@ -102,7 +123,6 @@ export default function UsersPage() {
   const handleConfirmSuspend = async (suspendData) => {
     try {
       await suspendUser(suspendingUser.id, suspendData);
-      alert(`User ${suspendingUser.name} has been suspended successfully!`);
       setShowSuspendModal(false);
       setSuspendingUser(null);
     } catch (error) {
@@ -132,18 +152,18 @@ export default function UsersPage() {
   const handleBulkAction = async (action) => {
     const selectedCount = selectedUsers.length;
     if (selectedCount === 0) {
-      alert('Please select at least one user');
+      toast.error('Please select at least one user');
       return;
     }
-    
+
     const confirmMessage = `Are you sure you want to ${action} ${selectedCount} selected user(s)?`;
     if (window.confirm(confirmMessage)) {
       try {
         await bulkAction(selectedUsers, action);
-        alert(`Bulk ${action} applied to ${selectedCount} user(s)`);
+        toast.success(`Bulk ${action} applied to ${selectedCount} user(s)`);
         setSelectedUsers([]);
       } catch (error) {
-        alert(`Error applying bulk ${action}: ${error.message}`);
+        toast.error(`Error applying bulk ${action}: ${error.message}`);
       }
     }
   };
@@ -165,31 +185,39 @@ export default function UsersPage() {
       /> */}
 
       <UsersResultsSummary
-        startIndex={startIndex}
-        itemsPerPage={itemsPerPage}
-        filteredCount={totalItems}
-        totalCount={users.length}
+        startIndex={(pagination.currentPage - 1) * pagination.itemsPerPage}
+        itemsPerPage={pagination.itemsPerPage}
+        filteredCount={pagination.totalItems}
+        totalCount={pagination.totalItems}
         searchTerm={searchTerm}
         selectedFilters={selectedFilters}
-        onItemsPerPageChange={handleItemsPerPageChange}
+        onItemsPerPageChange={() => {}} // Not supported with API pagination
         onClearFilters={handleClearFilters}
       />
 
-      <UsersTable
-        users={paginatedUsers}
-        selectedUsers={selectedUsers}
-        onSelectUser={handleSelectUser}
-        onSelectAll={handleSelectAll}
-        onEditUser={handleEditUser}
-        onSuspendUser={handleSuspendUser}
-      />
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        </div>
+      ) : (
+        <>
+          <UsersTable
+            users={paginatedUsers}
+            selectedUsers={selectedUsers}
+            onSelectUser={handleSelectUser}
+            onSelectAll={handleSelectAll}
+            onEditUser={handleEditUser}
+            onSuspendUser={handleSuspendUser}
+          />
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        onPageChange={handlePageChange}
-      />
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            onPageChange={apiHandlePageChange}
+          />
+        </>
+      )}
 
       {/* Edit User Modal */}
       <EditUserModal

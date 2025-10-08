@@ -1,11 +1,37 @@
 import React, { useState } from "react";
+import userAPIs from '../../data/users/userAPI';
+import toast from 'react-hot-toast';
+import { InputModal } from './InputModal';
 
 export const UserActionsSection = ({ user }) => {
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [isNotificationSent, setIsNotificationSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSendNotification = () => {
-    setIsNotificationSent(true);
-    setTimeout(() => setIsNotificationSent(false), 2000);
+  const handleOpenNotificationModal = () => {
+    setShowNotificationModal(true);
+  };
+
+  const handleSendNotification = async (message) => {
+    setLoading(true);
+    try {
+      const response = await userAPIs.sendNotification(
+        user.id,
+        message,
+        'info'
+      );
+
+      if (response.success) {
+        toast.success(response.message || 'Notification sent successfully');
+        setIsNotificationSent(true);
+        setTimeout(() => setIsNotificationSent(false), 2000);
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast.error(error.message || 'Failed to send notification');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,14 +67,27 @@ export const UserActionsSection = ({ user }) => {
         <div>
           <button
             className="inline-flex h-[40px] items-center justify-center gap-2 px-6 py-2 bg-teal-600 rounded-full cursor-pointer transition-colors duration-200 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium"
-            onClick={handleSendNotification}
-            disabled={isNotificationSent}
+            onClick={handleOpenNotificationModal}
+            disabled={isNotificationSent || loading}
             aria-label={`Send notification to ${user?.name || 'user'}`}
           >
-            {isNotificationSent ? "Sent!" : "Send Notification"}
+            {loading ? "Sending..." : isNotificationSent ? "Sent!" : "Send Notification"}
           </button>
         </div>
       </div>
+
+      {/* Notification Modal */}
+      <InputModal
+        isOpen={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+        onSubmit={handleSendNotification}
+        title="Send Notification"
+        message={`Enter a custom notification message for ${user?.name || 'this user'}:`}
+        type="textarea"
+        placeholder="Type your notification message here..."
+        submitText="Send"
+        cancelText="Cancel"
+      />
     </section>
   );
 };

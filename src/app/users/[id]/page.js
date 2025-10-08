@@ -1,9 +1,12 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { UserDetailPage } from '../../../components/users/UserDetailPage';
 import { useParams, useRouter } from 'next/navigation';
+import userAPIs from '../../../data/users/userAPI';
+import toast from 'react-hot-toast';
 
-// Mock user data - in a real app, this would come from an API
+// Mock user data as fallback
 const mockUsers = {
   'IDO9012': {
     id: 1,
@@ -155,8 +158,109 @@ export default function UserDetail() {
   const router = useRouter();
   const userId = params.id;
 
-  // Find user by ID
-  const user = mockUsers[userId];
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      setLoading(true);
+      try {
+        const response = await userAPIs.getUserDetails(userId);
+
+        if (response.success) {
+          // Map API response to component structure
+          const userData = response.data;
+          const mappedUser = {
+            id: userData.id,
+            name: userData.name,
+            userId: userData.userId,
+            tier: userData.tier,
+            email: userData.email,
+            status: userData.status,
+            avatar: userData.avatar,
+            gender: userData.gender || 'N/A',
+            age: userData.age || 'N/A',
+            phone: userData.phone,
+            location: userData.location || 'N/A',
+            device: 'N/A', // Not in API response
+            ipAddress: 'N/A', // Not in API response
+            appVersion: userData.appVersion,
+            lastActive: userData.lastActive,
+            faceVerification: userData.faceVerification,
+            memberSince: userData.memberSince,
+            registrationDate: userData.registrationDate,
+            signupCountry: userData.signupCountry || 'N/A',
+            country: userData.country || 'N/A',
+            accountStatus: userData.accountStatus,
+            lastLoginIp: 'N/A', // Not in API response
+            lastLoginLocation: 'N/A', // Not in API response
+
+            // Balance & Tier data
+            currentXP: `${userData.xp || 0} XP`,
+            coinBalance: `${userData.coinBalance || 0} Coins`,
+            redemptionCount: '0 redemptions', // Not in API response
+            redemptionPreference: 'N/A', // Not in API response
+            mostPlayedGame: 'N/A', // Not in API response
+            lastGamePlayed: 'N/A', // Not in API response
+            totalGamesDownloaded: `${userData.gamesPlayed || 0} games`,
+            avgSessionDuration: 'N/A', // Not in API response
+            primaryEarningSource: 'N/A', // Not in API response
+            preferredGameCategory: 'N/A', // Not in API response
+            onboardingGoal: userData.onboarding?.completed ? 'Completed' : `Step ${userData.onboarding?.step || 1}`,
+            notificationSettings: userData.profile?.notifications ? 'Enabled' : 'Disabled',
+
+            // Activity Summary data
+            lastLogin: userData.lastActive,
+            totalLogins: 'N/A', // Not in API response
+            lastTaskCompleted: `${userData.surveysCompleted || 0} surveys completed`,
+            offersRedeemed: '0 offers', // Not in API response
+            lastOfferClaimed: 'N/A', // Not in API response
+            totalCoinsEarned: `${userData.coinBalance || 0} coins`,
+            totalXPEarned: `${userData.xp || 0} XP`,
+            redemptionsMade: '0 redemptions', // Not in API response
+            challengeProgress: 'N/A', // Not in API response
+            spinUsage: 'N/A', // Not in API response
+
+            // Additional data from API
+            vip: userData.vip,
+            wallet: userData.wallet,
+            onboarding: userData.onboarding,
+            profile: userData.profile,
+            gamesPlayed: userData.gamesPlayed,
+            tasksCompleted: userData.tasksCompleted,
+            surveysCompleted: userData.surveysCompleted
+          };
+
+          setUser(mappedUser);
+        }
+      } catch (err) {
+        console.error('Error fetching user details:', err);
+        toast.error('Failed to load user details');
+        setError(err.message);
+
+        // Try fallback to mock data
+        const mockUser = mockUsers[userId];
+        if (mockUser) {
+          setUser(mockUser);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchUserDetails();
+    }
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

@@ -5,12 +5,17 @@ import { ConfirmationModal } from "./ConfirmationModal";
 import { InputModal } from "./InputModal";
 import SuspendUserModal from "./SuspendUserModal";
 import { showSuccessNotification, showErrorNotification, showInfoNotification } from "./NotificationSystem";
+import userAPIs from '../../data/users/userAPI';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export const UserDetailsSection = ({ user }) => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("Profile");
   const [confirmationModal, setConfirmationModal] = useState({ isOpen: false, action: null, data: {} });
   const [inputModal, setInputModal] = useState({ isOpen: false, action: null, data: {} });
   const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const tabs = [
     { name: "Profile", active: true },
@@ -40,17 +45,32 @@ export const UserDetailsSection = ({ user }) => {
     { label: "Member Since", value: user?.memberSince || "January 12, 2025" },
   ];
 
-  // Action buttons per requirements
-  const actionButtons = [
+  // Action buttons per requirements - dynamically generated based on user status
+  const getActionButtons = () => {
+    const buttons = [];
+
     // EXCLUDED: Ban/Restore Account functionality not supported per requirements - will be handled as DevOps activity
-    // { text: "Ban Account", bgColor: "bg-red-600 hover:bg-red-700", action: "ban" },
-    // { text: "Restore Account", bgColor: "bg-green-600 hover:bg-green-700", action: "restore" },
-    { text: "Suspend Account", bgColor: "bg-yellow-600 hover:bg-yellow-700", action: "suspend" },
+    // if (user?.status === 'Active') {
+    //   buttons.push({ text: "Ban Account", bgColor: "bg-red-600 hover:bg-red-700", action: "ban" });
+    // } else {
+    //   buttons.push({ text: "Restore Account", bgColor: "bg-green-600 hover:bg-green-700", action: "restore" });
+    // }
+
+    // Only show Suspend button if user is Active
+    if (user?.status === 'Active') {
+      buttons.push({ text: "Suspend Account", bgColor: "bg-yellow-600 hover:bg-yellow-700", action: "suspend" });
+    }
+
     // EXCLUDED: Delete User (hard-delete) not supported per requirements
-    // { text: "Delete Account", bgColor: "bg-gray-800 hover:bg-gray-900", action: "delete" },
+    // buttons.push({ text: "Delete Account", bgColor: "bg-gray-800 hover:bg-gray-900", action: "delete" });
+
     // PHASE 2: Adjust Balance temporarily hidden
-    // { text: "Adjust Balance", bgColor: "bg-blue-600 hover:bg-blue-700", action: "adjustBalance" },
-  ];
+    // buttons.push({ text: "Adjust Balance", bgColor: "bg-blue-600 hover:bg-blue-700", action: "adjustBalance" });
+
+    return buttons;
+  };
+
+  const actionButtons = getActionButtons();
 
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
@@ -156,19 +176,29 @@ export const UserDetailsSection = ({ user }) => {
   };
 
   const handleConfirmSuspend = async (suspendData) => {
+    setLoading(true);
     try {
-      // Here you would typically make an API call to suspend the user
-      console.log('Suspending user from details section:', suspendData);
-      
-      // Show success message
-      showSuccessNotification(`User ${user?.name || 'account'} has been suspended`);
-      
-      setShowSuspendModal(false);
-      
-      // In a real app, you might want to redirect or refresh the page
+      const response = await userAPIs.updateUserStatus(
+        user.id,
+        'inactive',
+        suspendData.reason || ''
+      );
+
+      if (response.success) {
+        toast.success(response.message || 'User suspended successfully');
+        setShowSuspendModal(false);
+
+        // Redirect to users page after suspension
+        setTimeout(() => {
+          router.push('/users');
+        }, 1500);
+      }
     } catch (error) {
       console.error('Error suspending user:', error);
-      throw error; // Re-throw to let the modal handle the error
+      toast.error(error.message || 'Failed to suspend user');
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -182,11 +212,15 @@ export const UserDetailsSection = ({ user }) => {
           showSuccessNotification(`User tier changed to ${inputValue}`);
           break;
         case 'sendNotification':
-          console.log(`Sending notification: ${inputValue}`);
-          // TODO: API call to send push notification
-          await new Promise(resolve => setTimeout(resolve, 500));
-          showSuccessNotification(`Notification sent to ${user?.name || 'user'}`);
-          showInfoNotification(`Message: "${inputValue}"`);
+          const response = await userAPIs.sendNotification(
+            user.id,
+            inputValue,
+            'info'
+          );
+          if (response.success) {
+            toast.success(response.message || 'Notification sent successfully');
+            showInfoNotification(`Message: "${inputValue}"`);
+          }
           break;
         case 'adjustBalance':
           console.log(`Adjusting user balance by: ${inputValue}`);

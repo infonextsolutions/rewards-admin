@@ -7,26 +7,22 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phoneNumber: '',
     gender: '',
     dateOfBirth: '',
-    country: '',
-    userTier: '',
-    xp: '',
-    coinBalance: '',
-    redemptionPreference: '',
-    emailNotifications: true,
-    smsNotifications: false
+    location: '',
+    currentTier: '',
+    accountStatus: ''
   });
   
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const genderOptions = ['Male', 'Female', 'Other'];
+  const genderOptions = ['male', 'female'];
   const countryOptions = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Spain', 'Italy', 'India', 'Japan', 'Other'];
-  const tierOptions = ['Bronze', 'Gold', 'Platinum', 'Premium'];
-  const redemptionOptions = ['Cash', 'PayPal', 'Gift Card', 'Crypto'];
+  const tierOptions = ['Bronze', 'Silver', 'Gold', 'Platinum'];
+  const statusOptions = ['Active', 'Inactive'];
 
   // Initialize form data when user prop changes
   useEffect(() => {
@@ -34,16 +30,12 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
       setFormData({
         name: user.name || '',
         email: user.email || '',
-        phone: user.phone || '',
-        gender: user.gender || '',
+        phoneNumber: user.phone || user.phoneNumber || '',
+        gender: user.gender?.toLowerCase() || '',
         dateOfBirth: user.dateOfBirth || '',
-        country: user.location || user.country || '',
-        userTier: user.tier || '',
-        xp: user.currentXP?.replace(/[^\d]/g, '') || user.totalXPEarned?.replace(/[^\d]/g, '') || '',
-        coinBalance: user.coinBalance?.replace(/[^\d.]/g, '') || '',
-        redemptionPreference: user.redemptionPreference || '',
-        emailNotifications: true,
-        smsNotifications: false
+        location: user.location || user.country || '',
+        currentTier: user.tier || user.currentTier || '',
+        accountStatus: user.status || user.accountStatus || 'Active'
       });
       setErrors({});
       setHasChanges(false);
@@ -68,51 +60,45 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     // Name validation
     if (!formData.name.trim()) {
       newErrors.name = 'Full name is required';
     }
-    
+
     // Email validation
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
-    // XP validation
-    if (formData.xp && isNaN(formData.xp)) {
-      newErrors.xp = 'XP must be a valid number';
-    }
-    
-    // Coin Balance validation
-    if (formData.coinBalance && isNaN(formData.coinBalance)) {
-      newErrors.coinBalance = 'Coin balance must be a valid number';
-    }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
-      // Prepare data for submission
+      // Prepare data for submission matching backend structure
       const submitData = {
-        ...formData,
         name: formData.name.trim(),
         email: formData.email.toLowerCase().trim(),
-        phone: formData.phone.trim()
+        phoneNumber: formData.phoneNumber.trim(),
+        gender: formData.gender,
+        dateOfBirth: formData.dateOfBirth,
+        location: formData.location,
+        currentTier: formData.currentTier,
+        accountStatus: formData.accountStatus
       };
-      
+
       await onSave(submitData);
       onClose();
     } catch (error) {
@@ -202,16 +188,16 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
 
             {/* Phone Number */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
               <input
                 type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
+                id="phoneNumber"
+                name="phoneNumber"
+                value={formData.phoneNumber}
                 onChange={handleChange}
-                placeholder="+1 (555) 123-4567"
+                placeholder="+1-202-555-0189"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black"
               />
             </div>
@@ -241,144 +227,69 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                 Date of Birth
               </label>
               <input
-                type="text"
+                type="date"
                 id="dateOfBirth"
                 name="dateOfBirth"
                 value={formData.dateOfBirth}
                 onChange={handleChange}
-                placeholder="15/05/1990"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black"
               />
             </div>
 
-            {/* Country / Location */}
+            {/* Location */}
             <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
-                Country / Location
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                Location
               </label>
               <select
-                id="country"
-                name="country"
-                value={formData.country}
+                id="location"
+                name="location"
+                value={formData.location}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
               >
-                <option value="">United States</option>
+                <option value="">Select location</option>
                 {countryOptions.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
             </div>
 
-            {/* User Tier */}
+            {/* Current Tier */}
             <div>
-              <label htmlFor="userTier" className="block text-sm font-medium text-gray-700 mb-2">
-                User Tier
+              <label htmlFor="currentTier" className="block text-sm font-medium text-gray-700 mb-2">
+                Current Tier
               </label>
               <select
-                id="userTier"
-                name="userTier"
-                value={formData.userTier}
+                id="currentTier"
+                name="currentTier"
+                value={formData.currentTier}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
               >
-                <option value="">Premium</option>
+                <option value="">Select tier</option>
                 {tierOptions.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
             </div>
 
-            {/* XP (Experience Points) */}
+            {/* Account Status */}
             <div>
-              <label htmlFor="xp" className="block text-sm font-medium text-gray-700 mb-2">
-                XP (Experience Points)
-              </label>
-              <input
-                type="number"
-                id="xp"
-                name="xp"
-                value={formData.xp}
-                onChange={handleChange}
-                placeholder="2500"
-                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
-                  errors.xp ? 'border-red-300' : ''
-                }`}
-              />
-              {errors.xp && <p className="mt-1 text-sm text-red-600">{errors.xp}</p>}
-            </div>
-
-            {/* Coin Balance */}
-            <div>
-              <label htmlFor="coinBalance" className="block text-sm font-medium text-gray-700 mb-2">
-                Coin Balance
-              </label>
-              <input
-                type="number"
-                id="coinBalance"
-                name="coinBalance"
-                value={formData.coinBalance}
-                onChange={handleChange}
-                placeholder="150.75"
-                step="0.01"
-                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
-                  errors.coinBalance ? 'border-red-300' : ''
-                }`}
-              />
-              {errors.coinBalance && <p className="mt-1 text-sm text-red-600">{errors.coinBalance}</p>}
-            </div>
-
-            {/* Redemption Preference */}
-            <div>
-              <label htmlFor="redemptionPreference" className="block text-sm font-medium text-gray-700 mb-2">
-                Redemption Preference
+              <label htmlFor="accountStatus" className="block text-sm font-medium text-gray-700 mb-2">
+                Account Status
               </label>
               <select
-                id="redemptionPreference"
-                name="redemptionPreference"
-                value={formData.redemptionPreference}
+                id="accountStatus"
+                name="accountStatus"
+                value={formData.accountStatus}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
               >
-                <option value="">Cash</option>
-                {redemptionOptions.map(option => (
+                {statusOptions.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          {/* Notification Preferences */}
-          <div className="mt-8">
-            <h3 className="text-base font-medium text-gray-700 mb-4">Notification Preferences</h3>
-            <div className="flex items-center gap-8">
-              <div className="flex items-center">
-                <input
-                  id="emailNotifications"
-                  name="emailNotifications"
-                  type="checkbox"
-                  checked={formData.emailNotifications}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="emailNotifications" className="ml-2 text-sm text-gray-700">
-                  Email Notifications
-                </label>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  id="smsNotifications"
-                  name="smsNotifications"
-                  type="checkbox"
-                  checked={formData.smsNotifications}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="smsNotifications" className="ml-2 text-sm text-gray-700">
-                  SMS Notifications
-                </label>
-              </div>
             </div>
           </div>
 

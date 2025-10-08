@@ -1,58 +1,96 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { MOCK_USERS } from '../data/users';
+import { useState, useMemo, useEffect } from 'react';
+import userAPIs from '../data/users/userAPI';
+import toast from 'react-hot-toast';
 
 export const useUsers = () => {
-  const [users] = useState(MOCK_USERS);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
+  });
+  const [apiFilters, setApiFilters] = useState({
+    search: '',
+    tier: '',
+    status: '',
+    gender: '',
+    ageRange: '',
+    memberSince: ''
+  });
 
+  // Fetch users from API
+  const fetchUsers = async (page = pagination.currentPage, filters = apiFilters) => {
+    setLoading(true);
+    try {
+      const response = await userAPIs.getUsers({
+        page,
+        limit: pagination.itemsPerPage,
+        ...filters
+      });
+
+      if (response.success) {
+        setUsers(response.data.users);
+        setPagination({
+          currentPage: response.data.pagination.currentPage,
+          totalPages: response.data.pagination.totalPages,
+          totalItems: response.data.pagination.totalItems,
+          itemsPerPage: response.data.pagination.itemsPerPage
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Apply filters to API
+  const applyFilters = (searchTerm, filters) => {
+    const newFilters = {
+      search: searchTerm || '',
+      tier: filters.tierLevel || '',
+      status: filters.status || '',
+      gender: filters.gender || '',
+      ageRange: filters.ageRange || '',
+      memberSince: filters.memberSince || ''
+    };
+
+    setApiFilters(newFilters);
+    fetchUsers(1, newFilters); // Reset to page 1 when filters change
+  };
+
+  // For frontend compatibility - returns users directly since API handles filtering
   const filterUsers = useMemo(() => {
     return (searchTerm, filters) => {
-      return users.filter(user => {
-        const matchesSearch = !searchTerm || 
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.phone.includes(searchTerm) ||
-          user.location.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesTier = !filters.tierLevel || user.tier === filters.tierLevel;
-        const matchesStatus = !filters.status || user.status === filters.status;
-        const matchesLocation = !filters.location || user.location === filters.location;
-        const matchesGender = !filters.gender || user.gender === filters.gender;
-        const matchesAgeRange = !filters.ageRange || user.age === filters.ageRange;
-        
-        let matchesMemberSince = true;
-        if (filters.memberSince) {
-          const now = new Date();
-          const memberSinceDate = new Date('2025-01-01');
-          const daysDiff = Math.floor((now - memberSinceDate) / (1000 * 60 * 60 * 24));
-          
-          switch (filters.memberSince) {
-            case 'Last 30 days':
-              matchesMemberSince = daysDiff <= 30;
-              break;
-            case 'Last 3 months':
-              matchesMemberSince = daysDiff <= 90;
-              break;
-            case 'Last 6 months':
-              matchesMemberSince = daysDiff <= 180;
-              break;
-            case 'Last year':
-              matchesMemberSince = daysDiff <= 365;
-              break;
-            default:
-              matchesMemberSince = true;
-          }
-        }
-        
-        return matchesSearch && matchesTier && matchesStatus && 
-               matchesLocation && matchesGender && matchesAgeRange && matchesMemberSince;
-      });
+      // Trigger API call with new filters
+      if (searchTerm !== apiFilters.search ||
+          filters.tierLevel !== apiFilters.tier ||
+          filters.status !== apiFilters.status ||
+          filters.gender !== apiFilters.gender ||
+          filters.ageRange !== apiFilters.ageRange ||
+          filters.memberSince !== apiFilters.memberSince) {
+        applyFilters(searchTerm, filters);
+      }
+      // Return current users (API already filtered)
+      return users;
     };
-  }, [users]);
+  }, [users, apiFilters]);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    fetchUsers(newPage, apiFilters);
+  };
 
   const updateUser = async (userId, userData) => {
     setLoading(true);
@@ -71,12 +109,23 @@ export const useUsers = () => {
   const suspendUser = async (userId, suspendData) => {
     setLoading(true);
     try {
-      console.log('Suspending user:', userId, suspendData);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await userAPIs.updateUserStatus(
+        userId,
+        'inactive',
+        suspendData.reason || ''
+      );
+
+      if (response.success) {
+        toast.success(response.message || 'User suspended successfully');
+        // Refresh users list
+        await fetchUsers(pagination.currentPage, apiFilters);
+      }
+
       setLoading(false);
-      return { success: true };
+      return response;
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Failed to suspend user');
       setLoading(false);
       throw err;
     }
@@ -106,9 +155,13 @@ export const useUsers = () => {
     users,
     loading,
     error,
+    pagination,
     filterUsers,
     updateUser,
     suspendUser,
     bulkAction,
+    handlePageChange,
+    fetchUsers,
+    applyFilters
   };
 };
