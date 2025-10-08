@@ -60,7 +60,7 @@ export const useUsers = () => {
   const applyFilters = (searchTerm, filters) => {
     const newFilters = {
       search: searchTerm || '',
-      tier: filters.tierLevel || '',
+      tier: filters.tierLevel ? filters.tierLevel.toLowerCase() : '',
       status: filters.status || '',
       gender: filters.gender || '',
       ageRange: filters.ageRange || '',
