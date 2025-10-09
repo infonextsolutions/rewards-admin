@@ -1,5 +1,28 @@
 'use client';
 
+import axios from 'axios';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://rewardsapi.hireagent.co/api';
+
+// Axios instance with default config
+const apiClient = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add auth token to requests
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 // Mock data for challenges
 const mockChallenges = [
   {
@@ -196,90 +219,313 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Mock API functions
 export const challengesBonusesAPI = {
   // Challenge operations
-  async getChallenges() {
-    await delay(500); // Simulate network delay
-    return [...mockChallenges];
+  async getCalendarChallenges(year, month) {
+    try {
+      const response = await apiClient.get('/admin/daily-challenges/challenges/calendar', {
+        params: { year, month }
+      });
+
+      const calendarData = response.data.data.calendarData || {};
+
+      // Transform calendar data to frontend format
+      const transformedData = {};
+      Object.entries(calendarData).forEach(([date, challenges]) => {
+        transformedData[date] = challenges.map(apiData => ({
+          id: apiData.id,
+          title: apiData.title,
+          type: apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1),
+          date: apiData.challengeDate,
+          coinReward: apiData.coinReward,
+          xpReward: apiData.xpReward,
+          claimType: apiData.claimType === 'auto' ? 'Auto' : 'Watch Ad',
+          visibility: apiData.isVisible,
+          status: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1)
+        }));
+      });
+
+      return transformedData;
+    } catch (error) {
+      console.error('Get calendar challenges error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  async getChallenges(params = {}) {
+    try {
+      const { page = 1, limit = 10, type = '', status = '' } = params;
+
+      const queryParams = {
+        page,
+        limit,
+        ...(type && { type }),
+        ...(status && { status })
+      };
+
+      const response = await apiClient.get('/admin/daily-challenges/challenges', { params: queryParams });
+      const challengesArray = response.data.data.challenges || [];
+
+      // Transform API response to frontend format
+      return challengesArray.map(apiData => ({
+        id: apiData._id,
+        title: apiData.title,
+        type: apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1),
+        date: apiData.challengeDate,
+        coinReward: apiData.coinReward,
+        xpReward: apiData.xpReward,
+        claimType: apiData.claimType === 'auto' ? 'Auto' : 'Watch Ad',
+        visibility: apiData.isVisible,
+        status: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1),
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      }));
+    } catch (error) {
+      console.error('Get challenges error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async createChallenge(challengeData) {
-    await delay(800);
-    const newChallenge = {
-      ...challengeData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    mockChallenges.push(newChallenge);
-    return newChallenge;
+    try {
+      // Map frontend format to API structure
+      const apiPayload = {
+        challengeDate: challengeData.date,
+        title: challengeData.title,
+        description: challengeData.title, // Use title as description if not provided
+        type: challengeData.type.toLowerCase(),
+        coinReward: challengeData.coinReward,
+        xpReward: challengeData.xpReward,
+        claimType: challengeData.claimType.toLowerCase(),
+        isVisible: challengeData.visibility,
+        targetAudience: {
+          userSegments: ['all'],
+          minXP: 0,
+          countries: []
+        },
+        requirements: {
+          minStreak: 0,
+          timeLimit: 1440
+        },
+        scheduling: {
+          startTime: new Date(challengeData.date).toISOString(),
+          endTime: new Date(new Date(challengeData.date).setHours(23, 59, 59, 999)).toISOString(),
+          timezone: 'UTC'
+        },
+        metadata: {
+          priority: 10,
+          tags: ['daily'],
+          notes: ''
+        }
+      };
+
+      const response = await apiClient.post('/admin/daily-challenges/challenges', apiPayload);
+      const apiData = response.data.data;
+
+      // Return in frontend format
+      return {
+        id: apiData._id,
+        title: apiData.title,
+        type: apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1),
+        date: apiData.challengeDate,
+        coinReward: apiData.coinReward,
+        xpReward: apiData.xpReward,
+        claimType: apiData.claimType === 'auto' ? 'Auto' : 'Watch Ad',
+        visibility: apiData.isVisible,
+        status: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1),
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      };
+    } catch (error) {
+      console.error('Create challenge error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async updateChallenge(id, challengeData) {
-    await delay(600);
-    const index = mockChallenges.findIndex(c => c.id === id);
-    if (index === -1) throw new Error('Challenge not found');
-    
-    const updatedChallenge = {
-      ...mockChallenges[index],
-      ...challengeData,
-      updatedAt: new Date().toISOString()
-    };
-    mockChallenges[index] = updatedChallenge;
-    return updatedChallenge;
+    try {
+      // Map frontend format to API structure
+      const apiPayload = {
+        title: challengeData.title,
+        description: challengeData.title,
+        coinReward: challengeData.coinReward,
+        xpReward: challengeData.xpReward,
+        status: challengeData.status?.toLowerCase() || 'scheduled',
+        isVisible: challengeData.visibility
+      };
+
+      const response = await apiClient.put(`/admin/daily-challenges/challenges/${id}`, apiPayload);
+      const apiData = response.data.data;
+
+      // Return in frontend format
+      return {
+        id: apiData._id,
+        title: apiData.title,
+        type: apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1),
+        date: apiData.challengeDate,
+        coinReward: apiData.coinReward,
+        xpReward: apiData.xpReward,
+        claimType: apiData.claimType === 'auto' ? 'Auto' : 'Watch Ad',
+        visibility: apiData.isVisible,
+        status: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1),
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      };
+    } catch (error) {
+      console.error('Update challenge error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async deleteChallenge(id) {
-    await delay(400);
-    const index = mockChallenges.findIndex(c => c.id === id);
-    if (index === -1) throw new Error('Challenge not found');
-    mockChallenges.splice(index, 1);
-    return true;
+    try {
+      const response = await apiClient.delete(`/admin/daily-challenges/challenges/${id}`);
+      return response.data.success;
+    } catch (error) {
+      console.error('Delete challenge error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async toggleChallengeVisibility(id, visibility) {
-    await delay(300);
-    const index = mockChallenges.findIndex(c => c.id === id);
-    if (index === -1) throw new Error('Challenge not found');
-    
-    const updatedChallenge = {
-      ...mockChallenges[index],
-      visibility,
-      updatedAt: new Date().toISOString()
-    };
-    mockChallenges[index] = updatedChallenge;
-    return updatedChallenge;
+    try {
+      const response = await apiClient.patch(`/admin/daily-challenges/challenges/${id}/visibility`);
+      const apiData = response.data.data;
+
+      // Return the updated visibility status
+      return {
+        visibility: apiData.isVisible
+      };
+    } catch (error) {
+      console.error('Toggle challenge visibility error:', error);
+      throw error.response?.data || error;
+    }
   },
 
 
   // Multiplier operations
   async getMultipliers() {
-    await delay(400);
-    return [...mockMultipliers];
+    try {
+      const response = await apiClient.get('/admin/daily-challenges/xp-multipliers');
+      const multipliersArray = response.data.data || [];
+
+      // Transform API response to frontend format
+      return multipliersArray.map(apiData => ({
+        id: apiData._id,
+        streakLength: apiData.streakLength,
+        multiplier: apiData.multiplier,
+        vipBonusApplied: apiData.vipBonusApplied,
+        active: apiData.isActive,
+        notes: apiData.metadata?.notes || '',
+        startDate: apiData.scheduling?.startDate || null,
+        endDate: apiData.scheduling?.endDate || null,
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      }));
+    } catch (error) {
+      console.error('Get multipliers error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async createMultiplier(multiplierData) {
-    await delay(700);
-    const newMultiplier = {
-      ...multiplierData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    mockMultipliers.push(newMultiplier);
-    return newMultiplier;
+    try {
+      // Map frontend format to API structure
+      const apiPayload = {
+        streakLength: multiplierData.streakLength,
+        multiplier: multiplierData.multiplier,
+        vipBonusApplied: multiplierData.vipBonusApplied,
+        isActive: multiplierData.active,
+        conditions: {
+          userSegments: ['all'],
+          minXP: 0,
+          challengeTypes: ['spin', 'game', 'survey']
+        },
+        vipOverlay: {
+          enabled: true,
+          bonusMultiplier: 1.2,
+          vipTiers: ['gold', 'platinum']
+        },
+        scheduling: {
+          startDate: new Date().toISOString(),
+          endDate: null,
+          timezone: 'UTC',
+          daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
+        },
+        metadata: {
+          priority: 10,
+          tags: ['streak', 'xp_bonus'],
+          notes: multiplierData.notes || ''
+        }
+      };
+
+      const response = await apiClient.post('/admin/daily-challenges/xp-multipliers', apiPayload);
+      const apiData = response.data.data;
+
+      // Return in frontend format
+      return {
+        id: apiData._id,
+        streakLength: apiData.streakLength,
+        multiplier: apiData.multiplier,
+        vipBonusApplied: apiData.vipBonusApplied,
+        active: apiData.isActive,
+        notes: apiData.metadata?.notes || '',
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      };
+    } catch (error) {
+      console.error('Create multiplier error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async updateMultiplier(id, multiplierData) {
-    await delay(500);
-    const index = mockMultipliers.findIndex(m => m.id === id);
-    if (index === -1) throw new Error('Multiplier not found');
+    try {
+      // Map frontend format to API structure
+      const apiPayload = {
+        multiplier: multiplierData.multiplier,
+        vipBonusApplied: multiplierData.vipBonusApplied,
+        vipOverlay: {
+          enabled: true,
+          bonusMultiplier: 1.5,
+          vipTiers: ['platinum']
+        },
+        metadata: {
+          notes: multiplierData.notes || ''
+        }
+      };
 
-    const updatedMultiplier = {
-      ...mockMultipliers[index],
-      ...multiplierData,
-      updatedAt: new Date().toISOString()
-    };
-    mockMultipliers[index] = updatedMultiplier;
-    return updatedMultiplier;
+      const response = await apiClient.put(`/admin/daily-challenges/xp-multipliers/${id}`, apiPayload);
+      const apiData = response.data.data;
+
+      // Return in frontend format
+      return {
+        id: apiData._id,
+        streakLength: apiData.streakLength,
+        multiplier: apiData.multiplier,
+        vipBonusApplied: apiData.vipBonusApplied,
+        active: apiData.isActive,
+        notes: apiData.metadata?.notes || '',
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      };
+    } catch (error) {
+      console.error('Update multiplier error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  async toggleMultiplierStatus(id) {
+    try {
+      const response = await apiClient.patch(`/admin/daily-challenges/xp-multipliers/${id}/status`);
+      const apiData = response.data.data;
+
+      // Return the updated active status
+      return {
+        isActive: apiData.isActive
+      };
+    } catch (error) {
+      console.error('Toggle multiplier status error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async deleteMultiplier(id) {
@@ -292,34 +538,161 @@ export const challengesBonusesAPI = {
 
   // Bonus day operations
   async getBonusDays() {
-    await delay(400);
-    return [...mockBonusDays];
+    try {
+      const response = await apiClient.get('/admin/daily-challenges/bonus-days');
+      const bonusDaysArray = response.data.data || [];
+
+      // Transform API response to frontend format
+      return bonusDaysArray.map(apiData => ({
+        id: apiData._id,
+        bonusDay: apiData.dayNumber,
+        rewardType: apiData.primaryReward.type.charAt(0).toUpperCase() + apiData.primaryReward.type.slice(1),
+        rewardValue: apiData.primaryReward.value,
+        alternateReward: apiData.alternateReward?.value || null,
+        resetRule: apiData.resetRule.onMiss,
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      }));
+    } catch (error) {
+      console.error('Get bonus days error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async createBonusDay(bonusDayData) {
-    await delay(700);
-    const newBonusDay = {
-      ...bonusDayData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    mockBonusDays.push(newBonusDay);
-    return newBonusDay;
+    try {
+      // Map frontend fields to API structure
+      const apiPayload = {
+        title: `Day ${bonusDayData.bonusDay} Bonus Reward`,
+        description: `Special bonus for ${bonusDayData.bonusDay}-day streak`,
+        primaryReward: {
+          type: bonusDayData.rewardType.toLowerCase(),
+          value: bonusDayData.rewardValue,
+          metadata: {}
+        },
+        alternateReward: {
+          type: 'xp',
+          value: bonusDayData.alternateReward || Math.floor(bonusDayData.rewardValue / 2),
+          metadata: {}
+        },
+        resetRule: {
+          onMiss: bonusDayData.resetRule,
+          gracePeriod: 1,
+          fallbackAction: 'reset_streak'
+        },
+        conditions: {
+          minStreak: bonusDayData.bonusDay,
+          requiresCompletion: true,
+          userSegments: ['all']
+        },
+        notification: {
+          enabled: true,
+          title: `${bonusDayData.bonusDay}-Day Streak Bonus!`,
+          message: `You've earned a special bonus for your dedication!`,
+          actionText: 'Claim Reward',
+          scheduledTime: '09:00'
+        },
+        banner: {
+          enabled: true,
+          title: 'Streak Bonus Available',
+          subtitle: `Claim your ${bonusDayData.bonusDay}-day reward`,
+          backgroundColor: '#FFD700',
+          textColor: '#000000',
+          position: 'top'
+        },
+        isActive: true
+      };
+
+      const response = await apiClient.put(
+        `/admin/daily-challenges/bonus-days/${bonusDayData.bonusDay}`,
+        apiPayload
+      );
+
+      const apiData = response.data.data;
+
+      // Return in frontend format
+      return {
+        id: apiData._id,
+        bonusDay: apiData.dayNumber,
+        rewardType: apiData.primaryReward.type.charAt(0).toUpperCase() + apiData.primaryReward.type.slice(1),
+        rewardValue: apiData.primaryReward.value,
+        alternateReward: apiData.alternateReward?.value || null,
+        resetRule: apiData.resetRule.onMiss,
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      };
+    } catch (error) {
+      console.error('Create bonus day error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async updateBonusDay(id, bonusDayData) {
-    await delay(500);
-    const index = mockBonusDays.findIndex(b => b.id === id);
-    if (index === -1) throw new Error('Bonus day not found');
+    try {
+      // Map frontend fields to API structure
+      const apiPayload = {
+        title: `Day ${bonusDayData.bonusDay} Bonus Reward`,
+        description: `Special bonus for ${bonusDayData.bonusDay}-day streak`,
+        primaryReward: {
+          type: bonusDayData.rewardType.toLowerCase(),
+          value: bonusDayData.rewardValue,
+          metadata: {}
+        },
+        alternateReward: {
+          type: 'xp',
+          value: bonusDayData.alternateReward || Math.floor(bonusDayData.rewardValue / 2),
+          metadata: {}
+        },
+        resetRule: {
+          onMiss: bonusDayData.resetRule,
+          gracePeriod: 1,
+          fallbackAction: 'reset_streak'
+        },
+        conditions: {
+          minStreak: bonusDayData.bonusDay,
+          requiresCompletion: true,
+          userSegments: ['all']
+        },
+        notification: {
+          enabled: true,
+          title: `${bonusDayData.bonusDay}-Day Streak Bonus!`,
+          message: `You've earned a special bonus for your dedication!`,
+          actionText: 'Claim Reward',
+          scheduledTime: '09:00'
+        },
+        banner: {
+          enabled: true,
+          title: 'Streak Bonus Available',
+          subtitle: `Claim your ${bonusDayData.bonusDay}-day reward`,
+          backgroundColor: '#FFD700',
+          textColor: '#000000',
+          position: 'top'
+        },
+        isActive: true
+      };
 
-    const updatedBonusDay = {
-      ...mockBonusDays[index],
-      ...bonusDayData,
-      updatedAt: new Date().toISOString()
-    };
-    mockBonusDays[index] = updatedBonusDay;
-    return updatedBonusDay;
+      const response = await apiClient.put(
+        `/admin/daily-challenges/bonus-days/${bonusDayData.bonusDay}`,
+        apiPayload
+      );
+
+      const apiData = response.data.data;
+
+      // Return in frontend format
+      return {
+        id: apiData._id,
+        bonusDay: apiData.dayNumber,
+        rewardType: apiData.primaryReward.type.charAt(0).toUpperCase() + apiData.primaryReward.type.slice(1),
+        rewardValue: apiData.primaryReward.value,
+        alternateReward: apiData.alternateReward?.value || null,
+        resetRule: apiData.resetRule.onMiss,
+        createdAt: apiData.createdAt,
+        updatedAt: apiData.updatedAt
+      };
+    } catch (error) {
+      console.error('Update bonus day error:', error);
+      throw error.response?.data || error;
+    }
   },
 
   async deleteBonusDay(id) {

@@ -48,12 +48,31 @@ export default function ChallengesBonusesModule() {
     addPauseRule,
     updatePauseRule,
     deletePauseRule,
-    refreshData
+    refreshData,
+    fetchChallenges,
+    fetchMultipliers,
+    fetchBonusDays,
+    fetchPauseRules
   } = useChallengesBonuses();
 
+  // Fetch data based on active view (lazy loading)
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    switch (activeView) {
+      case VIEW_MODES.XP_MULTIPLIER:
+        fetchMultipliers();
+        break;
+      case VIEW_MODES.BONUS_DAY:
+        fetchBonusDays();
+        break;
+      case VIEW_MODES.LIST:
+      case VIEW_MODES.CALENDAR:
+        fetchChallenges();
+        break;
+      case VIEW_MODES.PAUSE_RULES:
+        fetchPauseRules();
+        break;
+    }
+  }, [activeView, fetchMultipliers, fetchBonusDays, fetchChallenges, fetchPauseRules]);
 
   const handleAddChallenge = () => {
     setEditingChallenge(null);

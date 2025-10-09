@@ -28,13 +28,13 @@ export default function DailyChallengeListView({
   // Filter challenges
   const filteredChallenges = useMemo(() => {
     return challenges.filter(challenge => {
-      const matchesSearch = 
-        challenge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        challenge.type.toLowerCase().includes(searchTerm.toLowerCase());
-      
+      const matchesSearch =
+        (challenge.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (challenge.type?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+
       const matchesStatus = statusFilter === 'all' || challenge.status === statusFilter;
       const matchesType = typeFilter === 'all' || challenge.type === typeFilter;
-      
+
       return matchesSearch && matchesStatus && matchesType;
     }).sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [challenges, searchTerm, statusFilter, typeFilter]);
@@ -205,8 +205,8 @@ export default function DailyChallengeListView({
                   </td>
                 </tr>
               ) : (
-                paginatedChallenges.map((challenge) => (
-                  <tr key={challenge.id} className="hover:bg-gray-50">
+                paginatedChallenges.map((challenge, index) => (
+                  <tr key={challenge.id || `challenge-${index}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div className="flex items-center">
                         <CalendarIcon className="h-4 w-4 text-gray-400 mr-2" />

@@ -63,12 +63,16 @@ export default function XPMultiplierSetup({
     if (!validateForm()) return;
 
     const multiplierData = {
-      streakLength: parseInt(formData.streakLength),
       multiplier: parseFloat(formData.multiplier),
       vipBonusApplied: formData.vipBonusApplied,
-      active: formData.active,
       notes: formData.notes
     };
+
+    // Only include 'streakLength' and 'active' when creating (not editing)
+    if (!editingId) {
+      multiplierData.streakLength = parseInt(formData.streakLength);
+      multiplierData.active = formData.active;
+    }
 
     try {
       if (editingId) {
@@ -208,15 +212,17 @@ export default function XPMultiplierSetup({
                       />
                       <span className="ml-2 text-sm text-gray-700">VIP Bonus Applied</span>
                     </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.active}
-                        onChange={(e) => setFormData({...formData, active: e.target.checked})}
-                        className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Active</span>
-                    </label>
+                    {!editingId && (
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.active}
+                          onChange={(e) => setFormData({...formData, active: e.target.checked})}
+                          className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Active</span>
+                      </label>
+                    )}
                   </div>
                 </div>
               </div>
@@ -297,13 +303,9 @@ export default function XPMultiplierSetup({
                       // Edit Row
                       <>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="number"
-                            min="1"
-                            value={formData.streakLength}
-                            onChange={(e) => setFormData({...formData, streakLength: e.target.value})}
-                            className={`w-20 px-2 py-1 border rounded text-sm ${errors.streakLength ? 'border-red-300' : 'border-gray-300'}`}
-                          />
+                          <span className="font-medium text-gray-900 text-sm">
+                            {formData.streakLength}
+                          </span>
                           <span className="ml-1 text-sm text-gray-600">days</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -328,12 +330,14 @@ export default function XPMultiplierSetup({
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={formData.active}
-                            onChange={(e) => setFormData({...formData, active: e.target.checked})}
-                            className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                          />
+                          <span className={`inline-flex items-center justify-center min-w-[80px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            formData.active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {formData.active ? 'Active' : 'Inactive'}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-1">Use toggle button</p>
                         </td>
                         <td className="px-6 py-4">
                           <textarea

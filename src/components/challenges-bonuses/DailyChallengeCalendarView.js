@@ -57,11 +57,25 @@ export default function DailyChallengeCalendarView({
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth, day);
-      const dateString = date.toISOString().split('T')[0];
-      const dayChallenges = challenges.filter(challenge => 
-        challenge.date === dateString
-      );
-      
+
+      // Create date string in YYYY-MM-DD format using local date components
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dayStr = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${dayStr}`;
+
+      // Match challenges by date - handle both ISO string and Date object formats
+      const dayChallenges = challenges.filter(challenge => {
+        if (!challenge.date) return false;
+
+        // Normalize the challenge date to YYYY-MM-DD format
+        const challengeDateString = typeof challenge.date === 'string'
+          ? challenge.date.split('T')[0]
+          : new Date(challenge.date).toISOString().split('T')[0];
+
+        return challengeDateString === dateString;
+      });
+
       days.push({
         date,
         day,
@@ -184,14 +198,26 @@ export default function DailyChallengeCalendarView({
   const getWeekDays = () => {
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-    
+
     const days = [];
     for (let i = 0; i < 7; i++) {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
-      const dateString = date.toISOString().split('T')[0];
-      const dayChallenges = challenges.filter(challenge => challenge.date === dateString);
-      
+
+      // Create date string using local date components to avoid timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dayStr = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${dayStr}`;
+
+      const dayChallenges = challenges.filter(challenge => {
+        if (!challenge.date) return false;
+        const challengeDateString = typeof challenge.date === 'string'
+          ? challenge.date.split('T')[0]
+          : new Date(challenge.date).toISOString().split('T')[0];
+        return challengeDateString === dateString;
+      });
+
       days.push({
         date,
         day: date.getDate(),
@@ -205,9 +231,20 @@ export default function DailyChallengeCalendarView({
 
   // Generate single day view
   const getDayView = () => {
-    const dateString = currentDate.toISOString().split('T')[0];
-    const dayChallenges = challenges.filter(challenge => challenge.date === dateString);
-    
+    // Create date string using local date components to avoid timezone issues
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(currentDate.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${dayStr}`;
+
+    const dayChallenges = challenges.filter(challenge => {
+      if (!challenge.date) return false;
+      const challengeDateString = typeof challenge.date === 'string'
+        ? challenge.date.split('T')[0]
+        : new Date(challenge.date).toISOString().split('T')[0];
+      return challengeDateString === dateString;
+    });
+
     return {
       date: currentDate,
       day: currentDate.getDate(),

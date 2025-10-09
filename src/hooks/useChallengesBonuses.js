@@ -170,15 +170,15 @@ export function useChallengesBonuses() {
   const toggleMultiplierActive = useCallback(async (id, active) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const updatedMultiplier = await challengesBonusesAPI.updateMultiplier(id, { active });
-      setMultipliers(prev => 
-        prev.map(multiplier => 
-          multiplier.id === id ? updatedMultiplier : multiplier
+      const result = await challengesBonusesAPI.toggleMultiplierStatus(id);
+      setMultipliers(prev =>
+        prev.map(multiplier =>
+          multiplier.id === id ? { ...multiplier, active: result.isActive } : multiplier
         )
       );
-      return updatedMultiplier;
+      return result;
     } catch (err) {
       setError('Failed to update multiplier status. Please try again.');
       console.error('Error toggling multiplier active status:', err);
@@ -298,6 +298,63 @@ export function useChallengesBonuses() {
     }
   }, []);
 
+  // Individual fetch functions for lazy loading
+  const fetchChallenges = useCallback(async () => {
+    if (challenges.length > 0) return; // Already loaded
+    setLoading(true);
+    try {
+      const data = await challengesBonusesAPI.getChallenges();
+      setChallenges(data);
+    } catch (err) {
+      setError('Failed to load challenges');
+      console.error('Error fetching challenges:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [challenges.length]);
+
+  const fetchMultipliers = useCallback(async () => {
+    if (multipliers.length > 0) return; // Already loaded
+    setLoading(true);
+    try {
+      const data = await challengesBonusesAPI.getMultipliers();
+      setMultipliers(data);
+    } catch (err) {
+      setError('Failed to load multipliers');
+      console.error('Error fetching multipliers:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [multipliers.length]);
+
+  const fetchBonusDays = useCallback(async () => {
+    if (bonusDays.length > 0) return; // Already loaded
+    setLoading(true);
+    try {
+      const data = await challengesBonusesAPI.getBonusDays();
+      setBonusDays(data);
+    } catch (err) {
+      setError('Failed to load bonus days');
+      console.error('Error fetching bonus days:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [bonusDays.length]);
+
+  const fetchPauseRules = useCallback(async () => {
+    if (pauseRules.length > 0) return; // Already loaded
+    setLoading(true);
+    try {
+      const data = await challengesBonusesAPI.getPauseRules();
+      setPauseRules(data);
+    } catch (err) {
+      setError('Failed to load pause rules');
+      console.error('Error fetching pause rules:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [pauseRules.length]);
+
   return {
     // State
     challenges,
@@ -309,6 +366,10 @@ export function useChallengesBonuses() {
 
     // Actions
     refreshData,
+    fetchChallenges,
+    fetchMultipliers,
+    fetchBonusDays,
+    fetchPauseRules,
 
     // Challenge operations
     addChallenge,
