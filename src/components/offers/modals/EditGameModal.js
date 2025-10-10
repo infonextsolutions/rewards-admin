@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useMasterData } from '../../../hooks/useMasterData';
 
-const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
 const XP_TIERS = ['Junior', 'Mid', 'Senior', 'All'];
-const TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
-const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
 const GAME_GENRES = ['puzzle', 'action', 'strategy', 'arcade', 'adventure', 'sports', 'racing', 'simulation', 'rpg'];
 const GAME_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
@@ -29,6 +27,7 @@ const MARKETING_CHANNELS = [
 ];
 
 export default function EditGameModal({ isOpen, onClose, game, onSave }) {
+  const { sdkProviders, tierAccess, countries, loading: masterDataLoading } = useMasterData();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -237,10 +236,11 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     value={formData.sdk}
                     onChange={(e) => handleInputChange('sdk', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    disabled={masterDataLoading}
                   >
                     <option value="">Choose SDK Game...</option>
-                    {SDK_PROVIDERS.map(sdk => (
-                      <option key={sdk} value={sdk}>{sdk}</option>
+                    {sdkProviders.map(sdk => (
+                      <option key={sdk.id} value={sdk.name}>{sdk.name}</option>
                     ))}
                   </select>
                 </div>
@@ -335,11 +335,13 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     value={formData.tier}
                     onChange={(e) => handleInputChange('tier', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    disabled={masterDataLoading}
                   >
                     <option value="">Choose Tier...</option>
-                    {TIERS.map(tier => (
-                      <option key={tier} value={tier}>{tier}</option>
+                    {tierAccess.map(tier => (
+                      <option key={tier.id} value={tier.name}>{tier.name}</option>
                     ))}
+                    <option value="All">All</option>
                   </select>
                 </div>
 
@@ -394,15 +396,16 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   Target Countries
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-                  {COUNTRIES.map(country => (
-                    <label key={country} className="flex items-center">
+                  {countries.map(country => (
+                    <label key={country.code} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={formData.countries.includes(country)}
-                        onChange={() => handleCountryToggle(country)}
+                        checked={formData.countries.includes(country.code)}
+                        onChange={() => handleCountryToggle(country.code)}
                         className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        disabled={masterDataLoading}
                       />
-                      <span className="ml-2 text-sm text-gray-700">{country}</span>
+                      <span className="ml-2 text-sm text-gray-700" title={country.name}>{country.code}</span>
                     </label>
                   ))}
                 </div>
@@ -478,10 +481,11 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     onChange={(e) => handleSegmentCountryChange(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
                     aria-label="Country"
+                    disabled={masterDataLoading}
                   >
                     <option value="">Select Country...</option>
-                    {COUNTRIES.map(country => (
-                      <option key={country} value={country}>{country}</option>
+                    {countries.map(country => (
+                      <option key={country.code} value={country.code}>{country.name}</option>
                     ))}
                   </select>
                 </div>

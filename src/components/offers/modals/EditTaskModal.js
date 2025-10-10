@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useMasterData } from '../../../hooks/useMasterData';
 
 const REWARD_TYPES = ['XP', 'Coins', 'XP + Coins', 'XP Boost', 'Coins + XP Boost'];
 const REPEAT_FREQ = ['Once', 'Daily', 'Weekly', 'Monthly'];
-const TIER_RESTRICTIONS = ['Bronze', 'Gold', 'Platinum', 'All Tiers'];
 const XP_TIER_RESTRICTIONS = ['Junior', 'Mid', 'Senior', 'All'];
 
 export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
+  const { tierAccess, loading: masterDataLoading } = useMasterData();
   const [formData, setFormData] = useState({
     taskName: '',
     milestoneLogic: '',
@@ -117,6 +118,12 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
 
   if (!isOpen) return null;
 
+  // Add "All Tiers" option to tier access if not already present
+  const tierOptions = [...tierAccess];
+  if (!tierOptions.find(t => t.id === 'all' || t.name === 'All Tiers')) {
+    tierOptions.push({ id: 'all', name: 'All Tiers' });
+  }
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -202,8 +209,9 @@ export default function EditTaskModal({ isOpen, onClose, task, onSave }) {
                     value={formData.tierRestriction}
                     onChange={(e) => handleInputChange('tierRestriction', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                    disabled={masterDataLoading}
                   >
-                    {TIER_RESTRICTIONS.map(tier => <option key={tier} value={tier}>{tier}</option>)}
+                    {tierOptions.map(tier => <option key={tier.id} value={tier.name}>{tier.name}</option>)}
                   </select>
                 </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { XMarkIcon, CloudArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { useMasterData } from '../../../hooks/useMasterData';
 
 const SDK_OFFERS = [
   'WELCOME_001', 'DAILY_002', 'SURVEY_003', 'APP_DOWNLOAD_004', 'TRIAL_005',
@@ -15,11 +16,6 @@ const AGE_GROUPS = [
 ];
 
 const GENDERS = ['Male', 'Female', 'Other', 'Any'];
-
-const COUNTRIES = [
-  'US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE',
-  'BR', 'IN', 'JP', 'KR', 'MX', 'AR', 'CL', 'CO', 'PE', 'VE'
-];
 
 const CITIES = {
   'US': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
@@ -38,7 +34,6 @@ const MARKETING_CHANNELS = [
 ];
 
 const XP_TIERS = ['Junior', 'Mid', 'Senior', 'All'];
-const TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
 
 const CREATIVE_SECTIONS = {
   offerCard: {
@@ -50,6 +45,7 @@ const CREATIVE_SECTIONS = {
 };
 
 export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
+  const { tierAccess, countries, loading: masterDataLoading } = useMasterData();
   const [formData, setFormData] = useState({
     sdkOfferId: '',
     offerName: '',
@@ -375,6 +371,12 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
 
   const availableCities = formData.segments.country ? CITIES[formData.segments.country] || [] : [];
 
+  // Add "All" option to tier access if not already present
+  const tierOptions = [...tierAccess];
+  if (!tierOptions.find(t => t.id === 'all')) {
+    tierOptions.push({ id: 'all', name: 'All' });
+  }
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
@@ -580,10 +582,11 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                     onChange={(e) => handleCountryChange(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                     aria-label="Country"
+                    disabled={masterDataLoading}
                   >
                     <option value="">Select Country...</option>
-                    {COUNTRIES.map(country => (
-                      <option key={country} value={country}>{country}</option>
+                    {countries.map(country => (
+                      <option key={country.code} value={country.code}>{country.name}</option>
                     ))}
                   </select>
                 </div>
@@ -680,41 +683,46 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                   <div className={`space-y-2 max-h-32 overflow-y-auto border rounded-md p-3 ${
                     errors.tiers ? 'border-red-300' : 'border-gray-200'
                   }`}>
-                    {TIERS.map(tier => {
-                      const getTierBadgeStyle = (tier) => {
-                        switch (tier) {
+                    {tierOptions.map(tier => {
+                      const getTierBadgeStyle = (tierName) => {
+                        switch (tierName) {
                           case 'Gold': return 'bg-yellow-100 text-yellow-800';
                           case 'Platinum': return 'bg-purple-100 text-purple-800';
                           case 'Bronze': return 'bg-amber-100 text-amber-800';
+                          case 'Silver': return 'bg-gray-200 text-gray-800';
+                          case 'Free': return 'bg-green-100 text-green-800';
                           case 'All': return 'bg-blue-100 text-blue-800';
                           default: return 'bg-gray-100 text-gray-800';
                         }
                       };
 
-                      const getTierIcon = (tier) => {
-                        switch (tier) {
+                      const getTierIcon = (tierName) => {
+                        switch (tierName) {
                           case 'Gold': return '🟡';
                           case 'Platinum': return '🟣';
                           case 'Bronze': return '🟤';
+                          case 'Silver': return '⚪';
+                          case 'Free': return '🟢';
                           case 'All': return '🔵';
                           default: return '⚫';
                         }
                       };
 
                       return (
-                        <label key={tier} className="flex items-center justify-between">
+                        <label key={tier.id} className="flex items-center justify-between">
                           <div className="flex items-center">
                             <input
                               type="checkbox"
-                              checked={formData.tiers.includes(tier)}
-                              onChange={() => handleMultiSelectChange('tiers', tier)}
+                              checked={formData.tiers.includes(tier.name)}
+                              onChange={() => handleMultiSelectChange('tiers', tier.name)}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              disabled={masterDataLoading}
                             />
-                            <span className="ml-2 text-sm text-gray-700">{tier}</span>
+                            <span className="ml-2 text-sm text-gray-700">{tier.name}</span>
                           </div>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTierBadgeStyle(tier)}`}>
-                            <span className="mr-1">{getTierIcon(tier)}</span>
-                            {tier}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTierBadgeStyle(tier.name)}`}>
+                            <span className="mr-1">{getTierIcon(tier.name)}</span>
+                            {tier.name}
                           </span>
                         </label>
                       );
