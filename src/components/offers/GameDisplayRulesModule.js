@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import EditDisplayRuleModal from './modals/EditDisplayRuleModal';
 import ConfirmationModal from './modals/ConfirmationModal';
 import MilestoneBadge from '../ui/MilestoneBadge';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { useDisplayRules } from '@/hooks/useDisplayRules';
 
 const mockDisplayRules = [
   {
@@ -136,13 +138,18 @@ const milestoneOptions = [
 ];
 
 export default function GameDisplayRulesModule() {
-  const [rules, setRules] = useState(mockDisplayRules);
+  const { rules, loading, error, fetchDisplayRules, createDisplayRule, updateDisplayRule } = useDisplayRules();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEnabled, setFilterEnabled] = useState('all');
   const [filterMilestone, setFilterMilestone] = useState('all');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRule, setSelectedRule] = useState(null);
+
+  // Fetch display rules on component mount
+  useEffect(() => {
+    fetchDisplayRules();
+  }, [fetchDisplayRules]);
 
   // Filter rules
   const filteredRules = rules.filter(rule => {
@@ -160,10 +167,15 @@ export default function GameDisplayRulesModule() {
     return matchesSearch && matchesEnabled && matchesMilestone;
   }).sort((a, b) => a.priority - b.priority);
 
-  const handleToggleRule = (ruleId) => {
-    setRules(prev => prev.map(rule =>
-      rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule
-    ));
+  const handleToggleRule = async (ruleId) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (rule) {
+      try {
+        await updateDisplayRule(ruleId, { enabled: !rule.enabled });
+      } catch (error) {
+        console.error('Failed to toggle rule:', error);
+      }
+    }
   };
 
   const handleEditRule = (rule) => {
@@ -182,37 +194,28 @@ export default function GameDisplayRulesModule() {
   };
 
   const confirmDeleteRule = () => {
+    // TODO: Implement delete API when available
     if (selectedRule) {
-      setRules(prev => prev.filter(rule => rule.id !== selectedRule.id));
+      console.log('Delete API not yet implemented for rule:', selectedRule.id);
       setShowDeleteModal(false);
       setSelectedRule(null);
     }
   };
 
-  const handleSaveRule = (ruleData) => {
-    if (selectedRule) {
-      // Edit existing rule - preserve original created by data, update last modified
-      const updatedRule = {
-        ...ruleData,
-        createdBy: selectedRule.createdBy,
-        createdAt: selectedRule.createdAt,
-        lastModified: new Date().toISOString().split('T')[0]
-      };
-      setRules(prev => prev.map(rule =>
-        rule.id === selectedRule.id ? updatedRule : rule
-      ));
-    } else {
-      // Add new rule - add created by metadata
-      const newRule = {
-        ...ruleData,
-        createdBy: 'admin@jackson.com', // In real app, this would come from auth context
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString().split('T')[0]
-      };
-      setRules(prev => [...prev, newRule]);
+  const handleSaveRule = async (ruleData) => {
+    try {
+      if (selectedRule) {
+        // Edit existing rule
+        await updateDisplayRule(selectedRule.id, ruleData);
+      } else {
+        // Create new rule
+        await createDisplayRule(ruleData);
+      }
+      setShowEditModal(false);
+      setSelectedRule(null);
+    } catch (error) {
+      console.error('Failed to save rule:', error);
     }
-    setShowEditModal(false);
-    setSelectedRule(null);
   };
 
   const getStatusBadge = (enabled) => {
@@ -360,7 +363,22 @@ export default function GameDisplayRulesModule() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRules.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="px-6 py-8 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <LoadingSpinner size="lg" className="text-indigo-600" />
+                      <p className="mt-3 text-sm text-gray-500">Loading display rules...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan="8" className="px-6 py-8 text-center text-red-600">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredRules.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || filterEnabled !== 'all' || filterMilestone !== 'all'

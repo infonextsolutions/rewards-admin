@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, FunnelIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import Pagination from '../ui/Pagination';
 import Link from 'next/link';
@@ -10,6 +10,8 @@ import GamePreviewModal from './modals/GamePreviewModal';
 import ConfirmationModal from './modals/ConfirmationModal';
 import TierBadge from '../ui/TierBadge';
 import XPTierBadge from '../ui/XPTierBadge';
+import { useGames } from '../../hooks/useGames';
+import toast from 'react-hot-toast';
 
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
@@ -61,6 +63,8 @@ const mockGames = [
 ];
 
 export default function GamesListingModule() {
+  const { games: apiGames, pagination: apiPagination, loading, error, fetchGames, createGame, updateGame, deleteGame, getGameById } = useGames();
+
   // single columns set matching combined screenshot
   const columns = [
     { key: 'title', label: 'Game Title' },
@@ -80,7 +84,6 @@ export default function GamesListingModule() {
     { key: 'actions', label: 'Actions' }
   ];
 
-  const [games, setGames] = useState(mockGames);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     country: 'all',
@@ -91,38 +94,38 @@ export default function GamesListingModule() {
     tier: 'all'
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showSegmentsModal, setShowSegmentsModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Fetch games on mount and when filters change
+  useEffect(() => {
+    const apiFilters = {
+      search: searchTerm,
+      status: filters.status,
+      country: filters.country,
+      sdk: filters.sdk,
+      xpTier: filters.xpTier,
+      adGame: filters.adGame
+    };
+    fetchGames(currentPage, apiFilters, itemsPerPage);
+  }, [currentPage, searchTerm, filters.status, filters.country, filters.sdk, filters.xpTier, filters.adGame, itemsPerPage, fetchGames]);
+
+  // Use API data directly - server-side filtering and pagination
+  const games = apiGames;
+  const totalPages = apiPagination.totalPages;
+  const paginatedGames = games;
+
+  // Client-side filtering for tier (not in API)
   const filteredGames = useMemo(() => {
-    return games.filter(game => {
-      const q = searchTerm.toLowerCase();
-      const matchesSearch =
-        game.title.toLowerCase().includes(q) ||
-        (game.sdk || '').toLowerCase().includes(q) ||
-        (game.id || '').toLowerCase().includes(q) ||
-        (game.xptrRules || '').toLowerCase().includes(q);
-
-      const matchesCountry = filters.country === 'all' || (game.countries || []).includes(filters.country);
-      const matchesSdk = filters.sdk === 'all' || game.sdk === filters.sdk;
-      const matchesStatus = filters.status === 'all' || game.status === filters.status;
-      const matchesAdGame = filters.adGame === 'all' ||
-        (filters.adGame === 'yes' && game.adSupported) ||
-        (filters.adGame === 'no' && !game.adSupported);
-      const matchesXpTier = filters.xpTier === 'all' || game.xpTier === filters.xpTier;
-      const matchesTier = filters.tier === 'all' || game.tier === filters.tier;
-
-      return matchesSearch && matchesCountry && matchesSdk && matchesStatus && matchesAdGame && matchesXpTier && matchesTier;
-    });
-  }, [games, searchTerm, filters]);
-
-  const totalPages = Math.ceil(filteredGames.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedGames = filteredGames.slice(startIndex, startIndex + itemsPerPage);
+    if (filters.tier === 'all') {
+      return paginatedGames;
+    }
+    return paginatedGames.filter(game => game.tier === filters.tier);
+  }, [paginatedGames, filters.tier]);
 
   const getStatusBadge = (status) => {
     const style = {
@@ -161,14 +164,34 @@ export default function GamesListingModule() {
     setShowEditModal(true);
   };
 
-  const handleSaveGame = (gameData) => {
-    if (selectedGame) {
-      setGames(prev => prev.map(g => g.id === selectedGame.id ? gameData : g));
-    } else {
-      setGames(prev => [...prev, gameData]);
+  const handleSaveGame = async (gameData) => {
+    try {
+      if (selectedGame) {
+        // Update existing game
+        await updateGame(selectedGame.id, gameData);
+        toast.success('Game updated successfully');
+      } else {
+        // Create new game
+        await createGame(gameData);
+        toast.success('Game created successfully');
+      }
+      setShowEditModal(false);
+      setSelectedGame(null);
+      // Refresh data
+      const apiFilters = {
+        search: searchTerm,
+        status: filters.status,
+        country: filters.country,
+        sdk: filters.sdk,
+        xpTier: filters.xpTier,
+        adGame: filters.adGame
+      };
+      fetchGames(currentPage, apiFilters, itemsPerPage);
+    } catch (error) {
+      console.error('Error saving game:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save game. Please try again.';
+      toast.error(errorMessage);
     }
-    setShowEditModal(false);
-    setSelectedGame(null);
   };
 
   const handleDeleteGame = (game) => {
@@ -176,11 +199,28 @@ export default function GamesListingModule() {
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteGame = () => {
-    if (selectedGame) {
-      setGames(prev => prev.filter(g => g.id !== selectedGame.id));
+  const confirmDeleteGame = async () => {
+    try {
+      await deleteGame(selectedGame?.id);
+      toast.success('Game deleted successfully');
       setShowDeleteModal(false);
       setSelectedGame(null);
+      // Refresh data
+      const apiFilters = {
+        search: searchTerm,
+        status: filters.status,
+        country: filters.country,
+        sdk: filters.sdk,
+        xpTier: filters.xpTier,
+        adGame: filters.adGame
+      };
+      fetchGames(currentPage, apiFilters, itemsPerPage);
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      // Show error message to user with toast
+      const errorMessage = error.response?.data?.message || 'Failed to delete game. Please try again.';
+      toast.error(errorMessage);
+      // Keep modal open so user can see the error
     }
   };
 
@@ -189,9 +229,18 @@ export default function GamesListingModule() {
     setShowSegmentsModal(true);
   };
 
-  const handleViewGame = (game) => {
-    setSelectedGame(game);
-    setShowPreviewModal(true);
+  const handleViewGame = async (game) => {
+    try {
+      // Fetch fresh data from API for viewing
+      const freshGameData = await getGameById(game.id);
+      setSelectedGame(freshGameData);
+      setShowPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching game details:', error);
+      // Fallback to using existing data if API call fails
+      setSelectedGame(game);
+      setShowPreviewModal(true);
+    }
   };
 
   const handleSegmentSave = (segmentData) => {
@@ -211,7 +260,7 @@ export default function GamesListingModule() {
       case 'sdk':
         return <div className="text-sm text-gray-900">{game.sdk}</div>;
       case 'xptrRules':
-        return <div className="text-sm text-gray-700 max-w-xs truncate" title={game.xptrRules}>{game.xptrRules}</div>;
+        return <div className="text-sm text-gray-700 max-w-[200px] break-words" title={game.xptrRules}>{game.xptrRules}</div>;
       case 'countries':
         return getCountryFlags(game.countries);
       case 'defaultTasks':
@@ -383,7 +432,12 @@ export default function GamesListingModule() {
                 paginatedGames.map(game => (
                   <tr key={game.id} className="hover:bg-gray-50">
                     {columns.map(col => (
-                      <td key={col.key} className="px-6 py-4 whitespace-nowrap align-top">
+                      <td
+                        key={col.key}
+                        className={`px-6 py-4 align-top ${
+                          col.key === 'xptrRules' || col.key === 'xpTier' || col.key === 'countries' ? '' : 'whitespace-nowrap'
+                        }`}
+                      >
                         {renderCell(col.key, game)}
                       </td>
                     ))}
@@ -396,7 +450,10 @@ export default function GamesListingModule() {
 
         {filteredGames.length > 0 && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, apiPagination.totalItems)} of {apiPagination.totalItems} games
+              </div>
               <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
           </div>

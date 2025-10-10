@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, ArrowLeftIcon, LinkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import EditProgressionRuleModal from './modals/EditProgressionRuleModal';
 import ConfirmationModal from './modals/ConfirmationModal';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { useProgressionRules } from '@/hooks/useProgressionRules';
 
 const mockProgressionRules = [
   {
@@ -142,13 +144,18 @@ const lockTypes = ['Sequential', 'Timed', 'Manual'];
 const eventTypes = ['Survey Completions', 'App Installs', 'Social Interactions', 'Purchase Events', 'Time Spent'];
 
 export default function TaskProgressionRulesModule() {
-  const [rules, setRules] = useState(mockProgressionRules);
+  const { rules, loading, error, fetchProgressionRules, createProgressionRule, updateProgressionRule } = useProgressionRules();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEnabled, setFilterEnabled] = useState('all');
   const [filterLockType, setFilterLockType] = useState('all');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRule, setSelectedRule] = useState(null);
+
+  // Fetch progression rules on component mount
+  useEffect(() => {
+    fetchProgressionRules();
+  }, [fetchProgressionRules]);
 
   // Filter rules
   const filteredRules = rules.filter(rule => {
@@ -167,9 +174,8 @@ export default function TaskProgressionRulesModule() {
   });
 
   const handleToggleRule = (ruleId) => {
-    setRules(prev => prev.map(rule =>
-      rule.id === ruleId ? { ...rule, override: !rule.override } : rule
-    ));
+    // TODO: Implement toggle API when available
+    console.log('Toggle API not yet implemented for rule:', ruleId);
   };
 
   const handleEditRule = (rule) => {
@@ -188,25 +194,28 @@ export default function TaskProgressionRulesModule() {
   };
 
   const confirmDeleteRule = () => {
+    // TODO: Implement delete API when available
     if (selectedRule) {
-      setRules(prev => prev.filter(rule => rule.id !== selectedRule.id));
+      console.log('Delete API not yet implemented for rule:', selectedRule.id);
       setShowDeleteModal(false);
       setSelectedRule(null);
     }
   };
 
-  const handleSaveRule = (ruleData) => {
-    if (selectedRule) {
-      // Edit existing rule
-      setRules(prev => prev.map(rule =>
-        rule.id === selectedRule.id ? ruleData : rule
-      ));
-    } else {
-      // Add new rule
-      setRules(prev => [...prev, ruleData]);
+  const handleSaveRule = async (ruleData) => {
+    try {
+      if (selectedRule) {
+        // Update existing rule
+        await updateProgressionRule(selectedRule.id, ruleData);
+      } else {
+        // Create new rule
+        await createProgressionRule(ruleData);
+      }
+      setShowEditModal(false);
+      setSelectedRule(null);
+    } catch (error) {
+      console.error('Failed to save rule:', error);
     }
-    setShowEditModal(false);
-    setSelectedRule(null);
   };
 
 
@@ -368,7 +377,22 @@ export default function TaskProgressionRulesModule() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRules.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="9" className="px-6 py-8 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <LoadingSpinner size="lg" className="text-indigo-600" />
+                      <p className="mt-3 text-sm text-gray-500">Loading progression rules...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan="9" className="px-6 py-8 text-center text-red-600">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredRules.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || filterEnabled !== 'all' || filterLockType !== 'all'

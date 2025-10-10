@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import FilterDropdown from '../ui/FilterDropdown';
 import Pagination from '../ui/Pagination';
@@ -10,6 +10,7 @@ import ManageSegmentsModal from './modals/ManageSegmentsModal';
 import OfferPreviewModal from '../surveys-offers/modals/OfferPreviewModal';
 import TierBadge from '../ui/TierBadge';
 import XPTierBadge from '../ui/XPTierBadge';
+import { useOffers } from '../../hooks/useOffers';
 
 const STATUS_TYPES = ['Active', 'Inactive'];
 const MARKETING_CHANNELS = ['Facebook', 'TikTok', 'Google', 'Instagram', 'Twitter'];
@@ -106,7 +107,8 @@ const mockOffers = [
 ];
 
 export default function OffersListingModule() {
-  const [offers, setOffers] = useState(mockOffers);
+  const { offers: apiOffers, pagination: apiPagination, loading, error, fetchOffers, createOffer, updateOffer, deleteOffer, getOfferById } = useOffers();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: 'all',
@@ -118,36 +120,40 @@ export default function OffersListingModule() {
   });
   const [activeTab, setActiveTab] = useState('offer');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSegmentsModal, setShowSegmentsModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
 
-  // Filter offers
+  // Fetch offers on mount and when filters change
+  useEffect(() => {
+    const apiFilters = {
+      search: searchTerm,
+      status: filters.status,
+      country: filters.country,
+      sdkProvider: filters.sdkProvider,
+      xpTier: filters.xpTier,
+      adOffer: filters.adOffer
+    };
+    fetchOffers(currentPage, apiFilters, itemsPerPage);
+  }, [currentPage, searchTerm, filters.status, filters.country, filters.sdkProvider, filters.xpTier, filters.adOffer, itemsPerPage, fetchOffers]);
+
+  // Use API data directly - server-side filtering and pagination
+  const offers = apiOffers;
+  const totalPages = apiPagination.totalPages;
+  const paginatedOffers = offers;
+
+  // Client-side filtering for marketing channel (not in API)
   const filteredOffers = useMemo(() => {
-    return offers.filter(offer => {
-      const matchesSearch =
-        offer.offerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.sdkOffer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.campaign.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesStatus = filters.status === 'all' || offer.status === filters.status;
-      const matchesChannel = filters.channel === 'all' || offer.marketingChannel === filters.channel;
-      const matchesCountry = filters.country === 'all' || (offer.countries && offer.countries.includes(filters.country));
-      const matchesSDK = filters.sdkProvider === 'all' || offer.sdkProvider === filters.sdkProvider;
-      const matchesXPTier = filters.xpTier === 'all' || offer.xpTier === filters.xpTier;
-      const matchesAdOffer = filters.adOffer === 'all' || offer.adOffer === filters.adOffer;
-
-      return matchesSearch && matchesStatus && matchesChannel && matchesCountry && matchesSDK && matchesXPTier && matchesAdOffer;
-    });
-  }, [offers, searchTerm, filters]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedOffers = filteredOffers.slice(startIndex, startIndex + itemsPerPage);
+    if (filters.channel === 'all') {
+      return paginatedOffers;
+    }
+    return paginatedOffers.filter(offer =>
+      offer.marketingChannel === filters.channel
+    );
+  }, [paginatedOffers, filters.channel]);
 
   // Get metric chip styling based on value
   const getMetricChipStyle = (value, type) => {
@@ -249,9 +255,18 @@ export default function OffersListingModule() {
     setShowSegmentsModal(true);
   };
 
-  const handleViewOffer = (offer) => {
-    setSelectedOffer(offer);
-    setShowPreviewModal(true);
+  const handleViewOffer = async (offer) => {
+    try {
+      // Fetch fresh data from API for viewing
+      const freshOfferData = await getOfferById(offer.id);
+      setSelectedOffer(freshOfferData);
+      setShowPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching offer details:', error);
+      // Fallback to using existing data if API call fails
+      setSelectedOffer(offer);
+      setShowPreviewModal(true);
+    }
   };
 
   const handleSaveSegments = (segmentData) => {
@@ -267,26 +282,53 @@ export default function OffersListingModule() {
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteOffer = () => {
+  const confirmDeleteOffer = async () => {
     if (selectedOffer) {
-      setOffers(prev => prev.filter(offer => offer.id !== selectedOffer.id));
-      setShowDeleteModal(false);
-      setSelectedOffer(null);
+      try {
+        // Delete offer via API
+        await deleteOffer(selectedOffer.id);
+        setShowDeleteModal(false);
+        setSelectedOffer(null);
+        // Refresh data
+        const apiFilters = {
+          search: searchTerm,
+          status: filters.status,
+          country: filters.country,
+          sdkProvider: filters.sdkProvider,
+          xpTier: filters.xpTier,
+          adOffer: filters.adOffer
+        };
+        fetchOffers(currentPage, apiFilters, itemsPerPage);
+      } catch (error) {
+        console.error('Error deleting offer:', error);
+      }
     }
   };
 
-  const handleSaveOffer = (offerData) => {
-    if (selectedOffer) {
-      // Edit existing offer
-      setOffers(prev => prev.map(offer =>
-        offer.id === selectedOffer.id ? offerData : offer
-      ));
-    } else {
-      // Add new offer
-      setOffers(prev => [...prev, offerData]);
+  const handleSaveOffer = async (offerData) => {
+    try {
+      if (selectedOffer) {
+        // Update existing offer
+        await updateOffer(selectedOffer.id, offerData);
+      } else {
+        // Create new offer
+        await createOffer(offerData);
+      }
+      setShowEditModal(false);
+      setSelectedOffer(null);
+      // Refresh data
+      const apiFilters = {
+        search: searchTerm,
+        status: filters.status,
+        country: filters.country,
+        sdkProvider: filters.sdkProvider,
+        xpTier: filters.xpTier,
+        adOffer: filters.adOffer
+      };
+      fetchOffers(currentPage, apiFilters, itemsPerPage);
+    } catch (error) {
+      console.error('Error saving offer:', error);
     }
-    setShowEditModal(false);
-    setSelectedOffer(null);
   };
 
   return (
@@ -584,7 +626,10 @@ export default function OffersListingModule() {
         {/* Pagination */}
         {filteredOffers.length > 0 && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, apiPagination.totalOffers)} of {apiPagination.totalOffers} offers
+              </div>
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -594,6 +639,7 @@ export default function OffersListingModule() {
           </div>
         )}
       </div>
+
 
       {/* Edit Offer Modal */}
       <EditOfferModal

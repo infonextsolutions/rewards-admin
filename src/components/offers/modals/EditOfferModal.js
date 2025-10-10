@@ -82,19 +82,27 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
   useEffect(() => {
     if (offer) {
       // Edit mode - populate with existing offer data
+      // Convert expiryDate to datetime-local format
+      let endDateValue = '';
+      if (offer.expiryDate) {
+        const date = new Date(offer.expiryDate);
+        // Format to datetime-local (YYYY-MM-DDTHH:MM)
+        endDateValue = date.toISOString().slice(0, 16);
+      }
+
       setFormData({
         sdkOfferId: offer.sdkOffer || '',
         offerName: offer.offerName || '',
         rewardType: offer.rewardType || '',
         rewardValue: offer.rewardValue || '',
         startDate: offer.startDate || '',
-        endDate: offer.endDate || '',
+        endDate: endDateValue,
         active: offer.status === 'Active',
         defaultFallback: offer.defaultFallback || false,
         segments: {
           ageGroups: offer.segments?.ageGroups || [],
           gender: offer.segments?.gender || '',
-          country: offer.segments?.country || '',
+          country: offer.segments?.country || (offer.countries && offer.countries.length > 0 ? offer.countries[0] : ''),
           city: offer.segments?.city || '',
           gamePreferences: offer.segments?.gamePreferences || [],
           marketingChannel: offer.marketingChannel || '',
@@ -231,6 +239,9 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
     }
     if (!formData.tiers || formData.tiers.length === 0) {
       newErrors.tiers = 'At least one tier must be selected';
+    }
+    if (!formData.endDate) {
+      newErrors.endDate = 'End date (expiry date) is required';
     }
 
     // Date validation
@@ -480,7 +491,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date
+                    End Date (Expiry Date) *
                   </label>
                   <input
                     type="datetime-local"

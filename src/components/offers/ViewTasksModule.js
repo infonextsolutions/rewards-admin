@@ -7,8 +7,12 @@ import Pagination from '../ui/Pagination';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import EditTaskModal from './modals/EditTaskModal';
+import ConfirmationModal from './modals/ConfirmationModal';
 import TierBadge from '../ui/TierBadge';
 import XPTierBadge from '../ui/XPTierBadge';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import { useTasks } from '../../hooks/useTasks';
+import toast from 'react-hot-toast';
 
 const REWARD_TYPES = ['XP', 'Coins', 'XP + Coins', 'XP Boost', 'Coins + XP Boost'];
 const TIER_RESTRICTIONS = ['Bronze', 'Gold', 'Platinum', 'All Tiers'];
@@ -120,7 +124,9 @@ export default function ViewTasksModule() {
   const searchParams = useSearchParams();
   const gameFilter = searchParams.get('game');
 
-  const [tasks, setTasks] = useState(mockTasks);
+  // Initialize API hook with gameId
+  const { tasks: apiTasks, pagination: apiPagination, loading, error, fetchTasks, createTask, updateTask, deleteTask } = useTasks(gameFilter);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     gameId: gameFilter || 'all',
@@ -133,6 +139,16 @@ export default function ViewTasksModule() {
   const [itemsPerPage] = useState(10);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch tasks when component mounts or filters change
+  useEffect(() => {
+    if (gameFilter) {
+      fetchTasks(currentPage, searchTerm, itemsPerPage);
+    }
+  }, [gameFilter, currentPage, searchTerm, itemsPerPage, fetchTasks]);
 
   // Update filter when URL changes
   useEffect(() => {
@@ -141,29 +157,24 @@ export default function ViewTasksModule() {
     }
   }, [gameFilter]);
 
-  // Filter tasks
+  // Use API tasks directly (server-side pagination and search)
+  const tasks = apiTasks;
+
+  // Client-side filtering for fields not supported by API
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
-      const matchesSearch =
-        task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.completionRule.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.gameName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.id.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesGame = filters.gameId === 'all' || task.gameId === filters.gameId;
       const matchesRewardType = filters.rewardType === 'all' || task.rewardType === filters.rewardType;
       const matchesTierRestriction = filters.tierRestriction === 'all' || task.tierRestriction === filters.tierRestriction;
       const matchesXPTierRestriction = filters.xpTierRestriction === 'all' || task.xpTierRestriction === filters.xpTierRestriction;
       const matchesStatus = filters.status === 'all' || task.status === filters.status;
 
-      return matchesSearch && matchesGame && matchesRewardType && matchesTierRestriction && matchesXPTierRestriction && matchesStatus;
+      return matchesRewardType && matchesTierRestriction && matchesXPTierRestriction && matchesStatus;
     });
-  }, [tasks, searchTerm, filters]);
+  }, [tasks, filters]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTasks = filteredTasks.slice(startIndex, startIndex + itemsPerPage);
+  // Use API pagination
+  const totalPages = apiPagination.totalPages;
+  const paginatedTasks = filteredTasks;
 
   const getStatusBadge = (status) => {
     const statusStyles = {
@@ -182,14 +193,15 @@ export default function ViewTasksModule() {
 
 
   const formatReward = (task) => {
-    const parts = [];
-    if (task.rewardXP > 0) {
-      parts.push(`${task.rewardXP} XP`);
+    const value = task.rewardValue || 0;
+    const type = task.rewardType || '';
+
+    if (type.toLowerCase() === 'coins') {
+      return `${value} Coins`;
+    } else if (type.toLowerCase() === 'xp') {
+      return `${value} XP`;
     }
-    if (task.rewardCoins > 0) {
-      parts.push(`${task.rewardCoins} Coins`);
-    }
-    return parts.join(' + ');
+    return `${value} ${type}`;
   };
 
   const formatTime = (timeString) => {
@@ -198,7 +210,13 @@ export default function ViewTasksModule() {
   };
 
   const handleEditTask = (task) => {
-    setSelectedTask(task);
+    // Transform API task data to match EditTaskModal's expected format
+    const transformedTask = {
+      ...task,
+      taskName: task.name,
+      milestoneLogic: task.completionRule
+    };
+    setSelectedTask(transformedTask);
     setShowEditModal(true);
   };
 
@@ -207,23 +225,52 @@ export default function ViewTasksModule() {
     setShowEditModal(true);
   };
 
-  const handleSaveTask = (taskData) => {
-    if (selectedTask) {
-      // Edit existing task
-      setTasks(prev => prev.map(task =>
-        task.id === selectedTask.id ? taskData : task
-      ));
-    } else {
-      // Add new task
-      setTasks(prev => [...prev, taskData]);
+  const handleSaveTask = async (taskData) => {
+    try {
+      if (selectedTask) {
+        // Update existing task
+        await updateTask(selectedTask.id, taskData);
+        toast.success('Task updated successfully');
+        // Refresh tasks list
+        fetchTasks(currentPage, searchTerm, itemsPerPage);
+      } else {
+        // Create new task
+        await createTask(taskData);
+        toast.success('Task created successfully');
+        // Refresh tasks list
+        fetchTasks(currentPage, searchTerm, itemsPerPage);
+      }
+      setShowEditModal(false);
+      setSelectedTask(null);
+    } catch (error) {
+      console.error('Error saving task:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to save task. Please try again.';
+      toast.error(errorMessage);
     }
-    setShowEditModal(false);
-    setSelectedTask(null);
   };
 
-  const handleDeleteTask = (taskId) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      setTasks(prev => prev.filter(task => task.id !== taskId));
+  const handleDeleteTask = (task) => {
+    setTaskToDelete(task);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteTask(taskToDelete.id);
+      toast.success('Task deleted successfully');
+      setShowDeleteModal(false);
+      setTaskToDelete(null);
+      // Refresh tasks list
+      fetchTasks(currentPage, searchTerm, itemsPerPage);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete task. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -238,8 +285,6 @@ export default function ViewTasksModule() {
     }
   };
 
-
-  const selectedGame = mockGames.find(g => g.id === gameFilter);
 
   return (
     <div className="space-y-6">
@@ -258,9 +303,9 @@ export default function ViewTasksModule() {
                 <h2 className="text-lg font-semibold text-gray-900">
                   View Tasks
                 </h2>
-                {selectedGame && (
+                {gameFilter && (
                   <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    {selectedGame.name}
+                    Game ID: {gameFilter}
                   </span>
                 )}
               </div>
@@ -367,55 +412,64 @@ export default function ViewTasksModule() {
         </div>
 
         {/* Tasks Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Task Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Completion Rule
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reward Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tier Restriction
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  XP Tier
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                {/* PHASE 2: Override column temporarily hidden */}
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Override
-                </th> */}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedTasks.length === 0 ? (
+        {loading ? (
+          <LoadingSpinner message="Loading tasks..." size="medium" />
+        ) : error ? (
+          <div className="px-6 py-8 text-center">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm || Object.values(filters).some(f => f !== 'all')
-                      ? 'No tasks match your current filters.'
-                      : 'No tasks configured yet. Add your first task to get started.'}
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Task Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Completion Rule
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Reward Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tier Restriction
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    XP Tier
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  {/* PHASE 2: Override column temporarily hidden */}
+                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Override
+                  </th> */}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : (
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                      {searchTerm || Object.values(filters).some(f => f !== 'all')
+                        ? 'No tasks match your current filters.'
+                        : 'No tasks configured yet. Add your first task to get started.'}
+                    </td>
+                  </tr>
+                ) : (
                 paginatedTasks.map((task) => (
                   <React.Fragment key={task.id}>
                     <tr className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{task.taskName}</div>
+                          <div className="text-sm font-medium text-gray-900">{task.name}</div>
                           <div className="text-xs text-gray-700">{task.id}</div>
-                          <div className="text-xs text-gray-600 mt-1">{task.gameName}</div>
+                          {task.description && (
+                            <div className="text-xs text-gray-600 mt-1">{task.description}</div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -426,14 +480,14 @@ export default function ViewTasksModule() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{formatReward(task)}</div>
-                          <div className="text-xs text-gray-700">{task.rewardType}</div>
+                          <div className="text-xs text-gray-700 capitalize">{task.rewardType}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <TierBadge tier={task.tierRestriction} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <XPTierBadge xpTier={task.xpTierRestriction} />
+                        <XPTierBadge xpTier={task.tierRestriction} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(task.status)}
@@ -463,7 +517,7 @@ export default function ViewTasksModule() {
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteTask(task.id)}
+                            onClick={() => handleDeleteTask(task)}
                             className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             title="Delete task"
                           >
@@ -474,18 +528,19 @@ export default function ViewTasksModule() {
                     </tr>
 
                   </React.Fragment>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Results Summary & Pagination */}
-        {filteredTasks.length > 0 && (
+        {!loading && !error && filteredTasks.length > 0 && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTasks.length)} of {filteredTasks.length} tasks
+                Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, apiPagination.totalItems)} of {apiPagination.totalItems} tasks
               </div>
               <Pagination
                 currentPage={currentPage}
@@ -506,6 +561,22 @@ export default function ViewTasksModule() {
         }}
         task={selectedTask}
         onSave={handleSaveTask}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setTaskToDelete(null);
+        }}
+        onConfirm={confirmDeleteTask}
+        title="Delete Task"
+        message={`Are you sure you want to delete "${taskToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="warning"
+        loading={isDeleting}
       />
     </div>
   );

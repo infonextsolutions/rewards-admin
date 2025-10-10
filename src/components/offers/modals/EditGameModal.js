@@ -7,6 +7,8 @@ const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniver
 const XP_TIERS = ['Junior', 'Mid', 'Senior', 'All'];
 const TIERS = ['Bronze', 'Gold', 'Platinum', 'All'];
 const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE'];
+const GAME_GENRES = ['puzzle', 'action', 'strategy', 'arcade', 'adventure', 'sports', 'racing', 'simulation', 'rpg'];
+const GAME_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
 const AGE_GROUPS = [
   '13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'
@@ -29,7 +31,9 @@ const MARKETING_CHANNELS = [
 export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     sdk: '',
+    xptrRules: '',
     rewardXP: 0,
     rewardCoins: 0,
     taskCount: 0,
@@ -39,6 +43,18 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     xpTier: '',
     tier: '',
     countries: [],
+    tags: [],
+    metadata: {
+      genre: 'puzzle',
+      difficulty: 'medium',
+      rating: 3,
+      downloadCount: 0
+    },
+    displayRules: {
+      maxGamesToShow: 10,
+      priority: 5,
+      isFeatured: false
+    },
     segments: {
       ageGroups: [],
       gender: '',
@@ -53,16 +69,30 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     if (game) {
       setFormData({
         title: game.title || '',
+        description: game.description || '',
         sdk: game.sdk || '',
+        xptrRules: game.xptrRules || '',
         rewardXP: game.rewardXP || 0,
         rewardCoins: game.rewardCoins || 0,
         taskCount: game.taskCount || 0,
-        activeVisible: game.activeVisible ?? true,
+        activeVisible: game.active !== undefined ? game.active : (game.activeVisible ?? true),
         fallbackGame: game.fallbackGame ?? false,
         thumbnail: game.thumbnail || null,
         xpTier: game.xpTier || '',
         tier: game.tier || '',
         countries: game.countries || [],
+        tags: game.tags || [],
+        metadata: {
+          genre: game.metadata?.genre || 'puzzle',
+          difficulty: game.metadata?.difficulty || 'medium',
+          rating: game.metadata?.rating || 3,
+          downloadCount: game.metadata?.downloadCount || 0
+        },
+        displayRules: {
+          maxGamesToShow: game.displayRules?.maxGamesToShow || 10,
+          priority: game.displayRules?.priority || 5,
+          isFeatured: game.displayRules?.isFeatured || false
+        },
         segments: {
           ageGroups: game.segments?.ageGroups || [],
           gender: game.segments?.gender || '',
@@ -75,7 +105,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     } else {
       setFormData({
         title: '',
+        description: '',
         sdk: '',
+        xptrRules: '',
         rewardXP: 0,
         rewardCoins: 0,
         taskCount: 0,
@@ -85,6 +117,18 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         xpTier: '',
         tier: '',
         countries: [],
+        tags: [],
+        metadata: {
+          genre: 'puzzle',
+          difficulty: 'medium',
+          rating: 3,
+          downloadCount: 0
+        },
+        displayRules: {
+          maxGamesToShow: 10,
+          priority: 5,
+          isFeatured: false
+        },
         segments: {
           ageGroups: [],
           gender: '',
@@ -214,6 +258,20 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   />
                 </div>
 
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    XPTR Rules *
+                  </label>
+                  <textarea
+                    value={formData.xptrRules}
+                    onChange={(e) => handleInputChange('xptrRules', e.target.value)}
+                    placeholder="Enter XP tier rules (e.g., Complete 3 surveys worth 100+ points each)"
+                    rows={2}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    required
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     XP Reward
@@ -283,6 +341,50 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                       <option key={tier} value={tier}>{tier}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Game Genre
+                  </label>
+                  <select
+                    value={formData.metadata.genre}
+                    onChange={(e) => handleInputChange('metadata.genre', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  >
+                    {GAME_GENRES.map(genre => (
+                      <option key={genre} value={genre}>{genre.charAt(0).toUpperCase() + genre.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Difficulty
+                  </label>
+                  <select
+                    value={formData.metadata.difficulty}
+                    onChange={(e) => handleInputChange('metadata.difficulty', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  >
+                    {GAME_DIFFICULTIES.map(difficulty => (
+                      <option key={difficulty} value={difficulty}>{difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rating (1-5)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={formData.metadata.rating}
+                    onChange={(e) => handleInputChange('metadata.rating', parseInt(e.target.value) || 3)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  />
                 </div>
               </div>
 

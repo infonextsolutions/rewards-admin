@@ -2,29 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { XMarkIcon, PlusIcon, TrashIcon, LinkIcon } from '@heroicons/react/24/outline';
+import { tasksAPI } from '../../../data/tasks';
+import { gamesAPI } from '../../../data/games';
 
 const lockTypes = ['Sequential', 'Timed', 'Manual'];
 const eventTypes = ['Survey Completions', 'App Installs', 'Social Interactions', 'Purchase Events', 'Time Spent'];
 const timeWindows = ['1 hour', '6 hours', '12 hours', '24 hours', '3 days', '7 days', '30 days'];
 
-const mockGames = [
-  { id: 'GAME001', name: 'Survey Master Pro' },
-  { id: 'GAME002', name: 'Download & Play Challenge' },
-  { id: 'GAME003', name: 'Premium Trial Signup' },
-  { id: 'GAME004', name: 'Social Media Follow' }
-];
-
-const sampleTasks = [
-  'Complete Survey A', 'Complete Survey B', 'Download App X', 'Download App Y',
-  'Follow Social Media', 'Sign up for Trial', 'Upgrade to Premium', 'Play for 30 minutes',
-  'Make In-App Purchase', 'Follow 1 Account', 'Follow 5 Accounts', 'Share Content',
-  'Invite Friends', 'Download Gaming App'
-];
-
 export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave }) {
+  const [tasks, setTasks] = useState([]);
+  const [games, setGames] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [loadingGames, setLoadingGames] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    taskId: '',
+    taskName: '',
     unlockCondition: '',
     dependencies: [{ fromTask: '', toTask: '' }],
     lockType: 'Sequential',
@@ -48,11 +42,55 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
 
   const [errors, setErrors] = useState({});
 
+  // Fetch games when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchGames();
+    }
+  }, [isOpen]);
+
+  // Fetch tasks when game is selected
+  useEffect(() => {
+    if (formData.gameId) {
+      fetchTasksForGame(formData.gameId);
+    } else {
+      setTasks([]);
+    }
+  }, [formData.gameId]);
+
+  const fetchTasksForGame = async (gameId) => {
+    setLoadingTasks(true);
+    try {
+      const response = await tasksAPI.getTasksForGame(gameId, { limit: 100 });
+      setTasks(response.tasks || []);
+    } catch (error) {
+      console.error('Error fetching tasks for game:', error);
+      setTasks([]);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  const fetchGames = async () => {
+    setLoadingGames(true);
+    try {
+      const response = await gamesAPI.getGames({ limit: 100 });
+      setGames(response.games || []);
+    } catch (error) {
+      console.error('Error fetching games:', error);
+      setGames([]);
+    } finally {
+      setLoadingGames(false);
+    }
+  };
+
   useEffect(() => {
     if (rule) {
       setFormData({
         name: rule.name || '',
         description: rule.description || '',
+        taskId: rule.taskId || '',
+        taskName: rule.taskName || '',
         unlockCondition: rule.unlockCondition || '',
         dependencies: rule.dependencies || [{ fromTask: '', toTask: '' }],
         lockType: rule.lockType || 'Sequential',
@@ -78,6 +116,8 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
       setFormData({
         name: '',
         description: '',
+        taskId: '',
+        taskName: '',
         unlockCondition: '',
         dependencies: [{ fromTask: '', toTask: '' }],
         lockType: 'Sequential',
@@ -117,12 +157,31 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
   };
 
   const handleGameChange = (gameId) => {
-    const selectedGame = mockGames.find(g => g.id === gameId);
+    const selectedGame = games.find(g => g.id === gameId);
     setFormData(prev => ({
       ...prev,
       gameId,
-      gameName: selectedGame ? selectedGame.name : ''
+      gameName: selectedGame ? selectedGame.name : '',
+      // Clear task selection when game changes
+      taskId: '',
+      taskName: ''
     }));
+  };
+
+  const handleTaskChange = (taskId) => {
+    const selectedTask = tasks.find(t => t.id === taskId);
+    setFormData(prev => ({
+      ...prev,
+      taskId,
+      taskName: selectedTask ? selectedTask.name : ''
+    }));
+    // Clear error when task is selected
+    if (errors.taskId) {
+      setErrors(prev => ({
+        ...prev,
+        taskId: ''
+      }));
+    }
   };
 
   const handleEventThresholdChange = (field, value) => {
@@ -180,6 +239,9 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
+    if (!formData.taskId) {
+      newErrors.taskId = 'Task selection is required';
+    }
     if (!formData.unlockCondition.trim()) {
       newErrors.unlockCondition = 'Unlock condition is required';
     }
@@ -192,16 +254,16 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
     if (!formData.gameId) {
       newErrors.gameId = 'Game selection is required';
     }
-    if (formData.dependencies.some(dep => !dep.fromTask.trim() || !dep.toTask.trim())) {
+    if (formData.dependencies.some(dep => !dep.fromTask || !dep.toTask)) {
       newErrors.dependencies = 'All dependencies must have both from and to tasks';
     }
     if (formData.eventThreshold.count < 1) {
       newErrors.eventThreshold = 'Event count must be at least 1';
     }
-    if (!formData.rewardTrigger.condition.trim()) {
+    if (!formData.rewardTrigger.condition || !formData.rewardTrigger.condition.trim()) {
       newErrors.rewardCondition = 'Reward trigger condition is required';
     }
-    if (!formData.rewardTrigger.reward.trim()) {
+    if (!formData.rewardTrigger.reward || !formData.rewardTrigger.reward.trim()) {
       newErrors.rewardValue = 'Reward value is required';
     }
 
@@ -278,13 +340,43 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                     className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
                       errors.gameId ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
                     }`}
+                    disabled={loadingGames}
                   >
-                    <option value="">Select Game</option>
-                    {mockGames.map(game => (
+                    <option value="">{loadingGames ? 'Loading games...' : 'Select Game'}</option>
+                    {games.map(game => (
                       <option key={game.id} value={game.id}>{game.name}</option>
                     ))}
                   </select>
                   {errors.gameId && <p className="mt-1 text-xs text-red-600">{errors.gameId}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Task *
+                  </label>
+                  <select
+                    value={formData.taskId}
+                    onChange={(e) => handleTaskChange(e.target.value)}
+                    className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                      errors.taskId ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-emerald-500'
+                    }`}
+                    disabled={loadingTasks || !formData.gameId}
+                  >
+                    <option value="">
+                      {!formData.gameId
+                        ? 'Select a game first'
+                        : loadingTasks
+                        ? 'Loading tasks...'
+                        : tasks.length === 0
+                        ? 'No tasks available for this game'
+                        : 'Select Task'}
+                    </option>
+                    {tasks.map(task => (
+                      <option key={task.id} value={task.id}>{task.name}</option>
+                    ))}
+                  </select>
+                  {errors.taskId && <p className="mt-1 text-xs text-red-600">{errors.taskId}</p>}
+                  {!formData.gameId && <p className="mt-1 text-xs text-gray-500">Please select a game to see available tasks</p>}
                 </div>
 
                 <div className="md:col-span-2">
@@ -349,10 +441,11 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                         value={dependency.fromTask}
                         onChange={(e) => handleDependencyChange(index, 'fromTask', e.target.value)}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        disabled={loadingTasks}
                       >
-                        <option value="">Select task</option>
-                        {sampleTasks.map(task => (
-                          <option key={task} value={task}>{task}</option>
+                        <option value="">{loadingTasks ? 'Loading...' : 'Select task'}</option>
+                        {tasks.map(task => (
+                          <option key={task.id} value={task.id}>{task.name}</option>
                         ))}
                       </select>
                     </div>
@@ -367,10 +460,11 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                         value={dependency.toTask}
                         onChange={(e) => handleDependencyChange(index, 'toTask', e.target.value)}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        disabled={loadingTasks}
                       >
-                        <option value="">Select task</option>
-                        {sampleTasks.map(task => (
-                          <option key={task} value={task}>{task}</option>
+                        <option value="">{loadingTasks ? 'Loading...' : 'Select task'}</option>
+                        {tasks.map(task => (
+                          <option key={task.id} value={task.id}>{task.name}</option>
                         ))}
                       </select>
                     </div>
@@ -465,9 +559,10 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                     value={formData.overrideByGameId}
                     onChange={(e) => handleInputChange('overrideByGameId', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    disabled={loadingGames}
                   >
-                    <option value="">Select Game to Override</option>
-                    {mockGames.map(game => (
+                    <option value="">{loadingGames ? 'Loading...' : 'Select Game to Override'}</option>
+                    {games.map(game => (
                       <option key={game.id} value={game.id}>{game.name} ({game.id})</option>
                     ))}
                   </select>
@@ -598,6 +693,10 @@ export default function EditProgressionRuleModal({ isOpen, onClose, rule, onSave
                 <div className="flex justify-between">
                   <span className="text-gray-600">Game:</span>
                   <span className="text-gray-900">{formData.gameName || 'No game selected'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Task:</span>
+                  <span className="text-gray-900">{formData.taskName || 'No task selected'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Unlock Condition:</span>

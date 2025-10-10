@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeftIcon, ClockIcon, GiftIcon, UserGroupIcon, PlayIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { useWelcomeBonusTimer } from '../../hooks/useWelcomeBonusTimer';
 
 const initialWelcomeBonusSettings = {
   unlockWindow: { value: 24, unit: 'hours' },
@@ -43,12 +44,35 @@ const availableGames = [
 ];
 
 export default function WelcomeBonusTimerRules() {
+  const { config, loading, error, fetchWelcomeBonusTimerRules, updateWelcomeBonusTimerRules } = useWelcomeBonusTimer();
   const [activeTab, setActiveTab] = useState('welcome-bonus');
   const [welcomeBonusSettings, setWelcomeBonusSettings] = useState(initialWelcomeBonusSettings);
   const [gameplaySettings, setGameplaySettings] = useState(initialGameplaySettings);
   const [isModified, setIsModified] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState('2024-03-15T10:30:00Z');
+  const [lastSaved, setLastSaved] = useState(null);
+
+  // Fetch welcome bonus timer rules on component mount
+  useEffect(() => {
+    fetchWelcomeBonusTimerRules();
+  }, [fetchWelcomeBonusTimerRules]);
+
+  // Update local state when config is loaded from API
+  useEffect(() => {
+    if (config) {
+      // Convert API format to component format
+      setWelcomeBonusSettings({
+        unlockWindow: { value: config.unlockTimeHours, unit: 'hours' },
+        completionDeadline: { value: config.completionDeadlineDays, unit: 'days' },
+        overrideByGameId: config.gameOverrides && config.gameOverrides.length > 0,
+        selectedGames: config.gameOverrides ? config.gameOverrides.filter(g => g.isEnabled).map(g => g.gameId) : [],
+        overrideByXP: config.xpTierOverrides && config.xpTierOverrides.length > 0,
+        xpThreshold: config.xpTierOverrides && config.xpTierOverrides.length > 0 ? config.xpTierOverrides[0].minXp : 200,
+        enableRule: config.isActive
+      });
+      setLastSaved(config.updatedAt);
+    }
+  }, [config]);
 
   const handleWelcomeBonusChange = (key, value) => {
     setWelcomeBonusSettings(prev => ({
@@ -148,11 +172,62 @@ export default function WelcomeBonusTimerRules() {
     }
 
     setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    setIsModified(false);
-    setLastSaved(new Date().toISOString());
+
+    try {
+      // Convert component format to API format
+      const configData = {
+        unlockTimeHours: welcomeBonusSettings.unlockWindow.value,
+        completionDeadlineDays: welcomeBonusSettings.completionDeadline.value,
+        gameOverrides: welcomeBonusSettings.overrideByGameId && welcomeBonusSettings.selectedGames.length > 0
+          ? welcomeBonusSettings.selectedGames.map(gameId => ({
+              gameId,
+              unlockTimeHours: 12, // Default override values
+              completionDeadlineDays: 5,
+              isEnabled: true
+            }))
+          : [],
+        xpTierOverrides: welcomeBonusSettings.overrideByXP
+          ? [
+              {
+                minXp: 0,
+                maxXp: 500,
+                unlockTimeHours: 48,
+                completionDeadlineDays: 14,
+                isEnabled: true
+              },
+              {
+                minXp: 500,
+                maxXp: 2000,
+                unlockTimeHours: 24,
+                completionDeadlineDays: 10,
+                isEnabled: true
+              },
+              {
+                minXp: 2000,
+                maxXp: 999999,
+                unlockTimeHours: 12,
+                completionDeadlineDays: 5,
+                isEnabled: true
+              }
+            ]
+          : [],
+        isActive: welcomeBonusSettings.enableRule,
+        metadata: {
+          description: 'Welcome bonus timer configuration',
+          notes: 'Updated from admin panel',
+          version: '1.1'
+        }
+      };
+
+      await updateWelcomeBonusTimerRules(configData);
+      setIsModified(false);
+      setLastSaved(new Date().toISOString());
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      alert('Failed to save settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleResetSettings = () => {
@@ -264,6 +339,102 @@ export default function WelcomeBonusTimerRules() {
 
         {/* Tab Content */}
         <div className="p-6">
+          {/* API Data Section - Show Welcome Bonus Timer Configuration from API */}
+          {activeTab === 'welcome-bonus' && config && (
+            <div className="mb-8 pb-8 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">Current Configuration (from API)</h3>
+                  <p className="text-sm text-gray-500 mt-1">{config.metadata?.description || 'Welcome bonus timer configuration'}</p>
+                </div>
+                <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                  config.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {config.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+
+              {!loading && !error && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Base Configuration */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <ClockIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                      Base Configuration
+                    </h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Unlock Time:</span>
+                        <span className="font-medium text-gray-900">{config.unlockTimeHours} hours</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Completion Deadline:</span>
+                        <span className="font-medium text-gray-900">{config.completionDeadlineDays} days</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Game Overrides */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <Cog6ToothIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                      Game Overrides
+                    </h4>
+                    {config.gameOverrides && config.gameOverrides.length > 0 ? (
+                      <div className="space-y-2 text-xs">
+                        {config.gameOverrides.slice(0, 2).map((override, idx) => (
+                          <div key={idx} className="p-2 bg-gray-50 rounded">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-gray-600">Game ID:</span>
+                              <span className="font-mono text-xs text-gray-900">{override.gameId.substring(0, 8)}...</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Timer:</span>
+                              <span className="font-medium text-gray-900">{override.unlockTimeHours}h / {override.completionDeadlineDays}d</span>
+                            </div>
+                          </div>
+                        ))}
+                        {config.gameOverrides.length > 2 && (
+                          <p className="text-xs text-gray-500 text-center mt-2">
+                            +{config.gameOverrides.length - 2} more
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500">No game overrides configured</p>
+                    )}
+                  </div>
+
+                  {/* XP Tier Overrides */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <UserGroupIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                      XP Tier Overrides
+                    </h4>
+                    {config.xpTierOverrides && config.xpTierOverrides.length > 0 ? (
+                      <div className="space-y-2 text-xs">
+                        {config.xpTierOverrides.map((tier, idx) => (
+                          <div key={idx} className="p-2 bg-gray-50 rounded">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-gray-600">XP Range:</span>
+                              <span className="font-medium text-gray-900">{tier.minXp}-{tier.maxXp}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Timer:</span>
+                              <span className="font-medium text-gray-900">{tier.unlockTimeHours}h / {tier.completionDeadlineDays}d</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500">No XP tier overrides configured</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'welcome-bonus' && (
             <div className="space-y-8">
               {/* Welcome Bonus Config Section */}
