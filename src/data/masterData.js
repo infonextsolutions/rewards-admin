@@ -79,6 +79,19 @@ export const masterDataAPI = {
   },
 
   /**
+   * Get creative placements
+   */
+  async getCreativePlacements() {
+    try {
+      const response = await apiClient.get('/api/admin/creatives/master/placements');
+      return response.data.data; // Returns array of strings
+    } catch (error) {
+      console.error('Error fetching creative placements:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Fetch all master data at once
    */
   async getAllMasterData() {

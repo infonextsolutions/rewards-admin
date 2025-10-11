@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { placementOptions, segmentOptions, validPIDs } from '../constants';
+import { segmentOptions, validPIDs } from '../constants';
 import { validateTitle, validateFile, validatePID, validateSegment } from '../validation';
+import { masterDataAPI } from '../../../../data/masterData';
 
 const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreatives }) => {
   const [formData, setFormData] = useState({
@@ -12,8 +13,30 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
     status: "Active",
     file: null
   });
-  
+
   const [errors, setErrors] = useState({});
+  const [placementOptions, setPlacementOptions] = useState([]);
+  const [loadingPlacements, setLoadingPlacements] = useState(false);
+
+  // Fetch placements when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchPlacements();
+    }
+  }, [isOpen]);
+
+  const fetchPlacements = async () => {
+    setLoadingPlacements(true);
+    try {
+      const placements = await masterDataAPI.getCreativePlacements();
+      setPlacementOptions(placements || []);
+    } catch (error) {
+      console.error('Error fetching placements:', error);
+      setPlacementOptions([]);
+    } finally {
+      setLoadingPlacements(false);
+    }
+  };
 
   useEffect(() => {
     if (creative) {
@@ -168,11 +191,12 @@ const AddEditCreativeModal = ({ isOpen, onClose, creative, onSave, existingCreat
                 setFormData(prev => ({ ...prev, placement: e.target.value }));
                 if (errors.placement) setErrors(prev => ({ ...prev, placement: null }));
               }}
+              disabled={loadingPlacements}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent ${
                 errors.placement ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${loadingPlacements ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <option value="">Select Placement</option>
+              <option value="">{loadingPlacements ? 'Loading placements...' : 'Select Placement'}</option>
               {placementOptions.map(option => (
                 <option key={option} value={option}>{option}</option>
               ))}

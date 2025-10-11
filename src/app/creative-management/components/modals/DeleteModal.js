@@ -24,8 +24,7 @@ const DeleteModal = ({ isOpen, onClose, creative, onConfirm }) => {
           </button>
           <button
             onClick={() => {
-              onConfirm(creative.id);
-              onClose();
+              onConfirm(creative);
             }}
             className="px-4 py-2 bg-red-600 text-white rounded-md"
           >
