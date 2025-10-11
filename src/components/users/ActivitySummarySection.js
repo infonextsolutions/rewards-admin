@@ -1,50 +1,164 @@
 import React from "react";
 
 export const ActivitySummarySection = ({ user }) => {
+  // Helper function to get redemption data with proper breakdown
+  const getRedemptionData = () => {
+    const redemptionBreakdown = user?.redemptionBreakdown;
+    const walletTransactions = user?.wallet?.transactions || [];
+
+    // Get the actual count from API
+    const totalCount = redemptionBreakdown?.count || user?.redemptionsMade || 0;
+
+    // If no redemptions, return early
+    if (totalCount === 0) {
+      return {
+        total: "0 redemptions",
+        breakdown: "No redemptions yet"
+      };
+    }
+
+    // Build breakdown from wallet transactions if available
+    if (walletTransactions.length > 0) {
+      const redemptionTxns = walletTransactions.filter(t =>
+        t.type?.toLowerCase() === 'redemption' ||
+        t.type?.toLowerCase() === 'withdraw'
+      );
+
+      // Count by method
+      const methodCounts = {};
+      redemptionTxns.forEach(txn => {
+        const method = txn.method || txn.redemptionType || 'Other';
+        methodCounts[method] = (methodCounts[method] || 0) + 1;
+      });
+
+      // Format breakdown
+      const breakdownParts = Object.entries(methodCounts).map(([method, count]) => {
+        if (method.toLowerCase().includes('paypal')) {
+          return `${count} via PayPal`;
+        } else if (method.toLowerCase().includes('gift')) {
+          return `${count} Gift Card`;
+        } else {
+          return `${count} via ${method}`;
+        }
+      });
+
+      return {
+        total: `${totalCount} redemption${totalCount !== 1 ? 's' : ''}`,
+        breakdown: breakdownParts.length > 0
+          ? breakdownParts.join(', ')
+          : `${redemptionBreakdown?.totalCoins || 0} coins total`
+      };
+    }
+
+    // Fallback to just showing total coins if no transaction details
+    return {
+      total: `${totalCount} redemption${totalCount !== 1 ? 's' : ''}`,
+      breakdown: redemptionBreakdown?.totalCoins
+        ? `${redemptionBreakdown.totalCoins} coins redeemed total`
+        : "Details not available"
+    };
+  };
+
+  // Helper function to get challenge progress data
+  const getChallengeProgressData = () => {
+    const challengeData = user?.challengeProgress;
+
+    if (!challengeData) {
+      return {
+        name: "No active challenge",
+        percentage: 0,
+        showProgress: false
+      };
+    }
+
+    // Check if there's an active challenge in recentChallenges
+    const activeChallenge = challengeData.recentChallenges?.find(c => c.status === 'in_progress') ||
+                           challengeData.recentChallenges?.[0];
+
+    if (activeChallenge) {
+      const percentage = activeChallenge.progress || 0;
+      return {
+        name: activeChallenge.name || activeChallenge.type || "Active Challenge",
+        percentage: percentage,
+        showProgress: true
+      };
+    }
+
+    // Check for streak-based challenges
+    if (challengeData.currentStreak > 0) {
+      // Assume a 7-day login challenge as common pattern
+      const streakPercentage = (challengeData.currentStreak / 7) * 100;
+      return {
+        name: `${challengeData.currentStreak}-Day Login Streak`,
+        percentage: Math.min(streakPercentage, 100),
+        showProgress: true
+      };
+    }
+
+    // If challenges completed but none active
+    if (challengeData.totalChallengesCompleted > 0) {
+      return {
+        name: "No active challenge",
+        percentage: 0,
+        showProgress: false
+      };
+    }
+
+    return {
+      name: "N/A",
+      percentage: 0,
+      showProgress: false
+    };
+  };
+
+  const redemptionData = getRedemptionData();
+  const challengeProgress = getChallengeProgressData();
+
   const activityData = [
     {
       label: "Last Login Timestamp",
-      value: user?.lastLogin || "May 28, 2025 – 11:42 AM",
+      value: user?.lastLogin || user?.lastLoginAt || "May 28, 2025 – 11:42 AM",
       isTimestamp: true
     },
     {
       label: "Total Logins Since Registration",
-      value: user?.totalLogins || "58 logins since Mar 2025",
+      value: user?.loginCount ? `${user.loginCount} logins since ${new Date(user.registrationDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : "58 logins since Mar 2025",
       isCount: true
     },
     {
       label: "Last Task Completed",
-      value: user?.lastTaskCompleted || "BitLabs Survey #432 – May 27",
+      value: user?.lastTaskCompleted || "N/A",
     },
     {
       label: "Offers Redeemed + Last Offer Claimed",
-      value: user?.offersRedeemed || "12 offers redeemed",
-      additionalInfo: user?.lastOfferClaimed || "Lucky Spin – 200 coins – May 26"
+      value: user?.offersRedeemed ? `${user.offersRedeemed} offers redeemed` : "0 offers redeemed",
+      additionalInfo: user?.lastOfferClaimed || "No offers claimed yet"
     },
     {
       label: "Total Coins Earned",
-      value: user?.totalCoinsEarned || "47,250 coins earned",
+      value: user?.totalCoinsEarned !== undefined ? `${user.totalCoinsEarned.toLocaleString()} coins earned` : "0 coins earned",
       isHighlighted: true
     },
     {
       label: "Total XP Earned",
-      value: user?.totalXPEarned || "2,850 XP earned",
+      value: user?.totalXPEarned !== undefined ? `${user.totalXPEarned.toLocaleString()} XP earned` : "0 XP earned",
       isHighlighted: true
     },
     {
       label: "Redemptions Made (Summary View)",
-      value: user?.redemptionsMade || "3 redemptions",
-      additionalInfo: "2 via PayPal ($15), 1 Gift Card ($10)"
+      value: redemptionData.total,
+      additionalInfo: redemptionData.breakdown
     },
     {
       label: "Challenge Progress",
-      value: user?.challengeProgress || "Day 6 of 7-Day Login Challenge",
-      isProgress: true
+      value: challengeProgress.name,
+      isProgress: challengeProgress.showProgress,
+      progressPercentage: challengeProgress.percentage
     },
     {
       label: "Spin Usage History",
-      value: user?.spinUsage || "8 spins used this month",
-      additionalInfo: "Last spin: May 24 (won 150 coins)"
+      value: user?.spinUsage ? `${user.spinUsage} spins used this month` : "0 spins used this month",
+      additionalInfo: user?.lastSpinAt ? `Last spin: ${new Date(user.lastSpinAt).toLocaleDateString()}` : "No spins yet"
     },
   ];
 
@@ -112,9 +226,9 @@ export const ActivitySummarySection = ({ user }) => {
                 <div className="space-y-1">
                   <span>{item.value}</span>
                   <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '85.7%' }}></div>
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${item.progressPercentage || 0}%` }}></div>
                   </div>
-                  <span className="text-xs text-gray-500">85.7% complete</span>
+                  <span className="text-xs text-gray-500">{item.progressPercentage?.toFixed(1) || 0}% complete</span>
                 </div>
               ) : (
                 <div>
@@ -157,9 +271,9 @@ export const ActivitySummarySection = ({ user }) => {
                 <div className="space-y-1">
                   <span>{item.value}</span>
                   <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '85.7%' }}></div>
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${item.progressPercentage || 0}%` }}></div>
                   </div>
-                  <span className="text-xs text-gray-500">85.7% complete</span>
+                  <span className="text-xs text-gray-500">{item.progressPercentage?.toFixed(1) || 0}% complete</span>
                 </div>
               ) : (
                 <div>

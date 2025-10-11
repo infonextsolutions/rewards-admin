@@ -23,6 +23,43 @@ export const UserDetailsSection = ({ user }) => {
     { name: "Activity Summary", active: false },
   ];
 
+  // Helper function to format gender
+  const formatGender = (gender) => {
+    if (!gender || gender === 'N/A') return 'N/A';
+    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  };
+
+  // Helper function to format game preferences (What types of games do you enjoy playing)
+  const formatGamePreferences = (preferences) => {
+    if (!preferences || preferences.length === 0) return 'Not specified';
+    // Capitalize first letter of each game type
+    return preferences.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ');
+  };
+
+  // Helper function to format game style (What kind of games do you prefer)
+  const formatGameStyle = (gameStyle) => {
+    if (!gameStyle) return 'Not specified';
+    return gameStyle.charAt(0).toUpperCase() + gameStyle.slice(1);
+  };
+
+  // Helper function to format improvement area (Which of these sounds most like you)
+  const formatImprovementArea = (improvementArea) => {
+    if (!improvementArea) return 'Not specified';
+    return improvementArea.charAt(0).toUpperCase() + improvementArea.slice(1);
+  };
+
+  // Helper function to get notification status
+  const getNotificationStatus = () => {
+    // Check profile.notifications (boolean) first, then notificationSettings (string)
+    if (user?.profile?.notifications !== undefined) {
+      return user.profile.notifications ? 'Enabled' : 'Disabled';
+    }
+    if (user?.notificationSettings) {
+      return user.notificationSettings;
+    }
+    return 'Disabled';
+  };
+
   const userFields = [
     { label: "User ID", value: user?.userId || "USR-202589" },
     { label: "Full Name", value: user?.name || "Nick Johnson" },
@@ -30,7 +67,7 @@ export const UserDetailsSection = ({ user }) => {
     { label: "Phone", value: user?.phone || "+33 6 45 32 19 87" },
     { label: "Registration Date", value: user?.registrationDate || "March 12, 2025" },
     { label: "Age Range", value: user?.age || "25–34" },
-    { label: "Gender", value: user?.gender || "Male" },
+    { label: "Gender", value: formatGender(user?.gender || user?.onboarding?.gender) },
     { label: "Country/Region (IP Signup)", value: user?.signupCountry || user?.country || "France" },
     { label: "Current Location", value: user?.location || "Lyon, France" },
     // PHASE 2: Device and Security info temporarily hidden
@@ -43,6 +80,12 @@ export const UserDetailsSection = ({ user }) => {
     // { label: "Last Login IP Address", value: user?.lastLoginIp || user?.ipAddress || "182.77.56.14" },
     // { label: "Last Login Location", value: user?.lastLoginLocation || "Lyon, France" },
     { label: "Member Since", value: user?.memberSince || "January 12, 2025" },
+    // Onboarding questionnaire fields (current app version)
+    { label: "Game Types Enjoyed", value: formatGamePreferences(user?.onboarding?.gamePreferences) },
+    { label: "Preferred Game Style", value: formatGameStyle(user?.onboarding?.gameStyle) },
+    { label: "User Motivation", value: formatImprovementArea(user?.onboarding?.improvementArea) },
+    // Notification settings
+    { label: "Notification Settings", value: getNotificationStatus(), isBadge: true },
   ];
 
   // Action buttons per requirements - dynamically generated based on user status
@@ -185,7 +228,11 @@ export const UserDetailsSection = ({ user }) => {
       );
 
       if (response.success) {
-        toast.success(response.message || 'User suspended successfully');
+        // Override API message to use consistent terminology
+        const message = response.message?.toLowerCase().includes('inactivated')
+          ? 'Account Suspended'
+          : (response.message || 'Account Suspended');
+        toast.success(message);
         setShowSuspendModal(false);
 
         // Redirect to users page after suspension
@@ -245,17 +292,13 @@ export const UserDetailsSection = ({ user }) => {
   const renderTabContent = () => {
     if (activeTab === "Profile") {
       return (
-        <div className="flex items-start gap-14 relative self-stretch w-full flex-[0_0_auto]">
-          <div className="flex flex-col items-start gap-[30px] relative w-48">
-            {userFields.map((field, index) => (
-              <div key={`label-${index}`} className="relative w-fit [font-family:'DM_Sans',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
+        <div className="flex flex-col gap-[30px] relative self-stretch w-full flex-[0_0_auto]">
+          {userFields.map((field, index) => (
+            <div key={`field-${index}`} className="flex items-center gap-14 relative self-stretch w-full">
+              <div className="relative w-48 [font-family:'DM_Sans',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
                 {field.label}
               </div>
-            ))}
-          </div>
-          <div className="flex flex-col items-start gap-[30px] relative flex-1">
-            {userFields.map((field, index) => (
-              <div key={`value-${index}`} className="relative w-fit [font-family:'DM_Sans',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]">
+              <div className="relative flex-1 [font-family:'DM_Sans',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]">
                 {field.isEmail ? (
                   <a
                     className="text-blue-600 hover:text-blue-800 underline"
@@ -268,7 +311,7 @@ export const UserDetailsSection = ({ user }) => {
                   </a>
                 ) : field.isBadge ? (
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    field.value === 'Active' ? 'bg-green-100 text-green-800' : 
+                    field.value === 'Active' ? 'bg-green-100 text-green-800' :
                     field.value === 'Inactive' ? 'bg-red-100 text-red-800' :
                     field.value === 'Paused' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-gray-100 text-gray-800'
@@ -296,8 +339,8 @@ export const UserDetailsSection = ({ user }) => {
                   field.value
                 )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       );
     } else if (activeTab === "Balance & Tier") {

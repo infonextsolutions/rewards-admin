@@ -129,7 +129,11 @@ export const useUsers = () => {
       );
 
       if (response.success) {
-        toast.success(response.message || 'User suspended successfully');
+        // Override API message to use consistent terminology
+        const message = response.message?.toLowerCase().includes('inactivated')
+          ? 'Account Suspended'
+          : (response.message || 'Account Suspended');
+        toast.success(message);
         // Refresh users list
         await fetchUsers(pagination.currentPage, apiFilters);
       }

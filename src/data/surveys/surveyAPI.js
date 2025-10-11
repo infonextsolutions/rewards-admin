@@ -1,7 +1,5 @@
-// Mock data operations for Survey & Non-Gaming Offers module
-// This file provides mock functionality without API calls
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://rewardsapi.hireagent.co/api';
+// Survey & Non-Gaming Offers API module
+import apiClient from '../../lib/apiClient';
 
 const surveyAPIs = {
   // Mock success response
@@ -13,288 +11,132 @@ const surveyAPIs = {
   // Get SDK list with pagination
   async getSDKList({ page = 1, limit = 10 } = {}) {
     try {
-      const token = localStorage.getItem('token');
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        search: '',
-        status: 'all',
-        category: 'all'
-      });
-
-      const response = await fetch(`${API_BASE}/admin/surveys/sdk/list?${queryParams}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      const response = await apiClient.get('/admin/surveys/sdk/list', {
+        params: {
+          page,
+          limit,
+          search: '',
+          status: 'all',
+          category: 'all'
         }
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Get SDK list error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Create new SDK
   async createSDK(sdkData) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/sdk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(sdkData)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await apiClient.post('/admin/surveys/sdk', sdkData);
+      return response.data;
     } catch (error) {
       console.error('Create SDK error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Get SDK details by ID
   async getSDKDetails(sdkId) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/sdk/${sdkId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await apiClient.get(`/admin/surveys/sdk/${sdkId}`);
+      return response.data;
     } catch (error) {
       console.error('Get SDK details error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Update SDK configuration
   async updateSDKConfig(sdkId, configData) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/sdk/${sdkId}/config`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(configData)
-      });
-
-      const data = await response.json();
-
-      // Return data even if response is not ok, let caller handle it
-      return data;
+      const response = await apiClient.put(`/admin/surveys/sdk/${sdkId}/config`, configData);
+      return response.data;
     } catch (error) {
       console.error('Update SDK config error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Update SDK segment rules
   async updateSDKSegmentRules(sdkId, segmentRules) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/sdk/${sdkId}/segments`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ segmentRules })
-      });
-
-      const data = await response.json();
-
-      // Return data even if response is not ok, let caller handle it
-      return data;
+      const response = await apiClient.put(`/admin/surveys/sdk/${sdkId}/segments`, { segmentRules });
+      return response.data;
     } catch (error) {
       console.error('Update SDK segment rules error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Preview audience for segment rules
   async previewAudience(segmentRules) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/sdk/audience-preview`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ segmentRules })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await apiClient.post('/admin/surveys/sdk/audience-preview', { segmentRules });
+      return response.data;
     } catch (error) {
       console.error('Preview audience error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Toggle SDK status (activate/deactivate)
   async toggleSDKStatus(sdkId) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/sdk/${sdkId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await apiClient.patch(`/admin/surveys/sdk/${sdkId}/status`);
+      return response.data;
     } catch (error) {
       console.error('Toggle SDK status error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Get live offers with pagination
   async getLiveOffers({ page = 1, limit = 20 } = {}) {
     try {
-      const token = localStorage.getItem('token');
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString()
+      const response = await apiClient.get('/admin/surveys/offers/live', {
+        params: { page, limit }
       });
-
-      const response = await fetch(`${API_BASE}/admin/surveys/offers/live?${queryParams}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      return response.data;
     } catch (error) {
       console.error('Get live offers error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Get offer details by ID
   async getOfferDetails(offerId) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/offers/${offerId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await apiClient.get(`/admin/surveys/offers/${offerId}`);
+      return response.data;
     } catch (error) {
       console.error('Get offer details error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Update offer status
   async updateOfferStatus(offerId, status) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/offers/${offerId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await apiClient.patch(`/admin/surveys/offers/${offerId}/status`, { status });
+      return response.data;
     } catch (error) {
       console.error('Update offer status error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   },
 
   // Update offer reward
   async updateOfferReward(offerId, coinReward) {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/admin/surveys/offers/${offerId}/reward`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ coinReward })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await apiClient.patch(`/admin/surveys/offers/${offerId}/reward`, { coinReward });
+      return response.data;
     } catch (error) {
       console.error('Update offer reward error:', error);
-      throw error;
+      throw error.response?.data || error;
     }
   }
 };
