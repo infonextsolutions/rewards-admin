@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import AddEditRewardModal from './modals/AddEditRewardModal';
 import DeleteConfirmationModal from './modals/DeleteConfirmationModal';
 import TierBadge from '../ui/TierBadge';
@@ -52,27 +53,33 @@ export default function PrizePoolConfiguration({
   const handleAddReward = async (rewardData) => {
     try {
       await onAddReward(rewardData);
+      toast.success('Reward created successfully');
       setShowAddModal(false);
     } catch (error) {
       console.error('Error adding reward:', error);
+      toast.error(error.message || 'Failed to create reward');
     }
   };
 
   const handleUpdateReward = async (id, rewardData) => {
     try {
       await onUpdateReward(id, rewardData);
+      toast.success('Reward updated successfully');
       setEditingReward(null);
     } catch (error) {
       console.error('Error updating reward:', error);
+      toast.error(error.message || 'Failed to update reward');
     }
   };
 
   const handleDeleteReward = async (id) => {
     try {
       await onDeleteReward(id);
+      toast.success('Reward deleted successfully');
       setDeletingReward(null);
     } catch (error) {
       console.error('Error deleting reward:', error);
+      toast.error(error.message || 'Failed to delete reward');
     }
   };
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import PrizePoolConfiguration from './PrizePoolConfiguration';
 import SpinSettingsConfiguration from './SpinSettingsConfiguration';
+import LoadingSpinner from '../common/LoadingSpinner';
 import { useSpinWheel } from '../../hooks/useSpinWheel';
 
 export default function SpinWheelManagerModule() {
@@ -34,7 +35,7 @@ export default function SpinWheelManagerModule() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+        <LoadingSpinner size="lg" className="text-emerald-600" />
       </div>
     );
   }

@@ -161,7 +161,11 @@ export default function AddEditRewardModal({
           icon: file,
           iconUrl: e.target.result
         }));
-        setErrors(prev => ({ ...prev, icon: undefined }));
+        // Remove icon error by creating new object without the icon property
+        setErrors(prev => {
+          const { icon, ...rest } = prev;
+          return rest;
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -378,7 +382,7 @@ export default function AddEditRewardModal({
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
                   <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
-                    {Object.values(errors).map((error, index) => (
+                    {Object.values(errors).filter(Boolean).map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
                   </ul>

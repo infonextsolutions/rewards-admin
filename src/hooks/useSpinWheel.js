@@ -60,116 +60,265 @@ const mockSettings = {
 };
 
 export function useSpinWheel() {
-  const [rewards, setRewards] = useState(mockRewards);
+  const [rewards, setRewards] = useState([]);
   const [settings, setSettings] = useState(mockSettings);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Simulate API delay
   const simulateDelay = (ms = 1000) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Fetch all rewards (mock)
+  // Fetch all rewards from API
   const fetchRewards = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      await simulateDelay(500);
-      setRewards(mockRewards);
+
+      // Import the API dynamically
+      const { default: spinWheelAPIs } = await import('../data/spinWheel/spinWheelAPI');
+      const response = await spinWheelAPIs.getRewards({ page: 1, limit: 100 });
+
+      if (response.success && response.data) {
+        // Map API response to component format
+        const mappedRewards = response.data.rewards.map((reward, index) => ({
+          id: reward._id,
+          label: reward.name,
+          type: reward.type.charAt(0).toUpperCase() + reward.type.slice(1), // capitalize: coins -> Coins
+          amount: reward.amount,
+          probability: reward.probability,
+          tierVisibility: reward.eligibleTiers || [],
+          icon: reward.icon,
+          active: reward.isActive,
+          order: index + 1,
+          color: reward.color,
+          metadata: reward.metadata,
+          stats: reward.stats
+        }));
+
+        setRewards(mappedRewards);
+      }
     } catch (err) {
+      console.error('Error fetching rewards:', err);
       setError(err.message || 'Failed to fetch rewards');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Fetch spin settings (mock)
+  // Fetch spin settings
   const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      await simulateDelay(500);
-      setSettings(mockSettings);
+
+      // Import the API dynamically
+      const { default: spinWheelAPIs } = await import('../data/spinWheel/spinWheelAPI');
+      const response = await spinWheelAPIs.getConfig();
+
+      if (response.success && response.data) {
+        // Map API response to component format
+        const mappedSettings = {
+          spinMode: response.data.spinMode,
+          cooldownPeriod: response.data.cooldownPeriod,
+          maxSpinsPerDay: response.data.maxSpinsPerDay,
+          eligibleTiers: response.data.eligibleTiers || [],
+          startDate: response.data.startDate ? new Date(response.data.startDate).toISOString().slice(0, 16) : '',
+          endDate: response.data.endDate ? new Date(response.data.endDate).toISOString().slice(0, 16) : ''
+        };
+
+        setSettings(mappedSettings);
+      }
     } catch (err) {
+      console.error('Error fetching settings:', err);
       setError(err.message || 'Failed to fetch settings');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Add new reward (mock)
+  // Add new reward
   const addReward = useCallback(async (rewardData) => {
     try {
       setLoading(true);
       setError(null);
-      await simulateDelay(800);
-      
-      const newReward = {
-        ...rewardData,
-        id: Date.now() // Simple ID generation for mock
-      };
-      
-      setRewards(prev => [...prev, newReward]);
-      return newReward;
+
+      // Prepare FormData
+      const formData = new FormData();
+
+      // Add static name field (modal doesn't have name field)
+      formData.append('name', rewardData.label || 'Reward');
+
+      // Add other fields from modal
+      formData.append('type', rewardData.type.toLowerCase()); // Convert "Coins" to "coins"
+      formData.append('amount', rewardData.amount);
+      formData.append('probability', rewardData.probability);
+
+      // Handle tierVisibility - convert to eligibleTiers
+      if (rewardData.tierVisibility && rewardData.tierVisibility.length > 0) {
+        // If "All Tiers" is selected, send all tier values
+        if (rewardData.tierVisibility.includes('All Tiers')) {
+          const allTiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+          allTiers.forEach(tier => {
+            formData.append('tierVisibility[]', tier);
+          });
+        } else {
+          rewardData.tierVisibility.forEach(tier => {
+            formData.append('tierVisibility[]', tier);
+          });
+        }
+      }
+
+      formData.append('active', rewardData.active ? 'true' : 'false');
+
+      // Add icon file if provided
+      if (rewardData.icon && rewardData.icon instanceof File) {
+        formData.append('icon', rewardData.icon);
+      }
+
+      // Import API and create reward
+      const { default: spinWheelAPIs } = await import('../data/spinWheel/spinWheelAPI');
+      const response = await spinWheelAPIs.createReward(formData);
+
+      if (response.success && response.data) {
+        // Refresh rewards list
+        await fetchRewards();
+        return response.data.reward;
+      }
     } catch (err) {
+      console.error('Error adding reward:', err);
       setError(err.message || 'Failed to add reward');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchRewards]);
 
-  // Update existing reward (mock)
+  // Update existing reward
   const updateReward = useCallback(async (id, rewardData) => {
     try {
       setLoading(true);
       setError(null);
-      await simulateDelay(800);
-      
-      const updatedReward = { ...rewardData, id };
-      setRewards(prev => prev.map(reward => 
-        reward.id === id ? updatedReward : reward
-      ));
-      return updatedReward;
+
+      // Prepare FormData
+      const formData = new FormData();
+
+      // Add static name field (modal doesn't have name field)
+      formData.append('name', rewardData.label || 'Reward');
+
+      // Add other fields from modal
+      formData.append('type', rewardData.type.toLowerCase()); // Convert "Coins" to "coins"
+      formData.append('amount', rewardData.amount);
+      formData.append('probability', rewardData.probability);
+
+      // Handle tierVisibility - convert to eligibleTiers
+      if (rewardData.tierVisibility && rewardData.tierVisibility.length > 0) {
+        // If "All Tiers" is selected, send all tier values
+        if (rewardData.tierVisibility.includes('All Tiers')) {
+          const allTiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+          allTiers.forEach(tier => {
+            formData.append('tierVisibility[]', tier);
+          });
+        } else {
+          rewardData.tierVisibility.forEach(tier => {
+            formData.append('tierVisibility[]', tier);
+          });
+        }
+      }
+
+      formData.append('active', rewardData.active ? 'true' : 'false');
+
+      // Add icon file if provided (optional for update)
+      if (rewardData.icon && rewardData.icon instanceof File) {
+        formData.append('icon', rewardData.icon);
+      }
+
+      // Import API and update reward
+      const { default: spinWheelAPIs } = await import('../data/spinWheel/spinWheelAPI');
+      const response = await spinWheelAPIs.updateReward(id, formData);
+
+      if (response.success && response.data) {
+        // Refresh rewards list
+        await fetchRewards();
+        return response.data.reward;
+      }
     } catch (err) {
+      console.error('Error updating reward:', err);
       setError(err.message || 'Failed to update reward');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchRewards]);
 
-  // Delete reward (mock)
+  // Delete reward
   const deleteReward = useCallback(async (id) => {
     try {
       setLoading(true);
       setError(null);
-      await simulateDelay(500);
-      
-      setRewards(prev => prev.filter(reward => reward.id !== id));
+
+      // Import API and delete reward
+      const { default: spinWheelAPIs } = await import('../data/spinWheel/spinWheelAPI');
+      const response = await spinWheelAPIs.deleteReward(id);
+
+      if (response.success) {
+        // Refresh rewards list
+        await fetchRewards();
+        return response;
+      }
     } catch (err) {
+      console.error('Error deleting reward:', err);
       setError(err.message || 'Failed to delete reward');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchRewards]);
 
-  // Update spin settings (mock)
+  // Update spin settings
   const updateSettings = useCallback(async (settingsData) => {
     try {
       setLoading(true);
       setError(null);
-      await simulateDelay(800);
-      
-      setSettings(settingsData);
-      return settingsData;
+
+      // Prepare API payload
+      const payload = {
+        name: settingsData.spinMode === 'free' ? 'Main Spin Wheel' : 'Ad-Based Spin Wheel',
+        spinMode: settingsData.spinMode,
+        cooldownPeriod: settingsData.cooldownPeriod,
+        maxSpinsPerDay: settingsData.maxSpinsPerDay,
+        eligibleTiers: settingsData.eligibleTiers || []
+      };
+
+      // Add dates if provided
+      if (settingsData.startDate) {
+        payload.startDate = settingsData.startDate;
+      } else {
+        payload.startDate = '';
+      }
+
+      if (settingsData.endDate) {
+        payload.endDate = settingsData.endDate;
+      } else {
+        payload.endDate = '';
+      }
+
+      // Import API and save settings
+      const { default: spinWheelAPIs } = await import('../data/spinWheel/spinWheelAPI');
+      const response = await spinWheelAPIs.saveConfig(payload);
+
+      if (response.success && response.data) {
+        // Refresh settings
+        await fetchSettings();
+        return response.data;
+      }
     } catch (err) {
+      console.error('Error updating settings:', err);
       setError(err.message || 'Failed to update settings');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchSettings]);
 
   // Reorder rewards
   const reorderRewards = useCallback(async (startIndex, endIndex) => {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 export default function SpinSettingsConfiguration({ settings = {}, onUpdateSettings, loading }) {
   const [formData, setFormData] = useState({
@@ -50,6 +51,7 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
       newErrors.dateRange = 'Start date must be before end date';
     }
+    
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -95,11 +97,13 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
     setSaving(true);
     try {
       await onUpdateSettings(formData);
+      toast.success('Settings saved successfully');
       setSaveSuccess(true);
       setHasChanges(false);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
+      toast.error(error.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
@@ -164,7 +168,7 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                     type="radio"
                     name="spinMode"
                     value="ad-based"
-                    checked={formData.spinMode === 'ad-based'}
+                    checked={formData.spinMode === 'ad-based' || formData.spinMode === 'ad_based'}
                     onChange={(e) => handleInputChange('spinMode', e.target.value)}
                     className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
                   />
