@@ -4,83 +4,77 @@ import { useState, useEffect } from 'react';
 import FilterDropdown from '@/components/ui/FilterDropdown';
 import Pagination from '@/components/ui/Pagination';
 import { CheckIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+import SneakPeekModal from '../modals/SneakPeekModal';
 
-export default function RedemptionQueue({ onSneakPeek }) {
+export default function RedemptionQueue() {
   const [redemptions, setRedemptions] = useState([]);
   const [filters, setFilters] = useState({
-    status: '',
     verification: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState({});
+  const [loadingRedemptions, setLoadingRedemptions] = useState(true);
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [totalRedemptions, setTotalRedemptions] = useState(0);
+  const [showSneakPeek, setShowSneakPeek] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
-  // Mock data
+  // Fetch redemptions from API
   useEffect(() => {
-    const mockRedemptions = [
-      {
-        id: 'RED-001',
-        userId: 'USR-202589',
-        amount: '500$',
-        status: 'Pending',
-        verification: 'Face Verified',
-        offerCompletion: 'Spin Master – 12 min session',
-        createdAt: '12/06/2025 10:30 AM',
-        userProfile: {
-          name: 'John Doe',
-          email: 'john@example.com',
-          tier: 'Gold',
-          totalRedemptions: 5
+    const fetchRedemptions = async () => {
+      setLoadingRedemptions(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          'https://rewardsapi.hireagent.co/api/admin/transactions/redemptions/pending',
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          // Transform API data to component format
+          const transformedRedemptions = result.data.redemptions.map(r => ({
+            id: r._id,
+            userId: r.userId || r.user?._id || '-',
+            userName: r.userName || `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim() || '-',
+            userEmail: r.userEmail || r.user?.email || '-',
+            userMobile: r.userMobile || r.user?.mobile || '-',
+            amount: `${r.amount} ${r.balanceType || 'coins'}`,
+            status: r.status.charAt(0).toUpperCase() + r.status.slice(1),
+            verification: r.faceVerified ? 'Face Verified' : 'Face Not Verified',
+            faceVerified: r.faceVerified,
+            offerCompletion: r.offerCompletion?.title || r.metadata?.offerCompletion?.title || 'No offer data',
+            offerCompletedAt: r.offerCompletion?.completedAt || r.metadata?.offerCompletion?.completedAt || null,
+            createdAt: new Date(r.createdAt).toLocaleString('en-GB'),
+            location: r.userLocation ? `${r.userLocation.city || ''}, ${r.userLocation.country || ''}`.trim() : '-',
+            userProfile: {
+              name: r.userName || `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim() || '-',
+              email: r.userEmail || r.user?.email || '-',
+              mobile: r.userMobile || r.user?.mobile || '-',
+              location: r.userLocation
+            },
+            rawData: r
+          }));
+
+          setRedemptions(transformedRedemptions);
+          setTotalRedemptions(result.data.total || transformedRedemptions.length);
         }
-      },
-      {
-        id: 'RED-002',
-        userId: 'USR-202590',
-        amount: '200$',
-        status: 'Pending',
-        verification: 'Pending Verification',
-        offerCompletion: 'Survey Task – 8 min session',
-        createdAt: '12/06/2025 11:15 AM',
-        userProfile: {
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          tier: 'Platinum',
-          totalRedemptions: 2
-        }
-      },
-      {
-        id: 'RED-003',
-        userId: 'USR-202591',
-        amount: '1000$',
-        status: 'Approved',
-        verification: 'Face Verified',
-        offerCompletion: 'Gaming Challenge – 25 min session',
-        createdAt: '11/06/2025 09:45 AM',
-        userProfile: {
-          name: 'Mike Johnson',
-          email: 'mike@example.com',
-          tier: 'Platinum',
-          totalRedemptions: 12
-        }
-      },
-      {
-        id: 'RED-004',
-        userId: 'USR-202592',
-        amount: '300$',
-        status: 'Rejected',
-        verification: 'Face Not Verified',
-        offerCompletion: 'Quiz Challenge – 5 min session',
-        createdAt: '11/06/2025 02:20 PM',
-        userProfile: {
-          name: 'Sarah Wilson',
-          email: 'sarah@example.com',
-          tier: 'Bronze',
-          totalRedemptions: 1
-        }
+      } catch (error) {
+        console.error('Error fetching redemptions:', error);
+      } finally {
+        setLoadingRedemptions(false);
       }
-    ];
-    setRedemptions(mockRedemptions);
+    };
+
+    fetchRedemptions();
   }, []);
 
   const handleFilterChange = (filterId, value) => {
@@ -90,52 +84,95 @@ export default function RedemptionQueue({ onSneakPeek }) {
 
   const handleApprove = async (redemptionId) => {
     setLoading(prev => ({ ...prev, [redemptionId]: true }));
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setRedemptions(prev => 
-      prev.map(redemption => 
-        redemption.id === redemptionId 
-          ? { ...redemption, status: 'Approved' }
-          : redemption
-      )
-    );
-    
-    setLoading(prev => ({ ...prev, [redemptionId]: false }));
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `https://rewardsapi.hireagent.co/api/admin/transactions/redemptions/${redemptionId}/approve`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update local state to reflect approval
+        setRedemptions(prev =>
+          prev.filter(redemption => redemption.id !== redemptionId)
+        );
+        setTotalRedemptions(prev => Math.max(0, prev - 1));
+
+        // Show success message
+        toast.success('Redemption approved successfully!');
+      } else {
+        toast.error(result.message || 'Failed to approve redemption');
+      }
+    } catch (error) {
+      console.error('Error approving redemption:', error);
+      toast.error('Failed to approve redemption. Please try again.');
+    } finally {
+      setLoading(prev => ({ ...prev, [redemptionId]: false }));
+    }
   };
 
   const handleReject = async (redemptionId) => {
     if (!rejectReason.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
 
     setLoading(prev => ({ ...prev, [redemptionId]: true }));
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setRedemptions(prev => 
-      prev.map(redemption => 
-        redemption.id === redemptionId 
-          ? { ...redemption, status: 'Rejected', rejectReason }
-          : redemption
-      )
-    );
-    
-    setLoading(prev => ({ ...prev, [redemptionId]: false }));
-    setShowRejectModal(null);
-    setRejectReason('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `https://rewardsapi.hireagent.co/api/admin/transactions/redemptions/${redemptionId}/reject`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            reason: rejectReason
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove from list since it's no longer pending
+        setRedemptions(prev =>
+          prev.filter(redemption => redemption.id !== redemptionId)
+        );
+        setTotalRedemptions(prev => Math.max(0, prev - 1));
+
+        // Show success message
+        toast.success('Redemption rejected successfully!');
+
+        // Close modal and reset
+        setShowRejectModal(null);
+        setRejectReason('');
+      } else {
+        toast.error(result.message || 'Failed to reject redemption');
+      }
+    } catch (error) {
+      console.error('Error rejecting redemption:', error);
+      toast.error('Failed to reject redemption. Please try again.');
+    } finally {
+      setLoading(prev => ({ ...prev, [redemptionId]: false }));
+    }
   };
 
   const handleSneakPeek = (redemption) => {
-    onSneakPeek({
-      userId: redemption.userId,
-      profile: redemption.userProfile,
-      offerHistory: [redemption.offerCompletion],
-      verificationStatus: redemption.verification
-    });
+    setSelectedUserId(redemption.userId);
+    setShowSneakPeek(true);
   };
 
   const getStatusBadge = (status) => {
@@ -171,11 +208,10 @@ export default function RedemptionQueue({ onSneakPeek }) {
 
 
   const filteredRedemptions = redemptions.filter(redemption => {
-    const matchesStatus = !filters.status || redemption.status === filters.status;
-    const matchesVerification = !filters.verification || 
+    const matchesVerification = !filters.verification ||
       redemption.verification.includes(filters.verification);
-    
-    return matchesStatus && matchesVerification;
+
+    return matchesVerification;
   });
 
   const itemsPerPage = 10;
@@ -186,21 +222,19 @@ export default function RedemptionQueue({ onSneakPeek }) {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 items-center">
-        <FilterDropdown
-          filterId="status"
-          label="Status"
-          options={['Pending', 'Approved', 'Rejected']}
-          value={filters.status}
-          onChange={handleFilterChange}
-        />
-        <FilterDropdown
-          filterId="verification"
-          label="Verification"
-          options={['Face Verified', 'Pending']}
-          value={filters.verification}
-          onChange={handleFilterChange}
-        />
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex gap-3">
+          <FilterDropdown
+            filterId="verification"
+            label="Verification"
+            options={['Face Verified', 'Face Not Verified']}
+            value={filters.verification}
+            onChange={handleFilterChange}
+          />
+        </div>
+        <div className="text-sm text-gray-600">
+          {loadingRedemptions ? 'Loading...' : `${totalRedemptions} pending redemption${totalRedemptions !== 1 ? 's' : ''}`}
+        </div>
       </div>
 
       {/* Table */}
@@ -233,11 +267,27 @@ export default function RedemptionQueue({ onSneakPeek }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedRedemptions.map((redemption) => (
-                <tr key={redemption.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">{redemption.id}</span>
+              {loadingRedemptions ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-3"></div>
+                      <p className="text-gray-600">Loading redemption requests...</p>
+                    </div>
                   </td>
+                </tr>
+              ) : paginatedRedemptions.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center">
+                    <p className="text-gray-600">No pending redemptions found</p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedRedemptions.map((redemption) => (
+                  <tr key={redemption.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-gray-900">{redemption.id}</span>
+                    </td>
                   <td className="px-6 py-4">
                     <button
                       onClick={() => window.open(`/users/${redemption.userId}`, '_blank')}
@@ -301,7 +351,8 @@ export default function RedemptionQueue({ onSneakPeek }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -362,6 +413,16 @@ export default function RedemptionQueue({ onSneakPeek }) {
       <div className="text-sm text-gray-600">
         Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRedemptions.length)} of {filteredRedemptions.length} redemption requests
       </div>
+
+      {/* Sneak Peek Modal */}
+      <SneakPeekModal
+        userId={selectedUserId}
+        isOpen={showSneakPeek}
+        onClose={() => {
+          setShowSneakPeek(false);
+          setSelectedUserId(null);
+        }}
+      />
     </div>
   );
 }

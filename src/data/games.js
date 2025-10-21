@@ -31,40 +31,36 @@ export const gamesAPI = {
    */
   async createGame(gameData) {
     try {
-      // Transform frontend data to API format
-      const apiPayload = {
-        title: gameData.title,
-        description: gameData.description || `Play ${gameData.title} to earn rewards`,
-        sdkProvider: gameData.sdkProvider || gameData.sdk || 'besitos',
-        countries: gameData.countries || [],
-        xptrRules: gameData.xptrRules || '',
-        tags: gameData.tags || [],
-        isAdSupported: gameData.adSupported || gameData.isAdSupported || false,
-        metadata: {
-          genre: gameData.metadata?.genre || 'puzzle',
-          difficulty: gameData.metadata?.difficulty || 'medium',
-          estimatedPlayTime: gameData.metadata?.estimatedPlayTime || 10,
-          minAge: gameData.metadata?.minAge || 13,
-          imageUrl: gameData.metadata?.imageUrl || '',
-          iconUrl: gameData.metadata?.iconUrl || '',
-          packageName: gameData.metadata?.packageName || '',
-          version: gameData.metadata?.version || '1.0.0',
-          size: gameData.metadata?.size || '',
-          rating: gameData.metadata?.rating || 3,
-          downloadCount: gameData.metadata?.downloadCount || 0
-        },
-        tierRestrictions: {
-          minTier: gameData.tierRestrictions?.minTier || 'free',
-          maxTier: gameData.tierRestrictions?.maxTier || 'platinum'
-        },
-        displayRules: {
-          maxGamesToShow: gameData.displayRules?.maxGamesToShow || 10,
-          priority: gameData.displayRules?.priority || 5,
-          isFeatured: gameData.displayRules?.isFeatured || false
-        }
-      };
+      // Create FormData for file upload
+      const formData = new FormData();
 
-      const response = await apiClient.post('/api/admin/game-offers/games', apiPayload);
+      // Add all fields to FormData
+      Object.keys(gameData).forEach(key => {
+        const value = gameData[key];
+
+        // Handle file uploads
+        if (key === 'gameThumbnail' && value instanceof File) {
+          formData.append(key, value);
+        }
+        // Handle arrays - stringify them
+        else if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        }
+        // Handle null/undefined
+        else if (value === null || value === undefined) {
+          // Skip null/undefined values
+        }
+        // Handle other values
+        else {
+          formData.append(key, value);
+        }
+      });
+
+      const response = await apiClient.post('/api/admin/game-offers/games', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
       // Transform response back to frontend format
       const game = response.data.data;
@@ -108,32 +104,36 @@ export const gamesAPI = {
    */
   async updateGame(gameId, gameData) {
     try {
-      // Transform frontend data to API format (only include updatable fields)
-      const apiPayload = {};
+      // Create FormData for file upload (same as create)
+      const formData = new FormData();
 
-      // Only include fields that are provided
-      if (gameData.title) apiPayload.title = gameData.title;
-      if (gameData.description !== undefined) apiPayload.description = gameData.description;
-      if (gameData.active !== undefined) apiPayload.isActive = gameData.active;
-      if (gameData.activeVisible !== undefined) apiPayload.isActive = gameData.activeVisible;
-      if (gameData.tags) apiPayload.tags = gameData.tags;
+      // Add all fields to FormData
+      Object.keys(gameData).forEach(key => {
+        const value = gameData[key];
 
-      // Metadata - only include if provided
-      if (gameData.metadata) {
-        apiPayload.metadata = {};
-        if (gameData.metadata.rating !== undefined) apiPayload.metadata.rating = gameData.metadata.rating;
-        if (gameData.metadata.downloadCount !== undefined) apiPayload.metadata.downloadCount = gameData.metadata.downloadCount;
-      }
+        // Handle file uploads
+        if (key === 'gameThumbnail' && value instanceof File) {
+          formData.append(key, value);
+        }
+        // Handle arrays - stringify them
+        else if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        }
+        // Handle null/undefined
+        else if (value === null || value === undefined) {
+          // Skip null/undefined values
+        }
+        // Handle other values
+        else {
+          formData.append(key, value);
+        }
+      });
 
-      // Display rules - only include if provided
-      if (gameData.displayRules) {
-        apiPayload.displayRules = {};
-        if (gameData.displayRules.maxGamesToShow !== undefined) apiPayload.displayRules.maxGamesToShow = gameData.displayRules.maxGamesToShow;
-        if (gameData.displayRules.priority !== undefined) apiPayload.displayRules.priority = gameData.displayRules.priority;
-        if (gameData.displayRules.isFeatured !== undefined) apiPayload.displayRules.isFeatured = gameData.displayRules.isFeatured;
-      }
-
-      const response = await apiClient.put(`/api/admin/game-offers/games/${gameId}`, apiPayload);
+      const response = await apiClient.put(`/api/admin/game-offers/games/${gameId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
       // Transform response back to frontend format
       const game = response.data.data;

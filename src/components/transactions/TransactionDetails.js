@@ -13,66 +13,97 @@ export default function TransactionDetails({ transactionId }) {
   const decodedTransactionId = decodeURIComponent(transactionId);
 
   useEffect(() => {
-    // Mock API call to fetch transaction details
+    // Fetch transaction details from API
     const fetchTransactionDetails = async () => {
       setLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock transaction data (in real app, this would come from API)
-      const mockTransaction = {
-        id: decodedTransactionId,
-        userId: 'USR-202589',
-        userName: 'John Doe',
-        type: 'Reward',
-        amount: '20$',
-        description: 'Spin Master Gaming Challenge Completion Reward',
-        status: 'Completed',
-        approval: 'Yes',
-        createdOn: '12/06/2025 10:30 AM',
-        approvedOn: '12/06/2025 11:15 AM',
-        approvedBy: 'ADM-21',
-        adminName: 'Sarah Manager',
-        paymentMethod: 'Paytm',
-        referenceNumber: 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-        ipAddress: '192.168.1.100',
-        deviceInfo: 'Android 12, Chrome Mobile 91.0',
-        location: 'Mumbai, India',
-        category: 'Gaming Reward',
-        source: 'Spin Master App',
-        notes: 'User completed 12-minute gaming session successfully',
-        timeline: [
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          `https://rewardsapi.hireagent.co/api/admin/transactions?search=${encodeURIComponent(decodedTransactionId)}`,
           {
-            action: 'Transaction Initiated',
-            timestamp: '12/06/2025 10:30 AM',
-            description: 'User completed gaming challenge'
-          },
-          {
-            action: 'Verification Completed',
-            timestamp: '12/06/2025 10:45 AM',
-            description: 'Face verification passed'
-          },
-          {
-            action: 'Admin Review',
-            timestamp: '12/06/2025 11:10 AM',
-            description: 'Reviewed by Sarah Manager (ADM-21)'
-          },
-          {
-            action: 'Transaction Approved',
-            timestamp: '12/06/2025 11:15 AM',
-            description: 'Approved and funds credited'
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
           }
-        ]
-      };
-      
-      setTransaction(mockTransaction);
-      setLoading(false);
+        );
+
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.transactions.length > 0) {
+          const t = result.data.transactions[0]; // Get first transaction from search results
+
+          // Transform API data to component format
+          const transformedTransaction = {
+            id: t.transactionId || t.referenceId || t._id,
+            userId: t.userId || t.user?._id || '-',
+            userName: t.userName || `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.trim() || '-',
+            userEmail: t.userEmail || t.user?.email || '-',
+            userMobile: t.user?.mobile || '-',
+            type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
+            amount: `${t.amount} ${t.balanceType || 'coins'}`,
+            description: t.description || '-',
+            status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
+            approval: t.isApproved ? 'Yes' : 'No',
+            createdOn: new Date(t.createdAt).toLocaleString('en-GB'),
+            approvedOn: t.approval?.status === 'approved' && t.updatedAt ? new Date(t.updatedAt).toLocaleString('en-GB') : '-',
+            approvedBy: t.approval?.approvedBy || '-',
+            adminName: t.approval?.approverName || '-',
+            paymentMethod: t.paymentProvider || 'Internal',
+            referenceNumber: t.referenceId || t.transactionId || t._id,
+            category: t.metadata?.category || 'General',
+            source: t.metadata?.source || 'System',
+            notes: t.metadata?.notes || '-',
+
+            // Wallet info
+            walletBalance: t.user?.wallet?.balance || 0,
+            walletCurrency: t.user?.wallet?.currency || 'coins',
+
+            // XP info
+            xpCurrent: t.user?.xp?.current || 0,
+            xpTier: t.user?.xp?.tier || 0,
+            xpStreak: t.user?.xp?.streak || 0,
+            xpReward: t.metadata?.xp || 0,
+
+            // Additional metadata
+            metadata: t.metadata || {},
+
+            // Timeline based on available data
+            timeline: [
+              {
+                action: 'Transaction Initiated',
+                timestamp: new Date(t.createdAt).toLocaleString('en-GB'),
+                description: `${t.type.charAt(0).toUpperCase() + t.type.slice(1)} transaction created`
+              },
+              ...(t.updatedAt && t.updatedAt !== t.createdAt ? [{
+                action: 'Transaction Updated',
+                timestamp: new Date(t.updatedAt).toLocaleString('en-GB'),
+                description: `Status: ${t.status}`
+              }] : []),
+              ...(t.approval?.status === 'approved' ? [{
+                action: 'Transaction Approved',
+                timestamp: new Date(t.updatedAt).toLocaleString('en-GB'),
+                description: t.approval.approverName ? `Approved by ${t.approval.approverName}` : 'Approved'
+              }] : [])
+            ]
+          };
+
+          setTransaction(transformedTransaction);
+        } else {
+          setTransaction(null);
+        }
+      } catch (error) {
+        console.error('Error fetching transaction details:', error);
+        setTransaction(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     if (transactionId) {
       fetchTransactionDetails();
     }
-  }, [transactionId]);
+  }, [transactionId, decodedTransactionId]);
 
   if (loading) {
     return (
@@ -251,6 +282,40 @@ export default function TransactionDetails({ transactionId }) {
                   <p className="text-sm text-gray-500">{transaction.userId}</p>
                 </div>
               </div>
+
+              <div className="space-y-2 mb-4">
+                {transaction.userEmail && transaction.userEmail !== '-' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500">Email</label>
+                    <p className="text-sm text-gray-900">{transaction.userEmail}</p>
+                  </div>
+                )}
+                {transaction.userMobile && transaction.userMobile !== '-' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500">Mobile</label>
+                    <p className="text-sm text-gray-900">{transaction.userMobile}</p>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500">Wallet Balance</label>
+                  <p className="text-sm font-semibold text-emerald-600">
+                    {transaction.walletBalance} {transaction.walletCurrency}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500">XP Level</label>
+                  <p className="text-sm text-gray-900">
+                    {transaction.xpCurrent} XP (Tier {transaction.xpTier})
+                  </p>
+                </div>
+                {transaction.xpReward > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500">XP Reward</label>
+                    <p className="text-sm text-emerald-600">+{transaction.xpReward} XP</p>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => window.open(`/users/${transaction.userId}`, '_blank')}
                 className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
@@ -260,7 +325,7 @@ export default function TransactionDetails({ transactionId }) {
             </div>
 
             {/* Admin Info */}
-            {transaction.adminName && (
+            {transaction.adminName && transaction.adminName !== '-' && (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Admin Information</h2>
                 <div className="space-y-2">
@@ -276,24 +341,24 @@ export default function TransactionDetails({ transactionId }) {
               </div>
             )}
 
-            {/* Technical Info */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Technical Information</h2>
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">IP Address</label>
-                  <p className="text-sm font-mono text-gray-900">{transaction.ipAddress}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Device Info</label>
-                  <p className="text-sm text-gray-900">{transaction.deviceInfo}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Location</label>
-                  <p className="text-sm text-gray-900">{transaction.location}</p>
+            {/* Additional Metadata */}
+            {transaction.metadata && Object.keys(transaction.metadata).length > 0 && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Details</h2>
+                <div className="space-y-2">
+                  {Object.entries(transaction.metadata).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="block text-xs font-medium text-gray-500 capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

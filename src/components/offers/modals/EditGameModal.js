@@ -28,7 +28,11 @@ const MARKETING_CHANNELS = [
 
 export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const { sdkProviders, tierAccess, countries, loading: masterDataLoading } = useMasterData();
+  const [platform, setPlatform] = useState('android');
+  const [gamesList, setGamesList] = useState([]);
+  const [loadingGames, setLoadingGames] = useState(false);
   const [formData, setFormData] = useState({
+    gameId: '',
     title: '',
     description: '',
     sdk: '',
@@ -39,6 +43,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     activeVisible: true,
     fallbackGame: false,
     thumbnail: null,
+    thumbnailWidth: 300,
+    thumbnailHeight: 300,
+    thumbnailAltText: '',
     xpTier: '',
     tier: '',
     countries: [],
@@ -47,7 +54,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       genre: 'puzzle',
       difficulty: 'medium',
       rating: 3,
-      downloadCount: 0
+      downloadCount: 0,
+      estimatedPlayTime: 15
     },
     displayRules: {
       maxGamesToShow: 10,
@@ -67,6 +75,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   useEffect(() => {
     if (game) {
       setFormData({
+        gameId: game.gameId || game.id || '',
         title: game.title || '',
         description: game.description || '',
         sdk: game.sdk || '',
@@ -77,6 +86,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         activeVisible: game.active !== undefined ? game.active : (game.activeVisible ?? true),
         fallbackGame: game.fallbackGame ?? false,
         thumbnail: game.thumbnail || null,
+        thumbnailWidth: game.thumbnailWidth || 300,
+        thumbnailHeight: game.thumbnailHeight || 300,
+        thumbnailAltText: game.thumbnailAltText || '',
         xpTier: game.xpTier || '',
         tier: game.tier || '',
         countries: game.countries || [],
@@ -85,7 +97,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           genre: game.metadata?.genre || 'puzzle',
           difficulty: game.metadata?.difficulty || 'medium',
           rating: game.metadata?.rating || 3,
-          downloadCount: game.metadata?.downloadCount || 0
+          downloadCount: game.metadata?.downloadCount || 0,
+          estimatedPlayTime: game.metadata?.estimatedPlayTime || 15
         },
         displayRules: {
           maxGamesToShow: game.displayRules?.maxGamesToShow || 10,
@@ -103,6 +116,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       });
     } else {
       setFormData({
+        gameId: '',
         title: '',
         description: '',
         sdk: '',
@@ -113,6 +127,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         activeVisible: true,
         fallbackGame: false,
         thumbnail: null,
+        thumbnailWidth: 300,
+        thumbnailHeight: 300,
+        thumbnailAltText: '',
         xpTier: '',
         tier: '',
         countries: [],
@@ -121,7 +138,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           genre: 'puzzle',
           difficulty: 'medium',
           rating: 3,
-          downloadCount: 0
+          downloadCount: 0,
+          estimatedPlayTime: 15
         },
         displayRules: {
           maxGamesToShow: 10,
@@ -139,6 +157,45 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       });
     }
   }, [game, isOpen]);
+
+  // Fetch games by SDK name
+  useEffect(() => {
+    const fetchGamesBySDK = async () => {
+      if (!formData.sdk || !platform) {
+        setGamesList([]);
+        return;
+      }
+
+      setLoadingGames(true);
+      try {
+        const token = localStorage.getItem('token');
+        const sdkName = formData.sdk.toLowerCase();
+        const response = await fetch(
+          `https://rewardsapi.hireagent.co/api/admin/game-offers/games/by-sdk/${sdkName}?device_platform=${platform}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setGamesList(result.data);
+        } else {
+          setGamesList([]);
+        }
+      } catch (error) {
+        console.error('Error fetching games:', error);
+        setGamesList([]);
+      } finally {
+        setLoadingGames(false);
+      }
+    };
+
+    fetchGamesBySDK();
+  }, [formData.sdk, platform]);
 
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {
@@ -195,12 +252,53 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     }
   };
 
+  const handleGameSelect = (gameId) => {
+    const selectedGame = gamesList.find(g => g.id === gameId);
+    if (selectedGame) {
+      setFormData(prev => ({
+        ...prev,
+        gameId: selectedGame.id,
+        title: selectedGame.title,
+        description: selectedGame.description || prev.description,
+        thumbnailAltText: `${selectedGame.title} game thumbnail`
+      }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({
-      id: game?.id || `GAME${Date.now()}`,
-      ...formData
-    });
+
+    // Map form data to API format
+    const apiPayload = {
+      gameId: formData.gameId,
+      title: formData.title,
+      description: formData.description,
+      sdkProvider: formData.sdk,
+      xptrRules: formData.xptrRules,
+      rewardXP: parseInt(formData.rewardXP) || 0,
+      rewardCoins: parseInt(formData.rewardCoins) || 0,
+      defaultTaskCount: parseInt(formData.taskCount) || 0,
+      xpTier: formData.xpTier,
+      tier: formData.tier,
+      genre: formData.metadata.genre,
+      difficulty: formData.metadata.difficulty,
+      rating: parseFloat(formData.metadata.rating) || 3,
+      estimatedPlayTime: parseInt(formData.metadata.estimatedPlayTime) || 15,
+      countries: formData.countries,
+      ageGroups: formData.segments.ageGroups,
+      gender: formData.segments.gender || 'all',
+      marketingChannel: formData.segments.marketingChannel,
+      campaignName: formData.segments.campaignName,
+      isActive: formData.activeVisible,
+      isDefaultFallback: formData.fallbackGame,
+      isAdSupported: true,
+      gameThumbnail: formData.thumbnail,
+      thumbnailWidth: parseInt(formData.thumbnailWidth) || 300,
+      thumbnailHeight: parseInt(formData.thumbnailHeight) || 300,
+      thumbnailAltText: formData.thumbnailAltText || `${formData.title} game thumbnail`
+    };
+
+    onSave(apiPayload);
     onClose();
   };
 
@@ -230,11 +328,36 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Device Platform
+                  </label>
+                  <select
+                    value={platform}
+                    onChange={(e) => {
+                      setPlatform(e.target.value);
+                      // Reset SDK and game selection when platform changes
+                      handleInputChange('sdk', '');
+                      handleInputChange('gameId', '');
+                      handleInputChange('title', '');
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="android">Android</option>
+                    <option value="ios">iOS</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Select SDK Game
                   </label>
                   <select
                     value={formData.sdk}
-                    onChange={(e) => handleInputChange('sdk', e.target.value)}
+                    onChange={(e) => {
+                      handleInputChange('sdk', e.target.value);
+                      // Reset game selection when SDK changes
+                      handleInputChange('gameId', '');
+                      handleInputChange('title', '');
+                    }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
                     disabled={masterDataLoading}
                   >
@@ -249,13 +372,25 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Game Title
                   </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="Enter game title"
+                  <select
+                    value={formData.gameId}
+                    onChange={(e) => handleGameSelect(e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  />
+                    disabled={!formData.sdk || loadingGames}
+                  >
+                    <option value="">
+                      {!formData.sdk
+                        ? 'Select SDK first...'
+                        : loadingGames
+                        ? 'Loading games...'
+                        : 'Choose game...'}
+                    </option>
+                    {gamesList.map(game => (
+                      <option key={game.id} value={game.id}>
+                        {game.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="md:col-span-2">
@@ -576,6 +711,48 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     </p>
                   </>
                 )}
+              </div>
+
+              {/* Thumbnail Metadata */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Thumbnail Width (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.thumbnailWidth}
+                    onChange={(e) => handleInputChange('thumbnailWidth', parseInt(e.target.value) || 300)}
+                    placeholder="300"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Thumbnail Height (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.thumbnailHeight}
+                    onChange={(e) => handleInputChange('thumbnailHeight', parseInt(e.target.value) || 300)}
+                    placeholder="300"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Alt Text
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.thumbnailAltText}
+                    onChange={(e) => handleInputChange('thumbnailAltText', e.target.value)}
+                    placeholder="Game thumbnail description"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
               </div>
             </div>
 

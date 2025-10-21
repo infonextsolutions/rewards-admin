@@ -5,6 +5,7 @@ import FilterDropdown from '@/components/ui/FilterDropdown';
 import Pagination from '@/components/ui/Pagination';
 import { CheckIcon, DocumentArrowDownIcon, XMarkIcon, ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { getDateRangeFilter } from '@/utils/dateFilters';
+import toast from 'react-hot-toast';
 
 export default function TransactionLog({ onSneakPeek }) {
   const [filters, setFilters] = useState({
@@ -16,70 +17,125 @@ export default function TransactionLog({ onSneakPeek }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [transactions, setTransactions] = useState([]);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
+  });
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [approvalAction, setApprovalAction] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [transactionTypes, setTransactionTypes] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-  // Mock data
+  // Fetch filter options from API
   useEffect(() => {
-    const today = new Date();
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    const twoDaysAgo = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
-    const fiveDaysAgo = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
-    
-    const formatDate = (date) => {
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
+    const fetchFilterOptions = async () => {
+      setLoadingOptions(true);
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+
+        // Fetch statuses
+        const statusResponse = await fetch(
+          'https://rewardsapi.hireagent.co/api/admin/transactions/meta/statuses',
+          { headers }
+        );
+        const statusData = await statusResponse.json();
+        if (statusData.success) {
+          // Capitalize first letter for display
+          setStatusOptions(statusData.data.map(s => s.charAt(0).toUpperCase() + s.slice(1)));
+        }
+
+        // Fetch transaction types
+        const typesResponse = await fetch(
+          'https://rewardsapi.hireagent.co/api/admin/transactions/meta/types',
+          { headers }
+        );
+        const typesData = await typesResponse.json();
+        if (typesData.success) {
+          // Capitalize first letter for display
+          setTransactionTypes(typesData.data.map(t => t.charAt(0).toUpperCase() + t.slice(1)));
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+        // Fallback to default options
+        setStatusOptions(['Completed', 'Pending', 'Failed']);
+        setTransactionTypes(['Credit', 'Debit', 'Reward', 'Xp', 'Redemption', 'Spin', 'Adjustment', 'Refund', 'Bonus', 'Penalty']);
+      } finally {
+        setLoadingOptions(false);
+      }
     };
 
-    const mockTransactions = [
-      {
-        id: '#ID09012',
-        userId: 'USR-202589',
-        type: 'Reward',
-        amount: '20$',
-        createdOn: formatDate(today),
-        approvedOn: formatDate(today),
-        status: 'Completed',
-        approval: 'Yes'
-      },
-      {
-        id: '#ID09013',
-        userId: 'USR-202590',
-        type: 'XP',
-        amount: '150 XP',
-        createdOn: formatDate(yesterday),
-        approvedOn: formatDate(yesterday),
-        status: 'Pending',
-        approval: 'No'
-      },
-      {
-        id: '#ID09014',
-        userId: 'USR-202591',
-        type: 'Redemption',
-        amount: '500$',
-        createdOn: formatDate(twoDaysAgo),
-        approvedOn: '-',
-        status: 'Failed',
-        approval: 'No'
-      },
-      {
-        id: '#ID09015',
-        userId: 'USR-202592',
-        type: 'Spin',
-        amount: '10$',
-        createdOn: formatDate(fiveDaysAgo),
-        approvedOn: formatDate(fiveDaysAgo),
-        status: 'Completed',
-        approval: 'Yes'
-      }
-    ];
-    setTransactions(mockTransactions);
+    fetchFilterOptions();
   }, []);
+
+  // Fetch transactions from API
+  const fetchTransactions = async (page = 1) => {
+    setLoadingTransactions(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        search: searchTerm || '',
+        type: filters.type ? filters.type.toLowerCase() : '',
+        status: filters.status ? filters.status.toLowerCase() : ''
+      });
+
+      const response = await fetch(
+        `https://rewardsapi.hireagent.co/api/admin/transactions?${params}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        // Transform API data to component format
+        const transformedTransactions = result.data.transactions.map(t => ({
+          id: t.transactionId || t.referenceId || t._id,
+          userId: t.userId || t.user?._id || '-',
+          userName: t.userName || `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.trim() || '-',
+          userEmail: t.userEmail || t.user?.email || '-',
+          type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
+          amount: `${t.amount} ${t.balanceType || 'coins'}`,
+          description: t.description || '-',
+          createdOn: new Date(t.createdAt).toLocaleDateString('en-GB'),
+          approvedOn: t.approval?.status === 'approved' && t.updatedAt ? new Date(t.updatedAt).toLocaleDateString('en-GB') : '-',
+          status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
+          approval: t.isApproved ? 'Yes' : 'No',
+          approvalRequired: t.approval?.required || false,
+          approvalStatus: t.approvalStatus || t.approval?.status || 'not_required',
+          rawData: t // Store raw data for reference
+        }));
+
+        setTransactions(transformedTransactions);
+        setPagination(result.data.pagination);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  // Fetch transactions on mount and when filters change
+  useEffect(() => {
+    fetchTransactions(currentPage);
+  }, [currentPage, searchTerm, filters.type, filters.status]);
 
   const handleFilterChange = (filterId, value) => {
     setFilters(prev => ({ ...prev, [filterId]: value }));
@@ -103,14 +159,14 @@ export default function TransactionLog({ onSneakPeek }) {
   };
 
   const handleExport = () => {
-    // Export functionality
+    // Export functionality - exports current page transactions
     const csvContent = [
       ['Transaction ID', 'User ID', 'Type', 'Amount', 'Created On', 'Approved On', 'Status', 'Approval'],
-      ...filteredTransactions.map(t => [
+      ...displayTransactions.map(t => [
         t.id, t.userId, t.type, t.amount, t.createdOn, t.approvedOn, t.status, t.approval
       ])
     ].map(row => row.join(',')).join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -134,20 +190,20 @@ export default function TransactionLog({ onSneakPeek }) {
     // Simulate processing delay
     setTimeout(() => {
       // Update local state
-      setTransactions(prev => prev.map(t => 
-        t.id === selectedTransaction.id 
-          ? { 
-              ...t, 
+      setTransactions(prev => prev.map(t =>
+        t.id === selectedTransaction.id
+          ? {
+              ...t,
               approval: approvalAction === 'approve' ? 'Yes' : 'No',
               approvedOn: approvalAction === 'approve' ? new Date().toLocaleDateString('en-GB') : '-',
               status: approvalAction === 'approve' ? 'Completed' : 'Failed'
             }
           : t
       ));
-      
+
       // Show success feedback
-      alert(`Transaction ${approvalAction === 'approve' ? 'approved' : 'rejected'} successfully!`);
-      
+      toast.success(`Transaction ${approvalAction === 'approve' ? 'approved' : 'rejected'} successfully!`);
+
       setIsLoading(false);
       setShowApprovalModal(false);
       setSelectedTransaction(null);
@@ -161,82 +217,10 @@ export default function TransactionLog({ onSneakPeek }) {
     setApprovalAction('');
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    
-    // Simulate refresh delay
-    setTimeout(() => {
-      const today = new Date();
-      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-      const twoDaysAgo = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
-      const fiveDaysAgo = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
-      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      
-      const formatDate = (date) => {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-      };
-
-      // Reset to mock data (simulate fresh data from server)
-      const mockTransactions = [
-        {
-          id: '#ID09012',
-          userId: 'USR-202589',
-          type: 'Reward',
-          amount: '20$',
-          createdOn: formatDate(today),
-          approvedOn: formatDate(today),
-          status: 'Completed',
-          approval: 'Yes'
-        },
-        {
-          id: '#ID09013',
-          userId: 'USR-202590',
-          type: 'XP',
-          amount: '150 XP',
-          createdOn: formatDate(yesterday),
-          approvedOn: formatDate(yesterday),
-          status: 'Pending',
-          approval: 'No'
-        },
-        {
-          id: '#ID09014',
-          userId: 'USR-202591',
-          type: 'Redemption',
-          amount: '500$',
-          createdOn: formatDate(twoDaysAgo),
-          approvedOn: '-',
-          status: 'Failed',
-          approval: 'No'
-        },
-        {
-          id: '#ID09015',
-          userId: 'USR-202592',
-          type: 'Spin',
-          amount: '10$',
-          createdOn: formatDate(fiveDaysAgo),
-          approvedOn: formatDate(fiveDaysAgo),
-          status: 'Completed',
-          approval: 'Yes'
-        },
-        {
-          id: '#ID09016',
-          userId: 'USR-202593',
-          type: 'XP',
-          amount: '75 XP',
-          createdOn: formatDate(sevenDaysAgo),
-          approvedOn: '-',
-          status: 'Pending',
-          approval: 'No'
-        }
-      ];
-      
-      setTransactions(mockTransactions);
-      setCurrentPage(1);
-      setIsRefreshing(false);
-    }, 1500);
+    await fetchTransactions(currentPage);
+    setIsRefreshing(false);
   };
 
   const getStatusBadge = (status) => {
@@ -254,23 +238,9 @@ export default function TransactionLog({ onSneakPeek }) {
   };
 
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = !searchTerm || 
-      transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.userId.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = !filters.type || transaction.type === filters.type;
-    const matchesStatus = !filters.status || transaction.status === filters.status;
-    const matchesApproval = !filters.approval || transaction.approval === filters.approval;
-    const matchesDateRange = getDateRangeFilter(filters.dateRange, 'createdOn')(transaction);
-    
-    return matchesSearch && matchesType && matchesStatus && matchesApproval && matchesDateRange;
-  });
-
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+  // No client-side filtering needed - API handles it
+  // Use transactions directly as they're already filtered by the API
+  const displayTransactions = transactions;
 
   return (
     <div className="space-y-6">
@@ -287,16 +257,18 @@ export default function TransactionLog({ onSneakPeek }) {
           <FilterDropdown
             filterId="type"
             label="Type"
-            options={['XP', 'Reward', 'Redemption', 'Spin']}
+            options={transactionTypes}
             value={filters.type}
             onChange={handleFilterChange}
+            disabled={loadingOptions}
           />
           <FilterDropdown
             filterId="status"
             label="Status"
-            options={['Completed', 'Pending', 'Failed']}
+            options={statusOptions}
             value={filters.status}
             onChange={handleFilterChange}
+            disabled={loadingOptions}
           />
           <FilterDropdown
             filterId="approval"
@@ -384,8 +356,24 @@ export default function TransactionLog({ onSneakPeek }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
+              {loadingTransactions ? (
+                <tr>
+                  <td colSpan="8" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-3"></div>
+                      <p className="text-gray-600">Loading transactions...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : displayTransactions.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="px-6 py-12 text-center">
+                    <p className="text-gray-600">No transactions found</p>
+                  </td>
+                </tr>
+              ) : (
+                displayTransactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <button
                       onClick={() => window.open(`/transactions/${encodeURIComponent(transaction.id)}`, '_blank')}
@@ -450,17 +438,18 @@ export default function TransactionLog({ onSneakPeek }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredTransactions.length}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
             onPageChange={setCurrentPage}
           />
         )}
@@ -468,7 +457,11 @@ export default function TransactionLog({ onSneakPeek }) {
 
       {/* Results Summary */}
       <div className="text-sm text-gray-600">
-        Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
+        {loadingTransactions ? (
+          'Loading transactions...'
+        ) : (
+          `Showing ${((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}-${Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of ${pagination.totalItems} transactions`
+        )}
       </div>
 
       {/* Approval Confirmation Modal */}
