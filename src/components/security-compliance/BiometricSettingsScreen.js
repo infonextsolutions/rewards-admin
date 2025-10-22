@@ -1,24 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
-const VERIFICATION_METHODS = ['Native', 'SDK'];
-const RETRY_TYPES = ['OTP', 'PIN'];
+const VERIFICATION_METHODS = ["Native", "SDK"];
+const RETRY_TYPES = ["OTP", "PIN"];
 // EXCLUDED: Biometric subtype selection (Face/Iris) not supported per requirements - default biometric is provided
 // const VERIFICATION_TYPES = ['Face', 'Iris', 'Fingerprint'];
-const USER_ROLES = ['Player', 'VIP', 'Guest', 'Premium'];
-const SDK_PROVIDERS = ['FaceIO', 'RecognitionIO', 'BiometricAuth', 'SecureVision'];
+const USER_ROLES = ["Player", "VIP", "Guest", "Premium"];
+const SDK_PROVIDERS = [
+  "FaceIO",
+  "RecognitionIO",
+  "BiometricAuth",
+  "SecureVision",
+];
 
-export default function BiometricSettingsScreen({ onSave }) {
+export default function BiometricSettingsScreen({ onSave, onTestConnection }) {
   const [formData, setFormData] = useState({
-    verificationMethod: 'Native',
-    sdkProvider: 'FaceIO',
-    providerApiKey: '',
-    retryType: 'OTP',
+    verificationMethod: "Native",
+    sdkProvider: "FaceIO",
+    providerApiKey: "",
+    retryType: "OTP",
     retryLimit: 3,
     lockDuration: 10,
     // verificationType: 'Face', // EXCLUDED: Biometric subtype selection not supported
-    userRole: 'Player',
+    userRole: "Player",
     // dataCap: 150 // EXCLUDED: Role-based data cap enforcement not supported
   });
 
@@ -30,20 +35,23 @@ export default function BiometricSettingsScreen({ onSave }) {
   const validateForm = () => {
     const newErrors = {};
 
-    if (formData.verificationMethod === 'SDK' && !formData.providerApiKey.trim()) {
-      newErrors.providerApiKey = 'API Key is required when SDK is selected';
+    if (
+      formData.verificationMethod === "SDK" &&
+      !formData.providerApiKey.trim()
+    ) {
+      newErrors.providerApiKey = "API Key is required when SDK is selected";
     }
 
-    if (formData.verificationMethod === 'SDK' && !formData.sdkProvider) {
-      newErrors.sdkProvider = 'SDK Provider is required';
+    if (formData.verificationMethod === "SDK" && !formData.sdkProvider) {
+      newErrors.sdkProvider = "SDK Provider is required";
     }
 
     if (formData.retryLimit < 1 || formData.retryLimit > 10) {
-      newErrors.retryLimit = 'Retry limit must be between 1 and 10';
+      newErrors.retryLimit = "Retry limit must be between 1 and 10";
     }
 
     if (formData.lockDuration < 1) {
-      newErrors.lockDuration = 'Lock duration must be at least 1 minute';
+      newErrors.lockDuration = "Lock duration must be at least 1 minute";
     }
 
     // EXCLUDED: Role-based data cap enforcement not supported
@@ -57,7 +65,7 @@ export default function BiometricSettingsScreen({ onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -67,74 +75,74 @@ export default function BiometricSettingsScreen({ onSave }) {
       await onSave?.(formData);
       // Success notification would be handled by parent
     } catch (error) {
-      console.error('Failed to save biometric settings:', error);
+      console.error("Failed to save biometric settings:", error);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
-    
+
     // Clear connection status when API key or provider changes
-    if (field === 'providerApiKey' || field === 'sdkProvider') {
+    if (field === "providerApiKey" || field === "sdkProvider") {
       setConnectionStatus(null);
     }
   };
 
   const handleTestConnection = async () => {
     if (!formData.providerApiKey.trim() || !formData.sdkProvider) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        providerApiKey: !formData.providerApiKey.trim() ? 'API Key is required for testing' : undefined,
-        sdkProvider: !formData.sdkProvider ? 'SDK Provider is required for testing' : undefined
+        providerApiKey: !formData.providerApiKey.trim()
+          ? "API Key is required for testing"
+          : undefined,
+        sdkProvider: !formData.sdkProvider
+          ? "SDK Provider is required for testing"
+          : undefined,
       }));
       return;
     }
 
     setIsTestingConnection(true);
     setConnectionStatus(null);
-    
+
     try {
-      // Simulate API call for testing SDK connection
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock API endpoint: POST /admin/security/test-sdk
-      console.log('Testing SDK connection:', {
+      // Use real API call for testing SDK connection
+      const result = await onTestConnection?.({
         provider: formData.sdkProvider,
-        apiKey: formData.providerApiKey
+        apiKey: formData.providerApiKey,
+        verificationMethod: formData.verificationMethod,
       });
-      
-      // Mock successful response (90% success rate)
-      const isSuccess = Math.random() > 0.1;
-      
-      if (isSuccess) {
+
+      if (result?.success) {
         setConnectionStatus({
-          type: 'success',
-          message: `Successfully connected to ${formData.sdkProvider} SDK`
+          type: "success",
+          message: `Successfully connected to ${formData.sdkProvider} SDK`,
         });
       } else {
         setConnectionStatus({
-          type: 'error',
-          message: `Failed to connect to ${formData.sdkProvider}. Please check your API key.`
+          type: "error",
+          message:
+            result?.error ||
+            `Failed to connect to ${formData.sdkProvider}. Please check your API key.`,
         });
       }
-      
     } catch (error) {
       setConnectionStatus({
-        type: 'error',
-        message: 'Connection test failed. Please try again.'
+        type: "error",
+        message: "Connection test failed. Please try again.",
       });
     } finally {
       setIsTestingConnection(false);
@@ -144,8 +152,13 @@ export default function BiometricSettingsScreen({ onSave }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Biometric Authentication & Retry Settings</h2>
-        <p className="text-gray-600 text-sm mt-1">Configure biometric verification and retry logic for user authentication</p>
+        <h2 className="text-xl font-semibold text-gray-900">
+          Biometric Authentication & Retry Settings
+        </h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Configure biometric verification and retry logic for user
+          authentication
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -157,33 +170,43 @@ export default function BiometricSettingsScreen({ onSave }) {
             </label>
             <select
               value={formData.verificationMethod}
-              onChange={(e) => handleInputChange('verificationMethod', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("verificationMethod", e.target.value)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
             >
-              {VERIFICATION_METHODS.map(method => (
-                <option key={method} value={method}>{method}</option>
+              {VERIFICATION_METHODS.map((method) => (
+                <option key={method} value={method}>
+                  {method}
+                </option>
               ))}
             </select>
           </div>
 
-          {formData.verificationMethod === 'SDK' && (
+          {formData.verificationMethod === "SDK" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 SDK Provider <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.sdkProvider}
-                onChange={(e) => handleInputChange('sdkProvider', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("sdkProvider", e.target.value)
+                }
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white ${
-                  errors.sdkProvider ? 'border-red-300' : 'border-gray-300'
+                  errors.sdkProvider ? "border-red-300" : "border-gray-300"
                 }`}
               >
-                {SDK_PROVIDERS.map(provider => (
-                  <option key={provider} value={provider}>{provider}</option>
+                {SDK_PROVIDERS.map((provider) => (
+                  <option key={provider} value={provider}>
+                    {provider}
+                  </option>
                 ))}
               </select>
               {errors.sdkProvider && (
-                <p className="mt-1 text-sm text-red-600">{errors.sdkProvider}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.sdkProvider}
+                </p>
               )}
             </div>
           )}
@@ -261,8 +284,10 @@ export default function BiometricSettingsScreen({ onSave }) {
 
         {/* Retry Configuration */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Retry Logic Configuration</h3>
-          
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Retry Logic Configuration
+          </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -270,11 +295,13 @@ export default function BiometricSettingsScreen({ onSave }) {
               </label>
               <select
                 value={formData.retryType}
-                onChange={(e) => handleInputChange('retryType', e.target.value)}
+                onChange={(e) => handleInputChange("retryType", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
               >
-                {RETRY_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {RETRY_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
             </div>
@@ -288,9 +315,11 @@ export default function BiometricSettingsScreen({ onSave }) {
                 min="1"
                 max="10"
                 value={formData.retryLimit}
-                onChange={(e) => handleInputChange('retryLimit', parseInt(e.target.value))}
+                onChange={(e) =>
+                  handleInputChange("retryLimit", parseInt(e.target.value))
+                }
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                  errors.retryLimit ? 'border-red-300' : 'border-gray-300'
+                  errors.retryLimit ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="3"
               />
@@ -307,14 +336,18 @@ export default function BiometricSettingsScreen({ onSave }) {
                 type="number"
                 min="1"
                 value={formData.lockDuration}
-                onChange={(e) => handleInputChange('lockDuration', parseInt(e.target.value))}
+                onChange={(e) =>
+                  handleInputChange("lockDuration", parseInt(e.target.value))
+                }
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                  errors.lockDuration ? 'border-red-300' : 'border-gray-300'
+                  errors.lockDuration ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="10"
               />
               {errors.lockDuration && (
-                <p className="mt-1 text-sm text-red-600">{errors.lockDuration}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.lockDuration}
+                </p>
               )}
             </div>
           </div>
@@ -345,11 +378,13 @@ export default function BiometricSettingsScreen({ onSave }) {
             </label>
             <select
               value={formData.userRole}
-              onChange={(e) => handleInputChange('userRole', e.target.value)}
+              onChange={(e) => handleInputChange("userRole", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
             >
-              {USER_ROLES.map(role => (
-                <option key={role} value={role}>{role}</option>
+              {USER_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
               ))}
             </select>
           </div>
@@ -384,12 +419,28 @@ export default function BiometricSettingsScreen({ onSave }) {
             className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
           >
             {isSaving && (
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
             )}
-            <span>{isSaving ? 'Saving...' : 'Save Settings'}</span>
+            <span>{isSaving ? "Saving..." : "Save Settings"}</span>
           </button>
         </div>
       </form>
