@@ -1,137 +1,106 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import FilterDropdown from '@/components/ui/FilterDropdown';
-import Pagination from '@/components/ui/Pagination';
-import { MagnifyingGlassIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from "react";
+import FilterDropdown from "@/components/ui/FilterDropdown";
+import Pagination from "@/components/ui/Pagination";
+import {
+  MagnifyingGlassIcon,
+  ClockIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { TRANSACTION_API } from "../../../data/transactions";
+import toast from "react-hot-toast";
 
 export default function AuditTrails() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [filters, setFilters] = useState({
-    admin: '',
-    action: '',
-    dateRange: ''
+    admin: "",
+    user: "",
+    action: "",
+    dateRange: "",
   });
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+  });
+  const [availableActions, setAvailableActions] = useState([]);
 
-  // Mock audit trail data
+  // Load audit logs from API
   useEffect(() => {
-    // Generate realistic timestamps for testing date filters
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-    const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
-    const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
-    
-    const formatTimestamp = (date) => {
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
+    const loadAuditLogs = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await TRANSACTION_API.getAuditLogs({
+          page: currentPage,
+          limit: pagination.itemsPerPage,
+          adminName: filters.admin || undefined,
+          userName: filters.user || undefined,
+          action: filters.action || undefined,
+          startDate: filters.dateRange
+            ? filters.dateRange.split(" to ")[0]
+            : undefined,
+          endDate: filters.dateRange
+            ? filters.dateRange.split(" to ")[1]
+            : undefined,
+        });
+
+        if (response.data?.success && response.data?.data) {
+          const logs = response.data.data.logs || response.data.data;
+          setAuditLogs(Array.isArray(logs) ? logs : []);
+
+          // Update pagination
+          if (response.data.data.pagination) {
+            setPagination({
+              currentPage:
+                response.data.data.pagination.currentPage || currentPage,
+              totalPages: response.data.data.pagination.totalPages || 1,
+              totalItems: response.data.data.pagination.totalItems || 0,
+              itemsPerPage: response.data.data.pagination.itemsPerPage || 10,
+            });
+          }
+        } else {
+          throw new Error("Failed to load audit logs");
+        }
+      } catch (error) {
+        console.error("Failed to load audit logs:", error);
+        setError(
+          "Unable to load audit logs. Please check your connection and try again."
+        );
+        setAuditLogs([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const mockAuditLogs = [
-      {
-        id: 'AUD-20102',
-        adminId: 'ADM-21',
-        adminName: 'John Admin',
-        action: 'Approved Redemption',
-        targetUser: 'USR-38281',
-        targetUserName: 'Jane Smith',
-        details: {
-          redemptionId: 'RED-001',
-          amount: '500$',
-          previousStatus: 'Pending',
-          newStatus: 'Approved'
-        },
-        timestamp: formatTimestamp(oneHourAgo),
-        ipAddress: '192.168.1.100',
-        userAgent: 'Chrome/91.0'
-      },
-      {
-        id: 'AUD-20103',
-        adminId: 'ADM-43',
-        adminName: 'Sarah Manager',
-        action: 'Wallet Adjustment',
-        targetUser: 'USR-202589',
-        targetUserName: 'Mike Johnson',
-        details: {
-          adjustmentType: 'Add XP',
-          amount: '+500 XP',
-          reason: 'Compensation for system error',
-          previousBalance: '1250 XP',
-          newBalance: '1750 XP'
-        },
-        timestamp: formatTimestamp(sixHoursAgo),
-        ipAddress: '192.168.1.101',
-        userAgent: 'Firefox/89.0'
-      },
-      {
-        id: 'AUD-20104',
-        adminId: 'ADM-21',
-        adminName: 'John Admin',
-        action: 'Rejected Redemption',
-        targetUser: 'USR-202592',
-        targetUserName: 'Alex Wilson',
-        details: {
-          redemptionId: 'RED-004',
-          amount: '300$',
-          reason: 'Face verification failed',
-          previousStatus: 'Pending',
-          newStatus: 'Rejected'
-        },
-        timestamp: formatTimestamp(twoDaysAgo),
-        ipAddress: '192.168.1.100',
-        userAgent: 'Chrome/91.0'
-      },
-      {
-        id: 'AUD-20105',
-        adminId: 'ADM-43',
-        adminName: 'Sarah Manager',
-        action: 'Transaction Approval',
-        targetUser: 'USR-202590',
-        targetUserName: 'Emily Davis',
-        details: {
-          transactionId: '#ID09015',
-          type: 'Reward',
-          amount: '20$',
-          previousStatus: 'Pending',
-          newStatus: 'Approved'
-        },
-        timestamp: formatTimestamp(fiveDaysAgo),
-        ipAddress: '192.168.1.101',
-        userAgent: 'Firefox/89.0'
-      },
-      // {
-      //   id: 'AUD-20106',
-      //   adminId: 'ADM-12',
-      //   adminName: 'Tom Supervisor',
-      //   action: 'Conversion Rate Update',
-      //   targetUser: 'SYSTEM',
-      //   targetUserName: 'System Configuration',
-      //   details: {
-      //     tier: 'Gold',
-      //     previousRate: '120 XP = ₹1',
-      //     newRate: '100 XP = ₹1',
-      //     effectiveDate: '2025-06-01'
-      //   },
-      //   timestamp: formatTimestamp(fifteenDaysAgo),
-      //   ipAddress: '192.168.1.102',
-      //   userAgent: 'Edge/91.0'
-      // }
-    ];
-    
-    setAuditLogs(mockAuditLogs);
+    loadAuditLogs();
+  }, [currentPage, filters]);
+
+  // Load available actions for filter dropdown
+  useEffect(() => {
+    const loadAvailableActions = async () => {
+      try {
+        const response = await TRANSACTION_API.getAuditActions();
+        if (response.data?.success && response.data?.data) {
+          setAvailableActions(response.data.data.actions || []);
+        }
+      } catch (error) {
+        console.error("Failed to load available actions:", error);
+      }
+    };
+
+    loadAvailableActions();
   }, []);
 
   const handleFilterChange = (filterId, value) => {
-    setFilters(prev => ({ ...prev, [filterId]: value }));
+    setFilters((prev) => ({ ...prev, [filterId]: value }));
     setCurrentPage(1);
   };
 
@@ -142,11 +111,12 @@ export default function AuditTrails() {
 
   const handleClearFilters = () => {
     setFilters({
-      admin: '',
-      action: '',
-      dateRange: ''
+      admin: "",
+      user: "",
+      action: "",
+      dateRange: "",
     });
-    setSearchTerm('');
+    setSearchTerm("");
     setCurrentPage(1);
   };
 
@@ -154,11 +124,11 @@ export default function AuditTrails() {
   const mapUserIdForNavigation = (targetUserId) => {
     // Map USR-XXXXX format to IDOXXXX format for existing user pages
     const userIdMappings = {
-      'USR-38281': 'IDO9012',
-      'USR-202589': 'IDO9013', 
-      'USR-202590': 'IDO9014',
-      'USR-202591': 'IDO9015',
-      'USR-202592': 'IDO9016'
+      "USR-38281": "IDO9012",
+      "USR-202589": "IDO9013",
+      "USR-202590": "IDO9014",
+      "USR-202591": "IDO9015",
+      "USR-202592": "IDO9016",
     };
     
     return userIdMappings[targetUserId] || targetUserId;
@@ -169,11 +139,11 @@ export default function AuditTrails() {
     // For now, show audit details in a simple alert
     // In a real implementation, this would open an audit detail modal or page
     const details = `
-Audit Entry: ${auditLog.id}
+Audit Entry: ${auditLog.entryId}
 Admin: ${auditLog.adminName} (${auditLog.adminId})
 Action: ${auditLog.action}
-Target: ${auditLog.targetUser !== 'SYSTEM' ? auditLog.targetUserName : auditLog.targetUser}
-Time: ${auditLog.timestamp}
+Target: ${auditLog.targetUserName || "System"}
+Time: ${new Date(auditLog.timestamp).toLocaleString()}
     `.trim();
     
     alert(`Audit Details:\n\n${details}`);
@@ -185,7 +155,7 @@ Time: ${auditLog.timestamp}
       // Handle format like "2025-05-28 12:01 PM"
       return new Date(timestamp);
     } catch (error) {
-      console.error('Error parsing timestamp:', timestamp);
+      console.error("Error parsing timestamp:", timestamp);
       return new Date(0); // Return epoch time if parsing fails
     }
   };
@@ -199,13 +169,13 @@ Time: ${auditLog.timestamp}
     let startDate;
     
     switch (filters.dateRange) {
-      case 'Last 24 hours':
+      case "Last 24 hours":
         startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
-      case 'Last 7 days':
+      case "Last 7 days":
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
-      case 'Last 30 days':
+      case "Last 30 days":
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       default:
@@ -217,43 +187,47 @@ Time: ${auditLog.timestamp}
 
   const getActionBadge = (action) => {
     const styles = {
-      'Approved Redemption': 'bg-green-100 text-green-800',
-      'Rejected Redemption': 'bg-red-100 text-red-800',
-      'Wallet Adjustment': 'bg-blue-100 text-blue-800',
-      'Transaction Approval': 'bg-purple-100 text-purple-800',
-      'Conversion Rate Update': 'bg-orange-100 text-orange-800'
+      APPROVE_REDEMPTION: "bg-green-100 text-green-800",
+      REJECT_REDEMPTION: "bg-red-100 text-red-800",
+      ADD_COINS: "bg-blue-100 text-blue-800",
+      SUBTRACT_COINS: "bg-orange-100 text-orange-800",
+      ADD_XP: "bg-purple-100 text-purple-800",
+      SUBTRACT_XP: "bg-pink-100 text-pink-800",
+      ADJUST_BALANCE: "bg-indigo-100 text-indigo-800",
+      FREEZE_WALLET: "bg-red-100 text-red-800",
+      UNFREEZE_WALLET: "bg-green-100 text-green-800",
+      VIEW_TRANSACTION: "bg-gray-100 text-gray-800",
+      VIEW_USER_WALLET: "bg-gray-100 text-gray-800",
     };
-    
+
+    // Convert action to readable format
+    const readableAction = action
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
+
     return (
-      <span className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full w-[140px] ${styles[action] || 'bg-gray-100 text-gray-800'}`}>
-        {action}
+      <span
+        className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full w-[140px] ${
+          styles[action] || "bg-gray-100 text-gray-800"
+        }`}
+      >
+        {readableAction}
       </span>
     );
   };
 
+  // Use auditLogs directly since filtering is handled by API
+  const paginatedLogs = auditLogs;
 
-  const filteredLogs = auditLogs.filter(log => {
-    const matchesSearch = !searchTerm || 
-      log.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.adminName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.targetUser.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.targetUserName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesAdmin = !filters.admin || log.adminName === filters.admin;
-    const matchesAction = !filters.action || log.action === filters.action;
-    const matchesDate = matchesDateRange(log);
-    
-    return matchesSearch && matchesAdmin && matchesAction && matchesDate;
-  });
-
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
-
-  // Get unique admin names and actions for filters
-  const uniqueAdmins = [...new Set(auditLogs.map(log => log.adminName))];
-  const uniqueActions = [...new Set(auditLogs.map(log => log.action))];
+  // Get unique admin names, users, and actions for filters
+  const uniqueAdmins = [...new Set(auditLogs.map((log) => log.adminName))];
+  const uniqueUsers = [
+    ...new Set(auditLogs.map((log) => log.targetUserName).filter(Boolean)),
+  ];
+  const uniqueActions =
+    availableActions.length > 0
+      ? availableActions
+      : [...new Set(auditLogs.map((log) => log.action))];
 
   return (
     <div className="space-y-6">
@@ -268,6 +242,13 @@ Time: ${auditLog.timestamp}
             onChange={handleFilterChange}
           />
           <FilterDropdown
+            filterId="user"
+            label="User"
+            options={uniqueUsers}
+            value={filters.user}
+            onChange={handleFilterChange}
+          />
+          <FilterDropdown
             filterId="action"
             label="Action"
             options={uniqueActions}
@@ -277,13 +258,17 @@ Time: ${auditLog.timestamp}
           <FilterDropdown
             filterId="dateRange"
             label="Date Range"
-            options={['Last 24 hours', 'Last 7 days', 'Last 30 days']}
+            options={["Last 24 hours", "Last 7 days", "Last 30 days"]}
             value={filters.dateRange}
             onChange={handleFilterChange}
           />
 
           {/* Clear Filters Button */}
-          {(filters.admin || filters.action || filters.dateRange || searchTerm) && (
+          {(filters.admin ||
+            filters.user ||
+            filters.action ||
+            filters.dateRange ||
+            searchTerm) && (
             <button
               onClick={handleClearFilters}
               className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -331,66 +316,187 @@ Time: ${auditLog.timestamp}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center">
+                    <div className="flex items-center justify-center space-x-2">
+                      <svg
+                        className="animate-spin h-5 w-5 text-emerald-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span className="text-gray-600">
+                        Loading audit logs...
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center">
+                    <div className="text-center">
+                      <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                        <svg
+                          className="w-8 h-8 text-red-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Unable to Load Audit Logs
+                      </h3>
+                      <p className="text-gray-600 mb-4">{error}</p>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedLogs.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center">
+                    <div className="text-center">
+                      <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <svg
+                          className="w-8 h-8 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        No Audit Logs Found
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {filters.admin ||
+                        filters.user ||
+                        filters.action ||
+                        filters.dateRange ||
+                        searchTerm
+                          ? "No audit logs match your current filters. Try adjusting your search criteria."
+                          : "No audit logs have been recorded yet. Admin actions and system events will appear here once they occur."}
+                      </p>
+                      {(filters.admin ||
+                        filters.user ||
+                        filters.action ||
+                        filters.dateRange ||
+                        searchTerm) && (
+                        <button
+                          onClick={handleClearFilters}
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedLogs.map((log) => (
+                  <tr key={log.entryId} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <button
                       onClick={() => handleEntryIdClick(log)}
                       className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
                       title="View audit details"
                     >
-                      {log.id}
+                        {log.entryId}
                     </button>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-gray-900">{log.adminId}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {log.adminId}
+                      </span>
                   </td>
+                    <td className="px-6 py-4">{getActionBadge(log.action)}</td>
                   <td className="px-6 py-4">
-                    {getActionBadge(log.action)}
-                  </td>
-                  <td className="px-6 py-4">
-                    {log.targetUser !== 'SYSTEM' ? (
+                      {log.targetUserId ? (
                       <button
                         onClick={() => {
-                          const mappedUserId = mapUserIdForNavigation(log.targetUser);
-                          window.open(`/users/${mappedUserId}`, '_blank');
+                            window.open(`/users/${log.targetUserId}`, "_blank");
                         }}
                         className="text-blue-600 hover:text-blue-800 font-medium"
-                        title={`View user profile for ${log.targetUser}`}
+                          title={`View user profile for ${log.targetUserName}`}
                       >
-                        {log.targetUser}
+                          {log.targetUserName}
                       </button>
                     ) : (
-                      <span className="font-medium text-gray-900">{log.targetUser}</span>
+                        <span className="font-medium text-gray-900">
+                          System
+                        </span>
                     )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <ClockIcon className="w-4 h-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">{log.timestamp}</span>
+                        <span className="text-sm text-gray-900">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </span>
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredLogs.length}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
             onPageChange={setCurrentPage}
           />
         )}
       </div>
 
-
       {/* Results Summary */}
       <div className="text-sm text-gray-600">
-        Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredLogs.length)} of {filteredLogs.length} audit entries
+        Showing{" "}
+        {pagination.totalItems > 0
+          ? `${
+              (pagination.currentPage - 1) * pagination.itemsPerPage + 1
+            }-${Math.min(
+              pagination.currentPage * pagination.itemsPerPage,
+              pagination.totalItems
+            )}`
+          : "0-0"}{" "}
+        of {pagination.totalItems} audit entries
       </div>
     </div>
   );

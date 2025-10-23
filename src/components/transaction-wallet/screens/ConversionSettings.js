@@ -1,77 +1,85 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { CogIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from "react";
+import { CogIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { TRANSACTION_API } from "../../../data/transactions";
+import toast from "react-hot-toast";
 
 export default function ConversionSettings() {
   const [conversionRules, setConversionRules] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState('');
+  const [lastUpdated, setLastUpdated] = useState("");
+  const [error, setError] = useState(null);
 
-  // Mock data from Rewards Config Module
+  // Load conversion settings from API
   useEffect(() => {
-    const mockConversionRules = [
-      {
-        id: 'CONV-001',
-        xpTier: 'Bronze',
-        conversionRule: '200 XP = ₹1',
-        method: 'Paytm',
-        ruleSource: 'Rewards Config Module'
-      },
-      {
-        id: 'CONV-002',
-        xpTier: 'Platinum',
-        conversionRule: '150 XP = ₹1',
-        method: 'UPI + Paytm',
-        ruleSource: 'Rewards Config Module'
-      },
-      {
-        id: 'CONV-003',
-        xpTier: 'Gold',
-        conversionRule: '100 XP = ₹1',
-        method: 'UPI + Paytm + Gift Card',
-        ruleSource: 'Rewards Config Module'
-      },
-      {
-        id: 'CONV-004',
-        xpTier: 'Platinum',
-        conversionRule: '75 XP = ₹1',
-        method: 'UPI + Paytm + Gift Card + Bank Transfer',
-        ruleSource: 'Rewards Config Module'
-      },
-      {
-        id: 'CONV-005',
-        xpTier: 'VIP',
-        conversionRule: '50 XP = ₹1',
-        method: 'All Methods + Priority Processing',
-        ruleSource: 'Rewards Config Module'
+    const loadConversionSettings = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await TRANSACTION_API.getConversionSettings();
+
+        if (response.data?.success && response.data?.data) {
+          const rules = response.data.data.rules || response.data.data;
+          setConversionRules(Array.isArray(rules) ? rules : []);
+          setLastUpdated(new Date().toLocaleString());
+        } else {
+          throw new Error("Failed to load conversion settings");
+        }
+      } catch (error) {
+        console.error("Failed to load conversion settings:", error);
+        setError(
+          "Unable to load conversion settings. Please check your connection and try again."
+        );
+        setConversionRules([]);
+      } finally {
+        setLoading(false);
       }
-    ];
-    
-    setConversionRules(mockConversionRules);
-    setLastUpdated('12/06/2025 10:30 AM');
+    };
+
+    loadConversionSettings();
   }, []);
 
   const handleRefresh = async () => {
     setLoading(true);
-    // Simulate API call to Rewards Config Module
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLastUpdated(new Date().toLocaleString());
-    setLoading(false);
-  };
+    setError(null);
 
+    try {
+      const response = await TRANSACTION_API.getConversionSettings();
+
+      if (response.data?.success && response.data?.data) {
+        const rules = response.data.data.rules || response.data.data;
+        setConversionRules(Array.isArray(rules) ? rules : []);
+        setLastUpdated(new Date().toLocaleString());
+        toast.success("Conversion settings refreshed successfully!");
+      } else {
+        throw new Error("Failed to refresh conversion settings");
+      }
+    } catch (error) {
+      console.error("Failed to refresh conversion settings:", error);
+      toast.error("Failed to refresh conversion settings. Please try again.");
+      setError(
+        "Unable to refresh conversion settings. Please check your connection and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">XP Conversion Rules</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            XP Conversion Rules
+          </h2>
           <p className="text-sm text-gray-600 mt-1">
             Configuration sourced from Rewards Config Module
           </p>
         </div>
-        
+
         {/* <div className="flex items-center gap-4">
           <div className="text-sm text-gray-500">
             Last updated: {lastUpdated}
@@ -111,7 +119,9 @@ export default function ConversionSettings() {
               {conversionRules.map((rule) => (
                 <tr key={rule.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-gray-900">{rule.xpTier}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {rule.xpTier}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-emerald-600">
@@ -124,7 +134,9 @@ export default function ConversionSettings() {
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <CogIcon className="w-4 h-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">{rule.ruleSource}</span>
+                      <span className="text-sm text-gray-900">
+                        {rule.ruleSource}
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -133,7 +145,6 @@ export default function ConversionSettings() {
           </table>
         </div>
       </div>
-
     </div>
   );
 }
