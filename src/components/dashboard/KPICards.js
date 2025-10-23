@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 const KPICard = ({ title, value, icon, loading }) => {
   if (loading) {
@@ -16,19 +16,19 @@ const KPICard = ({ title, value, icon, loading }) => {
   }
 
   const formatValue = (val, type) => {
-    if (type === 'currency') {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
+    if (type === "currency") {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0
+        maximumFractionDigits: 0,
       }).format(val);
     }
-    
-    if (type === 'number') {
-      return new Intl.NumberFormat('en-US').format(val);
+
+    if (type === "number") {
+      return new Intl.NumberFormat("en-US").format(val);
     }
-    
+
     return val;
   };
 
@@ -39,7 +39,9 @@ const KPICard = ({ title, value, icon, loading }) => {
           <span className="text-xl lg:text-2xl">{icon.emoji}</span>
         </div>
         <div className="ml-3 lg:ml-4 min-w-0 flex-1">
-          <p className="text-xs lg:text-sm font-medium text-gray-600 leading-tight">{title}</p>
+          <p className="text-xs lg:text-sm font-medium text-gray-600 leading-tight">
+            {title}
+          </p>
           <p className="text-lg lg:text-2xl font-bold text-gray-900 truncate mt-1">
             {formatValue(value, icon.type)}
           </p>
@@ -52,30 +54,35 @@ const KPICard = ({ title, value, icon, loading }) => {
 const KPICards = ({ data, loading }) => {
   const kpiConfig = [
     {
-      key: 'totalUsers',
-      title: 'Total Registered Users',
-      icon: { emoji: '👥', bgColor: 'bg-blue-100', type: 'number' }
+      key: "totalUsers",
+      title: "Total Registered Users",
+      icon: { emoji: "👥", bgColor: "bg-blue-100", type: "number" },
+      value: data?.overview?.totalUsers || 0,
     },
     {
-      key: 'activeUsersToday',
-      title: 'Active Users Today',
-      icon: { emoji: '🟢', bgColor: 'bg-green-100', type: 'number' }
+      key: "vipUsers",
+      title: "VIP Users",
+      icon: { emoji: "👑", bgColor: "bg-purple-100", type: "number" },
+      value: data?.overview?.vipUsers || 0,
     },
     {
-      key: 'totalRewardsIssued',
-      title: 'Total Rewards Issued',
-      icon: { emoji: '🪙', bgColor: 'bg-yellow-100', type: 'number' }
+      key: "totalSubscriptions",
+      title: "Total Subscriptions",
+      icon: { emoji: "📊", bgColor: "bg-green-100", type: "number" },
+      value: data?.overview?.totalSubscriptions || 0,
     },
     {
-      key: 'totalRedemptions',
-      title: 'Total Redemptions',
-      icon: { emoji: '💰', bgColor: 'bg-emerald-100', type: 'currency' }
+      key: "activeSubscriptions",
+      title: "Active Subscriptions",
+      icon: { emoji: "✅", bgColor: "bg-emerald-100", type: "number" },
+      value: data?.overview?.activeSubscriptions || 0,
     },
     {
-      key: 'avgXPPerUser',
-      title: 'Avg. XP/User',
-      icon: { emoji: '⭐', bgColor: 'bg-purple-100', type: 'number' }
-    }
+      key: "totalRevenue",
+      title: "Total Revenue",
+      icon: { emoji: "💰", bgColor: "bg-yellow-100", type: "currency" },
+      value: data?.revenue?.totalRevenue || 0,
+    },
   ];
 
   return (
@@ -85,7 +92,7 @@ const KPICards = ({ data, loading }) => {
           <KPICard
             key={config.key}
             title={config.title}
-            value={data[config.key]}
+            value={config.value}
             icon={config.icon}
             loading={loading}
           />
