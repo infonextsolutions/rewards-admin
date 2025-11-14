@@ -54,34 +54,34 @@ const KPICard = ({ title, value, icon, loading }) => {
 const KPICards = ({ data, loading }) => {
   const kpiConfig = [
     {
-      key: "totalUsers",
+      key: "totalRegisteredUsers",
       title: "Total Registered Users",
       icon: { emoji: "👥", bgColor: "bg-blue-100", type: "number" },
-      value: data?.overview?.totalUsers || 0,
+      value: data?.kpis?.totalRegisteredUsers || data?.overview?.totalUsers || 0,
     },
     {
-      key: "vipUsers",
-      title: "VIP Users",
+      key: "activeUsersToday",
+      title: "Active Users Today",
       icon: { emoji: "👑", bgColor: "bg-purple-100", type: "number" },
-      value: data?.overview?.vipUsers || 0,
+      value: data?.kpis?.activeUsersToday || 0,
     },
     {
-      key: "totalSubscriptions",
-      title: "Total Subscriptions",
-      icon: { emoji: "📊", bgColor: "bg-green-100", type: "number" },
-      value: data?.overview?.totalSubscriptions || 0,
+      key: "totalRewardsIssued",
+      title: "Total Rewards Issued",
+      icon: { emoji: "🎁", bgColor: "bg-green-100", type: "number" },
+      value: data?.kpis?.totalRewardsIssued || 0,
     },
     {
-      key: "activeSubscriptions",
-      title: "Active Subscriptions",
+      key: "totalRedemptions",
+      title: "Total Redemptions",
       icon: { emoji: "✅", bgColor: "bg-emerald-100", type: "number" },
-      value: data?.overview?.activeSubscriptions || 0,
+      value: data?.kpis?.totalRedemptions || 0,
     },
     {
-      key: "totalRevenue",
-      title: "Total Revenue",
-      icon: { emoji: "💰", bgColor: "bg-yellow-100", type: "currency" },
-      value: data?.revenue?.totalRevenue || 0,
+      key: "avgXPPerUser",
+      title: "Avg XP Per User",
+      icon: { emoji: "💰", bgColor: "bg-yellow-100", type: "number" },
+      value: data?.kpis?.avgXPPerUser || 0,
     },
   ];
 

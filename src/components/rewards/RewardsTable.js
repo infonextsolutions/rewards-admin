@@ -6,6 +6,8 @@ export default function RewardsTable({
   onEdit,
   onDelete,
   onToggleStatus,
+  onToggleNotification,
+  onToggleActive,
   selectedItems = [],
   onSelectItem,
   onSelectAll,
@@ -127,7 +129,7 @@ export default function RewardsTable({
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Decay Rule</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Inactivity Duration</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Min XP Limit</th>
-            {/* <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Notifications</th> */}
+            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Notifications</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Status</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Actions</th>
           </tr>
@@ -148,7 +150,7 @@ export default function RewardsTable({
             <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">Bonus Type</th>
             <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm">Trigger Condition</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Reward Value</th>
-            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Status</th>
+            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Active</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Actions</th>
           </tr>
         );
@@ -236,14 +238,14 @@ export default function RewardsTable({
             <td className="py-4 px-2 text-center">
               <span className="text-sm text-gray-700">{item.minimumXpLimit}</span>
             </td>
-            {/* <td className="py-4 px-2 text-center">
+            <td className="py-4 px-2 text-center">
               <div className="flex justify-center">
                 {renderToggle(
                   item.notificationToggle,
-                  () => onToggleStatus && onToggleStatus({ ...item, notificationToggle: !item.notificationToggle })
+                  () => onToggleNotification && onToggleNotification(item.id)
                 )}
               </div>
-            </td> */}
+            </td>
             <td className="py-4 px-2 text-center">
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                 item.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -346,11 +348,12 @@ export default function RewardsTable({
               <span className="text-sm text-gray-700 font-medium">{item.rewardValue}</span>
             </td>
             <td className="py-4 px-2 text-center">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                item.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {item.active ? 'Active' : 'Inactive'}
-              </span>
+              <div className="flex justify-center">
+                {renderToggle(
+                  item.active,
+                  () => onToggleActive && onToggleActive(item.id)
+                )}
+              </div>
             </td>
             <td className="py-4 px-2">
               <div className="flex items-center justify-center gap-1">

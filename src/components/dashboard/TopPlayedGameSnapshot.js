@@ -12,46 +12,46 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
   // - User DB: Demographics (age, gender, region segmentation)
   // - Analytics DB: User behavior and tier distribution
   
+  // Use provided data or default empty structure
   const gameData = data || {
-    name: 'Match 3 Daily',
+    name: 'N/A',
     banner: 'https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png',
-    avgXP: 315,
-    rewardConversion: 68,
+    avgXP: 0,
+    rewardConversion: 0,
     demographics: {
-      age: [
-        { name: '13-17', value: 8, color: '#ff6b6b' },
-        { name: '18-24', value: 22, color: '#4ecdc4' },
-        { name: '25-34', value: 35, color: '#45b7d1' },
-        { name: '35-44', value: 25, color: '#f9ca24' },
-        { name: '45+', value: 10, color: '#6c5ce7' }
-      ],
-      gender: [
-        { name: 'Female', value: 58, color: '#ff6b9d' },
-        { name: 'Male', value: 24, color: '#4ecdc4' },
-        { name: 'Other', value: 18, color: '#a0a0a0' }
-      ],
-      region: [
-        { name: 'North America', value: 40, color: '#3742fa' },
-        { name: 'Europe', value: 25, color: '#2ed573' },
-        { name: 'Asia', value: 20, color: '#ffa502' },
-        { name: 'Other', value: 15, color: '#6c5ce7' }
-      ],
-      tier: [
-        { name: 'Gold', value: 25, color: '#ffd700' },
-        { name: 'Platinum', value: 35, color: '#e5e5e5' },
-        { name: 'Bronze', value: 40, color: '#cd7f32' }
-      ]
+      age: [],
+      gender: [],
+      region: [],
+      tier: []
     }
+  };
+  
+  // Ensure demographics are arrays, handle empty objects from API
+  const demographics = gameData.demographics || {};
+  const normalizedDemographics = {
+    age: Array.isArray(demographics.age) ? demographics.age : 
+         (demographics.age && typeof demographics.age === 'object' ? Object.entries(demographics.age).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
+    gender: Array.isArray(demographics.gender) ? demographics.gender : 
+            (demographics.gender && typeof demographics.gender === 'object' ? Object.entries(demographics.gender).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
+    region: Array.isArray(demographics.region) ? demographics.region : 
+            (demographics.region && typeof demographics.region === 'object' ? Object.entries(demographics.region).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
+    tier: Array.isArray(demographics.tier) ? demographics.tier : 
+          (demographics.tier && typeof demographics.tier === 'object' ? Object.entries(demographics.tier).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
+  };
+  
+  const finalGameData = {
+    ...gameData,
+    demographics: normalizedDemographics
   };
 
   const statsData = [
     {
-      value: gameData.avgXP,
+      value: finalGameData.avgXP,
       label: "Avg. XP",
       color: "#00a389",
     },
     {
-      value: `${gameData.rewardConversion}%`,
+      value: `${finalGameData.rewardConversion}%`,
       label: "Reward\nConversion",
       color: "#00a389",
     },
@@ -60,7 +60,21 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
   const DonutChart = ({ data, title }) => {
     const RADIAN = Math.PI / 180;
     
+    // Ensure data is an array, default to empty array
+    const chartData = Array.isArray(data) ? data : [];
+    
+    // If data is empty, show empty chart with a placeholder
+    const isEmpty = chartData.length === 0;
+    
+    // For empty data, create a single segment to show empty state
+    const displayData = isEmpty 
+      ? [{ name: 'No Data', value: 100, color: '#6b7280' }]
+      : chartData;
+    
     const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+      // Don't show labels for empty state
+      if (isEmpty) return null;
+      
       const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
       const x = cx + radius * Math.cos(-midAngle * RADIAN);
       const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -87,7 +101,7 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={displayData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -97,12 +111,15 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {data.map((entry, index) => (
+                {displayData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value) => [`${value}%`, 'Percentage']}
+                formatter={(value, name, props) => {
+                  if (isEmpty) return ['No Data', 'Empty'];
+                  return [`${value}%`, 'Percentage'];
+                }}
                 labelStyle={{ color: '#374151' }}
                 contentStyle={{ 
                   backgroundColor: 'white', 
@@ -116,17 +133,24 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
         </div>
         
         {/* Legend */}
-        <div className="mt-2 flex flex-wrap justify-center gap-1">
-          {data.map((item, index) => (
-            <div key={index} className="flex items-center text-xs">
-              <div 
-                className="w-2 h-2 rounded-full mr-1"
-                style={{ backgroundColor: item.color }}
-              ></div>
-              <span className="text-white truncate max-w-16">{item.name}</span>
-            </div>
-          ))}
-        </div>
+        {!isEmpty && (
+          <div className="mt-2 flex flex-wrap justify-center gap-1">
+            {chartData.map((item, index) => (
+              <div key={index} className="flex items-center text-xs">
+                <div 
+                  className="w-2 h-2 rounded-full mr-1"
+                  style={{ backgroundColor: item.color }}
+                ></div>
+                <span className="text-white truncate max-w-16">{item.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {isEmpty && (
+          <div className="mt-2 text-center">
+            <span className="text-white text-xs opacity-70">No data available</span>
+          </div>
+        )}
       </div>
     );
   };
@@ -155,16 +179,16 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
           <div className="relative w-[140px] h-[140px] bg-white rounded-[12px] overflow-hidden border-[3px] border-solid border-[#d3f8d2] shadow-lg">
             <img
               className="w-full h-full object-cover"
-              alt={gameData.name}
-              src={gameData.banner}
+              alt={finalGameData.name}
+              src={finalGameData.banner}
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">${gameData.name.charAt(0)}</div>`;
+                e.target.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">${finalGameData.name.charAt(0)}</div>`;
               }}
             />
           </div>
           <h2 className="font-bold text-[#fff2ab] text-2xl text-center leading-tight">
-            {gameData.name}
+            {finalGameData.name}
           </h2>
         </div>
 
@@ -173,7 +197,7 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
           <div className="bg-[#02020280] rounded-[8px] p-6 shadow-[0px_0px_4px_#00000040] flex-1 backdrop-blur-sm">
             <div className="text-center">
               <div className="text-5xl font-bold text-[#00a389] mb-2">
-                {gameData.avgXP.toLocaleString()}
+                {finalGameData.avgXP.toLocaleString()}
               </div>
               <div className="text-white font-medium text-sm">
                 Avg. XP
@@ -184,7 +208,7 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
           <div className="bg-[#02020280] rounded-[8px] p-6 shadow-[0px_0px_4px_#00000040] flex-1 backdrop-blur-sm">
             <div className="text-center">
               <div className="text-5xl font-bold text-[#00a389] mb-2">
-                {gameData.rewardConversion}%
+                {finalGameData.rewardConversion}%
               </div>
               <div className="text-white font-medium text-sm whitespace-pre-line">
                 Reward{'\n'}Conversion
@@ -215,22 +239,22 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
       {/* Donut Charts for Demographics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <DonutChart 
-          data={gameData.demographics.age}
+          data={finalGameData.demographics.age}
           title="Age"
         />
         
         <DonutChart 
-          data={gameData.demographics.gender}
+          data={finalGameData.demographics.gender}
           title="Gender"
         />
         
         <DonutChart 
-          data={gameData.demographics.region}
+          data={finalGameData.demographics.region}
           title="Region"
         />
         
         <DonutChart 
-          data={gameData.demographics.tier}
+          data={finalGameData.demographics.tier}
           title="Tier"
         />
       </div>

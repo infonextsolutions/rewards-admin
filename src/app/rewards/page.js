@@ -35,16 +35,27 @@ export default function RewardsPage() {
     updateBonusLogic,
     deleteBonusLogic,
     toggleBonusLogicStatus,
+    toggleBonusLogicActive,
+    bulkUpdateBonusLogicStatus,
+    bulkDeleteBonusLogic,
+    createBonusLogic,
     fetchXPTiers,
     fetchSingleXPTier,
     createXPTier,
     updateXPTier,
     deleteXPTier,
+    toggleXPTierStatus,
+    bulkUpdateXPTiersStatus,
+    bulkDeleteXPTiers,
     fetchXPDecaySettings,
     fetchSingleXPDecay,
     createXPDecay,
     updateXPDecay,
-    deleteXPDecay
+    deleteXPDecay,
+    toggleXPDecayStatus,
+    toggleXPDecayNotification,
+    bulkUpdateXPDecayStatus,
+    bulkDeleteXPDecay
   } = useRewards();
   const [activeTab, setActiveTab] = useState("XP Tiers");
   const [selectedItems, setSelectedItems] = useState([]);
@@ -189,14 +200,68 @@ export default function RewardsPage() {
 
   const handleBulkStatusUpdate = async (status) => {
     try {
-      await bulkUpdateStatus(activeTab, selectedItems, status);
-      toast.success(`${selectedItems.length} items updated successfully!`);
-      setSelectedItems([]);
-
-      // Refresh bonus logic list if on that tab
-      if (activeTab === 'Bonus Logic') {
-        await fetchBonusLogic();
+      if (activeTab === 'XP Tiers') {
+        const result = await bulkUpdateXPTiersStatus(selectedItems, status);
+        if (result.success) {
+          toast.success(result.message || `${selectedItems.length} XP Tiers updated successfully!`);
+          await fetchXPTiers();
+        }
+      } else if (activeTab === 'XP Decay Settings') {
+        const result = await bulkUpdateXPDecayStatus(selectedItems, status);
+        if (result.success) {
+          toast.success(result.message || `${selectedItems.length} XP Decay Settings updated successfully!`);
+          await fetchXPDecaySettings();
+        }
+      } else if (activeTab === 'Bonus Logic') {
+        const result = await bulkUpdateBonusLogicStatus(selectedItems, status);
+        if (result.success) {
+          toast.success(result.message || `${selectedItems.length} Bonus Logic rules updated successfully!`);
+          await fetchBonusLogic();
+        }
+      } else {
+        await bulkUpdateStatus(activeTab, selectedItems, status);
+        toast.success(`${selectedItems.length} items updated successfully!`);
       }
+      setSelectedItems([]);
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) {
+      toast.error('Please select items to delete');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedItems.length} item(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      if (activeTab === 'XP Tiers') {
+        const result = await bulkDeleteXPTiers(selectedItems);
+        if (result.success) {
+          toast.success(result.message || `${selectedItems.length} XP Tiers deleted successfully!`);
+          await fetchXPTiers();
+        }
+      } else if (activeTab === 'XP Decay Settings') {
+        const result = await bulkDeleteXPDecay(selectedItems);
+        if (result.success) {
+          toast.success(result.message || `${selectedItems.length} XP Decay Settings deleted successfully!`);
+          await fetchXPDecaySettings();
+        }
+      } else if (activeTab === 'Bonus Logic') {
+        const result = await bulkDeleteBonusLogic(selectedItems);
+        if (result.success) {
+          toast.success(result.message || `${selectedItems.length} Bonus Logic rules deleted successfully!`);
+          await fetchBonusLogic();
+        }
+      } else {
+        toast.error('Bulk delete not supported for this tab');
+      }
+      setSelectedItems([]);
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
       toast.error(errorMessage);
@@ -205,12 +270,36 @@ export default function RewardsPage() {
 
   const handleToggleStatus = async (itemId) => {
     try {
-      await toggleItemStatus(activeTab, itemId);
-      toast.success('Status updated successfully!');
-
-      // Refresh bonus logic list if on that tab
-      if (activeTab === 'Bonus Logic') {
-        await fetchBonusLogic();
+      if (activeTab === 'XP Tiers') {
+        const item = xpTiers.find(i => i.id === itemId);
+        if (item) {
+          const result = await toggleXPTierStatus(itemId, !item.status);
+          if (result.success) {
+            toast.success(result.message || 'XP Tier status updated successfully!');
+            await fetchXPTiers();
+          }
+        }
+      } else if (activeTab === 'XP Decay Settings') {
+        const item = xpDecaySettings.find(i => i.id === itemId);
+        if (item) {
+          const result = await toggleXPDecayStatus(itemId, !item.status);
+          if (result.success) {
+            toast.success(result.message || 'XP Decay status updated successfully!');
+            await fetchXPDecaySettings();
+          }
+        }
+      } else if (activeTab === 'Bonus Logic') {
+        const item = bonusLogic.find(i => i.id === itemId);
+        if (item) {
+          const result = await toggleBonusLogicStatus(itemId, !item.status);
+          if (result.success) {
+            toast.success(result.message || 'Bonus Logic status updated successfully!');
+            await fetchBonusLogic();
+          }
+        }
+      } else {
+        await toggleItemStatus(activeTab, itemId);
+        toast.success('Status updated successfully!');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
@@ -324,24 +413,9 @@ export default function RewardsPage() {
           }
         } else {
           // Create new bonus logic
-          const token = localStorage.getItem('token');
-          const response = await fetch(`${API_BASE}/admin/rewards/bonus-logic`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(bonusData)
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || `HTTP error! status: ${response.status}`);
-          }
-
-          if (data.success) {
-            toast.success(data.message || 'Bonus logic created successfully!');
+          const result = await createBonusLogic(bonusData);
+          if (result.success) {
+            toast.success(result.message || 'Bonus logic created successfully!');
             setShowAddModal(false);
             setShowEditModal(false);
             setEditingItem(null);
@@ -499,6 +573,12 @@ export default function RewardsPage() {
               Deactivate Selected
             </button>
             <button
+              onClick={handleBulkDelete}
+              className="px-3 py-1 bg-red-800 text-white rounded text-sm hover:bg-red-900"
+            >
+              Delete Selected
+            </button>
+            <button
               onClick={() => setSelectedItems([])}
               className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
             >
@@ -520,6 +600,36 @@ export default function RewardsPage() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
+          onToggleNotification={async (itemId) => {
+            try {
+              const item = xpDecaySettings.find(i => i.id === itemId);
+              if (item) {
+                const result = await toggleXPDecayNotification(itemId, !item.notificationToggle);
+                if (result.success) {
+                  toast.success(result.message || 'Notification setting updated successfully!');
+                  await fetchXPDecaySettings();
+                }
+              }
+            } catch (error) {
+              const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+              toast.error(errorMessage);
+            }
+          }}
+          onToggleActive={async (itemId) => {
+            try {
+              const item = bonusLogic.find(i => i.id === itemId);
+              if (item) {
+                const result = await toggleBonusLogicActive(itemId, !item.active);
+                if (result.success) {
+                  toast.success(result.message || 'Active status updated successfully!');
+                  await fetchBonusLogic();
+                }
+              }
+            } catch (error) {
+              const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+              toast.error(errorMessage);
+            }
+          }}
         />
       )}
 

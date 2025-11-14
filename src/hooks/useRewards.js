@@ -554,8 +554,13 @@ export const useRewards = () => {
       data.append('tierName', formData.tierName);
       data.append('xpMin', formData.xpMin);
       data.append('xpMax', formData.xpMax);
-      data.append('accessBenefits', formData.accessBenefits);
+      data.append('accessBenefits', formData.accessBenefits || '');
       data.append('status', formData.status);
+
+      // Add badge if provided (can be string or file)
+      if (formData.badge && !formData.badgeFile) {
+        data.append('badge', formData.badge);
+      }
 
       // Add badge file if provided
       if (formData.badgeFile) {
@@ -591,8 +596,13 @@ export const useRewards = () => {
       data.append('tierName', formData.tierName);
       data.append('xpMin', formData.xpMin);
       data.append('xpMax', formData.xpMax);
-      data.append('accessBenefits', formData.accessBenefits);
+      data.append('accessBenefits', formData.accessBenefits || '');
       data.append('status', formData.status);
+
+      // Add badge if provided (can be string or file)
+      if (formData.badge && !formData.badgeFile) {
+        data.append('badge', formData.badge);
+      }
 
       // Add badge file if provided
       if (formData.badgeFile) {
@@ -674,6 +684,7 @@ export const useRewards = () => {
           decayPercentage: item.decayPercentage,
           decayPercentageValue: item.decayPercentageValue,
           sendNotification: item.sendNotification,
+          notificationToggle: item.notificationToggle ?? item.sendNotification ?? false,
           notificationMessage: item.notificationMessage,
           status: item.status,
           order: item.order,
@@ -821,6 +832,247 @@ export const useRewards = () => {
     }
   };
 
+  // XP Tiers - Additional endpoints
+  const toggleXPTierStatus = async (id, status) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch(`/xp-tiers/${id}/status`, { status });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkUpdateXPTiersStatus = async (ids, status) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch('/xp-tiers/bulk-status', { ids, status });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkDeleteXPTiers = async (ids) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.delete('/xp-tiers/bulk-delete', { data: { ids } });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  // XP Decay Settings - Additional endpoints
+  const toggleXPDecayStatus = async (id, status) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch(`/xp-decay/${id}/status`, { status });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const toggleXPDecayNotification = async (id, notificationToggle) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch(`/xp-decay/${id}/notification`, { notificationToggle });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkUpdateXPDecayStatus = async (ids, status) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch('/xp-decay/bulk-status', { ids, status });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkDeleteXPDecay = async (ids) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.delete('/xp-decay/bulk-delete', { data: { ids } });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  // Bonus Logic - Additional endpoints
+  const toggleBonusLogicActive = async (id, active) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch(`/bonus-logic/${id}/active`, { active });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkUpdateBonusLogicStatus = async (ids, status) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch('/bonus-logic/bulk-status', { ids, status });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkDeleteBonusLogic = async (ids) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.delete('/bonus-logic/bulk-delete', { data: { ids } });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const createBonusLogic = async (formData) => {
+    setLoading(true);
+    try {
+      const data = {
+        bonusType: formData.bonusType,
+        triggerCondition: formData.triggerCondition,
+        rewardValue: formData.rewardValue,
+        active: formData.active
+      };
+
+      const response = await apiClient.post('/bonus-logic', data);
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
   return {
     xpTiers,
     xpDecaySettings,
@@ -841,15 +1093,26 @@ export const useRewards = () => {
     updateBonusLogic,
     deleteBonusLogic,
     toggleBonusLogicStatus,
+    toggleBonusLogicActive,
+    bulkUpdateBonusLogicStatus,
+    bulkDeleteBonusLogic,
+    createBonusLogic,
     fetchXPTiers,
     fetchSingleXPTier,
     createXPTier,
     updateXPTier,
     deleteXPTier,
+    toggleXPTierStatus,
+    bulkUpdateXPTiersStatus,
+    bulkDeleteXPTiers,
     fetchXPDecaySettings,
     fetchSingleXPDecay,
     createXPDecay,
     updateXPDecay,
     deleteXPDecay,
+    toggleXPDecayStatus,
+    toggleXPDecayNotification,
+    bulkUpdateXPDecayStatus,
+    bulkDeleteXPDecay,
   };
 };

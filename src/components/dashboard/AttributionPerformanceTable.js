@@ -1,7 +1,36 @@
 'use client';
 
 const AttributionPerformanceTable = ({ data, loading }) => {
-  // Mock data for demonstration
+  // Map API data to table format
+  const getSourceIcon = (source) => {
+    const iconMap = {
+      'facebook': { icon: '📘', bg: 'bg-blue-100' },
+      'google': { icon: '🔍', bg: 'bg-green-100' },
+      'tiktok': { icon: '🎵', bg: 'bg-pink-100' },
+      'instagram': { icon: '📷', bg: 'bg-purple-100' },
+      'snapchat': { icon: '👻', bg: 'bg-yellow-100' },
+      'direct': { icon: '🌱', bg: 'bg-emerald-100' },
+      'organic': { icon: '🌱', bg: 'bg-emerald-100' },
+    };
+    return iconMap[source?.toLowerCase()] || { icon: '📊', bg: 'bg-gray-100' };
+  };
+
+  const tableData = data && data.length > 0 ? data.map((item, index) => {
+    const sourceIcon = getSourceIcon(item.source);
+    return {
+      id: index + 1,
+      source: item.source ? item.source.charAt(0).toUpperCase() + item.source.slice(1) : 'Unknown',
+      icon: sourceIcon.icon,
+      iconBg: sourceIcon.bg,
+      installs: item.installs || 0,
+      d1Retention: item.d1Retention || 0,
+      revenue: item.revenue || 0,
+      rewardCost: item.rewardCost || 0,
+      marginPercent: item.marginPercent || 0,
+    };
+  }) : [];
+
+  // Mock data for fallback
   const mockData = [
     {
       id: 1,
@@ -83,6 +112,8 @@ const AttributionPerformanceTable = ({ data, loading }) => {
     }
   ];
 
+  const displayData = tableData.length > 0 ? tableData : mockData;
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -139,10 +170,12 @@ const AttributionPerformanceTable = ({ data, loading }) => {
     );
   }
 
-  const totalInstalls = mockData.reduce((sum, item) => sum + item.installs, 0);
-  const totalRevenue = mockData.reduce((sum, item) => sum + item.revenue, 0);
-  const totalRewardCost = mockData.reduce((sum, item) => sum + item.rewardCost, 0);
-  const avgRetention = mockData.reduce((sum, item) => sum + item.d1Retention, 0) / mockData.length;
+  const totalInstalls = displayData.reduce((sum, item) => sum + item.installs, 0);
+  const totalRevenue = displayData.reduce((sum, item) => sum + item.revenue, 0);
+  const totalRewardCost = displayData.reduce((sum, item) => sum + item.rewardCost, 0);
+  const avgRetention = displayData.length > 0 
+    ? displayData.reduce((sum, item) => sum + item.d1Retention, 0) / displayData.length 
+    : 0;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -171,7 +204,7 @@ const AttributionPerformanceTable = ({ data, loading }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {mockData.map((source) => (
+              {displayData.map((source) => (
                 <tr key={source.id} className="hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-2">
                     <div className="flex items-center">

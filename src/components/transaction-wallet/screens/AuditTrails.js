@@ -14,10 +14,9 @@ import toast from "react-hot-toast";
 export default function AuditTrails() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [filters, setFilters] = useState({
-    admin: "",
-    user: "",
+    adminId: "",
+    userId: "",
     action: "",
-    dateRange: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,32 +37,30 @@ export default function AuditTrails() {
       setError(null);
 
       try {
-        const response = await TRANSACTION_API.getAuditLogs({
+        const params = {
           page: currentPage,
           limit: pagination.itemsPerPage,
-          adminName: filters.admin || undefined,
-          userName: filters.user || undefined,
-          action: filters.action || undefined,
-          startDate: filters.dateRange
-            ? filters.dateRange.split(" to ")[0]
-            : undefined,
-          endDate: filters.dateRange
-            ? filters.dateRange.split(" to ")[1]
-            : undefined,
-        });
+        };
+
+        // Add filters if provided
+        if (filters.adminId) params.adminId = filters.adminId;
+        if (filters.userId) params.userId = filters.userId;
+        if (filters.action) params.action = filters.action;
+
+        const response = await TRANSACTION_API.getAuditLogs(params);
 
         if (response.data?.success && response.data?.data) {
-          const logs = response.data.data.logs || response.data.data;
-          setAuditLogs(Array.isArray(logs) ? logs : []);
+          const data = response.data.data;
+          const logs = Array.isArray(data.logs) ? data.logs : [];
+          setAuditLogs(logs);
 
           // Update pagination
-          if (response.data.data.pagination) {
+          if (data.pagination) {
             setPagination({
-              currentPage:
-                response.data.data.pagination.currentPage || currentPage,
-              totalPages: response.data.data.pagination.totalPages || 1,
-              totalItems: response.data.data.pagination.totalItems || 0,
-              itemsPerPage: response.data.data.pagination.itemsPerPage || 10,
+              currentPage: data.pagination.currentPage || currentPage,
+              totalPages: data.pagination.totalPages || 1,
+              totalItems: data.pagination.totalItems || 0,
+              itemsPerPage: data.pagination.itemsPerPage || pagination.itemsPerPage,
             });
           }
         } else {
@@ -81,7 +78,7 @@ export default function AuditTrails() {
     };
 
     loadAuditLogs();
-  }, [currentPage, filters]);
+  }, [currentPage, filters.adminId, filters.userId, filters.action, pagination.itemsPerPage]);
 
   // Load available actions for filter dropdown
   useEffect(() => {
@@ -89,7 +86,8 @@ export default function AuditTrails() {
       try {
         const response = await TRANSACTION_API.getAuditActions();
         if (response.data?.success && response.data?.data) {
-          setAvailableActions(response.data.data.actions || []);
+          // API returns array directly
+          setAvailableActions(Array.isArray(response.data.data) ? response.data.data : []);
         }
       } catch (error) {
         console.error("Failed to load available actions:", error);
@@ -111,27 +109,12 @@ export default function AuditTrails() {
 
   const handleClearFilters = () => {
     setFilters({
-      admin: "",
-      user: "",
+      adminId: "",
+      userId: "",
       action: "",
-      dateRange: "",
     });
     setSearchTerm("");
     setCurrentPage(1);
-  };
-
-  // Helper function to map audit trail user IDs to actual user IDs
-  const mapUserIdForNavigation = (targetUserId) => {
-    // Map USR-XXXXX format to IDOXXXX format for existing user pages
-    const userIdMappings = {
-      "USR-38281": "IDO9012",
-      "USR-202589": "IDO9013",
-      "USR-202590": "IDO9014",
-      "USR-202591": "IDO9015",
-      "USR-202592": "IDO9016",
-    };
-    
-    return userIdMappings[targetUserId] || targetUserId;
   };
 
   // Handle Entry ID navigation to audit detail
@@ -149,41 +132,6 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
     alert(`Audit Details:\n\n${details}`);
   };
 
-  // Helper function to parse audit trail timestamp format
-  const parseAuditTimestamp = (timestamp) => {
-    try {
-      // Handle format like "2025-05-28 12:01 PM"
-      return new Date(timestamp);
-    } catch (error) {
-      console.error("Error parsing timestamp:", timestamp);
-      return new Date(0); // Return epoch time if parsing fails
-    }
-  };
-
-  // Helper function to filter by date range
-  const matchesDateRange = (log) => {
-    if (!filters.dateRange) return true;
-    
-    const logDate = parseAuditTimestamp(log.timestamp);
-    const now = new Date();
-    let startDate;
-    
-    switch (filters.dateRange) {
-      case "Last 24 hours":
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case "Last 7 days":
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case "Last 30 days":
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        return true;
-    }
-    
-    return logDate >= startDate && logDate <= now;
-  };
 
   const getActionBadge = (action) => {
     const styles = {
@@ -219,11 +167,21 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
   // Use auditLogs directly since filtering is handled by API
   const paginatedLogs = auditLogs;
 
-  // Get unique admin names, users, and actions for filters
-  const uniqueAdmins = [...new Set(auditLogs.map((log) => log.adminName))];
-  const uniqueUsers = [
-    ...new Set(auditLogs.map((log) => log.targetUserName).filter(Boolean)),
+  // Get unique admin IDs, user IDs, and actions for filters
+  const uniqueAdminIds = [...new Set(auditLogs.map((log) => ({
+    id: log.adminId,
+    name: log.adminName,
+    email: log.adminEmail
+  })).filter(log => log.id))];
+  
+  const uniqueUserIds = [
+    ...new Set(auditLogs.map((log) => ({
+      id: log.targetUserId,
+      name: log.targetUserName,
+      email: log.targetUserEmail
+    })).filter(log => log.id)),
   ];
+  
   const uniqueActions =
     availableActions.length > 0
       ? availableActions
@@ -235,17 +193,17 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
       <div className="flex flex-wrap gap-4 items-center justify-between">
         <div className="flex flex-wrap gap-3">
           <FilterDropdown
-            filterId="admin"
+            filterId="adminId"
             label="Admin"
-            options={uniqueAdmins}
-            value={filters.admin}
+            options={uniqueAdminIds.map(admin => admin.id)}
+            value={filters.adminId}
             onChange={handleFilterChange}
           />
           <FilterDropdown
-            filterId="user"
+            filterId="userId"
             label="User"
-            options={uniqueUsers}
-            value={filters.user}
+            options={uniqueUserIds.map(user => user.id)}
+            value={filters.userId}
             onChange={handleFilterChange}
           />
           <FilterDropdown
@@ -255,19 +213,11 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
             value={filters.action}
             onChange={handleFilterChange}
           />
-          <FilterDropdown
-            filterId="dateRange"
-            label="Date Range"
-            options={["Last 24 hours", "Last 7 days", "Last 30 days"]}
-            value={filters.dateRange}
-            onChange={handleFilterChange}
-          />
 
           {/* Clear Filters Button */}
-          {(filters.admin ||
-            filters.user ||
+          {(filters.adminId ||
+            filters.userId ||
             filters.action ||
-            filters.dateRange ||
             searchTerm) && (
             <button
               onClick={handleClearFilters}
@@ -401,18 +351,16 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
                         No Audit Logs Found
                       </h3>
                       <p className="text-gray-600 mb-4">
-                        {filters.admin ||
-                        filters.user ||
+                        {filters.adminId ||
+                        filters.userId ||
                         filters.action ||
-                        filters.dateRange ||
                         searchTerm
                           ? "No audit logs match your current filters. Try adjusting your search criteria."
                           : "No audit logs have been recorded yet. Admin actions and system events will appear here once they occur."}
                       </p>
-                      {(filters.admin ||
-                        filters.user ||
+                      {(filters.adminId ||
+                        filters.userId ||
                         filters.action ||
-                        filters.dateRange ||
                         searchTerm) && (
                         <button
                           onClick={handleClearFilters}
@@ -433,38 +381,58 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
                       className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
                       title="View audit details"
                     >
-                        {log.entryId}
+                      {log.entryId}
                     </button>
                   </td>
                   <td className="px-6 py-4">
+                    <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-900">
+                        {log.adminName || 'N/A'}
+                      </span>
+                      <span className="text-xs text-gray-500">
                         {log.adminId}
                       </span>
-                  </td>
-                    <td className="px-6 py-4">{getActionBadge(log.action)}</td>
-                  <td className="px-6 py-4">
-                      {log.targetUserId ? (
-                      <button
-                        onClick={() => {
-                            window.open(`/users/${log.targetUserId}`, "_blank");
-                        }}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
-                          title={`View user profile for ${log.targetUserName}`}
-                      >
-                          {log.targetUserName}
-                      </button>
-                    ) : (
-                        <span className="font-medium text-gray-900">
-                          System
+                      {log.adminEmail && (
+                        <span className="text-xs text-gray-400">
+                          {log.adminEmail}
                         </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">{getActionBadge(log.action)}</td>
+                  <td className="px-6 py-4">
+                    {log.targetUserId ? (
+                      <div className="flex flex-col">
+                        <button
+                          onClick={() => {
+                            window.open(`/users/${log.targetUserId}`, "_blank");
+                          }}
+                          className="text-blue-600 hover:text-blue-800 font-medium text-left"
+                          title={`View user profile for ${log.targetUserName}`}
+                        >
+                          {log.targetUserName || 'N/A'}
+                        </button>
+                        <span className="text-xs text-gray-500">
+                          {log.targetUserId}
+                        </span>
+                        {log.targetUserEmail && (
+                          <span className="text-xs text-gray-400">
+                            {log.targetUserEmail}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="font-medium text-gray-900">
+                        System
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <ClockIcon className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">
-                          {new Date(log.timestamp).toLocaleString()}
-                        </span>
+                      <span className="text-sm text-gray-900">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </span>
                     </div>
                   </td>
                 </tr>

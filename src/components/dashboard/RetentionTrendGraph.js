@@ -2,8 +2,27 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const RetentionTrendGraph = ({ data, filters, loading }) => {
-  // Mock data for demonstration
+const RetentionTrendGraph = ({ data, retentionCurrent, filters, loading }) => {
+  // Map API trend data to chart format
+  const chartData = data && data.length > 0 ? data.map((item, index) => {
+    const d1 = parseFloat(item.d1) || 0;
+    const d7 = parseFloat(item.d7) || 0;
+    const d14 = parseFloat(item.d14) || 0;
+    const d30 = parseFloat(item.d30) || 0;
+    
+    return {
+      day: `Day ${index + 1}`,
+      date: item.date,
+      retention: d1, // Use D1 retention for main line
+      installs: item.cohortSize || 0,
+      d1,
+      d7,
+      d14,
+      d30,
+    };
+  }) : [];
+
+  // Use mock data as fallback if no API data
   const mockData = [
     { day: 'D0', retention: 100, installs: 5000 },
     { day: 'D1', retention: 68.5, installs: 3425 },
@@ -14,6 +33,8 @@ const RetentionTrendGraph = ({ data, filters, loading }) => {
     { day: 'D21', retention: 15.2, installs: 760 },
     { day: 'D30', retention: 12.8, installs: 640 }
   ];
+
+  const displayData = chartData.length > 0 ? chartData : mockData;
 
   const customTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -77,7 +98,7 @@ const RetentionTrendGraph = ({ data, filters, loading }) => {
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={mockData}>
+          <LineChart data={displayData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis 
               dataKey="day" 
@@ -129,19 +150,27 @@ const RetentionTrendGraph = ({ data, filters, loading }) => {
       <div className="mt-6 pt-6 border-t border-gray-200">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600">68.5%</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {retentionCurrent?.d1?.toFixed(1) || "0.0"}%
+            </p>
             <p className="text-sm text-gray-600">D1 Retention</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-green-600">25.4%</p>
+            <p className="text-2xl font-bold text-green-600">
+              {retentionCurrent?.d7?.toFixed(1) || "0.0"}%
+            </p>
             <p className="text-sm text-gray-600">D7 Retention</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600">18.9%</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {retentionCurrent?.d14?.toFixed(1) || "0.0"}%
+            </p>
             <p className="text-sm text-gray-600">D14 Retention</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-orange-600">12.8%</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {retentionCurrent?.d30?.toFixed(1) || "0.0"}%
+            </p>
             <p className="text-sm text-gray-600">D30 Retention</p>
           </div>
         </div>

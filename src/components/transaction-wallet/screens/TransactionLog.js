@@ -1,31 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import FilterDropdown from '@/components/ui/FilterDropdown';
-import Pagination from '@/components/ui/Pagination';
-import { CheckIcon, DocumentArrowDownIcon, XMarkIcon, ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { getDateRangeFilter } from '@/utils/dateFilters';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import FilterDropdown from "@/components/ui/FilterDropdown";
+import Pagination from "@/components/ui/Pagination";
+import {
+  CheckIcon,
+  DocumentArrowDownIcon,
+  XMarkIcon,
+  ArrowPathIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import { getDateRangeFilter } from "@/utils/dateFilters";
+import toast from "react-hot-toast";
 
 export default function TransactionLog({ onSneakPeek }) {
   const [filters, setFilters] = useState({
-    dateRange: '',
-    type: '',
-    status: '',
-    approval: ''
+    dateRange: "",
+    type: "",
+    status: "",
+    approval: "",
   });
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [transactions, setTransactions] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 10
+    itemsPerPage: 10,
   });
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [approvalAction, setApprovalAction] = useState('');
+  const [approvalAction, setApprovalAction] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusOptions, setStatusOptions] = useState([]);
@@ -38,38 +44,53 @@ export default function TransactionLog({ onSneakPeek }) {
     const fetchFilterOptions = async () => {
       setLoadingOptions(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         const headers = {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         };
 
         // Fetch statuses
         const statusResponse = await fetch(
-          'https://rewardsapi.hireagent.co/api/admin/transactions/meta/statuses',
+          "https://rewardsapi.hireagent.co/api/admin/transactions/meta/statuses",
           { headers }
         );
         const statusData = await statusResponse.json();
         if (statusData.success) {
           // Capitalize first letter for display
-          setStatusOptions(statusData.data.map(s => s.charAt(0).toUpperCase() + s.slice(1)));
+          setStatusOptions(
+            statusData.data.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+          );
         }
 
         // Fetch transaction types
         const typesResponse = await fetch(
-          'https://rewardsapi.hireagent.co/api/admin/transactions/meta/types',
+          "https://rewardsapi.hireagent.co/api/admin/transactions/meta/types",
           { headers }
         );
         const typesData = await typesResponse.json();
         if (typesData.success) {
           // Capitalize first letter for display
-          setTransactionTypes(typesData.data.map(t => t.charAt(0).toUpperCase() + t.slice(1)));
+          setTransactionTypes(
+            typesData.data.map((t) => t.charAt(0).toUpperCase() + t.slice(1))
+          );
         }
       } catch (error) {
-        console.error('Error fetching filter options:', error);
+        console.error("Error fetching filter options:", error);
         // Fallback to default options
-        setStatusOptions(['Completed', 'Pending', 'Failed']);
-        setTransactionTypes(['Credit', 'Debit', 'Reward', 'Xp', 'Redemption', 'Spin', 'Adjustment', 'Refund', 'Bonus', 'Penalty']);
+        setStatusOptions(["Completed", "Pending", "Failed"]);
+        setTransactionTypes([
+          "Credit",
+          "Debit",
+          "Reward",
+          "Xp",
+          "Redemption",
+          "Spin",
+          "Adjustment",
+          "Refund",
+          "Bonus",
+          "Penalty",
+        ]);
       } finally {
         setLoadingOptions(false);
       }
@@ -82,22 +103,22 @@ export default function TransactionLog({ onSneakPeek }) {
   const fetchTransactions = async (page = 1) => {
     setLoadingTransactions(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '10',
-        search: searchTerm || '',
-        type: filters.type ? filters.type.toLowerCase() : '',
-        status: filters.status ? filters.status.toLowerCase() : ''
+        limit: "10",
+        search: searchTerm || "",
+        type: filters.type ? filters.type.toLowerCase() : "",
+        status: filters.status ? filters.status.toLowerCase() : "",
       });
 
       const response = await fetch(
         `https://rewardsapi.hireagent.co/api/admin/transactions?${params}`,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -105,28 +126,35 @@ export default function TransactionLog({ onSneakPeek }) {
 
       if (result.success && result.data) {
         // Transform API data to component format
-        const transformedTransactions = result.data.transactions.map(t => ({
+        const transformedTransactions = result.data.transactions.map((t) => ({
           id: t.transactionId || t.referenceId || t._id,
-          userId: t.userId || t.user?._id || '-',
-          userName: t.userName || `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.trim() || '-',
-          userEmail: t.userEmail || t.user?.email || '-',
+          userId: t.userId || t.user?._id || "-",
+          userName:
+            t.userName ||
+            `${t.user?.firstName || ""} ${t.user?.lastName || ""}`.trim() ||
+            "-",
+          userEmail: t.userEmail || t.user?.email || "-",
           type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
-          amount: `${t.amount} ${t.balanceType || 'coins'}`,
-          description: t.description || '-',
-          createdOn: new Date(t.createdAt).toLocaleDateString('en-GB'),
-          approvedOn: t.approval?.status === 'approved' && t.updatedAt ? new Date(t.updatedAt).toLocaleDateString('en-GB') : '-',
+          amount: `${t.amount} ${t.balanceType || "coins"}`,
+          description: t.description || "-",
+          createdOn: new Date(t.createdAt).toLocaleDateString("en-GB"),
+          approvedOn:
+            t.approval?.status === "approved" && t.updatedAt
+              ? new Date(t.updatedAt).toLocaleDateString("en-GB")
+              : "-",
           status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
-          approval: t.isApproved ? 'Yes' : 'No',
+          approval: t.isApproved ? "Yes" : "No",
           approvalRequired: t.approval?.required || false,
-          approvalStatus: t.approvalStatus || t.approval?.status || 'not_required',
-          rawData: t // Store raw data for reference
+          approvalStatus:
+            t.approvalStatus || t.approval?.status || "not_required",
+          rawData: t, // Store raw data for reference
         }));
 
         setTransactions(transformedTransactions);
         setPagination(result.data.pagination);
       }
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      console.error("Error fetching transactions:", error);
     } finally {
       setLoadingTransactions(false);
     }
@@ -138,7 +166,7 @@ export default function TransactionLog({ onSneakPeek }) {
   }, [currentPage, searchTerm, filters.type, filters.status]);
 
   const handleFilterChange = (filterId, value) => {
-    setFilters(prev => ({ ...prev, [filterId]: value }));
+    setFilters((prev) => ({ ...prev, [filterId]: value }));
     setCurrentPage(1);
   };
 
@@ -149,29 +177,38 @@ export default function TransactionLog({ onSneakPeek }) {
 
   const handleClearFilters = () => {
     setFilters({
-      dateRange: '',
-      type: '',
-      status: '',
-      approval: ''
+      dateRange: "",
+      type: "",
+      status: "",
+      approval: "",
     });
-    setSearchTerm('');
+    setSearchTerm("");
     setCurrentPage(1);
   };
 
   const handleExport = () => {
     // Export functionality - exports current page transactions
     const csvContent = [
-      ['Transaction ID', 'User ID', 'Type', 'Amount', 'Created On', 'Approved On', 'Status', 'Approval'],
-      ...displayTransactions.map(t => [
-        t.id, t.userId, t.type, t.amount, t.createdOn, t.approvedOn, t.status, t.approval
-      ])
-    ].map(row => row.join(',')).join('\n');
+      ["Transaction ID", "User ID", "Type", "Amount", "Created On", "Status"],
+      // ['Transaction ID', 'User ID', 'Type', 'Amount', 'Created On', 'Approved On', 'Status', 'Approval'],
+      ...displayTransactions.map((t) => [
+        t.id,
+        t.userId,
+        t.type,
+        t.amount,
+        t.createdOn,
+        t.status,
+        // t.id, t.userId, t.type, t.amount, t.createdOn, t.approvedOn, t.status, t.approval
+      ]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = 'transactions.csv';
+    link.download = "transactions.csv";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -184,37 +221,46 @@ export default function TransactionLog({ onSneakPeek }) {
 
   const confirmApproval = () => {
     if (!selectedTransaction) return;
-    
+
     setIsLoading(true);
-    
+
     // Simulate processing delay
     setTimeout(() => {
       // Update local state
-      setTransactions(prev => prev.map(t =>
-        t.id === selectedTransaction.id
-          ? {
-              ...t,
-              approval: approvalAction === 'approve' ? 'Yes' : 'No',
-              approvedOn: approvalAction === 'approve' ? new Date().toLocaleDateString('en-GB') : '-',
-              status: approvalAction === 'approve' ? 'Completed' : 'Failed'
-            }
-          : t
-      ));
+      setTransactions((prev) =>
+        prev.map((t) =>
+          t.id === selectedTransaction.id
+            ? {
+                ...t,
+                approval: approvalAction === "approve" ? "Yes" : "No",
+                approvedOn:
+                  approvalAction === "approve"
+                    ? new Date().toLocaleDateString("en-GB")
+                    : "-",
+                status: approvalAction === "approve" ? "Completed" : "Failed",
+              }
+            : t
+        )
+      );
 
       // Show success feedback
-      toast.success(`Transaction ${approvalAction === 'approve' ? 'approved' : 'rejected'} successfully!`);
+      toast.success(
+        `Transaction ${
+          approvalAction === "approve" ? "approved" : "rejected"
+        } successfully!`
+      );
 
       setIsLoading(false);
       setShowApprovalModal(false);
       setSelectedTransaction(null);
-      setApprovalAction('');
+      setApprovalAction("");
     }, 1000);
   };
 
   const cancelApproval = () => {
     setShowApprovalModal(false);
     setSelectedTransaction(null);
-    setApprovalAction('');
+    setApprovalAction("");
   };
 
   const handleRefresh = async () => {
@@ -225,18 +271,19 @@ export default function TransactionLog({ onSneakPeek }) {
 
   const getStatusBadge = (status) => {
     const styles = {
-      'Completed': 'bg-green-100 text-green-800',
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Failed': 'bg-red-100 text-red-800'
+      Completed: "bg-green-100 text-green-800",
+      Pending: "bg-yellow-100 text-yellow-800",
+      Failed: "bg-red-100 text-red-800",
     };
-    
+
     return (
-      <span className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full min-w-[80px] ${styles[status]}`}>
+      <span
+        className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full min-w-[80px] ${styles[status]}`}
+      >
         {status}
       </span>
     );
   };
-
 
   // No client-side filtering needed - API handles it
   // Use transactions directly as they're already filtered by the API
@@ -250,7 +297,7 @@ export default function TransactionLog({ onSneakPeek }) {
           <FilterDropdown
             filterId="dateRange"
             label="Date Range"
-            options={['Last 7 days', 'Last 30 days', 'Last 3 months']}
+            options={["Last 7 days", "Last 30 days", "Last 3 months"]}
             value={filters.dateRange}
             onChange={handleFilterChange}
           />
@@ -273,13 +320,17 @@ export default function TransactionLog({ onSneakPeek }) {
           <FilterDropdown
             filterId="approval"
             label="Approval"
-            options={['Yes', 'No']}
+            options={["Yes", "No"]}
             value={filters.approval}
             onChange={handleFilterChange}
           />
-          
+
           {/* Clear Filters Button */}
-          {(filters.dateRange || filters.type || filters.status || filters.approval || searchTerm) && (
+          {(filters.dateRange ||
+            filters.type ||
+            filters.status ||
+            filters.approval ||
+            searchTerm) && (
             <button
               onClick={handleClearFilters}
               className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -290,7 +341,7 @@ export default function TransactionLog({ onSneakPeek }) {
             </button>
           )}
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -302,17 +353,19 @@ export default function TransactionLog({ onSneakPeek }) {
               className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
-          
+
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh transaction list"
           >
-            <ArrowPathIcon className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            <ArrowPathIcon
+              className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
-          
+
           <button
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -344,21 +397,21 @@ export default function TransactionLog({ onSneakPeek }) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created On
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Approved On
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Approval
-                </th>
+                </th> */}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loadingTransactions ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-3"></div>
                       <p className="text-gray-600">Loading transactions...</p>
@@ -367,45 +420,60 @@ export default function TransactionLog({ onSneakPeek }) {
                 </tr>
               ) : displayTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <p className="text-gray-600">No transactions found</p>
                   </td>
                 </tr>
               ) : (
                 displayTransactions.map((transaction) => (
                   <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => window.open(`/transactions/${encodeURIComponent(transaction.id)}`, '_blank')}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      {transaction.id}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => window.open(`/users/${transaction.userId}`, '_blank')}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      {transaction.userId}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{transaction.type}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">{transaction.amount}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-gray-900">{transaction.createdOn}</span>
-                  </td>
-                  <td className="px-6 py-4">
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() =>
+                          window.open(
+                            `/transactions/${encodeURIComponent(
+                              transaction.id
+                            )}`,
+                            "_blank"
+                          )
+                        }
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        {transaction.id}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() =>
+                          window.open(`/users/${transaction.userId}`, "_blank")
+                        }
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        {transaction.userId}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-900">
+                        {transaction.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-gray-900">
+                        {transaction.amount}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-gray-900">
+                        {transaction.createdOn}
+                      </span>
+                    </td>
+                    {/* <td className="px-6 py-4">
                     <span className="text-gray-900">{transaction.approvedOn}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {getStatusBadge(transaction.status)}
-                  </td>
-                  <td className="px-6 py-4">
+                  </td> */}
+                    <td className="px-6 py-4">
+                      {getStatusBadge(transaction.status)}
+                    </td>
+                    {/* <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       {transaction.approval === 'Yes' ? (
                         <div className="flex items-center">
@@ -436,8 +504,8 @@ export default function TransactionLog({ onSneakPeek }) {
                         </div>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </td> */}
+                  </tr>
                 ))
               )}
             </tbody>
@@ -457,11 +525,14 @@ export default function TransactionLog({ onSneakPeek }) {
 
       {/* Results Summary */}
       <div className="text-sm text-gray-600">
-        {loadingTransactions ? (
-          'Loading transactions...'
-        ) : (
-          `Showing ${((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}-${Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of ${pagination.totalItems} transactions`
-        )}
+        {loadingTransactions
+          ? "Loading transactions..."
+          : `Showing ${
+              (pagination.currentPage - 1) * pagination.itemsPerPage + 1
+            }-${Math.min(
+              pagination.currentPage * pagination.itemsPerPage,
+              pagination.totalItems
+            )} of ${pagination.totalItems} transactions`}
       </div>
 
       {/* Approval Confirmation Modal */}
@@ -470,31 +541,42 @@ export default function TransactionLog({ onSneakPeek }) {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Confirm {approvalAction === 'approve' ? 'Approval' : 'Rejection'}
+                Confirm{" "}
+                {approvalAction === "approve" ? "Approval" : "Rejection"}
               </h3>
-              
+
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Transaction ID:</span>
-                  <span className="text-sm font-medium">{selectedTransaction.id}</span>
+                  <span className="text-sm font-medium">
+                    {selectedTransaction.id}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">User ID:</span>
-                  <span className="text-sm font-medium">{selectedTransaction.userId}</span>
+                  <span className="text-sm font-medium">
+                    {selectedTransaction.userId}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Type:</span>
-                  <span className="text-sm font-medium">{selectedTransaction.type}</span>
+                  <span className="text-sm font-medium">
+                    {selectedTransaction.type}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Amount:</span>
-                  <span className="text-sm font-medium">{selectedTransaction.amount}</span>
+                  <span className="text-sm font-medium">
+                    {selectedTransaction.amount}
+                  </span>
                 </div>
               </div>
 
               <p className="text-sm text-gray-600 mb-6">
-                Are you sure you want to {approvalAction === 'approve' ? 'approve' : 'reject'} this transaction? 
-                This action will update the transaction status and log the admin action.
+                Are you sure you want to{" "}
+                {approvalAction === "approve" ? "approve" : "reject"} this
+                transaction? This action will update the transaction status and
+                log the admin action.
               </p>
 
               <div className="flex gap-3 justify-end">
@@ -509,9 +591,9 @@ export default function TransactionLog({ onSneakPeek }) {
                   onClick={confirmApproval}
                   disabled={isLoading}
                   className={`px-4 py-2 rounded-md text-white disabled:opacity-50 ${
-                    approvalAction === 'approve'
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-red-600 hover:bg-red-700'
+                    approvalAction === "approve"
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-red-600 hover:bg-red-700"
                   }`}
                 >
                   {isLoading ? (
@@ -520,7 +602,9 @@ export default function TransactionLog({ onSneakPeek }) {
                       Processing...
                     </div>
                   ) : (
-                    `${approvalAction === 'approve' ? 'Approve' : 'Reject'} Transaction`
+                    `${
+                      approvalAction === "approve" ? "Approve" : "Reject"
+                    } Transaction`
                   )}
                 </button>
               </div>

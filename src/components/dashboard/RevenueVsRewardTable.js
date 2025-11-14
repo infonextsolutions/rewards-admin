@@ -1,76 +1,94 @@
-'use client';
+"use client";
 
 const RevenueVsRewardTable = ({ data, loading }) => {
-  // Mock data for demonstration
+  // Map API data to table format
+  const tableData =
+    data && data.length > 0
+      ? data.map((game, index) => ({
+          id: index + 1,
+          game: game.title || game.gameId || "Unknown Game",
+          icon: "🎮",
+          revenue: game.revenue || 0,
+          rewardCost: game.rewardCost || 0,
+          marginDollar: game.margin || 0,
+          marginPercent: game.marginPercent || 0,
+          d7Retention: game.d7Retention || 0,
+          gameId: game.gameId,
+        }))
+      : [];
+
+  // Mock data for fallback
   const mockData = [
     {
       id: 1,
-      game: 'Candy Crush Saga',
-      icon: '🍭',
+      game: "Candy Crush Saga",
+      icon: "🍭",
       revenue: 145000,
       rewardCost: 38000,
       marginDollar: 107000,
       marginPercent: 73.8,
-      d7Retention: 35.2
+      d7Retention: 35.2,
     },
     {
       id: 2,
-      game: 'Subway Surfers',
-      icon: '🚇',
+      game: "Subway Surfers",
+      icon: "🚇",
       revenue: 89000,
       rewardCost: 27000,
       marginDollar: 62000,
       marginPercent: 69.7,
-      d7Retention: 42.1
+      d7Retention: 42.1,
     },
     {
       id: 3,
-      game: 'Clash of Clans',
-      icon: '⚔️',
+      game: "Clash of Clans",
+      icon: "⚔️",
       revenue: 198000,
       rewardCost: 45000,
       marginDollar: 153000,
       marginPercent: 77.3,
-      d7Retention: 58.3
+      d7Retention: 58.3,
     },
     {
       id: 4,
-      game: 'Pokemon GO',
-      icon: '🎮',
+      game: "Pokemon GO",
+      icon: "🎮",
       revenue: 156000,
       rewardCost: 52000,
       marginDollar: 104000,
       marginPercent: 66.7,
-      d7Retention: 31.8
+      d7Retention: 31.8,
     },
     {
       id: 5,
-      game: 'Fortnite',
-      icon: '🔫',
+      game: "Fortnite",
+      icon: "🔫",
       revenue: 234000,
       rewardCost: 61000,
       marginDollar: 173000,
       marginPercent: 73.9,
-      d7Retention: 48.5
+      d7Retention: 48.5,
     },
     {
       id: 6,
-      game: 'Minecraft',
-      icon: '🧱',
+      game: "Minecraft",
+      icon: "🧱",
       revenue: 123000,
       rewardCost: 28000,
       marginDollar: 95000,
       marginPercent: 77.2,
-      d7Retention: 67.2
-    }
+      d7Retention: 67.2,
+    },
   ];
 
+  const displayData = tableData.length > 0 ? tableData : mockData;
+
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -88,11 +106,11 @@ const RevenueVsRewardTable = ({ data, loading }) => {
   // };
 
   const getMarginColor = (percent) => {
-    return 'text-gray-600 bg-gray-50';
+    return "text-gray-600 bg-gray-50";
   };
 
   const getRetentionColor = (percent) => {
-    return 'text-gray-600';
+    return "text-gray-600";
   };
 
   if (loading) {
@@ -122,7 +140,9 @@ const RevenueVsRewardTable = ({ data, loading }) => {
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Revenue vs Reward Cost</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Revenue vs Reward Cost
+            </h2>
             <p className="text-sm text-gray-600 mt-1">
               Profitability analysis by game performance
             </p>
@@ -134,22 +154,39 @@ const RevenueVsRewardTable = ({ data, loading }) => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Game</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Revenue</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Reward Cost</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Margin $</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Margin %</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">D7 Retention</th>
+                <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">
+                  Game
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                  Revenue
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                  Reward Cost
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                  Margin $
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                  Margin %
+                </th>
+                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                  D7 Retention
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {mockData.map((game) => (
-                <tr key={game.id} className="hover:bg-gray-50 transition-colors">
+              {displayData.map((game) => (
+                <tr
+                  key={game.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
                   <td className="py-4 px-2">
                     <div className="flex items-center">
                       <span className="text-lg mr-3">{game.icon}</span>
                       <div>
-                        <div className="font-medium text-gray-900 text-sm">{game.game}</div>
+                        <div className="font-medium text-gray-900 text-sm">
+                          {game.game}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -169,12 +206,20 @@ const RevenueVsRewardTable = ({ data, loading }) => {
                     </span>
                   </td>
                   <td className="py-4 px-2 text-right">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMarginColor(game.marginPercent)}`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMarginColor(
+                        game.marginPercent
+                      )}`}
+                    >
                       {game.marginPercent.toFixed(1)}%
                     </span>
                   </td>
                   <td className="py-4 px-2 text-right">
-                    <span className={`font-semibold text-sm ${getRetentionColor(game.d7Retention)}`}>
+                    <span
+                      className={`font-semibold text-sm ${getRetentionColor(
+                        game.d7Retention
+                      )}`}
+                    >
                       {game.d7Retention.toFixed(1)}%
                     </span>
                   </td>
@@ -183,7 +228,6 @@ const RevenueVsRewardTable = ({ data, loading }) => {
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );

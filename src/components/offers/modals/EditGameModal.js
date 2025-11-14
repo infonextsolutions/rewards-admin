@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useMasterData } from '../../../hooks/useMasterData';
+import { gamesAPI } from '../../../data/games';
 
 const XP_TIERS = ['Junior', 'Mid', 'Senior', 'All'];
 const GAME_GENRES = ['puzzle', 'action', 'strategy', 'arcade', 'adventure', 'sports', 'racing', 'simulation', 'rpg'];
@@ -31,6 +32,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const [platform, setPlatform] = useState('android');
   const [gamesList, setGamesList] = useState([]);
   const [loadingGames, setLoadingGames] = useState(false);
+  const [uiSections, setUiSections] = useState([]);
+  const [loadingUISections, setLoadingUISections] = useState(false);
   const [formData, setFormData] = useState({
     gameId: '',
     title: '',
@@ -48,6 +51,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     thumbnailAltText: '',
     xpTier: '',
     tier: '',
+    uiSection: '',
     countries: [],
     tags: [],
     metadata: {
@@ -91,6 +95,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         thumbnailAltText: game.thumbnailAltText || '',
         xpTier: game.xpTier || '',
         tier: game.tier || '',
+        uiSection: game.uiSection || '',
         countries: game.countries || [],
         tags: game.tags || [],
         metadata: {
@@ -132,6 +137,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         thumbnailAltText: '',
         xpTier: '',
         tier: '',
+        uiSection: '',
         countries: [],
         tags: [],
         metadata: {
@@ -157,6 +163,36 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       });
     }
   }, [game, isOpen]);
+
+  // Fetch UI sections on mount
+  useEffect(() => {
+    const fetchUISections = async () => {
+      if (!isOpen) return;
+      setLoadingUISections(true);
+      try {
+        const response = await gamesAPI.getUISections();
+        // Handle different response formats
+        let sections = [];
+        if (Array.isArray(response)) {
+          sections = response;
+        } else if (response.sections && Array.isArray(response.sections)) {
+          sections = response.sections;
+        } else if (response.data && Array.isArray(response.data)) {
+          sections = response.data;
+        } else if (response.data?.sections && Array.isArray(response.data.sections)) {
+          sections = response.data.sections;
+        }
+        // Extract section names if they're objects
+        sections = sections.map(section => typeof section === 'string' ? section : (section.name || section.value || section));
+        setUiSections(sections);
+      } catch (error) {
+        console.error('Error fetching UI sections:', error);
+      } finally {
+        setLoadingUISections(false);
+      }
+    };
+    fetchUISections();
+  }, [isOpen]);
 
   // Fetch games by SDK name
   useEffect(() => {
@@ -280,6 +316,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       defaultTaskCount: parseInt(formData.taskCount) || 0,
       xpTier: formData.xpTier,
       tier: formData.tier,
+      uiSection: formData.uiSection,
       genre: formData.metadata.genre,
       difficulty: formData.metadata.difficulty,
       rating: parseFloat(formData.metadata.rating) || 3,
@@ -477,6 +514,23 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                       <option key={tier.id} value={tier.name}>{tier.name}</option>
                     ))}
                     <option value="All">All</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    UI Section
+                  </label>
+                  <select
+                    value={formData.uiSection}
+                    onChange={(e) => handleInputChange('uiSection', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    disabled={loadingUISections}
+                  >
+                    <option value="">Choose UI Section...</option>
+                    {uiSections.map(section => (
+                      <option key={section} value={section}>{section}</option>
+                    ))}
                   </select>
                 </div>
 

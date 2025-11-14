@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import FilterDropdown from '@/components/ui/FilterDropdown';
+import { useState, useEffect, useCallback } from 'react';
 import Pagination from '@/components/ui/Pagination';
 import { CheckIcon, XMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import SneakPeekModal from '../modals/SneakPeekModal';
+import apiClient from '@/lib/apiClient';
 
 export default function RedemptionQueue() {
   const [redemptions, setRedemptions] = useState([]);
-  const [filters, setFilters] = useState({
-    verification: ''
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState({});
   const [loadingRedemptions, setLoadingRedemptions] = useState(true);
@@ -20,151 +17,162 @@ export default function RedemptionQueue() {
   const [totalRedemptions, setTotalRedemptions] = useState(0);
   const [showSneakPeek, setShowSneakPeek] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      return `${day}/${month}/${year} at ${hours}:${minutes}`;
+    } catch (error) {
+      return dateString;
+    }
+  };
 
   // Fetch redemptions from API
-  useEffect(() => {
-    const fetchRedemptions = async () => {
+  const fetchRedemptions = useCallback(async () => {
       setLoadingRedemptions(true);
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(
-          'https://rewardsapi.hireagent.co/api/admin/transactions/redemptions/pending',
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+      const params = {
+        page: currentPage,
+        limit: pagination.itemsPerPage,
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      };
 
-        const result = await response.json();
+      const response = await apiClient.get('/admin/payouts/pending', { params });
 
-        if (result.success && result.data) {
+      if (response.data?.success) {
+        const data = response.data.data || response.data;
+        
+        // API returns data.requests array
+        const requests = Array.isArray(data.requests) ? data.requests : [];
+
           // Transform API data to component format
-          const transformedRedemptions = result.data.redemptions.map(r => ({
+        const transformedRedemptions = requests.map(r => ({
             id: r._id,
-            userId: r.userId || r.user?._id || '-',
-            userName: r.userName || `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim() || '-',
-            userEmail: r.userEmail || r.user?.email || '-',
-            userMobile: r.userMobile || r.user?.mobile || '-',
-            amount: `${r.amount} ${r.balanceType || 'coins'}`,
-            status: r.status.charAt(0).toUpperCase() + r.status.slice(1),
-            verification: r.faceVerified ? 'Face Verified' : 'Face Not Verified',
-            faceVerified: r.faceVerified,
-            offerCompletion: r.offerCompletion?.title || r.metadata?.offerCompletion?.title || 'No offer data',
-            offerCompletedAt: r.offerCompletion?.completedAt || r.metadata?.offerCompletion?.completedAt || null,
-            createdAt: new Date(r.createdAt).toLocaleString('en-GB'),
-            location: r.userLocation ? `${r.userLocation.city || ''}, ${r.userLocation.country || ''}`.trim() : '-',
+          redemptionId: r.metadata?.externalId || r._id?.slice(-8) || r._id,
+          userId: r.userId?._id || r.user?.id || r.userId || '-',
+          userName: r.userId?.firstName && r.userId?.lastName 
+            ? `${r.userId.firstName} ${r.userId.lastName}`.trim()
+            : r.user?.name || r.userId?.firstName || '-',
+          userEmail: r.userId?.email || r.user?.email || '-',
+          userMobile: r.user?.mobile || r.userId?.mobile || '-',
+          amount: r.payment?.amount 
+            ? `${r.payment.currency || 'USD'} ${r.payment.amount}` 
+            : `${r.reward?.value?.denomination || 0} ${r.reward?.value?.currency_code || 'USD'}`,
+          status: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Pending',
+          payoutMethod: r.reward?.delivery?.method || 'N/A',
+          verification: 'Face Not Verified', // Default since not in API response
+          faceVerified: false,
+          offerCompletion: 'N/A',
+          offerCompletedAt: null,
+          createdAt: formatDate(r.createdAt),
+          location: '-',
             userProfile: {
-              name: r.userName || `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim() || '-',
-              email: r.userEmail || r.user?.email || '-',
-              mobile: r.userMobile || r.user?.mobile || '-',
-              location: r.userLocation
+            name: r.userId?.firstName && r.userId?.lastName 
+              ? `${r.userId.firstName} ${r.userId.lastName}`.trim()
+              : r.user?.name || '-',
+            email: r.userId?.email || r.user?.email || '-',
+            mobile: r.user?.mobile || r.userId?.mobile || '-',
+            location: null
             },
             rawData: r
           }));
 
           setRedemptions(transformedRedemptions);
-          setTotalRedemptions(result.data.total || transformedRedemptions.length);
+        
+        // Update pagination
+        if (data.pagination) {
+          setPagination({
+            currentPage: data.pagination.page || currentPage,
+            totalPages: data.pagination.pages || 1,
+            totalItems: data.pagination.total || 0,
+            itemsPerPage: data.pagination.limit || pagination.itemsPerPage
+          });
+          setTotalRedemptions(data.pagination.total || transformedRedemptions.length);
+        } else {
+          setTotalRedemptions(transformedRedemptions.length);
+        }
+      } else {
+        throw new Error(response.data?.message || 'Failed to fetch redemptions');
         }
       } catch (error) {
         console.error('Error fetching redemptions:', error);
+      toast.error(error.response?.data?.message || 'Failed to load redemption requests');
+      setRedemptions([]);
       } finally {
         setLoadingRedemptions(false);
       }
-    };
+  }, [currentPage, pagination.itemsPerPage]);
 
+  useEffect(() => {
     fetchRedemptions();
-  }, []);
+  }, [fetchRedemptions]);
 
-  const handleFilterChange = (filterId, value) => {
-    setFilters(prev => ({ ...prev, [filterId]: value }));
-    setCurrentPage(1);
-  };
 
   const handleApprove = async (redemptionId) => {
-    setLoading(prev => ({ ...prev, [redemptionId]: true }));
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `https://rewardsapi.hireagent.co/api/admin/transactions/redemptions/${redemptionId}/approve`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Update local state to reflect approval
-        setRedemptions(prev =>
-          prev.filter(redemption => redemption.id !== redemptionId)
-        );
-        setTotalRedemptions(prev => Math.max(0, prev - 1));
-
-        // Show success message
-        toast.success('Redemption approved successfully!');
-      } else {
-        toast.error(result.message || 'Failed to approve redemption');
-      }
-    } catch (error) {
-      console.error('Error approving redemption:', error);
-      toast.error('Failed to approve redemption. Please try again.');
-    } finally {
-      setLoading(prev => ({ ...prev, [redemptionId]: false }));
-    }
-  };
-
-  const handleReject = async (redemptionId) => {
-    if (!rejectReason.trim()) {
-      toast.error('Please provide a reason for rejection');
+    if (!redemptionId) {
+      toast.error('Invalid redemption ID');
       return;
     }
 
     setLoading(prev => ({ ...prev, [redemptionId]: true }));
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `https://rewardsapi.hireagent.co/api/admin/transactions/redemptions/${redemptionId}/reject`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            reason: rejectReason
-          })
-        }
-      );
+      const response = await apiClient.post(`/admin/payouts/${redemptionId}/approve`);
 
-      const result = await response.json();
+      if (response.data?.success) {
+        // Refresh the list
+        await fetchRedemptions();
+        toast.success('Redemption approved successfully!');
+      } else {
+        throw new Error(response.data?.message || 'Failed to approve redemption');
+      }
+    } catch (error) {
+      console.error('Error approving redemption:', error);
+      toast.error(error.response?.data?.message || 'Failed to approve redemption. Please try again.');
+    } finally {
+      setLoading(prev => ({ ...prev, [redemptionId]: false }));
+    }
+  };
 
-      if (result.success) {
-        // Remove from list since it's no longer pending
-        setRedemptions(prev =>
-          prev.filter(redemption => redemption.id !== redemptionId)
-        );
-        setTotalRedemptions(prev => Math.max(0, prev - 1));
+  const handleReject = async (redemptionId) => {
+    if (!redemptionId) {
+      toast.error('Invalid redemption ID');
+      return;
+    }
 
-        // Show success message
+    setLoading(prev => ({ ...prev, [redemptionId]: true }));
+
+    try {
+      const response = await apiClient.post(`/admin/payouts/${redemptionId}/reject`);
+
+      if (response.data?.success) {
+        // Refresh the list
+        await fetchRedemptions();
         toast.success('Redemption rejected successfully!');
 
         // Close modal and reset
         setShowRejectModal(null);
         setRejectReason('');
       } else {
-        toast.error(result.message || 'Failed to reject redemption');
+        throw new Error(response.data?.message || 'Failed to reject redemption');
       }
     } catch (error) {
       console.error('Error rejecting redemption:', error);
-      toast.error('Failed to reject redemption. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to reject redemption. Please try again.');
     } finally {
       setLoading(prev => ({ ...prev, [redemptionId]: false }));
     }
@@ -207,31 +215,21 @@ export default function RedemptionQueue() {
   };
 
 
-  const filteredRedemptions = redemptions.filter(redemption => {
-    const matchesVerification = !filters.verification ||
-      redemption.verification.includes(filters.verification);
+  // No filtering needed - use all redemptions
+  const filteredRedemptions = redemptions;
 
-    return matchesVerification;
-  });
-
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredRedemptions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRedemptions = filteredRedemptions.slice(startIndex, startIndex + itemsPerPage);
+  // Use API pagination if available, otherwise use client-side pagination
+  const paginatedRedemptions = pagination.totalPages > 1 
+    ? filteredRedemptions 
+    : filteredRedemptions.slice(
+        (currentPage - 1) * pagination.itemsPerPage,
+        currentPage * pagination.itemsPerPage
+      );
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      {/* Summary */}
       <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-3">
-          <FilterDropdown
-            filterId="verification"
-            label="Verification"
-            options={['Face Verified', 'Face Not Verified']}
-            value={filters.verification}
-            onChange={handleFilterChange}
-          />
-        </div>
         <div className="text-sm text-gray-600">
           {loadingRedemptions ? 'Loading...' : `${totalRedemptions} pending redemption${totalRedemptions !== 1 ? 's' : ''}`}
         </div>
@@ -250,19 +248,19 @@ export default function RedemptionQueue() {
                   User ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payout Method
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Verification
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Offer Completion
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Created At
                 </th>
               </tr>
             </thead>
@@ -286,7 +284,7 @@ export default function RedemptionQueue() {
                 paginatedRedemptions.map((redemption) => (
                   <tr key={redemption.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <span className="font-medium text-gray-900">{redemption.id}</span>
+                      <span className="font-medium text-gray-900">{redemption.redemptionId}</span>
                     </td>
                   <td className="px-6 py-4">
                     <button
@@ -296,6 +294,12 @@ export default function RedemptionQueue() {
                       {redemption.userId}
                     </button>
                   </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-900">{redemption.userName}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-900">{redemption.payoutMethod}</span>
+                    </td>
                   <td className="px-6 py-4">
                     <span className="font-medium text-emerald-600">{redemption.amount}</span>
                   </td>
@@ -303,52 +307,7 @@ export default function RedemptionQueue() {
                     {getStatusBadge(redemption.status)}
                   </td>
                   <td className="px-6 py-4">
-                    {getVerificationBadge(redemption.verification)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">{redemption.offerCompletion}</div>
-                    <div className="text-xs text-gray-500">{redemption.createdAt}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {redemption.status === 'Pending' && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(redemption.id)}
-                            disabled={loading[redemption.id]}
-                            className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] h-9"
-                          >
-                            {loading[redemption.id] ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                <span>Processing</span>
-                              </div>
-                            ) : (
-                              <>
-                                <CheckIcon className="w-4 h-4 mr-1" />
-                                Approve
-                              </>
-                            )}
-                          </button>
-                          
-                          <button
-                            onClick={() => setShowRejectModal(redemption.id)}
-                            className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 min-w-[100px] h-9"
-                          >
-                            <XMarkIcon className="w-4 h-4 mr-1" />
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      
-                      <button
-                        onClick={() => handleSneakPeek(redemption)}
-                        className="flex items-center justify-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 min-w-[120px] h-9"
-                      >
-                        <EyeIcon className="w-4 h-4 mr-1" />
-                        Sneak Peek
-                      </button>
-                    </div>
+                      <span className="text-sm text-gray-600">{redemption.createdAt}</span>
                   </td>
                 </tr>
                 ))
@@ -358,12 +317,14 @@ export default function RedemptionQueue() {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredRedemptions.length}
-            onPageChange={setCurrentPage}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            onPageChange={(page) => {
+              setCurrentPage(page);
+            }}
           />
         )}
       </div>
@@ -375,18 +336,9 @@ export default function RedemptionQueue() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Reject Redemption
             </h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reason for rejection *
-              </label>
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Please provide a detailed reason for rejection..."
-              />
-            </div>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to reject this redemption request? This action cannot be undone.
+            </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => {
@@ -411,7 +363,11 @@ export default function RedemptionQueue() {
 
       {/* Results Summary */}
       <div className="text-sm text-gray-600">
-        Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRedemptions.length)} of {filteredRedemptions.length} redemption requests
+        {loadingRedemptions ? (
+          'Loading...'
+        ) : (
+          `Showing ${((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}-${Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of ${pagination.totalItems} redemption requests`
+        )}
       </div>
 
       {/* Sneak Peek Modal */}

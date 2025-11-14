@@ -11,6 +11,7 @@ import ConfirmationModal from './modals/ConfirmationModal';
 import TierBadge from '../ui/TierBadge';
 import XPTierBadge from '../ui/XPTierBadge';
 import { useGames } from '../../hooks/useGames';
+import { gamesAPI } from '../../data/games';
 import toast from 'react-hot-toast';
 
 const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferToro', 'AdGate', 'RevenueUniverse', 'Pollfish'];
@@ -69,6 +70,8 @@ export default function GamesListingModule() {
   const columns = [
     { key: 'title', label: 'Game Title' },
     { key: 'sdk', label: 'SDK Game' },
+    { key: 'gameCategory', label: 'Game Category' },
+    { key: 'uiSection', label: 'UI Section' },
     { key: 'xptrRules', label: 'XPTR Rules' },
     { key: 'defaultTasks', label: 'Default Tasks' },
     { key: 'engagementTime', label: 'Engagement Time' },
@@ -100,6 +103,39 @@ export default function GamesListingModule() {
   const [showSegmentsModal, setShowSegmentsModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [uiSections, setUiSections] = useState([]);
+  const [loadingUISections, setLoadingUISections] = useState(false);
+  const [updatingUISection, setUpdatingUISection] = useState(null);
+
+  // Fetch UI sections on mount
+  useEffect(() => {
+    const fetchUISections = async () => {
+      setLoadingUISections(true);
+      try {
+        const response = await gamesAPI.getUISections();
+        // Handle different response formats
+        let sections = [];
+        if (Array.isArray(response)) {
+          sections = response;
+        } else if (response.sections && Array.isArray(response.sections)) {
+          sections = response.sections;
+        } else if (response.data && Array.isArray(response.data)) {
+          sections = response.data;
+        } else if (response.data?.sections && Array.isArray(response.data.sections)) {
+          sections = response.data.sections;
+        }
+        // Extract section names if they're objects
+        sections = sections.map(section => typeof section === 'string' ? section : (section.name || section.value || section));
+        setUiSections(sections);
+      } catch (error) {
+        console.error('Error fetching UI sections:', error);
+        toast.error('Failed to load UI sections');
+      } finally {
+        setLoadingUISections(false);
+      }
+    };
+    fetchUISections();
+  }, []);
 
   // Fetch games on mount and when filters change
   useEffect(() => {
@@ -248,6 +284,30 @@ export default function GamesListingModule() {
     // Handle segment save logic here
   };
 
+  const handleUISectionChange = async (gameId, newUISection) => {
+    setUpdatingUISection(gameId);
+    try {
+      await gamesAPI.updateGameUISection(gameId, newUISection);
+      toast.success('UI Section updated successfully');
+      // Refresh games list
+      const apiFilters = {
+        search: searchTerm,
+        status: filters.status,
+        country: filters.country,
+        sdk: filters.sdk,
+        xpTier: filters.xpTier,
+        adGame: filters.adGame
+      };
+      fetchGames(currentPage, apiFilters, itemsPerPage);
+    } catch (error) {
+      console.error('Error updating UI section:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update UI section. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingUISection(null);
+    }
+  };
+
   const renderCell = (key, game) => {
     switch (key) {
       case 'title':
@@ -259,6 +319,24 @@ export default function GamesListingModule() {
         );
       case 'sdk':
         return <div className="text-sm text-gray-900">{game.sdk}</div>;
+      case 'gameCategory':
+        return <div className="text-sm text-gray-900">{game.gameCategory || 'N/A'}</div>;
+      case 'uiSection':
+        return (
+          <select
+            value={game.uiSection || ''}
+            onChange={(e) => handleUISectionChange(game.id, e.target.value)}
+            disabled={updatingUISection === game.id}
+            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-green-500 focus:border-green-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="">Select Section</option>
+            {uiSections.map((section) => (
+              <option key={section} value={section}>
+                {section}
+              </option>
+            ))}
+          </select>
+        );
       case 'xptrRules':
         return <div className="text-sm text-gray-700 max-w-[200px] break-words" title={game.xptrRules}>{game.xptrRules}</div>;
       case 'countries':
@@ -435,7 +513,7 @@ export default function GamesListingModule() {
                       <td
                         key={col.key}
                         className={`px-6 py-4 align-top ${
-                          col.key === 'xptrRules' || col.key === 'xpTier' || col.key === 'countries' ? '' : 'whitespace-nowrap'
+                          col.key === 'xptrRules' || col.key === 'xpTier' || col.key === 'countries' || col.key === 'uiSection' ? '' : 'whitespace-nowrap'
                         }`}
                       >
                         {renderCell(col.key, game)}
