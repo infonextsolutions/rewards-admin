@@ -17,14 +17,16 @@ export function useChallengesBonuses() {
     setError(null);
 
     try {
-      const [challengesData, multipliersData, bonusDaysData, pauseRulesData] = await Promise.all([
-        challengesBonusesAPI.getChallenges(),
+      const [challengesResponse, multipliersData, bonusDaysData, pauseRulesData] = await Promise.all([
+        challengesBonusesAPI.getChallenges({ page: 1, limit: 100 }),
         challengesBonusesAPI.getMultipliers(),
         challengesBonusesAPI.getBonusDays(),
         challengesBonusesAPI.getPauseRules()
       ]);
 
-      setChallenges(challengesData);
+      // Handle new response structure with pagination
+      const challengesData = challengesResponse.challenges || challengesResponse;
+      setChallenges(Array.isArray(challengesData) ? challengesData : []);
       setMultipliers(multipliersData);
       setBonusDays(bonusDaysData);
       setPauseRules(pauseRulesData);
@@ -299,19 +301,24 @@ export function useChallengesBonuses() {
   }, []);
 
   // Individual fetch functions for lazy loading
-  const fetchChallenges = useCallback(async () => {
-    if (challenges.length > 0) return; // Already loaded
+  const fetchChallenges = useCallback(async (page = 1, limit = 10) => {
     setLoading(true);
     try {
-      const data = await challengesBonusesAPI.getChallenges();
-      setChallenges(data);
+      const response = await challengesBonusesAPI.getChallenges({ page, limit });
+      // Handle new response structure with pagination
+      if (response.challenges) {
+        setChallenges(response.challenges);
+      } else {
+        // Fallback for old structure
+        setChallenges(Array.isArray(response) ? response : []);
+      }
     } catch (err) {
       setError('Failed to load challenges');
       console.error('Error fetching challenges:', err);
     } finally {
       setLoading(false);
     }
-  }, [challenges.length]);
+  }, []);
 
   const fetchMultipliers = useCallback(async () => {
     if (multipliers.length > 0) return; // Already loaded

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { useMasterData } from '../../../hooks/useMasterData';
+import { gamesAPI } from '../../../data/games';
 
 const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey', 'Referral', 'Watch Ad', 'SDK Game'];
 const CLAIM_TYPES = ['Watch Ad', 'Auto'];
@@ -15,37 +17,113 @@ export default function AddEditChallengeModal({
   existingChallenges = [],
   loading = false
 }) {
+  const { sdkProviders } = useMasterData();
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     type: 'Spin',
     date: '',
     coinReward: '',
     xpReward: '',
     claimType: 'Watch Ad',
-    visibility: true
+    visibility: true,
+    status: 'Scheduled',
+    gameId: '',
+    sdkProvider: ''
   });
   const [errors, setErrors] = useState({});
+  const [gamesList, setGamesList] = useState([]);
+  const [loadingGames, setLoadingGames] = useState(false);
 
   // Initialize form data
   useEffect(() => {
     if (challenge) {
+      // Editing existing challenge
+      let challengeDate = challenge.date || '';
+      // If date is in ISO format, convert to YYYY-MM-DD for input
+      if (challengeDate && challengeDate.includes('T')) {
+        challengeDate = new Date(challengeDate).toISOString().split('T')[0];
+      }
       setFormData({
         title: challenge.title || '',
+        description: challenge.description || challenge.title || '',
         type: challenge.type || 'Spin',
-        date: challenge.date || '',
+        date: challengeDate,
         coinReward: challenge.coinReward?.toString() || '',
         xpReward: challenge.xpReward?.toString() || '',
         claimType: challenge.claimType || 'Watch Ad',
-        visibility: challenge.visibility !== false
+        visibility: challenge.visibility !== false,
+        status: challenge.status || 'Scheduled',
+        gameId: challenge.gameId || '',
+        sdkProvider: challenge.sdkProvider || ''
       });
-    } else if (selectedDate) {
-      const dateString = selectedDate.toISOString().split('T')[0];
+    } else {
+      // Creating new challenge - always set date if selectedDate is provided
+      let dateString = '';
+      if (selectedDate) {
+        // Handle both Date object and string formats
+        if (selectedDate instanceof Date) {
+          dateString = selectedDate.toISOString().split('T')[0];
+        } else if (typeof selectedDate === 'string') {
+          // If it's already a date string, use it directly or convert if needed
+          if (selectedDate.includes('T')) {
+            dateString = new Date(selectedDate).toISOString().split('T')[0];
+          } else {
+            dateString = selectedDate;
+          }
+        }
+      }
       setFormData(prev => ({
         ...prev,
-        date: dateString
+        date: dateString || prev.date
       }));
     }
-  }, [challenge, selectedDate]);
+  }, [challenge, selectedDate, isOpen]);
+
+  // Fetch games when SDK provider is selected and type is Game or SDK Game
+  useEffect(() => {
+    const fetchGamesBySDK = async () => {
+      if ((formData.type === 'Game' || formData.type === 'SDK Game') && formData.sdkProvider) {
+        setLoadingGames(true);
+        try {
+          const token = localStorage.getItem('token');
+          const sdkName = formData.sdkProvider.toLowerCase();
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE || 'https://rewardsapi.hireagent.co/api'}/admin/game-offers/games/by-sdk/${sdkName}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          const result = await response.json();
+
+          if (result.success && result.data) {
+            setGamesList(result.data.map(game => ({
+              id: game._id || game.id,
+              title: game.title || game.name,
+              gameId: game.gameId || game._id || game.id
+            })));
+          } else {
+            setGamesList([]);
+          }
+        } catch (error) {
+          console.error('Error fetching games:', error);
+          setGamesList([]);
+        } finally {
+          setLoadingGames(false);
+        }
+      } else {
+        setGamesList([]);
+        if (formData.type !== 'Game' && formData.type !== 'SDK Game') {
+          setFormData(prev => ({ ...prev, gameId: '', sdkProvider: '' }));
+        }
+      }
+    };
+
+    fetchGamesBySDK();
+  }, [formData.sdkProvider, formData.type]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -67,6 +145,15 @@ export default function AddEditChallengeModal({
       newErrors.xpReward = 'XP reward must be 0 or greater';
     }
 
+    // Validate game and SDK provider for Game/SDK Game types
+    if (formData.type === 'Game' || formData.type === 'SDK Game') {
+      if (!formData.sdkProvider) {
+        newErrors.sdkProvider = 'SDK Provider is required for Game challenges';
+      }
+      if (!formData.gameId) {
+        newErrors.gameId = 'Game is required for Game challenges';
+      }
+    }
 
     // Check for duplicate challenges on the same date (excluding current challenge if editing)
     const duplicateChallenge = existingChallenges.find(c => 
@@ -99,13 +186,16 @@ export default function AddEditChallengeModal({
 
     const challengeData = {
       title: formData.title.trim(),
+      description: formData.description.trim() || formData.title.trim(),
       type: formData.type,
       date: formData.date,
-      coinReward: parseInt(formData.coinReward),
-      xpReward: parseInt(formData.xpReward),
+      coinReward: parseInt(formData.coinReward) || 0,
+      xpReward: parseInt(formData.xpReward) || 0,
       claimType: formData.claimType,
       visibility: formData.visibility,
-      status: 'Scheduled' // Default status for new challenges
+      status: formData.status || 'Scheduled',
+      ...(formData.gameId && { gameId: formData.gameId }),
+      ...(formData.sdkProvider && { sdkProvider: formData.sdkProvider })
     };
 
     try {
@@ -116,16 +206,35 @@ export default function AddEditChallengeModal({
   };
 
   const handleClose = () => {
+    // Reset form data
+    let resetDate = '';
+    if (selectedDate) {
+      // Preserve selectedDate when closing if it exists
+      if (selectedDate instanceof Date) {
+        resetDate = selectedDate.toISOString().split('T')[0];
+      } else if (typeof selectedDate === 'string') {
+        if (selectedDate.includes('T')) {
+          resetDate = new Date(selectedDate).toISOString().split('T')[0];
+        } else {
+          resetDate = selectedDate;
+        }
+      }
+    }
     setFormData({
       title: '',
+      description: '',
       type: 'Spin',
-      date: '',
+      date: resetDate,
       coinReward: '',
       xpReward: '',
       claimType: 'Watch Ad',
-      visibility: true
+      visibility: true,
+      status: 'Scheduled',
+      gameId: '',
+      sdkProvider: ''
     });
     setErrors({});
+    setGamesList([]);
     onClose();
   };
 
@@ -161,11 +270,30 @@ export default function AddEditChallengeModal({
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.title ? 'border-red-300' : 'border-gray-300'}`}
-                placeholder="e.g., Play 2 SDK Games"
+                placeholder="e.g., Play Puzzle Game Challenge"
               />
               {errors.title && (
                 <p className="mt-1 text-sm text-red-600">{errors.title}</p>
               )}
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                rows={3}
+                className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.description ? 'border-red-300' : 'border-gray-300'}`}
+                placeholder="e.g., Complete a puzzle game to earn rewards"
+              />
+              {errors.description && (
+                <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                If left empty, the title will be used as description
+              </p>
             </div>
 
             <div>
@@ -174,7 +302,15 @@ export default function AddEditChallengeModal({
               </label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  setFormData({
+                    ...formData, 
+                    type: newType,
+                    // Clear game fields if not Game or SDK Game
+                    ...(newType !== 'Game' && newType !== 'SDK Game' && { gameId: '', sdkProvider: '' })
+                  });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
               >
                 {CHALLENGE_TYPES.map(type => (
@@ -201,6 +337,73 @@ export default function AddEditChallengeModal({
               )}
             </div>
           </div>
+
+          {/* Game and SDK Provider Fields (only for Game and SDK Game types) */}
+          {(formData.type === 'Game' || formData.type === 'SDK Game') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  SDK Provider *
+                </label>
+                <select
+                  value={formData.sdkProvider}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData, 
+                      sdkProvider: e.target.value,
+                      gameId: '' // Clear game when SDK changes
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  required={formData.type === 'Game' || formData.type === 'SDK Game'}
+                >
+                  <option value="">Select SDK Provider</option>
+                  {sdkProviders.map(sdk => (
+                    <option key={sdk.id || sdk.name} value={sdk.id || sdk.name}>
+                      {sdk.name || sdk.id}
+                    </option>
+                  ))}
+                </select>
+                {errors.sdkProvider && (
+                  <p className="mt-1 text-sm text-red-600">{errors.sdkProvider}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Game *
+                </label>
+                <select
+                  value={formData.gameId}
+                  onChange={(e) => {
+                    const selectedGameId = e.target.value;
+                    const selectedGame = gamesList.find(game => (game.gameId || game.id) === selectedGameId);
+                    // Auto-fill title with game name when game is selected
+                    setFormData({
+                      ...formData, 
+                      gameId: selectedGameId,
+                      title: selectedGame ? (selectedGame.title || selectedGame.name || formData.title) : formData.title
+                    });
+                  }}
+                  disabled={!formData.sdkProvider || loadingGames}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  required={formData.type === 'Game' || formData.type === 'SDK Game'}
+                >
+                  <option value="">
+                    {loadingGames ? 'Loading games...' : formData.sdkProvider ? 'Select Game' : 'Select SDK Provider first'}
+                  </option>
+                  {gamesList.map(game => (
+                    <option key={game.id} value={game.gameId || game.id}>
+                      {game.title || game.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.gameId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.gameId}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Rewards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -250,6 +453,22 @@ export default function AddEditChallengeModal({
                 {CLAIM_TYPES.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status *
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="Scheduled">Scheduled</option>
+                <option value="Live">Live</option>
+                <option value="Pending">Pending</option>
+                <option value="Expired">Expired</option>
               </select>
             </div>
           </div>

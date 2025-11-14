@@ -133,78 +133,61 @@ const Dashboard = () => {
     };
   }, [apiFilters, optimizedFetch, fetchDashboardData]);
 
-  const handleFilterChange = (filterKey, value) => {
+  const handleFilterChange = useCallback((filterKey, value) => {
     setFilters((prev) => ({
       ...prev,
       [filterKey]: value,
     }));
-  };
+  }, []);
 
-  // Map API data to component props (keeping UI same, using API data when available)
-  const retentionData = dashboardData.retention?.trend || [];
-  const topGameData = dashboardData.topPlayedGame ? {
-    name: dashboardData.topPlayedGame.title || "N/A",
-    banner: dashboardData.topPlayedGame.banner || "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
-    avgXP: dashboardData.topPlayedGame.analytics?.averageXP || 0,
-    rewardConversion: dashboardData.topPlayedGame.analytics?.rewardConversion || 0,
-    demographics: dashboardData.topPlayedGame.demographics || {
-      age: [],
-      gender: [],
-      region: [],
-      tier: [],
-    },
-  } : {
-    name: "N/A",
-    banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
-    avgXP: 0,
-    rewardConversion: 0,
-    demographics: {
-      age: [],
-      gender: [],
-      region: [],
-      tier: [],
-    },
-  };
+  // Memoize data transformations for performance
+  const retentionData = useMemo(() => dashboardData.retention?.trend || [], [dashboardData.retention?.trend]);
+  
+  const topGameData = useMemo(() => {
+    if (dashboardData.topPlayedGame) {
+      return {
+        name: dashboardData.topPlayedGame.title || "N/A",
+        banner: dashboardData.topPlayedGame.banner || "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
+        avgXP: dashboardData.topPlayedGame.analytics?.averageXP || 0,
+        rewardConversion: dashboardData.topPlayedGame.analytics?.rewardConversion || 0,
+        demographics: dashboardData.topPlayedGame.demographics || {
+          age: [],
+          gender: [],
+          region: [],
+          tier: [],
+        },
+      };
+    }
+    return {
+      name: "N/A",
+      banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
+      avgXP: 0,
+      rewardConversion: 0,
+      demographics: {
+        age: [],
+        gender: [],
+        region: [],
+        tier: [],
+      },
+    };
+  }, [dashboardData.topPlayedGame]);
+
+  const revenueByGame = useMemo(() => dashboardData.revenueByGame || [], [dashboardData.revenueByGame]);
+  const attributionData = useMemo(() => dashboardData.attribution || [], [dashboardData.attribution]);
+  const retentionCurrent = useMemo(() => dashboardData.retention?.current, [dashboardData.retention?.current]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Hello, {user?.firstName || "Admin"}! 👋
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Welcome to your admin dashboard - here&apos;s what&apos;s happening
-              today
-            </p>
-          </div>
-          {loading && (
-            <div className="flex items-center gap-2 text-emerald-600">
-              <svg
-                className="animate-spin h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              <span className="text-sm font-medium">Loading...</span>
-            </div>
-          )}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Hello, {user?.firstName || "Admin"}! 👋
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Welcome to your admin dashboard - here&apos;s what&apos;s happening
+            today
+          </p>
         </div>
       </div>
 
@@ -218,7 +201,7 @@ const Dashboard = () => {
       <div className="mb-6">
         <RetentionTrendGraph
           data={retentionData}
-          retentionCurrent={dashboardData.retention?.current}
+          retentionCurrent={retentionCurrent}
           filters={filters}
           loading={loading}
         />
@@ -232,11 +215,11 @@ const Dashboard = () => {
       {/* Tables Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Revenue vs Reward Cost Table */}
-        <RevenueVsRewardTable data={dashboardData.revenueByGame || []} loading={loading} />
+        <RevenueVsRewardTable data={revenueByGame} loading={loading} />
 
         {/* Attribution Performance Table */}
         <AttributionPerformanceTable
-          data={dashboardData.attribution || []}
+          data={attributionData}
           loading={loading}
         />
       </div>

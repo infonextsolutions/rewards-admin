@@ -292,6 +292,7 @@ export default function RemoteConfigTable({
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
+            totalItems={sortedConfigs.length}
             onPageChange={setCurrentPage}
           />
         </div>

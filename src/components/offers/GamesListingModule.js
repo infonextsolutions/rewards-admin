@@ -532,7 +532,12 @@ export default function GamesListingModule() {
               <div className="text-sm text-gray-600">
                 Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, apiPagination.totalItems)} of {apiPagination.totalItems} games
               </div>
-              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                totalItems={apiPagination.totalItems}
+                onPageChange={setCurrentPage} 
+              />
             </div>
           </div>
         )}

@@ -1,6 +1,8 @@
 'use client';
 
-const AttributionPerformanceTable = ({ data, loading }) => {
+import { memo, useMemo } from 'react';
+
+const AttributionPerformanceTable = memo(({ data, loading }) => {
   // Map API data to table format
   const getSourceIcon = (source) => {
     const iconMap = {
@@ -15,104 +17,25 @@ const AttributionPerformanceTable = ({ data, loading }) => {
     return iconMap[source?.toLowerCase()] || { icon: '📊', bg: 'bg-gray-100' };
   };
 
-  const tableData = data && data.length > 0 ? data.map((item, index) => {
-    const sourceIcon = getSourceIcon(item.source);
-    return {
-      id: index + 1,
-      source: item.source ? item.source.charAt(0).toUpperCase() + item.source.slice(1) : 'Unknown',
-      icon: sourceIcon.icon,
-      iconBg: sourceIcon.bg,
-      installs: item.installs || 0,
-      d1Retention: item.d1Retention || 0,
-      revenue: item.revenue || 0,
-      rewardCost: item.rewardCost || 0,
-      marginPercent: item.marginPercent || 0,
-    };
-  }) : [];
+  const tableData = useMemo(() => {
+    return data && data.length > 0 ? data.map((item, index) => {
+      const sourceIcon = getSourceIcon(item.source);
+      return {
+        id: index + 1,
+        source: item.source ? item.source.charAt(0).toUpperCase() + item.source.slice(1) : 'Unknown',
+        icon: sourceIcon.icon,
+        iconBg: sourceIcon.bg,
+        installs: item.installs || 0,
+        d1Retention: item.d1Retention || 0,
+        revenue: item.revenue || 0,
+        rewardCost: item.rewardCost || 0,
+        marginPercent: item.marginPercent || 0,
+      };
+    }) : [];
+  }, [data]);
 
-  // Mock data for fallback
-  const mockData = [
-    {
-      id: 1,
-      source: 'Facebook',
-      icon: '📘',
-      iconBg: 'bg-blue-100',
-      installs: 12500,
-      d1Retention: 72.5,
-      revenue: 89000,
-      rewardCost: 24000,
-      marginPercent: 73.0,
-      cpi: 2.45,
-      ltv: 18.50
-    },
-    {
-      id: 2,
-      source: 'Google',
-      icon: '🔍',
-      iconBg: 'bg-green-100',
-      installs: 8900,
-      d1Retention: 68.2,
-      revenue: 67000,
-      rewardCost: 19000,
-      marginPercent: 71.6,
-      cpi: 3.10,
-      ltv: 22.30
-    },
-    {
-      id: 3,
-      source: 'TikTok',
-      icon: '🎵',
-      iconBg: 'bg-pink-100',
-      installs: 15200,
-      d1Retention: 65.8,
-      revenue: 78000,
-      rewardCost: 28000,
-      marginPercent: 64.1,
-      cpi: 1.85,
-      ltv: 14.20
-    },
-    {
-      id: 4,
-      source: 'Instagram',
-      icon: '📷',
-      iconBg: 'bg-purple-100',
-      installs: 6700,
-      d1Retention: 69.4,
-      revenue: 45000,
-      rewardCost: 14000,
-      marginPercent: 68.9,
-      cpi: 2.75,
-      ltv: 19.80
-    },
-    {
-      id: 5,
-      source: 'Snapchat',
-      icon: '👻',
-      iconBg: 'bg-yellow-100',
-      installs: 4200,
-      d1Retention: 61.3,
-      revenue: 23000,
-      rewardCost: 9000,
-      marginPercent: 60.9,
-      cpi: 3.25,
-      ltv: 16.40
-    },
-    {
-      id: 6,
-      source: 'Organic',
-      icon: '🌱',
-      iconBg: 'bg-emerald-100',
-      installs: 3800,
-      d1Retention: 78.1,
-      revenue: 34000,
-      rewardCost: 8000,
-      marginPercent: 76.5,
-      cpi: 0.00,
-      ltv: 28.90
-    }
-  ];
-
-  const displayData = tableData.length > 0 ? tableData : mockData;
+  const displayData = tableData;
+  const hasData = displayData.length > 0;
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -170,10 +93,10 @@ const AttributionPerformanceTable = ({ data, loading }) => {
     );
   }
 
-  const totalInstalls = displayData.reduce((sum, item) => sum + item.installs, 0);
-  const totalRevenue = displayData.reduce((sum, item) => sum + item.revenue, 0);
-  const totalRewardCost = displayData.reduce((sum, item) => sum + item.rewardCost, 0);
-  const avgRetention = displayData.length > 0 
+  const totalInstalls = hasData ? displayData.reduce((sum, item) => sum + item.installs, 0) : 0;
+  const totalRevenue = hasData ? displayData.reduce((sum, item) => sum + item.revenue, 0) : 0;
+  const totalRewardCost = hasData ? displayData.reduce((sum, item) => sum + item.rewardCost, 0) : 0;
+  const avgRetention = hasData 
     ? displayData.reduce((sum, item) => sum + item.d1Retention, 0) / displayData.length 
     : 0;
 
@@ -191,65 +114,76 @@ const AttributionPerformanceTable = ({ data, loading }) => {
 
 
         {/* Attribution Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Source</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Installs</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">D1 Retention</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Revenue</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Reward Cost</th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Margin %</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {displayData.map((source) => (
-                <tr key={source.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-2">
-                    <div className="flex items-center">
-                      <div className={`p-2 rounded-lg ${source.iconBg} mr-3`}>
-                        <span className="text-sm">{source.icon}</span>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 text-sm">{source.source}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className="font-semibold text-gray-900 text-sm">
-                      {formatNumber(source.installs)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRetentionColor(source.d1Retention)}`}>
-                      {source.d1Retention.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className="font-semibold text-gray-900 text-sm">
-                      {formatCurrency(source.revenue)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className="text-gray-700 text-sm">
-                      {formatCurrency(source.rewardCost)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className={`font-semibold text-sm ${getMarginColor(source.marginPercent)}`}>
-                      {source.marginPercent.toFixed(1)}%
-                    </span>
-                  </td>
+        {hasData ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Source</th>
+                  <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Installs</th>
+                  <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">D1 Retention</th>
+                  <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Revenue</th>
+                  <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Reward Cost</th>
+                  <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">Margin %</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {displayData.map((source) => (
+                  <tr key={source.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-2">
+                      <div className="flex items-center">
+                        <div className={`p-2 rounded-lg ${source.iconBg} mr-3`}>
+                          <span className="text-sm">{source.icon}</span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 text-sm">{source.source}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-2 text-right">
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {formatNumber(source.installs)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-2 text-right">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRetentionColor(source.d1Retention)}`}>
+                        {source.d1Retention.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="py-4 px-2 text-right">
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {formatCurrency(source.revenue)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-2 text-right">
+                      <span className="text-gray-700 text-sm">
+                        {formatCurrency(source.rewardCost)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-2 text-right">
+                      <span className={`font-semibold text-sm ${getMarginColor(source.marginPercent)}`}>
+                        {source.marginPercent.toFixed(1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-12 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <p className="text-gray-500 text-sm">No attribution data available</p>
+              <p className="text-gray-400 text-xs mt-1">Data will appear once available</p>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
   );
-};
+});
+
+AttributionPerformanceTable.displayName = 'AttributionPerformanceTable';
 
 export default AttributionPerformanceTable;

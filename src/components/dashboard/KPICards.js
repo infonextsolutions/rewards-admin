@@ -1,6 +1,8 @@
 "use client";
 
-const KPICard = ({ title, value, icon, loading }) => {
+import { memo, useMemo } from "react";
+
+const KPICard = memo(({ title, value, icon, loading }) => {
   if (loading) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-pulse">
@@ -49,10 +51,12 @@ const KPICard = ({ title, value, icon, loading }) => {
       </div>
     </div>
   );
-};
+});
+
+KPICard.displayName = 'KPICard';
 
 const KPICards = ({ data, loading }) => {
-  const kpiConfig = [
+  const kpiConfig = useMemo(() => [
     {
       key: "totalRegisteredUsers",
       title: "Total Registered Users",
@@ -83,7 +87,7 @@ const KPICards = ({ data, loading }) => {
       icon: { emoji: "💰", bgColor: "bg-yellow-100", type: "number" },
       value: data?.kpis?.avgXPPerUser || 0,
     },
-  ];
+  ], [data]);
 
   return (
     <div className="mb-6">

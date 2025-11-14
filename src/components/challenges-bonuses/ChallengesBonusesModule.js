@@ -72,7 +72,7 @@ export default function ChallengesBonusesModule() {
         break;
       case VIEW_MODES.LIST:
       case VIEW_MODES.CALENDAR:
-        fetchChallenges();
+        fetchChallenges(1, 100); // Fetch with pagination
         break;
       case VIEW_MODES.PAUSE_RULES:
         fetchPauseRules();

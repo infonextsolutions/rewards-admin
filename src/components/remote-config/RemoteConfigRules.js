@@ -395,6 +395,7 @@ export default function RemoteConfigRules({
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
+              totalItems={sortedConfigs.length}
               onPageChange={setCurrentPage}
             />
           </div>

@@ -262,22 +262,39 @@ export const challengesBonusesAPI = {
       };
 
       const response = await apiClient.get('/admin/daily-challenges/challenges', { params: queryParams });
-      const challengesArray = response.data.data.challenges || [];
+      
+      // Handle new response structure with pagination
+      const responseData = response.data.data || response.data;
+      const challengesArray = responseData.challenges || [];
+      const pagination = responseData.pagination || {
+        currentPage: page,
+        totalPages: 0,
+        totalItems: 0,
+        itemsPerPage: limit
+      };
 
       // Transform API response to frontend format
-      return challengesArray.map(apiData => ({
+      const transformedChallenges = challengesArray.map(apiData => ({
         id: apiData._id,
         title: apiData.title,
-        type: apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1),
+        type: apiData.type ? apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1) : 'Spin',
         date: apiData.challengeDate,
-        coinReward: apiData.coinReward,
-        xpReward: apiData.xpReward,
-        claimType: apiData.claimType === 'auto' ? 'Auto' : 'Watch Ad',
-        visibility: apiData.isVisible,
-        status: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1),
+        coinReward: apiData.coinReward || 0,
+        xpReward: apiData.xpReward || 0,
+        claimType: apiData.claimType === 'auto' || apiData.claimType === 'Auto' ? 'Auto' : (apiData.claimType === 'manual' ? 'Watch Ad' : 'Watch Ad'),
+        visibility: apiData.isVisible !== false,
+        status: apiData.status ? apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1) : 'Scheduled',
+        gameId: apiData.gameId || null,
+        sdkProvider: apiData.sdkProvider || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt
       }));
+
+      // Return both challenges and pagination
+      return {
+        challenges: transformedChallenges,
+        pagination
+      };
     } catch (error) {
       console.error('Get challenges error:', error);
       throw error.response?.data || error;
@@ -286,51 +303,48 @@ export const challengesBonusesAPI = {
 
   async createChallenge(challengeData) {
     try {
-      // Map frontend format to API structure
+      // Map frontend format to API structure (enhanced API format)
+      // Format date to ISO string (e.g., "2025-10-21T00:00:00.000Z")
+      let challengeDate;
+      if (challengeData.date) {
+        const dateObj = new Date(challengeData.date);
+        // Set to start of day in UTC
+        dateObj.setUTCHours(0, 0, 0, 0);
+        challengeDate = dateObj.toISOString();
+      } else {
+        challengeDate = new Date().toISOString();
+      }
+
       const apiPayload = {
-        challengeDate: challengeData.date,
+        challengeDate: challengeDate,
         title: challengeData.title,
-        description: challengeData.title, // Use title as description if not provided
+        description: challengeData.description || challengeData.title,
         type: challengeData.type.toLowerCase(),
-        coinReward: challengeData.coinReward,
-        xpReward: challengeData.xpReward,
-        claimType: challengeData.claimType.toLowerCase(),
-        isVisible: challengeData.visibility,
-        targetAudience: {
-          userSegments: ['all'],
-          minXP: 0,
-          countries: []
-        },
-        requirements: {
-          minStreak: 0,
-          timeLimit: 1440
-        },
-        scheduling: {
-          startTime: new Date(challengeData.date).toISOString(),
-          endTime: new Date(new Date(challengeData.date).setHours(23, 59, 59, 999)).toISOString(),
-          timezone: 'UTC'
-        },
-        metadata: {
-          priority: 10,
-          tags: ['daily'],
-          notes: ''
-        }
+        coinReward: challengeData.coinReward || 0,
+        xpReward: challengeData.xpReward || 0,
+        claimType: challengeData.claimType === 'Auto' ? 'auto' : (challengeData.claimType === 'Watch Ad' ? 'manual' : challengeData.claimType.toLowerCase()),
+        isVisible: challengeData.visibility !== false,
+        status: challengeData.status ? challengeData.status.toLowerCase() : 'scheduled',
+        ...(challengeData.gameId && { gameId: challengeData.gameId }),
+        ...(challengeData.sdkProvider && { sdkProvider: challengeData.sdkProvider })
       };
 
       const response = await apiClient.post('/admin/daily-challenges/challenges', apiPayload);
-      const apiData = response.data.data;
+      const apiData = response.data.data || response.data;
 
       // Return in frontend format
       return {
         id: apiData._id,
         title: apiData.title,
-        type: apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1),
+        type: apiData.type ? apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1) : 'Spin',
         date: apiData.challengeDate,
-        coinReward: apiData.coinReward,
-        xpReward: apiData.xpReward,
-        claimType: apiData.claimType === 'auto' ? 'Auto' : 'Watch Ad',
-        visibility: apiData.isVisible,
-        status: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1),
+        coinReward: apiData.coinReward || 0,
+        xpReward: apiData.xpReward || 0,
+        claimType: apiData.claimType === 'auto' || apiData.claimType === 'Auto' ? 'Auto' : 'Watch Ad',
+        visibility: apiData.isVisible !== false,
+        status: apiData.status ? apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1) : 'Scheduled',
+        gameId: apiData.gameId || null,
+        sdkProvider: apiData.sdkProvider || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt
       };
@@ -342,30 +356,46 @@ export const challengesBonusesAPI = {
 
   async updateChallenge(id, challengeData) {
     try {
-      // Map frontend format to API structure
+      // Map frontend format to API structure (same as POST)
+      // Format date to ISO string if provided
+      let challengeDate;
+      if (challengeData.date) {
+        const dateObj = new Date(challengeData.date);
+        dateObj.setUTCHours(0, 0, 0, 0);
+        challengeDate = dateObj.toISOString();
+      }
+
       const apiPayload = {
-        title: challengeData.title,
-        description: challengeData.title,
-        coinReward: challengeData.coinReward,
-        xpReward: challengeData.xpReward,
-        status: challengeData.status?.toLowerCase() || 'scheduled',
-        isVisible: challengeData.visibility
+        ...(challengeDate && { challengeDate: challengeDate }),
+        ...(challengeData.title && { title: challengeData.title }),
+        ...(challengeData.description && { description: challengeData.description }),
+        ...(challengeData.title && !challengeData.description && { description: challengeData.title }),
+        ...(challengeData.type && { type: challengeData.type.toLowerCase() }),
+        ...(challengeData.coinReward !== undefined && { coinReward: challengeData.coinReward }),
+        ...(challengeData.xpReward !== undefined && { xpReward: challengeData.xpReward }),
+        ...(challengeData.claimType && { claimType: challengeData.claimType === 'Auto' ? 'auto' : (challengeData.claimType === 'Watch Ad' ? 'manual' : challengeData.claimType.toLowerCase()) }),
+        ...(challengeData.visibility !== undefined && { isVisible: challengeData.visibility !== false }),
+        ...(challengeData.status && { status: challengeData.status.toLowerCase() }),
+        ...(challengeData.gameId && { gameId: challengeData.gameId }),
+        ...(challengeData.sdkProvider && { sdkProvider: challengeData.sdkProvider })
       };
 
       const response = await apiClient.put(`/admin/daily-challenges/challenges/${id}`, apiPayload);
-      const apiData = response.data.data;
+      const apiData = response.data.data || response.data;
 
       // Return in frontend format
       return {
         id: apiData._id,
         title: apiData.title,
-        type: apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1),
+        type: apiData.type ? apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1) : 'Spin',
         date: apiData.challengeDate,
-        coinReward: apiData.coinReward,
-        xpReward: apiData.xpReward,
-        claimType: apiData.claimType === 'auto' ? 'Auto' : 'Watch Ad',
-        visibility: apiData.isVisible,
-        status: apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1),
+        coinReward: apiData.coinReward || 0,
+        xpReward: apiData.xpReward || 0,
+        claimType: apiData.claimType === 'auto' || apiData.claimType === 'Auto' ? 'Auto' : 'Watch Ad',
+        visibility: apiData.isVisible !== false,
+        status: apiData.status ? apiData.status.charAt(0).toUpperCase() + apiData.status.slice(1) : 'Scheduled',
+        gameId: apiData.gameId || null,
+        sdkProvider: apiData.sdkProvider || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt
       };

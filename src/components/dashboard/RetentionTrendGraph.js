@@ -1,40 +1,32 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const RetentionTrendGraph = ({ data, retentionCurrent, filters, loading }) => {
-  // Map API trend data to chart format
-  const chartData = data && data.length > 0 ? data.map((item, index) => {
-    const d1 = parseFloat(item.d1) || 0;
-    const d7 = parseFloat(item.d7) || 0;
-    const d14 = parseFloat(item.d14) || 0;
-    const d30 = parseFloat(item.d30) || 0;
-    
-    return {
-      day: `Day ${index + 1}`,
-      date: item.date,
-      retention: d1, // Use D1 retention for main line
-      installs: item.cohortSize || 0,
-      d1,
-      d7,
-      d14,
-      d30,
-    };
-  }) : [];
+const RetentionTrendGraph = memo(({ data, retentionCurrent, filters, loading }) => {
+  // Map API trend data to chart format - memoized for performance
+  const chartData = useMemo(() => {
+    return data && data.length > 0 ? data.map((item, index) => {
+      const d1 = parseFloat(item.d1) || 0;
+      const d7 = parseFloat(item.d7) || 0;
+      const d14 = parseFloat(item.d14) || 0;
+      const d30 = parseFloat(item.d30) || 0;
+      
+      return {
+        day: `Day ${index + 1}`,
+        date: item.date,
+        retention: d1, // Use D1 retention for main line
+        installs: item.cohortSize || 0,
+        d1,
+        d7,
+        d14,
+        d30,
+      };
+    }) : [];
+  }, [data]);
 
-  // Use mock data as fallback if no API data
-  const mockData = [
-    { day: 'D0', retention: 100, installs: 5000 },
-    { day: 'D1', retention: 68.5, installs: 3425 },
-    { day: 'D2', retention: 45.2, installs: 2260 },
-    { day: 'D3', retention: 38.7, installs: 1935 },
-    { day: 'D7', retention: 25.4, installs: 1270 },
-    { day: 'D14', retention: 18.9, installs: 945 },
-    { day: 'D21', retention: 15.2, installs: 760 },
-    { day: 'D30', retention: 12.8, installs: 640 }
-  ];
-
-  const displayData = chartData.length > 0 ? chartData : mockData;
+  const displayData = chartData;
+  const hasData = displayData.length > 0;
 
   const customTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -97,53 +89,62 @@ const RetentionTrendGraph = ({ data, retentionCurrent, filters, loading }) => {
       </div>
 
       <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={displayData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="day" 
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-            />
-            <YAxis 
-              yAxisId="left"
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-              domain={[0, 100]}
-            />
-            <YAxis 
-              yAxisId="right" 
-              orientation="right"
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-            />
-            <Tooltip content={customTooltip} />
-            
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="retention"
-              stroke="#3b82f6"
-              strokeWidth={3}
-              dot={{ r: 6, fill: '#3b82f6', stroke: '#ffffff', strokeWidth: 2 }}
-              activeDot={{ r: 8, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}
-            />
-            
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="installs"
-              stroke="#10b981"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={{ r: 4, fill: '#10b981' }}
-              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2, fill: '#ffffff' }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {hasData ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={displayData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="day" 
+                stroke="#6b7280"
+                fontSize={12}
+                tickLine={false}
+              />
+              <YAxis 
+                yAxisId="left"
+                stroke="#6b7280"
+                fontSize={12}
+                tickLine={false}
+                domain={[0, 100]}
+              />
+              <YAxis 
+                yAxisId="right" 
+                orientation="right"
+                stroke="#6b7280"
+                fontSize={12}
+                tickLine={false}
+              />
+              <Tooltip content={customTooltip} />
+              
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="retention"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                dot={{ r: 6, fill: '#3b82f6', stroke: '#ffffff', strokeWidth: 2 }}
+                activeDot={{ r: 8, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}
+              />
+              
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="installs"
+                stroke="#10b981"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ r: 4, fill: '#10b981' }}
+                activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2, fill: '#ffffff' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <p className="text-gray-500 text-sm">No retention data available</p>
+              <p className="text-gray-400 text-xs mt-1">Data will appear once available</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Summary Stats */}
@@ -177,6 +178,8 @@ const RetentionTrendGraph = ({ data, retentionCurrent, filters, loading }) => {
       </div>
     </div>
   );
-};
+});
+
+RetentionTrendGraph.displayName = 'RetentionTrendGraph';
 
 export default RetentionTrendGraph;

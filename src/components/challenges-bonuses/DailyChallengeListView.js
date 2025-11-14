@@ -289,6 +289,7 @@ export default function DailyChallengeListView({
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
+                totalItems={filteredChallenges.length}
                 onPageChange={setCurrentPage}
               />
             </div>

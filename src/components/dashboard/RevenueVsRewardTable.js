@@ -1,87 +1,43 @@
 "use client";
 
-const RevenueVsRewardTable = ({ data, loading }) => {
-  // Map API data to table format
-  const tableData =
-    data && data.length > 0
-      ? data.map((game, index) => ({
-          id: index + 1,
-          game: game.title || game.gameId || "Unknown Game",
-          icon: "🎮",
-          revenue: game.revenue || 0,
-          rewardCost: game.rewardCost || 0,
-          marginDollar: game.margin || 0,
-          marginPercent: game.marginPercent || 0,
-          d7Retention: game.d7Retention || 0,
-          gameId: game.gameId,
-        }))
-      : [];
+import { memo, useMemo, useState, useEffect } from "react";
+import Pagination from "../ui/Pagination";
 
-  // Mock data for fallback
-  const mockData = [
-    {
-      id: 1,
-      game: "Candy Crush Saga",
-      icon: "🍭",
-      revenue: 145000,
-      rewardCost: 38000,
-      marginDollar: 107000,
-      marginPercent: 73.8,
-      d7Retention: 35.2,
-    },
-    {
-      id: 2,
-      game: "Subway Surfers",
-      icon: "🚇",
-      revenue: 89000,
-      rewardCost: 27000,
-      marginDollar: 62000,
-      marginPercent: 69.7,
-      d7Retention: 42.1,
-    },
-    {
-      id: 3,
-      game: "Clash of Clans",
-      icon: "⚔️",
-      revenue: 198000,
-      rewardCost: 45000,
-      marginDollar: 153000,
-      marginPercent: 77.3,
-      d7Retention: 58.3,
-    },
-    {
-      id: 4,
-      game: "Pokemon GO",
-      icon: "🎮",
-      revenue: 156000,
-      rewardCost: 52000,
-      marginDollar: 104000,
-      marginPercent: 66.7,
-      d7Retention: 31.8,
-    },
-    {
-      id: 5,
-      game: "Fortnite",
-      icon: "🔫",
-      revenue: 234000,
-      rewardCost: 61000,
-      marginDollar: 173000,
-      marginPercent: 73.9,
-      d7Retention: 48.5,
-    },
-    {
-      id: 6,
-      game: "Minecraft",
-      icon: "🧱",
-      revenue: 123000,
-      rewardCost: 28000,
-      marginDollar: 95000,
-      marginPercent: 77.2,
-      d7Retention: 67.2,
-    },
-  ];
+const RevenueVsRewardTable = memo(({ data, loading }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const displayData = tableData.length > 0 ? tableData : mockData;
+  // Map API data to table format - memoized for performance
+  const tableData = useMemo(
+    () =>
+      data && data.length > 0
+        ? data.map((game, index) => ({
+            id: index + 1,
+            game: game.title || game.gameId || "Unknown Game",
+            icon: "🎮",
+            revenue: game.revenue || 0,
+            rewardCost: game.rewardCost || 0,
+            marginDollar: game.margin || 0,
+            marginPercent: game.marginPercent || 0,
+            d7Retention: game.d7Retention || 0,
+            gameId: game.gameId,
+          }))
+        : [],
+    [data]
+  );
+
+  // Reset to page 1 when data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(tableData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = tableData.slice(startIndex, endIndex);
+
+  const hasData = tableData.length > 0;
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
@@ -150,87 +106,114 @@ const RevenueVsRewardTable = ({ data, loading }) => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">
-                  Game
-                </th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
-                  Revenue
-                </th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
-                  Reward Cost
-                </th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
-                  Margin $
-                </th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
-                  Margin %
-                </th>
-                <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
-                  D7 Retention
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {displayData.map((game) => (
-                <tr
-                  key={game.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="py-4 px-2">
-                    <div className="flex items-center">
-                      <span className="text-lg mr-3">{game.icon}</span>
-                      <div>
-                        <div className="font-medium text-gray-900 text-sm">
-                          {game.game}
+        {hasData ? (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">
+                      Game
+                    </th>
+                    <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                      Revenue
+                    </th>
+                    <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                      Reward Cost
+                    </th>
+                    <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                      Margin $
+                    </th>
+                    <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                      Margin %
+                    </th>
+                    <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                      D7 Retention
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedData.map((game) => (
+                    <tr
+                      key={game.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="py-4 px-2">
+                        <div className="flex items-center">
+                          <span className="text-lg mr-3">{game.icon}</span>
+                          <div>
+                            <div className="font-medium text-gray-900 text-sm">
+                              {game.game}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className="font-semibold text-gray-900 text-sm">
-                      {formatCurrency(game.revenue)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className="text-gray-700 text-sm">
-                      {formatCurrency(game.rewardCost)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span className="font-semibold text-gray-600 text-sm">
-                      {formatCurrency(game.marginDollar)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMarginColor(
-                        game.marginPercent
-                      )}`}
-                    >
-                      {game.marginPercent.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-right">
-                    <span
-                      className={`font-semibold text-sm ${getRetentionColor(
-                        game.d7Retention
-                      )}`}
-                    >
-                      {game.d7Retention.toFixed(1)}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="py-4 px-2 text-right">
+                        <span className="font-semibold text-gray-900 text-sm">
+                          {formatCurrency(game.revenue)}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 text-right">
+                        <span className="text-gray-700 text-sm">
+                          {formatCurrency(game.rewardCost)}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 text-right">
+                        <span className="font-semibold text-gray-600 text-sm">
+                          {formatCurrency(game.marginDollar)}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 text-right">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMarginColor(
+                            game.marginPercent
+                          )}`}
+                        >
+                          {game.marginPercent.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 text-right">
+                        <span
+                          className={`font-semibold text-sm ${getRetentionColor(
+                            game.d7Retention
+                          )}`}
+                        >
+                          {game.d7Retention.toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={tableData.length}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center justify-center py-12 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <p className="text-gray-500 text-sm">No revenue data available</p>
+              <p className="text-gray-400 text-xs mt-1">
+                Data will appear once available
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-};
+});
+
+RevenueVsRewardTable.displayName = "RevenueVsRewardTable";
 
 export default RevenueVsRewardTable;
