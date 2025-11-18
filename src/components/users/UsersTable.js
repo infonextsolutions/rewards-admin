@@ -1,4 +1,41 @@
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
+
+function UserAvatar({ src, alt, className }) {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    if (!src) {
+      setImgError(true);
+      return;
+    }
+
+    const img = new Image();
+    img.onerror = () => setImgError(true);
+    img.onload = () => setImgError(false);
+    img.src = src;
+  }, [src]);
+
+  if (imgError || !src) {
+    return (
+      <div className={`${className} bg-gray-200 rounded-full items-center justify-center text-sm flex flex-shrink-0`}>
+        👤
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      className={className}
+      src={src}
+      alt={alt}
+      width={40}
+      height={40}
+      unoptimized
+    />
+  );
+}
 
 export default function UsersTable({
   users,
@@ -77,18 +114,11 @@ export default function UsersTable({
                 {/* Name Column */}
                 <td className="py-4 px-3">
                   <div className="flex items-center gap-2">
-                    <img
+                    <UserAvatar
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
                       src={row.avatar}
                       alt={`${row.name} avatar`}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
                     />
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full items-center justify-center text-sm hidden flex-shrink-0">
-                      👤
-                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-black text-sm tracking-[0.1px] leading-5 truncate">
                         {row.name}
@@ -148,10 +178,13 @@ export default function UsersTable({
                       borderColor: row.tierBorder,
                     }}
                   >
-                    <img
+                    <Image
                       className="w-3 h-3 flex-shrink-0"
                       alt="Icon star"
                       src={row.tierIcon}
+                      width={12}
+                      height={12}
+                      unoptimized
                     />
                     <div
                       className="font-semibold text-xs sm:text-sm text-center tracking-[0.10px] leading-4 whitespace-nowrap"
@@ -185,10 +218,13 @@ export default function UsersTable({
                       className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
                       title="Edit user"
                     >
-                      <img
+                      <Image
                         className="w-3.5 h-3.5"
                         alt="Icon pencil"
                         src="https://c.animaapp.com/t66hdvJZ/img/---icon--pencil--10@2x.png"
+                        width={14}
+                        height={14}
+                        unoptimized
                       />
                     </button>
 

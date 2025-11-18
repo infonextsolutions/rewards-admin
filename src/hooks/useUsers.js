@@ -54,6 +54,7 @@ export const useUsers = () => {
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Apply filters to API
@@ -88,6 +89,7 @@ export const useUsers = () => {
       // Return current users (API already filtered)
       return users;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users, apiFilters]);
 
   // Handle page change

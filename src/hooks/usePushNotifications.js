@@ -63,6 +63,17 @@ export const usePushNotifications = () => {
     });
   }, [abTests]);
 
+  // Utility functions
+  const calculateAudienceSize = useCallback((segments) => {
+    if (!segments || segments.length === 0) return 0;
+    
+    // Simple sum - in real app, this would call backend
+    return segments.reduce((total, segmentName) => {
+      const segment = USER_SEGMENTS.find(s => s.name === segmentName);
+      return total + (segment ? segment.userCount : 0);
+    }, 0);
+  }, []);
+
   // Campaign CRUD operations
   const createCampaign = useCallback(async (campaignData) => {
     setLoading(true);
@@ -130,7 +141,7 @@ export const usePushNotifications = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [calculateAudienceSize]);
 
   const updateCampaign = useCallback(async (campaignId, updateData) => {
     setLoading(true);
@@ -289,18 +300,7 @@ export const usePushNotifications = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Utility functions
-  const calculateAudienceSize = useCallback((segments) => {
-    if (!segments || segments.length === 0) return 0;
-    
-    // Simple sum - in real app, this would call backend
-    return segments.reduce((total, segmentName) => {
-      const segment = USER_SEGMENTS.find(s => s.name === segmentName);
-      return total + (segment ? segment.userCount : 0);
-    }, 0);
-  }, []);
+  }, [calculateAudienceSize]);
 
   const getUserRolePermissions = useCallback(() => {
     const roleConfig = PUSH_NOTIFICATION_ROLES.find(r => r.role === currentUserRole);

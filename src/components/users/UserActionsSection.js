@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Image from 'next/image';
 import userAPIs from '../../data/users/userAPI';
 import toast from 'react-hot-toast';
 import { InputModal } from './InputModal';
@@ -40,10 +41,13 @@ export const UserActionsSection = ({ user }) => {
       role="region"
       aria-labelledby="user-profile"
     >
-      <img
+      <Image
         className="relative w-[130px] h-[130px] object-cover rounded-full border-4 border-white shadow-sm"
         alt={`${user?.name || 'User'}'s profile picture`}
         src={user?.avatar || "https://c.animaapp.com/6mo0E72h/img/avatar.svg"}
+        width={130}
+        height={130}
+        unoptimized
       />
 
       <div className="text-center">
