@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 const TierBadge = ({ tier, showIcon = true, className = '' }) => {
   if (!tier) return null;
 
@@ -55,10 +57,12 @@ const TierBadge = ({ tier, showIcon = true, className = '' }) => {
       }}
     >
       {showIcon && (
-        <img
+        <Image
           className="w-3 h-3 flex-shrink-0"
           alt="tier icon"
           src={tierData.iconSrc}
+          width={12}
+          height={12}
         />
       )}
       <div

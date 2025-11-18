@@ -247,7 +247,7 @@ export default function SecuritySettingsList({
                 Delete Security Setting
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                Are you sure you want to delete "{deleteConfirm.name}"? This
+                Are you sure you want to delete &quot;{deleteConfirm.name}&quot;? This
                 action cannot be undone.
               </p>
 

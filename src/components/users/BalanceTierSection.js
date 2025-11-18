@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 export const BalanceTierSection = ({ user }) => {
   const balanceAndTierData = [
@@ -64,10 +65,12 @@ export const BalanceTierSection = ({ user }) => {
                   <div className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans',Helvetica] font-semibold text-[#464154] text-sm tracking-[0] leading-[normal]">
                     Gold
                   </div>
-                  <img
+                  <Image
                     className="relative w-5 h-5 mt-[-1.00px] mb-[-1.00px] aspect-[1]"
                     alt="Heroicons chevron up"
                     src="https://c.animaapp.com/OW4NDadO/img/heroicons-chevron-up-20-solid-1.svg"
+                    width={20}
+                    height={20}
                   />
                 </div>
               );
@@ -79,13 +82,15 @@ export const BalanceTierSection = ({ user }) => {
                   key={index}
                   className={`absolute ${topPositions[index]} left-0 flex items-center gap-2`}
                 >
-                  <img
+                  <Image
                     className="w-6 h-6 rounded"
                     alt={item.value}
                     src={item.value === 'PayPal' ? 
                       'https://cdn.worldvectorlogo.com/logos/paypal-2.svg' : 
                       'https://cdn-icons-png.flaticon.com/128/891/891462.png'
                     }
+                    width={24}
+                    height={24}
                   />
                   <span className="text-sm font-medium text-black">{item.value}</span>
                 </div>

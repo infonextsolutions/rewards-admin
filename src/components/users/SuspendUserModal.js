@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 const SuspendUserModal = ({ user, isOpen, onClose, onSuspend }) => {
   const [reason, setReason] = useState('');
@@ -120,10 +121,12 @@ const SuspendUserModal = ({ user, isOpen, onClose, onSuspend }) => {
         <div className="mb-4 p-3 bg-gray-50 rounded-md">
           <div className="flex items-center space-x-3">
             {user.avatar ? (
-              <img
+              <Image
                 src={user.avatar}
                 alt={`${user.name} avatar`}
                 className="w-10 h-10 rounded-full object-cover"
+                width={40}
+                height={40}
               />
             ) : (
               <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">

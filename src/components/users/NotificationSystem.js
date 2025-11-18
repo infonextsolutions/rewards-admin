@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 export const NotificationSystem = () => {
   const [notifications, setNotifications] = useState([]);
 
+  // Function to remove a notification
+  const removeNotification = useCallback((id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
   // Function to add a new notification
-  const addNotification = (message, type = 'info', duration = 5000) => {
+  const addNotification = useCallback((message, type = 'info', duration = 5000) => {
     const id = Date.now() + Math.random();
     const notification = { id, message, type, duration };
     
@@ -18,12 +23,7 @@ export const NotificationSystem = () => {
     }
 
     return id;
-  };
-
-  // Function to remove a notification
-  const removeNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  }, [removeNotification]);
 
   // Make functions available globally
   useEffect(() => {
@@ -31,7 +31,7 @@ export const NotificationSystem = () => {
     return () => {
       delete window.showNotification;
     };
-  }, []);
+  }, [addNotification]);
 
   const getNotificationStyles = (type) => {
     const baseStyles = "relative flex items-center justify-between w-full max-w-md p-4 mb-3 rounded-lg shadow-lg border-l-4 transition-all duration-300 ease-in-out";

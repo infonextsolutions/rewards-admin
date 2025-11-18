@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import FilterDropdown from "@/components/ui/FilterDropdown";
 import Pagination from "@/components/ui/Pagination";
 import {
@@ -100,7 +100,7 @@ export default function TransactionLog({ onSneakPeek }) {
   }, []);
 
   // Fetch transactions from API
-  const fetchTransactions = async (page = 1) => {
+  const fetchTransactions = useCallback(async (page = 1) => {
     setLoadingTransactions(true);
     try {
       const token = localStorage.getItem("token");
@@ -158,12 +158,12 @@ export default function TransactionLog({ onSneakPeek }) {
     } finally {
       setLoadingTransactions(false);
     }
-  };
+  }, [searchTerm, filters.type, filters.status]);
 
   // Fetch transactions on mount and when filters change
   useEffect(() => {
     fetchTransactions(currentPage);
-  }, [currentPage, searchTerm, filters.type, filters.status]);
+  }, [currentPage, fetchTransactions]);
 
   const handleFilterChange = (filterId, value) => {
     setFilters((prev) => ({ ...prev, [filterId]: value }));
