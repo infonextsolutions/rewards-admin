@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { useState, useEffect } from 'react';
 
 function UserAvatar({ src, alt, className }) {
@@ -11,7 +11,8 @@ function UserAvatar({ src, alt, className }) {
       return;
     }
 
-    const img = new Image();
+    // Use native browser Image constructor (not Next.js Image component)
+    const img = new window.Image();
     img.onerror = () => setImgError(true);
     img.onload = () => setImgError(false);
     img.src = src;
@@ -26,7 +27,7 @@ function UserAvatar({ src, alt, className }) {
   }
 
   return (
-    <Image
+    <NextImage
       className={className}
       src={src}
       alt={alt}
@@ -178,7 +179,7 @@ export default function UsersTable({
                       borderColor: row.tierBorder,
                     }}
                   >
-                    <Image
+                    <NextImage
                       className="w-3 h-3 flex-shrink-0"
                       alt="Icon star"
                       src={row.tierIcon}
@@ -218,7 +219,7 @@ export default function UsersTable({
                       className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
                       title="Edit user"
                     >
-                      <Image
+                      <NextImage
                         className="w-3.5 h-3.5"
                         alt="Icon pencil"
                         src="https://c.animaapp.com/t66hdvJZ/img/---icon--pencil--10@2x.png"
