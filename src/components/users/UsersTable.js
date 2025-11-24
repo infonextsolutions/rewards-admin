@@ -1,6 +1,6 @@
-import { useRouter } from 'next/navigation';
-import NextImage from 'next/image';
-import { useState, useEffect } from 'react';
+import { useRouter } from "next/navigation";
+import NextImage from "next/image";
+import { useState, useEffect } from "react";
 
 function UserAvatar({ src, alt, className }) {
   const [imgError, setImgError] = useState(false);
@@ -20,7 +20,9 @@ function UserAvatar({ src, alt, className }) {
 
   if (imgError || !src) {
     return (
-      <div className={`${className} bg-gray-200 rounded-full items-center justify-center text-sm flex flex-shrink-0`}>
+      <div
+        className={`${className} bg-gray-200 rounded-full items-center justify-center text-sm flex flex-shrink-0`}
+      >
         👤
       </div>
     );
@@ -45,12 +47,14 @@ export default function UsersTable({
   onSelectAll,
   onEditUser,
   onSuspendUser,
-  className = ""
+  className = "",
 }) {
   const router = useRouter();
 
   return (
-    <div className={`bg-white rounded-[10px] border border-gray-200 w-full ${className}`}>
+    <div
+      className={`bg-white rounded-[10px] border border-gray-200 w-full ${className}`}
+    >
       <div className="overflow-x-auto">
         <table className="w-full min-w-full lg:min-w-[1000px]">
           <thead>
@@ -100,7 +104,9 @@ export default function UsersTable({
             {users.map((row, index) => (
               <tr
                 key={row.id}
-                className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${index === users.length - 1 ? "border-b-0" : ""} ${selectedUsers.includes(row.id) ? "bg-blue-50" : ""}`}
+                className={`border-b border-[#d0d6e7] hover:bg-gray-50 transition-colors ${
+                  index === users.length - 1 ? "border-b-0" : ""
+                } ${selectedUsers.includes(row.id) ? "bg-blue-50" : ""}`}
               >
                 {/* Select Column - hidden */}
                 {/* <td className="py-4 px-3 text-center">
@@ -131,20 +137,26 @@ export default function UsersTable({
                 {/* User ID Column */}
                 <td className="py-4 px-2 text-center hidden xl:table-cell">
                   <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate">
-                    {row.userId}
+                    {row.id}
                   </div>
                 </td>
 
                 {/* Email Column */}
                 <td className="py-4 px-2">
-                  <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.email}>
+                  <div
+                    className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate"
+                    title={row.email}
+                  >
                     {row.email}
                   </div>
                 </td>
 
                 {/* Phone Column */}
                 <td className="py-4 px-2 hidden lg:table-cell">
-                  <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.phone}>
+                  <div
+                    className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate"
+                    title={row.phone}
+                  >
                     {row.phone}
                   </div>
                 </td>
@@ -165,7 +177,10 @@ export default function UsersTable({
 
                 {/* Location Column */}
                 <td className="py-4 px-2 hidden md:table-cell">
-                  <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate" title={row.location}>
+                  <div
+                    className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate"
+                    title={row.location}
+                  >
                     {row.location}
                   </div>
                 </td>
