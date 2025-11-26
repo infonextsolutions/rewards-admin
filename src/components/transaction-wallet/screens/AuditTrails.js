@@ -29,6 +29,8 @@ export default function AuditTrails() {
     itemsPerPage: 10,
   });
   const [availableActions, setAvailableActions] = useState([]);
+  const [allAdmins, setAllAdmins] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
 
   // Load audit logs from API
   useEffect(() => {
@@ -46,6 +48,7 @@ export default function AuditTrails() {
         if (filters.adminId) params.adminId = filters.adminId;
         if (filters.userId) params.userId = filters.userId;
         if (filters.action) params.action = filters.action;
+        if (searchTerm) params.search = searchTerm;
 
         const response = await TRANSACTION_API.getAuditLogs(params);
 
@@ -60,7 +63,8 @@ export default function AuditTrails() {
               currentPage: data.pagination.currentPage || currentPage,
               totalPages: data.pagination.totalPages || 1,
               totalItems: data.pagination.totalItems || 0,
-              itemsPerPage: data.pagination.itemsPerPage || pagination.itemsPerPage,
+              itemsPerPage:
+                data.pagination.itemsPerPage || pagination.itemsPerPage,
             });
           }
         } else {
@@ -78,23 +82,53 @@ export default function AuditTrails() {
     };
 
     loadAuditLogs();
-  }, [currentPage, filters.adminId, filters.userId, filters.action, pagination.itemsPerPage]);
+  }, [
+    currentPage,
+    filters.adminId,
+    filters.userId,
+    filters.action,
+    searchTerm,
+    pagination.itemsPerPage,
+  ]);
 
-  // Load available actions for filter dropdown
+  // Load available filter options (actions, admins, users)
   useEffect(() => {
-    const loadAvailableActions = async () => {
+    const loadFilterOptions = async () => {
       try {
-        const response = await TRANSACTION_API.getAuditActions();
-        if (response.data?.success && response.data?.data) {
-          // API returns array directly
-          setAvailableActions(Array.isArray(response.data.data) ? response.data.data : []);
+        // Load actions
+        const actionsResponse = await TRANSACTION_API.getAuditActions();
+        if (actionsResponse.data?.success && actionsResponse.data?.data) {
+          setAvailableActions(
+            Array.isArray(actionsResponse.data.data)
+              ? actionsResponse.data.data
+              : []
+          );
+        }
+
+        // Load admins and users for filter dropdowns
+        const filterOptionsResponse =
+          await TRANSACTION_API.getAuditFilterOptions();
+        if (
+          filterOptionsResponse.data?.success &&
+          filterOptionsResponse.data?.data
+        ) {
+          setAllAdmins(
+            Array.isArray(filterOptionsResponse.data.data.admins)
+              ? filterOptionsResponse.data.data.admins
+              : []
+          );
+          setAllUsers(
+            Array.isArray(filterOptionsResponse.data.data.users)
+              ? filterOptionsResponse.data.data.users
+              : []
+          );
         }
       } catch (error) {
-        console.error("Failed to load available actions:", error);
+        console.error("Failed to load filter options:", error);
       }
     };
 
-    loadAvailableActions();
+    loadFilterOptions();
   }, []);
 
   const handleFilterChange = (filterId, value) => {
@@ -128,10 +162,9 @@ Action: ${auditLog.action}
 Target: ${auditLog.targetUserName || "System"}
 Time: ${new Date(auditLog.timestamp).toLocaleString()}
     `.trim();
-    
+
     alert(`Audit Details:\n\n${details}`);
   };
-
 
   const getActionBadge = (action) => {
     const styles = {
@@ -167,25 +200,33 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
   // Use auditLogs directly since filtering is handled by API
   const paginatedLogs = auditLogs;
 
-  // Get unique admin IDs, user IDs, and actions for filters
-  const uniqueAdminIds = [...new Set(auditLogs.map((log) => ({
-    id: log.adminId,
-    name: log.adminName,
-    email: log.adminEmail
-  })).filter(log => log.id))];
-  
-  const uniqueUserIds = [
-    ...new Set(auditLogs.map((log) => ({
-      id: log.targetUserId,
-      name: log.targetUserName,
-      email: log.targetUserEmail
-    })).filter(log => log.id)),
-  ];
-  
-  const uniqueActions =
+  // Use all available options from API, not just current results
+  // This ensures filters always show all possible values
+  const adminOptions =
+    allAdmins.length > 0
+      ? allAdmins.map((admin) => ({
+          value: admin.id,
+          label: `${admin.name} (${admin.email || admin.id})`,
+        }))
+      : [];
+
+  const userOptions =
+    allUsers.length > 0
+      ? allUsers.map((user) => ({
+          value: user.id,
+          label: `${user.name} (${user.email || user.id})`,
+        }))
+      : [];
+
+  const actionOptions =
     availableActions.length > 0
-      ? availableActions
-      : [...new Set(auditLogs.map((log) => log.action))];
+      ? availableActions.map((action) => ({
+          value: action,
+          label: action
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
+        }))
+      : [];
 
   return (
     <div className="space-y-6">
@@ -195,23 +236,68 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
           <FilterDropdown
             filterId="adminId"
             label="Admin"
-            options={uniqueAdminIds.map(admin => admin.id)}
-            value={filters.adminId}
-            onChange={handleFilterChange}
+            options={adminOptions.map((opt) => opt.label)}
+            value={
+              filters.adminId
+                ? adminOptions.find((opt) => opt.value === filters.adminId)
+                    ?.label || filters.adminId
+                : ""
+            }
+            onChange={(id, selectedLabel) => {
+              if (!selectedLabel || selectedLabel === "Admin") {
+                handleFilterChange(id, "");
+                return;
+              }
+              const selectedAdmin = adminOptions.find(
+                (opt) => opt.label === selectedLabel
+              );
+              handleFilterChange(id, selectedAdmin ? selectedAdmin.value : "");
+            }}
           />
           <FilterDropdown
             filterId="userId"
             label="User"
-            options={uniqueUserIds.map(user => user.id)}
-            value={filters.userId}
-            onChange={handleFilterChange}
+            options={userOptions.map((opt) => opt.label)}
+            value={
+              filters.userId
+                ? userOptions.find((opt) => opt.value === filters.userId)
+                    ?.label || filters.userId
+                : ""
+            }
+            onChange={(id, selectedLabel) => {
+              if (!selectedLabel || selectedLabel === "User") {
+                handleFilterChange(id, "");
+                return;
+              }
+              const selectedUser = userOptions.find(
+                (opt) => opt.label === selectedLabel
+              );
+              handleFilterChange(id, selectedUser ? selectedUser.value : "");
+            }}
           />
           <FilterDropdown
             filterId="action"
             label="Action"
-            options={uniqueActions}
-            value={filters.action}
-            onChange={handleFilterChange}
+            options={actionOptions.map((opt) => opt.label)}
+            value={
+              filters.action
+                ? actionOptions.find((opt) => opt.value === filters.action)
+                    ?.label || filters.action
+                : ""
+            }
+            onChange={(id, selectedLabel) => {
+              if (!selectedLabel || selectedLabel === "Action") {
+                handleFilterChange(id, "");
+                return;
+              }
+              const selectedAction = actionOptions.find(
+                (opt) => opt.label === selectedLabel
+              );
+              handleFilterChange(
+                id,
+                selectedAction ? selectedAction.value : ""
+              );
+            }}
           />
 
           {/* Clear Filters Button */}
@@ -229,7 +315,7 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
             </button>
           )}
         </div>
-        
+
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -375,67 +461,70 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
               ) : (
                 paginatedLogs.map((log) => (
                   <tr key={log.entryId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleEntryIdClick(log)}
-                      className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
-                      title="View audit details"
-                    >
-                      {log.entryId}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-900">
-                        {log.adminName || 'N/A'}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {log.adminId}
-                      </span>
-                      {log.adminEmail && (
-                        <span className="text-xs text-gray-400">
-                          {log.adminEmail}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">{getActionBadge(log.action)}</td>
-                  <td className="px-6 py-4">
-                    {log.targetUserId ? (
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => handleEntryIdClick(log)}
+                        className="font-medium text-blue-600 hover:text-blue-800 cursor-pointer"
+                        title="View audit details"
+                      >
+                        {log.entryId}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <button
-                          onClick={() => {
-                            window.open(`/users/${log.targetUserId}`, "_blank");
-                          }}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-left"
-                          title={`View user profile for ${log.targetUserName}`}
-                        >
-                          {log.targetUserName || 'N/A'}
-                        </button>
-                        <span className="text-xs text-gray-500">
-                          {log.targetUserId}
+                        <span className="text-sm font-medium text-gray-900">
+                          {log.adminName || "N/A"}
                         </span>
-                        {log.targetUserEmail && (
+                        <span className="text-xs text-gray-500">
+                          {log.adminId}
+                        </span>
+                        {log.adminEmail && (
                           <span className="text-xs text-gray-400">
-                            {log.targetUserEmail}
+                            {log.adminEmail}
                           </span>
                         )}
                       </div>
-                    ) : (
-                      <span className="font-medium text-gray-900">
-                        System
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <ClockIcon className="w-4 h-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-6 py-4">{getActionBadge(log.action)}</td>
+                    <td className="px-6 py-4">
+                      {log.targetUserId ? (
+                        <div className="flex flex-col">
+                          <button
+                            onClick={() => {
+                              window.open(
+                                `/users/${log.targetUserId}`,
+                                "_blank"
+                              );
+                            }}
+                            className="text-blue-600 hover:text-blue-800 font-medium text-left"
+                            title={`View user profile for ${log.targetUserName}`}
+                          >
+                            {log.targetUserName || "N/A"}
+                          </button>
+                          <span className="text-xs text-gray-500">
+                            {log.targetUserId}
+                          </span>
+                          {log.targetUserEmail && (
+                            <span className="text-xs text-gray-400">
+                              {log.targetUserEmail}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="font-medium text-gray-900">
+                          System
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <ClockIcon className="w-4 h-4 text-gray-400 mr-2" />
+                        <span className="text-sm text-gray-900">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
                 ))
               )}
             </tbody>

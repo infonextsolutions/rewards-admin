@@ -24,32 +24,36 @@ export default function WalletAdjustments({ onSneakPeek }) {
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Load recent adjustments from API
+  // Load recent adjustments from API - only 5 most recent
   useEffect(() => {
     const loadRecentAdjustments = async () => {
       try {
-        // This would typically be a separate endpoint for recent adjustments
-        // For now, we'll use the audit logs to get recent wallet adjustments
-        const response = await TRANSACTION_API.getAuditLogs({
-          action: "WALLET_ADJUST",
-          limit: 10,
+        // Fetch recent adjustment transactions from backend API
+        const response = await TRANSACTION_API.getAllTransactions({
+          type: "adjustment",
+          limit: 5,
           page: 1,
         });
 
-        if (response.data?.success && response.data?.data?.logs) {
-          const adjustments = response.data.data.logs.map((log) => ({
-            id: log.id,
-            userId: log.targetUser,
-            balanceType: log.details?.balanceType || "coins",
-            adjustmentType: log.details?.adjustmentType || "add",
-            amount: `${log.details?.adjustmentType === "add" ? "+" : "-"}${
-              log.details?.amount || 0
-            }`,
-            reason: log.details?.reason || "Wallet adjustment",
-            adminId: log.adminId,
-            timestamp: new Date(log.timestamp).toLocaleString(),
-            status: "Completed",
-          }));
+        if (response.data?.success && response.data?.data?.transactions) {
+          const adjustments = response.data.data.transactions
+            .slice(0, 5) // Ensure only 5 items
+            .map((tx) => ({
+              id: tx.transactionId || tx.referenceId || tx._id,
+              userId: tx.userId || tx.user?._id || "-",
+              balanceType: tx.balanceType || "coins",
+              adjustmentType: tx.adjustment?.adjustmentType || "add",
+              amount: `${tx.adjustment?.adjustmentType === "add" ? "+" : "-"}${
+                tx.amount || 0
+              } ${tx.balanceType || "coins"}`,
+              reason:
+                tx.description || tx.adjustment?.reason || "Wallet adjustment",
+              adminId: tx.adjustment?.adminId || tx.metadata?.adminId || "-",
+              timestamp: new Date(
+                tx.createdAt || tx.createdOn
+              ).toLocaleString(),
+              status: tx.status || "Completed",
+            }));
           setRecentAdjustments(adjustments);
         }
       } catch (error) {
@@ -153,22 +157,50 @@ export default function WalletAdjustments({ onSneakPeek }) {
       const response = await TRANSACTION_API.adjustWallet(payload);
 
       if (response.data?.success) {
-        // Add to recent adjustments
-        const newAdjustment = {
-          id: response.data.data?.id || `ADJ-${Date.now()}`,
-          userId: formData.userId,
-          balanceType: formData.balanceType,
-          adjustmentType: formData.adjustmentType,
-          amount: `${formData.adjustmentType === "add" ? "+" : "-"}${
-            formData.amount
-          }`,
-          reason: formData.reason,
-          adminId: formData.adminId,
-          timestamp: new Date().toLocaleString(),
-          status: "Completed",
+        // Reload recent adjustments from API to get the latest 5
+        const loadRecentAdjustments = async () => {
+          try {
+            const adjustmentsResponse =
+              await TRANSACTION_API.getAllTransactions({
+                type: "adjustment",
+                limit: 5,
+                page: 1,
+              });
+
+            if (
+              adjustmentsResponse.data?.success &&
+              adjustmentsResponse.data?.data?.transactions
+            ) {
+              const adjustments = adjustmentsResponse.data.data.transactions
+                .slice(0, 5)
+                .map((tx) => ({
+                  id: tx.transactionId || tx.referenceId || tx._id,
+                  userId: tx.userId || tx.user?._id || "-",
+                  balanceType: tx.balanceType || "coins",
+                  adjustmentType: tx.adjustment?.adjustmentType || "add",
+                  amount: `${
+                    tx.adjustment?.adjustmentType === "add" ? "+" : "-"
+                  }${tx.amount || 0} ${tx.balanceType || "coins"}`,
+                  reason:
+                    tx.description ||
+                    tx.adjustment?.reason ||
+                    "Wallet adjustment",
+                  adminId:
+                    tx.adjustment?.adminId || tx.metadata?.adminId || "-",
+                  timestamp: new Date(
+                    tx.createdAt || tx.createdOn
+                  ).toLocaleString(),
+                  status: tx.status || "Completed",
+                }));
+              setRecentAdjustments(adjustments);
+            }
+          } catch (error) {
+            console.error("Failed to reload recent adjustments:", error);
+          }
         };
 
-        setRecentAdjustments((prev) => [newAdjustment, ...prev]);
+        // Reload adjustments from API
+        await loadRecentAdjustments();
 
         // Reset form
         setFormData({
@@ -405,82 +437,90 @@ export default function WalletAdjustments({ onSneakPeek }) {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Adjustment ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   User ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Adjustment
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Reason
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Admin
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Timestamp
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {recentAdjustments.map((adjustment) => (
-                <tr key={adjustment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">
-                      {adjustment.id}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() =>
-                        window.open(`/users/${adjustment.userId}`, "_blank")
-                      }
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      {adjustment.userId}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">
-                      {adjustment.balanceType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">
-                      {adjustment.adjustmentType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900">
-                      {adjustment.amount}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">
-                      {adjustment.reason}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">
-                      {adjustment.adminId}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-500">
-                      {adjustment.timestamp}
-                    </span>
+              {recentAdjustments.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="px-6 py-12 text-center">
+                    <p className="text-gray-500">No recent adjustments found</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                recentAdjustments.map((adjustment) => (
+                  <tr key={adjustment.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <span className="font-medium text-gray-900">
+                        {adjustment.id}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <button
+                        onClick={() =>
+                          window.open(`/users/${adjustment.userId}`, "_blank")
+                        }
+                        className="text-blue-600 hover:text-blue-800 font-medium mx-auto"
+                      >
+                        {adjustment.userId}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <span className="text-sm text-gray-900 capitalize">
+                        {adjustment.balanceType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <span className="text-sm text-gray-900 capitalize">
+                        {adjustment.adjustmentType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <span className="font-medium text-gray-900">
+                        {adjustment.amount}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <span className="text-sm text-gray-900">
+                        {adjustment.reason}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <span className="text-sm text-gray-900">
+                        {adjustment.adminId}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <span className="text-sm text-gray-500">
+                        {adjustment.timestamp}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

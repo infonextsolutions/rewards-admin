@@ -63,6 +63,24 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
       [field]: value
     }));
     setSaveSuccess(false);
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+    // Clear dateRange error when either date changes
+    if (field === 'startDate' || field === 'endDate') {
+      if (errors.dateRange) {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.dateRange;
+          return newErrors;
+        });
+      }
+    }
   };
 
   const handleTierChange = (tier, checked) => {
@@ -246,34 +264,64 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
 
           {/* Date Range Settings */}
           <div>
-            <h3 className="text-base font-medium text-gray-900 mb-4">Campaign Duration (Optional)</h3>
+            <div className="mb-4">
+              <h3 className="text-base font-medium text-gray-900 mb-1">Campaign Duration (Optional)</h3>
+              <p className="text-sm text-gray-600 mb-2">
+                Set a time window when the spin wheel will be available to users. Leave empty to make it always available.
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>How it works:</strong> The spin wheel will only be accessible to users between the start and end dates. 
+                  If no dates are set, the spin wheel is always available (subject to other settings like cooldown and daily limits).
+                </p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date
+                  Start Date & Time
                 </label>
                 <input
                   type="datetime-local"
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                    errors.dateRange ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Spin wheel becomes available at this time
+                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date
+                  End Date & Time
                 </label>
                 <input
                   type="datetime-local"
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                    errors.dateRange ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Spin wheel becomes unavailable after this time
+                </p>
               </div>
             </div>
             {errors.dateRange && (
               <p className="mt-2 text-sm text-red-600">{errors.dateRange}</p>
+            )}
+            {formData.startDate && formData.endDate && (
+              <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <p className="text-xs text-emerald-800">
+                  <strong>Active Period:</strong> The spin wheel will be available from{' '}
+                  {new Date(formData.startDate).toLocaleString()} to{' '}
+                  {new Date(formData.endDate).toLocaleString()}
+                </p>
+              </div>
             )}
           </div>
 

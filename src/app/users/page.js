@@ -50,6 +50,16 @@ export default function UsersPage() {
   // API handles filtering, use users directly
   const paginatedUsers = users;
 
+  // Console log users data from backend
+  useEffect(() => {
+    console.log('🟡 Users Page - Users data:', users);
+    console.log('🟡 Users Page - First user example:', users?.[0]);
+    if (users?.[0]) {
+      console.log('🟡 Users Page - User ID field:', users[0].id);
+      console.log('🟡 Users Page - User userId field:', users[0].userId);
+    }
+  }, [users]);
+
   // Apply filters when search term or filters change
   useEffect(() => {
     applyFilters(localSearchTerm, selectedFilters);

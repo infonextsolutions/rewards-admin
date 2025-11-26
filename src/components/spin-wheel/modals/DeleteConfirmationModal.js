@@ -16,20 +16,20 @@ export default function DeleteConfirmationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
       <div className="relative mx-auto p-5 border w-11/12 md:w-1/3 max-w-md shadow-lg rounded-md bg-white">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start flex-1 min-w-0 pr-2">
             <div className="flex-shrink-0">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mt-0.5" />
             </div>
-            <h3 className="ml-3 text-lg font-medium text-gray-900">
+            <h3 className="ml-3 text-lg font-medium text-gray-900 break-words">
               {title}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1"
+            className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0"
             disabled={loading}
           >
             <XMarkIcon className="h-6 w-6" />
@@ -37,7 +37,7 @@ export default function DeleteConfirmationModal({
         </div>
 
         <div className="mb-6">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 break-words overflow-wrap-anywhere">
             {message}
           </p>
         </div>

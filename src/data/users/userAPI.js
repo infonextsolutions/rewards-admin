@@ -27,6 +27,8 @@ const userAPIs = {
       };
 
       const response = await apiClient.get('/admin/users', { params });
+      console.log('🔵 User API Route - Response from backend:', response.data);
+      console.log('🔵 User API Route - Users data:', response.data?.data?.users);
       return response.data;
     } catch (error) {
       console.error('Get users error:', error);

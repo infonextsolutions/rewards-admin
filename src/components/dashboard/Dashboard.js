@@ -21,16 +21,18 @@ const Dashboard = () => {
     source: "all",
     gender: "all",
     search: "",
+    customStartDate: "",
+    customEndDate: "",
   });
 
   // Convert filters to API format
   const apiFilters = useMemo(() => {
     const now = new Date();
-    const endDate = new Date(now);
+    let endDate = new Date(now);
     endDate.setHours(23, 59, 59, 999);
-    
+
     let startDate = new Date(now);
-    
+
     switch (filters.dateRange) {
       case "today":
         startDate.setHours(0, 0, 0, 0);
@@ -57,6 +59,19 @@ const Dashboard = () => {
         startDate.setFullYear(startDate.getFullYear() - 1);
         startDate.setHours(0, 0, 0, 0);
         break;
+      case "custom":
+        // Use custom date range if provided
+        if (filters.customStartDate && filters.customEndDate) {
+          startDate = new Date(filters.customStartDate);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(filters.customEndDate);
+          endDate.setHours(23, 59, 59, 999);
+        } else {
+          // Fallback to last 30 days if custom dates not set
+          startDate.setDate(startDate.getDate() - 30);
+          startDate.setHours(0, 0, 0, 0);
+        }
+        break;
       default:
         startDate.setDate(startDate.getDate() - 30);
         startDate.setHours(0, 0, 0, 0);
@@ -66,35 +81,51 @@ const Dashboard = () => {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       gameId: filters.game && filters.game !== "all" ? filters.game : undefined,
-      source: filters.source && filters.source !== "all" ? filters.source : undefined,
-      gender: filters.gender && filters.gender !== "all" ? filters.gender : undefined,
-      search: filters.search && filters.search.trim() !== "" ? filters.search.trim() : undefined,
+      source:
+        filters.source && filters.source !== "all" ? filters.source : undefined,
+      gender:
+        filters.gender && filters.gender !== "all" ? filters.gender : undefined,
+      search:
+        filters.search && filters.search.trim() !== ""
+          ? filters.search.trim()
+          : undefined,
     };
-  }, [filters]);
+  }, [
+    filters.dateRange,
+    filters.game,
+    filters.source,
+    filters.gender,
+    filters.search,
+    filters.customStartDate,
+    filters.customEndDate,
+  ]);
 
   const { dashboardData, loading, error, fetchDashboardData } = useDashboard();
 
   // Optimized fetch function - instant for dropdowns, debounced for search
-  const optimizedFetch = useCallback((filtersToUse, isSearch = false) => {
-    // Cancel previous request if exists
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  const optimizedFetch = useCallback(
+    (filtersToUse, isSearch = false) => {
+      // Cancel previous request if exists
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-    // Clear existing timeout
-    if (filterTimeoutRef.current) {
-      clearTimeout(filterTimeoutRef.current);
-    }
+      // Clear existing timeout
+      if (filterTimeoutRef.current) {
+        clearTimeout(filterTimeoutRef.current);
+      }
 
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
+      // Create new abort controller
+      abortControllerRef.current = new AbortController();
 
-    // All filters trigger immediately since search is pre-debounced in FilterControls (250ms)
-    // Dropdown filters: instant response (0ms delay)
-    // Search: already debounced to 250ms in FilterControls, so we can call immediately here
-    // This prevents double debouncing and makes the UI feel much faster
-    fetchDashboardData(filtersToUse, abortControllerRef.current?.signal);
-  }, [fetchDashboardData]);
+      // All filters trigger immediately since search is pre-debounced in FilterControls (250ms)
+      // Dropdown filters: instant response (0ms delay)
+      // Search: already debounced to 250ms in FilterControls, so we can call immediately here
+      // This prevents double debouncing and makes the UI feel much faster
+      fetchDashboardData(filtersToUse, abortControllerRef.current?.signal);
+    },
+    [fetchDashboardData]
+  );
 
   // Initial load - fetch immediately without debounce
   const isInitialMount = useRef(true);
@@ -114,9 +145,9 @@ const Dashboard = () => {
       prevFiltersRef.current = apiFilters;
     } else {
       // Check if this is a search change or filter change
-      const isSearchChange = 
+      const isSearchChange =
         prevFiltersRef.current?.search !== apiFilters?.search;
-      
+
       // Subsequent changes - use optimized fetch (instant for dropdowns, debounced for search)
       optimizedFetch(apiFilters, isSearchChange);
       prevFiltersRef.current = apiFilters;
@@ -141,15 +172,47 @@ const Dashboard = () => {
   }, []);
 
   // Memoize data transformations for performance
-  const retentionData = useMemo(() => dashboardData.retention?.trend || [], [dashboardData.retention?.trend]);
-  
+  const retentionData = useMemo(
+    () => dashboardData.retention?.trend || [],
+    [dashboardData.retention?.trend]
+  );
+
   const topGameData = useMemo(() => {
     if (dashboardData.topPlayedGame) {
+      // Extract banner image URL with proper fallback chain
+      let bannerImageUrl = null;
+
+      // Try banner field first (backend now provides this)
+      if (dashboardData.topPlayedGame.banner) {
+        bannerImageUrl = dashboardData.topPlayedGame.banner;
+      }
+      // Then try bannerImage.url
+      else if (dashboardData.topPlayedGame.bannerImage?.url) {
+        bannerImageUrl = dashboardData.topPlayedGame.bannerImage.url;
+      }
+      // Then try bannerImage as string
+      else if (typeof dashboardData.topPlayedGame.bannerImage === "string") {
+        bannerImageUrl = dashboardData.topPlayedGame.bannerImage;
+      }
+      // Then try bannerImage object itself
+      else if (dashboardData.topPlayedGame.bannerImage) {
+        bannerImageUrl = dashboardData.topPlayedGame.bannerImage;
+      }
+      // Final fallback to default
+      else {
+        bannerImageUrl = "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png";
+      }
+
+      // Trim game name to remove text after " - " (dash)
+      const gameTitle = dashboardData.topPlayedGame.title || "N/A";
+      const trimmedTitle = gameTitle.split(" - ")[0].trim();
+
       return {
-        name: dashboardData.topPlayedGame.title || "N/A",
-        banner: dashboardData.topPlayedGame.banner || "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
+        name: trimmedTitle,
+        banner: bannerImageUrl,
         avgXP: dashboardData.topPlayedGame.analytics?.averageXP || 0,
-        rewardConversion: dashboardData.topPlayedGame.analytics?.rewardConversion || 0,
+        rewardConversion:
+          dashboardData.topPlayedGame.analytics?.rewardConversion || 0,
         demographics: dashboardData.topPlayedGame.demographics || {
           age: [],
           gender: [],
@@ -172,9 +235,18 @@ const Dashboard = () => {
     };
   }, [dashboardData.topPlayedGame]);
 
-  const revenueByGame = useMemo(() => dashboardData.revenueByGame || [], [dashboardData.revenueByGame]);
-  const attributionData = useMemo(() => dashboardData.attribution || [], [dashboardData.attribution]);
-  const retentionCurrent = useMemo(() => dashboardData.retention?.current, [dashboardData.retention?.current]);
+  const revenueByGame = useMemo(
+    () => dashboardData.revenueByGame || [],
+    [dashboardData.revenueByGame]
+  );
+  const attributionData = useMemo(
+    () => dashboardData.attribution || [],
+    [dashboardData.attribution]
+  );
+  const retentionCurrent = useMemo(
+    () => dashboardData.retention?.current,
+    [dashboardData.retention?.current]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
@@ -192,7 +264,11 @@ const Dashboard = () => {
       </div>
 
       {/* Filter Controls */}
-      <FilterControls filters={filters} onFilterChange={handleFilterChange} loading={loading} />
+      <FilterControls
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        loading={loading}
+      />
 
       {/* KPI Cards */}
       <KPICards data={dashboardData} loading={loading} />
@@ -218,10 +294,7 @@ const Dashboard = () => {
         <RevenueVsRewardTable data={revenueByGame} loading={loading} />
 
         {/* Attribution Performance Table */}
-        <AttributionPerformanceTable
-          data={attributionData}
-          loading={loading}
-        />
+        <AttributionPerformanceTable data={attributionData} loading={loading} />
       </div>
     </div>
   );

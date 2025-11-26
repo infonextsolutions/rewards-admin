@@ -83,20 +83,32 @@ export function useSpinWheel() {
 
       if (response.success && response.data) {
         // Map API response to component format
-        const mappedRewards = response.data.rewards.map((reward, index) => ({
-          id: reward._id,
-          label: reward.name,
-          type: reward.type.charAt(0).toUpperCase() + reward.type.slice(1), // capitalize: coins -> Coins
-          amount: reward.amount,
-          probability: reward.probability,
-          tierVisibility: reward.eligibleTiers || [],
-          icon: reward.icon,
-          active: reward.isActive,
-          order: index + 1,
-          color: reward.color,
-          metadata: reward.metadata,
-          stats: reward.stats,
-        }));
+        const mappedRewards = response.data.rewards.map((reward, index) => {
+          // Map backend types to frontend display types
+          const typeMap = {
+            coins: "Coins",
+            xp: "XP",
+            coupon: "Coupon",
+            bonus_task: "Bonus Task",
+            premium_feature: "Premium",
+          };
+          const displayType = typeMap[reward.type] || reward.type.charAt(0).toUpperCase() + reward.type.slice(1);
+          
+          return {
+            id: reward._id,
+            label: reward.name,
+            type: displayType,
+            amount: reward.amount,
+            probability: reward.probability,
+            tierVisibility: reward.eligibleTiers || [],
+            icon: reward.icon,
+            active: reward.isActive,
+            order: index + 1,
+            color: reward.color,
+            metadata: reward.metadata,
+            stats: reward.stats,
+          };
+        });
 
         setRewards(mappedRewards);
       }
@@ -158,8 +170,17 @@ export function useSpinWheel() {
         // Add static name field (modal doesn't have name field)
         formData.append("name", rewardData.label || "Reward");
 
-        // Add other fields from modal
-        formData.append("type", rewardData.type.toLowerCase()); // Convert "Coins" to "coins"
+        // Add other fields from modal - normalize type to backend format
+        const typeMap = {
+          Coins: "coins",
+          XP: "xp",
+          Coupon: "coupon",
+          Coupons: "coupon", // Handle plural form
+          "Bonus Task": "bonus_task",
+          Premium: "premium_feature",
+        };
+        const normalizedType = typeMap[rewardData.type] || rewardData.type.toLowerCase();
+        formData.append("type", normalizedType);
         formData.append("amount", rewardData.amount);
         formData.append("probability", rewardData.probability);
 
@@ -220,8 +241,17 @@ export function useSpinWheel() {
         // Add static name field (modal doesn't have name field)
         formData.append("name", rewardData.label || "Reward");
 
-        // Add other fields from modal
-        formData.append("type", rewardData.type.toLowerCase()); // Convert "Coins" to "coins"
+        // Add other fields from modal - normalize type to backend format
+        const typeMap = {
+          Coins: "coins",
+          XP: "xp",
+          Coupon: "coupon",
+          Coupons: "coupon", // Handle plural form
+          "Bonus Task": "bonus_task",
+          Premium: "premium_feature",
+        };
+        const normalizedType = typeMap[rewardData.type] || rewardData.type.toLowerCase();
+        formData.append("type", normalizedType);
         formData.append("amount", rewardData.amount);
         formData.append("probability", rewardData.probability);
 

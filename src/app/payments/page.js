@@ -17,6 +17,25 @@ const Frame = ({
   const [typeOpen, setTypeOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
+  // SW-40: Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        !event.target.closest(".filter-dropdown-container") &&
+        !event.target.closest("button")
+      ) {
+        setDateRangeOpen(false);
+        setTypeOpen(false);
+        setStatusOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Helper function to get date range label
   const getDateRangeLabel = () => {
     if (!filters.dateRange) return "Date Range";
@@ -31,19 +50,25 @@ const Frame = ({
       setOpen: setDateRangeOpen,
       options: null,
     },
-    {
-      id: "type",
-      label: filters.type || "Type",
-      isOpen: typeOpen,
-      setOpen: setTypeOpen,
-      options: typeOptions,
-    },
+    // Type filter commented out for now
+    // {
+    //   id: "type",
+    //   label: filters.type || "Type",
+    //   isOpen: typeOpen,
+    //   setOpen: setTypeOpen,
+    //   options: typeOptions,
+    // },
     {
       id: "status",
-      label: filters.status || "Status",
+      label: filters.status
+        ? filters.status.charAt(0).toUpperCase() +
+          filters.status.slice(1).toLowerCase()
+        : "Status",
       isOpen: statusOpen,
       setOpen: setStatusOpen,
-      options: statusOptions,
+      options: statusOptions.map(
+        (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+      ),
     },
   ];
 
@@ -55,7 +80,10 @@ const Frame = ({
   };
 
   const handleFilterSelect = (filterId, value) => {
-    onFilterChange(filterId, value);
+    // For status filter, convert displayed value back to lowercase for API
+    const actualValue =
+      filterId === "status" && value ? value.toLowerCase() : value;
+    onFilterChange(filterId, actualValue);
     const filter = filterOptions.find((f) => f.id === filterId);
     if (filter) {
       filter.setOpen(false);
@@ -90,7 +118,7 @@ const Frame = ({
           {filterOptions.map((filter) => (
             <div
               key={filter.id}
-              className="relative min-w-[150px] flex-shrink-0"
+              className="relative min-w-[150px] flex-shrink-0 filter-dropdown-container"
             >
               <div className="relative h-[42px] bg-white rounded-[9.6px] shadow-[0px_3.2px_3.2px_#0000000a] border border-gray-200">
                 <button
@@ -405,13 +433,15 @@ const Table = ({
         </table>
       </div>
 
-      {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        onPageChange={onPageChange}
-      />
+      {/* Pagination - SW-41: Always show pagination if there are items */}
+      {totalItems > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={onPageChange}
+        />
+      )}
     </div>
   );
 };
@@ -430,8 +460,15 @@ export default function PaymentsPage() {
     totalPages: 1,
     totalItems: 0,
   });
+  // Maintain all possible status options - don't reset when filtering
   const [statusOptions, setStatusOptions] = useState([]);
   const [typeOptions, setTypeOptions] = useState([]);
+
+  // Define all possible status values to ensure they're always available
+  const allPossibleStatuses = ["pending", "completed", "failed"];
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedPayoutId, setSelectedPayoutId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const itemsPerPage = 20;
 
   // Helper function to calculate date range
@@ -516,28 +553,57 @@ export default function PaymentsPage() {
 
         setPaymentsData(requests);
 
-        // Extract unique statuses and types from the data
+        // Extract unique statuses from the data
+        // Always merge with existing options to ensure all status options remain available
+        // even after a filter is applied
         const uniqueStatuses = [
           ...new Set(
             requests.map((req) => req.status).filter((status) => status != null)
           ),
-        ].sort();
+        ];
 
-        const uniqueTypes = [
-          ...new Set(
-            requests
-              .map((req) => req.reward?.delivery?.method)
-              .filter((type) => type != null)
-          ),
-        ].sort();
+        // Merge with existing options and all possible statuses to ensure complete list
+        setStatusOptions((prevOptions) => {
+          const merged = [
+            ...new Set([
+              ...allPossibleStatuses,
+              ...prevOptions,
+              ...uniqueStatuses,
+            ]),
+          ]
+            .filter((status) => status != null)
+            .sort();
+          // Only update if we have new statuses or if this is the first load
+          return prevOptions.length === 0 || merged.length > prevOptions.length
+            ? merged
+            : prevOptions;
+        });
 
-        // Update options if we have new data
-        if (uniqueStatuses.length > 0) {
-          setStatusOptions(uniqueStatuses);
-        }
-        if (uniqueTypes.length > 0) {
-          setTypeOptions(uniqueTypes);
-        }
+        // SW-39: Filter out "link" and other invalid types
+        // Type filter commented out for now
+        // const validTypes = [
+        //   "UPI",
+        //   "Paytm",
+        //   "Gift Card",
+        //   "Bank Transfer",
+        //   "PayPal",
+        //   "Amazon Pay",
+        // ];
+        // const uniqueTypes = [
+        //   ...new Set(
+        //     requests
+        //       .map((req) => req.reward?.delivery?.method)
+        //       .filter(
+        //         (type) =>
+        //           type != null && type !== "link" && validTypes.includes(type)
+        //       )
+        //   ),
+        // ].sort();
+
+        // Type options commented out
+        // if (uniqueTypes.length > 0) {
+        //   setTypeOptions(uniqueTypes);
+        // }
 
         // Update pagination - API uses 'pages' and 'total'
         if (data.pagination) {
@@ -605,20 +671,36 @@ export default function PaymentsPage() {
     }
   };
 
-  const handleReject = async (payoutId) => {
-    if (!payoutId) {
+  const handleReject = (payoutId) => {
+    // SW-42: Open modal to collect rejection reason
+    setSelectedPayoutId(payoutId);
+    setRejectionReason("");
+    setRejectModalOpen(true);
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!selectedPayoutId) {
       toast.error("Invalid payout ID");
+      return;
+    }
+
+    if (!rejectionReason.trim()) {
+      toast.error("Please provide a rejection reason");
       return;
     }
 
     setLoading(true);
     try {
       const response = await apiClient.post(
-        `/admin/payouts/${payoutId}/reject`
+        `/admin/payouts/${selectedPayoutId}/reject`,
+        { reason: rejectionReason.trim() }
       );
 
       if (response.data?.success) {
         toast.success("Payout rejected successfully");
+        setRejectModalOpen(false);
+        setSelectedPayoutId(null);
+        setRejectionReason("");
         // Refresh the list
         await fetchPayouts();
       } else {
@@ -626,10 +708,24 @@ export default function PaymentsPage() {
       }
     } catch (error) {
       console.error("Error rejecting payout:", error);
-      toast.error(error.response?.data?.message || "Failed to reject payout");
+      const errorMessage =
+        error.response?.data?.message || "Failed to reject payout";
+      toast.error(errorMessage);
+      // If error is about missing reason, keep modal open
+      if (!errorMessage.includes("reason")) {
+        setRejectModalOpen(false);
+        setSelectedPayoutId(null);
+        setRejectionReason("");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRejectCancel = () => {
+    setRejectModalOpen(false);
+    setSelectedPayoutId(null);
+    setRejectionReason("");
   };
 
   const handlePageChange = (page) => {
@@ -653,15 +749,16 @@ export default function PaymentsPage() {
     const matchesSearch =
       !searchTerm || searchableText.includes(searchTerm.toLowerCase());
 
-    // Type filter
-    const payoutMethod =
-      payment.reward?.delivery?.method ||
-      payment.payoutMethod ||
-      payment.method ||
-      "";
-    const matchesType =
-      !filters.type ||
-      payoutMethod.toLowerCase() === filters.type.toLowerCase();
+    // Type filter - commented out for now
+    // const payoutMethod =
+    //   payment.reward?.delivery?.method ||
+    //   payment.payoutMethod ||
+    //   payment.method ||
+    //   "";
+    // const matchesType =
+    //   !filters.type ||
+    //   payoutMethod.toLowerCase() === filters.type.toLowerCase();
+    const matchesType = true; // Always match since type filter is disabled
 
     // Date range filter (client-side fallback if API doesn't support it)
     let matchesDate = true;
@@ -675,7 +772,7 @@ export default function PaymentsPage() {
       }
     }
 
-    return matchesSearch && matchesType && matchesDate;
+    return matchesSearch && matchesType && matchesDate; // matchesType always true since type filter is disabled
   });
 
   return (
@@ -685,7 +782,7 @@ export default function PaymentsPage() {
         setFilters={setFilters}
         onFilterChange={handleFilterChange}
         statusOptions={statusOptions}
-        typeOptions={typeOptions}
+        typeOptions={[]} // Type filter commented out
       />
       <Table
         data={filteredData}
@@ -697,6 +794,53 @@ export default function PaymentsPage() {
         totalItems={pagination.totalItems || filteredData.length}
         onPageChange={handlePageChange}
       />
+
+      {/* SW-42: Rejection Reason Modal */}
+      {rejectModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Reject Payout Request
+              </h3>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rejection Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Please provide a reason for rejecting this payout request..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This reason will be sent to the user
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleRejectCancel}
+                  disabled={loading}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRejectConfirm}
+                  disabled={loading || !rejectionReason.trim()}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Rejecting..." : "Reject Payout"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

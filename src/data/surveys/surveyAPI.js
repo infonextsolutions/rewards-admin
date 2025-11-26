@@ -184,22 +184,32 @@ const surveyAPIs = {
     page = 1,
     limit = 20,
     devices,
+    country,
   } = {}) {
     try {
       console.log("API Call: getBitLabNonGameOffers", {
         type,
         devices,
+        country,
         page,
         limit,
         url: "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
       });
+      // Configure paramsSerializer to handle arrays correctly
+      // Arrays will be serialized as devices[]=android&devices[]=iphone
+      const paramsSerializer = {
+        indexes: null, // Serialize arrays as devices[]=value1&devices[]=value2
+      };
+
       const response = await apiClient.get(
         "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
         {
           params: {
             type,
             devices,
+            country,
           },
+          paramsSerializer: paramsSerializer,
         }
       );
       console.log("API Response: getBitLabNonGameOffers", response.data);
@@ -233,6 +243,7 @@ const surveyAPIs = {
     offerType = "all",
     autoActivate = true,
     devices = undefined,
+    country = undefined,
   } = {}) {
     try {
       console.log("API Call: syncBitLabOffers", {
@@ -240,6 +251,7 @@ const surveyAPIs = {
         offerType,
         autoActivate,
         devices,
+        country,
         url: "/admin/game-offers/non-game-offers/sync/bitlabs",
       });
       const response = await apiClient.post(
@@ -249,6 +261,7 @@ const surveyAPIs = {
           offerType,
           autoActivate,
           devices,
+          country,
         }
       );
       console.log("API Response: syncBitLabOffers", response.data);
@@ -288,7 +301,8 @@ const surveyAPIs = {
   async syncSingleBitLabOffer(
     offerId,
     offerType = "survey",
-    devices = undefined
+    devices = undefined,
+    country = undefined
   ) {
     try {
       const response = await apiClient.post(
@@ -298,6 +312,7 @@ const surveyAPIs = {
           offerType: offerType,
           autoActivate: true,
           devices: devices,
+          country: country,
         }
       );
       return response.data;

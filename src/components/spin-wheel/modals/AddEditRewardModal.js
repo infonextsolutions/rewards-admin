@@ -72,8 +72,8 @@ export default function AddEditRewardModal({
     // Label validation
     if (!formData.label.trim()) {
       newErrors.label = 'Reward label is required';
-    } else if (formData.label.length > 100) {
-      newErrors.label = 'Reward label must be 100 characters or less';
+    } else if (formData.label.length > 10) {
+      newErrors.label = 'Reward label must be 10 characters or less';
     } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.label)) {
       newErrors.label = 'Reward label must contain only alphanumeric characters and spaces';
     }
@@ -101,6 +101,16 @@ export default function AddEditRewardModal({
       newErrors.probability = 'Probability cannot exceed 100%';
     } else if (formData.probability > remainingProbability && formData.active) {
       newErrors.probability = `Probability cannot exceed ${remainingProbability}% (remaining available)`;
+    } else {
+      // Check for duplicate probability (only for active rewards)
+      const duplicateProbability = existingRewards.find(r => 
+        r.active && 
+        Math.abs(r.probability - parseFloat(formData.probability)) < 0.01 && // Allow for floating point precision
+        (!isEdit || r.id !== reward?.id)
+      );
+      if (duplicateProbability) {
+        newErrors.probability = `A reward with ${formData.probability}% probability already exists. Please deactivate the existing reward first or use a different probability.`;
+      }
     }
 
     // Tier visibility validation
@@ -117,6 +127,14 @@ export default function AddEditRewardModal({
       ...prev,
       [field]: value
     }));
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleTierChange = (tier, checked) => {
@@ -140,6 +158,14 @@ export default function AddEditRewardModal({
       
       return { ...prev, tierVisibility: newTiers };
     });
+    // Clear tier visibility error when user makes changes
+    if (errors.tierVisibility) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.tierVisibility;
+        return newErrors;
+      });
+    }
   };
 
   const handleIconUpload = (event) => {
@@ -225,8 +251,11 @@ export default function AddEditRewardModal({
                   errors.label ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="200 Coins"
-                maxLength={100}
+                maxLength={10}
               />
+              <p className="mt-1 text-xs text-gray-500">
+                {formData.label.length}/10 characters
+              </p>
               {errors.label && (
                 <p className="mt-1 text-sm text-red-600">{errors.label}</p>
               )}
@@ -314,8 +343,8 @@ export default function AddEditRewardModal({
             )}
           </div>
 
-          {/* Icon Upload */}
-          <div>
+          {/* Icon Upload - Hidden */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Reward Icon (Optional)
             </label>
@@ -356,7 +385,7 @@ export default function AddEditRewardModal({
                 )}
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Active Status */}
           <div>

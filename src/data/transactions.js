@@ -52,6 +52,9 @@ export const TRANSACTION_API = {
   getConversionSettings: () =>
     apiClient.get("/admin/transactions/conversion/settings"),
 
+  updateConversionSettings: (data) =>
+    apiClient.put("/admin/transactions/conversion/settings", data),
+
   // Audit Trails endpoints
   getAuditLogs: (params = {}) => {
     const queryParams = new URLSearchParams();
@@ -69,6 +72,9 @@ export const TRANSACTION_API = {
   },
 
   getAuditActions: () => apiClient.get("/admin/transactions/audit/actions"),
+
+  getAuditFilterOptions: () =>
+    apiClient.get("/admin/transactions/audit/filter-options"),
 
   // Master Data endpoints
   getTransactionTypes: () => apiClient.get("/admin/transactions/meta/types"),

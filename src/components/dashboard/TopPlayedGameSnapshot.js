@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import React from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const TopPlayedGameSnapshot = ({ data, loading }) => {
   // Data Integration Points (as per requirements):
@@ -11,37 +11,65 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
   // - Reward DB: Reward conversion percentage
   // - User DB: Demographics (age, gender, region segmentation)
   // - Analytics DB: User behavior and tier distribution
-  
+
   // Use provided data or default empty structure
   const gameData = data || {
-    name: 'N/A',
-    banner: 'https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png',
+    name: "N/A",
+    banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
     avgXP: 0,
     rewardConversion: 0,
     demographics: {
       age: [],
       gender: [],
       region: [],
-      tier: []
-    }
+      tier: [],
+    },
   };
-  
+
   // Ensure demographics are arrays, handle empty objects from API
   const demographics = gameData.demographics || {};
   const normalizedDemographics = {
-    age: Array.isArray(demographics.age) ? demographics.age : 
-         (demographics.age && typeof demographics.age === 'object' ? Object.entries(demographics.age).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
-    gender: Array.isArray(demographics.gender) ? demographics.gender : 
-            (demographics.gender && typeof demographics.gender === 'object' ? Object.entries(demographics.gender).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
-    region: Array.isArray(demographics.region) ? demographics.region : 
-            (demographics.region && typeof demographics.region === 'object' ? Object.entries(demographics.region).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
-    tier: Array.isArray(demographics.tier) ? demographics.tier : 
-          (demographics.tier && typeof demographics.tier === 'object' ? Object.entries(demographics.tier).map(([name, value]) => ({ name, value: value || 0, color: '#6b7280' })) : []),
+    age: Array.isArray(demographics.age)
+      ? demographics.age
+      : demographics.age && typeof demographics.age === "object"
+      ? Object.entries(demographics.age).map(([name, value]) => ({
+          name,
+          value: value || 0,
+          color: "#6b7280",
+        }))
+      : [],
+    gender: Array.isArray(demographics.gender)
+      ? demographics.gender
+      : demographics.gender && typeof demographics.gender === "object"
+      ? Object.entries(demographics.gender).map(([name, value]) => ({
+          name,
+          value: value || 0,
+          color: "#6b7280",
+        }))
+      : [],
+    region: Array.isArray(demographics.region)
+      ? demographics.region
+      : demographics.region && typeof demographics.region === "object"
+      ? Object.entries(demographics.region).map(([name, value]) => ({
+          name,
+          value: value || 0,
+          color: "#6b7280",
+        }))
+      : [],
+    tier: Array.isArray(demographics.tier)
+      ? demographics.tier
+      : demographics.tier && typeof demographics.tier === "object"
+      ? Object.entries(demographics.tier).map(([name, value]) => ({
+          name,
+          value: value || 0,
+          color: "#6b7280",
+        }))
+      : [],
   };
-  
+
   const finalGameData = {
     ...gameData,
-    demographics: normalizedDemographics
+    demographics: normalizedDemographics,
   };
 
   const statsData = [
@@ -59,32 +87,39 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
 
   const DonutChart = ({ data, title }) => {
     const RADIAN = Math.PI / 180;
-    
+
     // Ensure data is an array, default to empty array
     const chartData = Array.isArray(data) ? data : [];
-    
+
     // If data is empty, show empty chart with a placeholder
     const isEmpty = chartData.length === 0;
-    
+
     // For empty data, create a single segment to show empty state
-    const displayData = isEmpty 
-      ? [{ name: 'No Data', value: 100, color: '#6b7280' }]
+    const displayData = isEmpty
+      ? [{ name: "No Data", value: 100, color: "#6b7280" }]
       : chartData;
-    
-    const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+
+    const renderCustomizedLabel = ({
+      cx,
+      cy,
+      midAngle,
+      innerRadius,
+      outerRadius,
+      percent,
+    }) => {
       // Don't show labels for empty state
       if (isEmpty) return null;
-      
+
       const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
       const x = cx + radius * Math.cos(-midAngle * RADIAN);
       const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
       return percent > 0.08 ? (
-        <text 
-          x={x} 
-          y={y} 
-          fill="white" 
-          textAnchor="middle" 
+        <text
+          x={x}
+          y={y}
+          fill="white"
+          textAnchor="middle"
           dominantBaseline="central"
           fontSize={9}
           fontWeight="bold"
@@ -96,7 +131,9 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
 
     return (
       <div className="bg-[#02020280] rounded-[8px] p-4 shadow-[0px_0px_4px_#00000040] backdrop-blur-sm">
-        <h3 className="text-center font-semibold text-white text-sm mb-3">{title}</h3>
+        <h3 className="text-center font-semibold text-white text-sm mb-3">
+          {title}
+        </h3>
         <div className="h-32">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -115,40 +152,44 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name, props) => {
-                  if (isEmpty) return ['No Data', 'Empty'];
-                  return [`${value}%`, 'Percentage'];
+                  if (isEmpty) return ["No Data", "Empty"];
+                  return [`${value}%`, "Percentage"];
                 }}
-                labelStyle={{ color: '#374151' }}
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '6px',
-                  fontSize: '12px'
+                labelStyle={{ color: "#374151" }}
+                contentStyle={{
+                  backgroundColor: "white",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "6px",
+                  fontSize: "12px",
                 }}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
-        
+
         {/* Legend */}
         {!isEmpty && (
           <div className="mt-2 flex flex-wrap justify-center gap-1">
             {chartData.map((item, index) => (
               <div key={index} className="flex items-center text-xs">
-                <div 
+                <div
                   className="w-2 h-2 rounded-full mr-1"
                   style={{ backgroundColor: item.color }}
                 ></div>
-                <span className="text-white truncate max-w-16">{item.name}</span>
+                <span className="text-white truncate max-w-16">
+                  {item.name}
+                </span>
               </div>
             ))}
           </div>
         )}
         {isEmpty && (
           <div className="mt-2 text-center">
-            <span className="text-white text-xs opacity-70">No data available</span>
+            <span className="text-white text-xs opacity-70">
+              No data available
+            </span>
           </div>
         )}
       </div>
@@ -167,28 +208,34 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
     <div
       className="relative w-full min-h-[400px] rounded-[10px] overflow-hidden p-8"
       style={{
-        background: 'radial-gradient(50% 50% at 50% 50%, rgba(88,48,173,1) 0%, rgba(42,34,102,1) 100%)'
+        background:
+          "radial-gradient(50% 50% at 50% 50%, rgba(88,48,173,1) 0%, rgba(42,34,102,1) 100%)",
       }}
     >
-      <h1 className="text-2xl font-semibold text-white mb-8">Top Played Game</h1>
+      <h1 className="text-2xl font-semibold text-white mb-8">
+        Top Played Game
+      </h1>
 
       {/* Game Banner & Title + Metrics Section */}
       <div className="flex items-start gap-8 mb-8">
         {/* Game Icon & Title */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-[140px] h-[140px] bg-white rounded-[12px] overflow-hidden border-[3px] border-solid border-[#d3f8d2] shadow-lg">
+          <div className="relative w-[240px] h-[240px] bg-white rounded-[12px] overflow-hidden border-[3px] border-solid border-[#d3f8d2] shadow-lg">
             <img
               className="w-full h-full object-cover"
               alt={finalGameData.name}
               src={finalGameData.banner}
               onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">${finalGameData.name.charAt(0)}</div>`;
+                e.target.style.display = "none";
+                const displayName = finalGameData.name.split(" - ")[0];
+                e.target.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">${displayName.charAt(
+                  0
+                )}</div>`;
               }}
             />
           </div>
           <h2 className="font-bold text-[#fff2ab] text-2xl text-center leading-tight">
-            {finalGameData.name}
+            {finalGameData.name.split(" - ")[0]}
           </h2>
         </div>
 
@@ -199,19 +246,17 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
               <div className="text-5xl font-bold text-[#00a389] mb-2">
                 {finalGameData.avgXP.toLocaleString()}
               </div>
-              <div className="text-white font-medium text-sm">
-                Avg. XP
-              </div>
+              <div className="text-white font-medium text-sm">Avg. XP</div>
             </div>
           </div>
-          
+
           <div className="bg-[#02020280] rounded-[8px] p-6 shadow-[0px_0px_4px_#00000040] flex-1 backdrop-blur-sm">
             <div className="text-center">
               <div className="text-5xl font-bold text-[#00a389] mb-2">
                 {finalGameData.rewardConversion}%
               </div>
               <div className="text-white font-medium text-sm whitespace-pre-line">
-                Reward{'\n'}Conversion
+                Reward{"\n"}Conversion
               </div>
             </div>
           </div>
@@ -238,25 +283,13 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
 
       {/* Donut Charts for Demographics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <DonutChart 
-          data={finalGameData.demographics.age}
-          title="Age"
-        />
-        
-        <DonutChart 
-          data={finalGameData.demographics.gender}
-          title="Gender"
-        />
-        
-        <DonutChart 
-          data={finalGameData.demographics.region}
-          title="Region"
-        />
-        
-        <DonutChart 
-          data={finalGameData.demographics.tier}
-          title="Tier"
-        />
+        <DonutChart data={finalGameData.demographics.age} title="Age" />
+
+        <DonutChart data={finalGameData.demographics.gender} title="Gender" />
+
+        <DonutChart data={finalGameData.demographics.region} title="Region" />
+
+        <DonutChart data={finalGameData.demographics.tier} title="Tier" />
       </div>
     </div>
   );

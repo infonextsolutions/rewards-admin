@@ -4,6 +4,44 @@ import axios from "axios";
 
 const API_BASE = "https://rewardsapi.hireagent.co";
 
+// XP Tier mapping: Frontend strings to Backend numbers
+const XP_TIER_MAP = {
+  Junior: 1,
+  Mid: 2,
+  Senior: 3,
+  All: null, // null means no tier restriction
+};
+
+// Reverse mapping: Backend numbers to Frontend strings
+const XP_TIER_REVERSE_MAP = {
+  1: "Junior",
+  2: "Mid",
+  3: "Senior",
+  4: "Senior", // Fallback for higher numbers
+  5: "Senior",
+  6: "Senior",
+  7: "Senior",
+  8: "Senior",
+  9: "Senior",
+  10: "Senior",
+};
+
+// Helper function to convert XP Tier string to number
+function xpTierStringToNumber(xpTierString) {
+  if (!xpTierString || xpTierString === "All" || xpTierString === "") {
+    return null;
+  }
+  return XP_TIER_MAP[xpTierString] || 1;
+}
+
+// Helper function to convert XP Tier number to string
+function xpTierNumberToString(xpTierNumber) {
+  if (xpTierNumber === null || xpTierNumber === undefined) {
+    return "All";
+  }
+  return XP_TIER_REVERSE_MAP[xpTierNumber] || "Junior";
+}
+
 // Create axios instance with auth interceptor
 const apiClient = axios.create({
   baseURL: API_BASE,
@@ -92,7 +130,7 @@ export const gamesAPI = {
         installRate: 0,
         marketingChannel: "N/A",
         campaign: "N/A",
-        xpTier: game.xptrRules || "All",
+        xpTier: xpTierNumberToString(game.xpTier),
         tier: game.tierRestrictions?.minTier
           ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
             game.tierRestrictions.minTier.slice(1)
@@ -176,7 +214,7 @@ export const gamesAPI = {
         installRate: 0,
         marketingChannel: "N/A",
         campaign: "N/A",
-        xpTier: game.xptrRules || "All",
+        xpTier: xpTierNumberToString(game.xpTier),
         tier: game.tierRestrictions?.minTier
           ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
             game.tierRestrictions.minTier.slice(1)
@@ -230,7 +268,7 @@ export const gamesAPI = {
         installRate: 0, // Not in API
         marketingChannel: "N/A", // Not in API
         campaign: "N/A", // Not in API
-        xpTier: game.xptrRules || "All",
+        xpTier: xpTierNumberToString(game.xpTier),
         tier: game.tierRestrictions?.minTier
           ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
             game.tierRestrictions.minTier.slice(1)
@@ -269,17 +307,49 @@ export const gamesAPI = {
       if (params.search && params.search.trim() !== "") {
         queryParams.append("search", params.search);
       }
-      if (params.country && params.country.trim() !== "") {
+      if (
+        params.country &&
+        params.country !== "all" &&
+        params.country.trim() !== ""
+      ) {
         queryParams.append("country", params.country);
       }
-      if (params.sdkProvider && params.sdkProvider.trim() !== "") {
+      if (
+        params.sdkProvider &&
+        params.sdkProvider !== "all" &&
+        params.sdkProvider.trim() !== ""
+      ) {
         queryParams.append("sdkProvider", params.sdkProvider);
+      }
+      if (params.sdk && params.sdk !== "all" && params.sdk.trim() !== "") {
+        queryParams.append("sdkProvider", params.sdk);
       }
       if (params.xptr && params.xptr.trim() !== "") {
         queryParams.append("xptr", params.xptr);
       }
-      if (params.adGame && params.adGame.trim() !== "") {
-        queryParams.append("adGame", params.adGame);
+      if (
+        params.xpTier &&
+        params.xpTier !== "all" &&
+        params.xpTier.trim() !== ""
+      ) {
+        // Convert XP Tier string to number for backend
+        const xpTierNum = xpTierStringToNumber(params.xpTier);
+        if (xpTierNum !== null) {
+          queryParams.append("xpTier", xpTierNum.toString());
+        }
+      }
+      if (
+        params.adGame &&
+        params.adGame !== "all" &&
+        params.adGame.trim() !== ""
+      ) {
+        const adGameValue =
+          params.adGame === "yes"
+            ? "true"
+            : params.adGame === "no"
+            ? "false"
+            : params.adGame;
+        queryParams.append("adGame", adGameValue);
       }
       if (
         params.status &&
@@ -316,7 +386,7 @@ export const gamesAPI = {
           installRate: 0, // Not in API
           marketingChannel: "N/A", // Not in API
           campaign: "N/A", // Not in API
-          xpTier: game.xptrRules || "All",
+          xpTier: xpTierNumberToString(game.xpTier),
           tier: game.tierRestrictions?.minTier
             ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
               game.tierRestrictions.minTier.slice(1)

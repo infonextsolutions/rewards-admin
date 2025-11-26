@@ -20,6 +20,7 @@ export default function BitLabSurveys() {
   const [syncing, setSyncing] = useState(false);
   const [configuredSurveys, setConfiguredSurveys] = useState([]);
   const [showConfigured, setShowConfigured] = useState(false);
+  const [countryFilter, setCountryFilter] = useState("US"); // Country code filter (default: US)
 
   // Fetch surveys
   const fetchSurveys = async (page = pagination.currentPage) => {
@@ -31,37 +32,69 @@ export default function BitLabSurveys() {
         type: "survey",
         page,
         limit: pagination.itemsPerPage,
+        country: countryFilter,
       });
 
       if (response.success && response.categorized) {
-        const mappedSurveys = (response.categorized.surveys || []).map(
-          (survey) => ({
-            id: survey.id || survey.surveyId,
-            surveyId: survey.surveyId || survey.id,
-            title: survey.title || survey.name,
-            description: survey.description || "",
-            icon: survey.icon || "",
-            banner: survey.banner || "",
-            reward: survey.reward || { coins: 0, currency: "points", xp: 0 },
-            estimatedTime: survey.estimatedTime || survey.duration || 0,
-            clickUrl: survey.clickUrl || survey.surveyUrl || "",
-            confirmationTime: survey.confirmationTime || "",
-            pendingTime: survey.pendingTime || 0,
-            isAvailable: survey.isAvailable !== false,
-            provider: survey.provider || "bitlabs",
-            requirements: survey.requirements || "",
-            thingsToKnow: survey.thingsToKnow || [],
-          })
-        );
+        const surveys = response.categorized.surveys || [];
+        const mappedSurveys = surveys.map((survey) => ({
+          id: survey.id || survey.surveyId || survey.offerId,
+          surveyId: survey.surveyId || survey.id || survey.offerId,
+          offerId: survey.offerId || survey.id || survey.surveyId,
+          title: survey.title || survey.name || "Untitled Survey",
+          description: survey.description || "",
+          icon: survey.icon || survey.banner || "",
+          banner: survey.banner || survey.icon || "",
+          reward: survey.reward || { coins: 0, currency: "points", xp: 0 },
+          estimatedTime: survey.estimatedTime || survey.duration || 0,
+          clickUrl: survey.clickUrl || survey.surveyUrl || survey.url || "",
+          confirmationTime: survey.confirmationTime || "",
+          pendingTime: survey.pendingTime || 0,
+          isAvailable: survey.isAvailable !== false,
+          provider: survey.provider || "bitlabs",
+          requirements: survey.requirements || "",
+          thingsToKnow: survey.thingsToKnow || [],
+          category:
+            typeof survey.category === "string"
+              ? survey.category
+              : survey.category?.name || "Survey",
+        }));
 
         setSurveys(mappedSurveys);
         setPagination({
           currentPage: page,
-          totalPages: Math.ceil(
-            (response.categorized.surveys?.length || 0) /
-              pagination.itemsPerPage
-          ),
-          totalItems: response.categorized.surveys?.length || 0,
+          totalPages: Math.ceil(surveys.length / pagination.itemsPerPage),
+          totalItems: surveys.length,
+          itemsPerPage: pagination.itemsPerPage,
+        });
+      } else if (response.success && !response.categorized) {
+        // Fallback: if categorized is not available, try data array
+        const surveys = response.data || [];
+        const mappedSurveys = surveys
+          .filter((s) => s.type === "survey" || s.offerType === "survey")
+          .map((survey) => ({
+            id: survey.id || survey.surveyId || survey.offerId,
+            surveyId: survey.surveyId || survey.id || survey.offerId,
+            offerId: survey.offerId || survey.id || survey.surveyId,
+            title: survey.title || survey.name || "Untitled Survey",
+            description: survey.description || "",
+            icon: survey.icon || survey.banner || "",
+            banner: survey.banner || survey.icon || "",
+            reward: survey.reward || { coins: 0, currency: "points", xp: 0 },
+            estimatedTime: survey.estimatedTime || survey.duration || 0,
+            clickUrl: survey.clickUrl || survey.surveyUrl || survey.url || "",
+            isAvailable: survey.isAvailable !== false,
+            provider: survey.provider || "bitlabs",
+            category:
+              typeof survey.category === "string"
+                ? survey.category
+                : survey.category?.name || "Survey",
+          }));
+        setSurveys(mappedSurveys);
+        setPagination({
+          currentPage: page,
+          totalPages: Math.ceil(mappedSurveys.length / pagination.itemsPerPage),
+          totalItems: mappedSurveys.length,
           itemsPerPage: pagination.itemsPerPage,
         });
       }
@@ -155,6 +188,7 @@ export default function BitLabSurveys() {
         offerIds: selectedSurveys,
         offerType: "survey",
         autoActivate: true,
+        country: countryFilter,
       });
 
       if (response.success) {
@@ -185,6 +219,7 @@ export default function BitLabSurveys() {
       const response = await surveyAPIs.syncBitLabOffers({
         offerType: "survey",
         autoActivate: true,
+        country: countryFilter,
       });
 
       if (response.success) {
@@ -212,6 +247,11 @@ export default function BitLabSurveys() {
   const isConfigured = (surveyId) => {
     return configuredSurveys.some((c) => c.externalId === surveyId);
   };
+
+  const countryOptions = [
+    { value: "US", label: "United States" },
+    { value: "CA", label: "Canada" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -285,6 +325,35 @@ export default function BitLabSurveys() {
             </svg>
             <span>Configured ({configuredSurveys.length})</span>
           </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        {/* Country Filter */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-700 mb-2">
+            Filter by Country
+          </label>
+          <select
+            value={countryFilter}
+            onChange={(e) => {
+              setCountryFilter(e.target.value);
+              fetchSurveys(1);
+            }}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+          >
+            {countryOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filter Results Summary */}
+        <div className="text-sm text-gray-600 lg:ml-auto">
+          Showing {surveys.length} surveys
         </div>
       </div>
 

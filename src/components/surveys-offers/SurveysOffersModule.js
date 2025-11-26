@@ -4,8 +4,7 @@ import { useState } from "react";
 import SurveySDKManager from "./SurveySDKManager";
 import LiveOffersAnalytics from "./LiveOffersAnalytics";
 import NonGamingOffers from "./NonGamingOffers";
-// COMMENTED OUT: BitLab Surveys tab
-// import BitLabSurveys from './BitLabSurveys';
+import BitLabSurveys from './BitLabSurveys';
 import SyncedOffersView from "./SyncedOffersView";
 
 export default function SurveysOffersModule() {
@@ -15,8 +14,7 @@ export default function SurveysOffersModule() {
     // { id: 'sdk-manager', label: 'SDK Manager', icon: 'settings' },
     // { id: 'live-offers', label: 'Live Offers & Analytics', icon: 'chart' },
     { id: "non-gaming", label: "Non-Gaming Offers", icon: "gift" },
-    // COMMENTED OUT: BitLab Surveys tab
-    // { id: 'bitlab-surveys', label: 'BitLab Surveys', icon: 'clipboard' },
+    { id: 'bitlab-surveys', label: 'BitLab Surveys', icon: 'clipboard' },
     { id: "synced-offers", label: "All Synced Data", icon: "database" },
   ];
 
@@ -153,8 +151,7 @@ export default function SurveysOffersModule() {
         {/* {activeTab === 'sdk-manager' && <SurveySDKManager key="sdk-manager" />} */}
         {/* {activeTab === 'live-offers' && <LiveOffersAnalytics key="live-offers" />} */}
         {activeTab === "non-gaming" && <NonGamingOffers key="non-gaming" />}
-        {/* COMMENTED OUT: BitLab Surveys tab */}
-        {/* {activeTab === 'bitlab-surveys' && <BitLabSurveys key="bitlab-surveys" />} */}
+        {activeTab === 'bitlab-surveys' && <BitLabSurveys key="bitlab-surveys" />}
         {activeTab === "synced-offers" && (
           <SyncedOffersView key="synced-offers" />
         )}

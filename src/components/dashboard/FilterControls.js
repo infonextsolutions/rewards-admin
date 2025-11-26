@@ -162,6 +162,8 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
                 setSearchValue("");
               } else if (key === "dateRange") {
                 onFilterChange(key, "last30days");
+              } else if (key === "customStartDate" || key === "customEndDate") {
+                onFilterChange(key, "");
               } else {
                 onFilterChange(key, "all");
               }
@@ -275,14 +277,47 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <FilterDropdown
-          label="Date Range"
-          value={filters.dateRange}
-          onChange={(value) => onFilterChange("dateRange", value)}
-          options={dateRangeOptions}
-          placeholder="Select Date Range"
-          disabled={loading}
-        />
+        <div className="flex flex-col">
+          <label className="text-sm font-medium text-gray-700 mb-2">
+            Date Range
+          </label>
+          <select
+            value={filters.dateRange}
+            onChange={(e) => onFilterChange("dateRange", e.target.value)}
+            disabled={loading}
+            className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {dateRangeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {filters.dateRange === "custom" && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={filters.customStartDate || ""}
+                onChange={(e) =>
+                  onFilterChange("customStartDate", e.target.value)
+                }
+                disabled={loading}
+                className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Start Date"
+              />
+              <input
+                type="date"
+                value={filters.customEndDate || ""}
+                onChange={(e) =>
+                  onFilterChange("customEndDate", e.target.value)
+                }
+                disabled={loading}
+                className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="End Date"
+              />
+            </div>
+          )}
+        </div>
 
         <FilterDropdown
           label="Game ID"

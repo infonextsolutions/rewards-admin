@@ -18,6 +18,7 @@ export default function NonGamingOffers() {
 
   const [typeFilter, setTypeFilter] = useState("all"); // all, surveys, cashback, magic-receipts, shopping
   const [deviceFilter, setDeviceFilter] = useState("all"); // all, android, iphone, ipad
+  const [countryFilter, setCountryFilter] = useState("US"); // Country code filter (default: US)
   const [selectedOffers, setSelectedOffers] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [configuredOffers, setConfiguredOffers] = useState([]);
@@ -29,40 +30,46 @@ export default function NonGamingOffers() {
     page = pagination.currentPage,
     type = typeFilter
   ) => {
-    console.log("NonGamingOffers: fetchOffers called", { page, type });
+    console.log("NonGamingOffers: fetchOffers called", {
+      page,
+      type,
+      country: countryFilter,
+    });
     setLoading(true);
     try {
       let response;
 
       if (type === "surveys") {
         // Use admin route with type filter
+        const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
         response = await surveyAPIs.getBitLabNonGameOffers({
           type: "survey",
           page,
           limit: pagination.itemsPerPage,
+          country: countryFilter,
+          devices: devices,
         });
 
         if (response.success && response.categorized) {
-          const mappedOffers = (response.categorized.surveys || []).map(
-            (offer) => ({
-              id: offer.id || offer.offerId || offer.surveyId,
-              offerId: offer.offerId || offer.id || offer.surveyId,
-              title: offer.title || offer.name,
-              description: offer.description || "",
-              type: "survey",
-              category:
-                typeof offer.category === "string"
-                  ? offer.category
-                  : offer.category?.name || "Survey",
-              icon: offer.icon || "",
-              banner: offer.banner || "",
-              reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
-              estimatedTime: offer.estimatedTime || 0,
-              clickUrl: offer.clickUrl || offer.surveyUrl || "",
-              isAvailable: offer.isAvailable !== false,
-              provider: offer.provider || "bitlabs",
-            })
-          );
+          const surveys = response.categorized.surveys || [];
+          const mappedOffers = surveys.map((offer) => ({
+            id: offer.id || offer.offerId || offer.surveyId,
+            offerId: offer.offerId || offer.id || offer.surveyId,
+            title: offer.title || offer.name || "Untitled Survey",
+            description: offer.description || "",
+            type: "survey",
+            category:
+              typeof offer.category === "string"
+                ? offer.category
+                : offer.category?.name || "Survey",
+            icon: offer.icon || offer.banner || "",
+            banner: offer.banner || offer.icon || "",
+            reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
+            estimatedTime: offer.estimatedTime || offer.duration || 0,
+            clickUrl: offer.clickUrl || offer.surveyUrl || offer.url || "",
+            isAvailable: offer.isAvailable !== false,
+            provider: offer.provider || "bitlabs",
+          }));
 
           setOffers(mappedOffers);
           setPagination({
@@ -77,31 +84,33 @@ export default function NonGamingOffers() {
         }
       } else if (type === "cashback") {
         // Use admin route with type filter
+        const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
         response = await surveyAPIs.getBitLabNonGameOffers({
           type: "cashback",
           page,
           limit: pagination.itemsPerPage,
+          country: countryFilter,
+          devices: devices,
         });
 
         if (response.success && response.categorized) {
-          const mappedOffers = (response.categorized.cashback || []).map(
-            (offer) => ({
-              id: offer.id || offer.offerId,
-              offerId: offer.offerId || offer.id,
-              title: offer.title || offer.name,
-              description: offer.description || "",
-              type: "cashback",
-              category:
-                typeof offer.category === "string"
-                  ? offer.category
-                  : offer.category?.name || "Cashback",
-              icon: offer.icon || "",
-              banner: offer.banner || "",
-              reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
-              clickUrl: offer.clickUrl || "",
-              provider: offer.provider || "bitlabs",
-            })
-          );
+          const cashbackOffers = response.categorized.cashback || [];
+          const mappedOffers = cashbackOffers.map((offer) => ({
+            id: offer.id || offer.offerId,
+            offerId: offer.offerId || offer.id,
+            title: offer.title || offer.name || "Untitled Cashback Offer",
+            description: offer.description || "",
+            type: "cashback",
+            category:
+              typeof offer.category === "string"
+                ? offer.category
+                : offer.category?.name || "Cashback",
+            icon: offer.icon || offer.banner || "",
+            banner: offer.banner || offer.icon || "",
+            reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
+            clickUrl: offer.clickUrl || offer.url || "",
+            provider: offer.provider || "bitlabs",
+          }));
 
           setOffers(mappedOffers);
           setPagination({
@@ -116,31 +125,33 @@ export default function NonGamingOffers() {
         }
       } else if (type === "magic-receipts") {
         // Use admin route with type filter
+        const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
         response = await surveyAPIs.getBitLabNonGameOffers({
           type: "magic_receipt",
           page,
           limit: pagination.itemsPerPage,
+          country: countryFilter,
+          devices: devices,
         });
 
         if (response.success && response.categorized) {
-          const mappedOffers = (response.categorized.magicReceipts || []).map(
-            (offer) => ({
-              id: offer.id || offer.offerId,
-              offerId: offer.offerId || offer.id,
-              title: offer.title || offer.name,
-              description: offer.description || "",
-              type: "magic-receipt",
-              category:
-                typeof offer.category === "string"
-                  ? offer.category
-                  : offer.category?.name || "Magic Receipt",
-              icon: offer.icon || "",
-              banner: offer.banner || "",
-              reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
-              clickUrl: offer.clickUrl || "",
-              provider: offer.provider || "bitlabs",
-            })
-          );
+          const magicReceipts = response.categorized.magicReceipts || [];
+          const mappedOffers = magicReceipts.map((offer) => ({
+            id: offer.id || offer.offerId,
+            offerId: offer.offerId || offer.id,
+            title: offer.title || offer.name || "Untitled Magic Receipt",
+            description: offer.description || "",
+            type: "magic-receipt",
+            category:
+              typeof offer.category === "string"
+                ? offer.category
+                : offer.category?.name || "Magic Receipt",
+            icon: offer.icon || offer.banner || "",
+            banner: offer.banner || offer.icon || "",
+            reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
+            clickUrl: offer.clickUrl || offer.url || "",
+            provider: offer.provider || "bitlabs",
+          }));
 
           setOffers(mappedOffers);
           setPagination({
@@ -155,31 +166,33 @@ export default function NonGamingOffers() {
         }
       } else if (type === "shopping") {
         // Use admin route with type filter
+        const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
         response = await surveyAPIs.getBitLabNonGameOffers({
           type: "shopping",
           page,
           limit: pagination.itemsPerPage,
+          country: countryFilter,
+          devices: devices,
         });
 
         if (response.success && response.categorized) {
-          const mappedOffers = (response.categorized.shopping || []).map(
-            (offer) => ({
-              id: offer.id || offer.offerId,
-              offerId: offer.offerId || offer.id,
-              title: offer.title || offer.name,
-              description: offer.description || "",
-              type: "shopping",
-              category:
-                typeof offer.category === "string"
-                  ? offer.category
-                  : offer.category?.name || "Shopping",
-              icon: offer.icon || "",
-              banner: offer.banner || "",
-              reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
-              clickUrl: offer.clickUrl || "",
-              provider: offer.provider || "bitlabs",
-            })
-          );
+          const shoppingOffers = response.categorized.shopping || [];
+          const mappedOffers = shoppingOffers.map((offer) => ({
+            id: offer.id || offer.offerId,
+            offerId: offer.offerId || offer.id,
+            title: offer.title || offer.name || "Untitled Shopping Offer",
+            description: offer.description || "",
+            type: "shopping",
+            category:
+              typeof offer.category === "string"
+                ? offer.category
+                : offer.category?.name || "Shopping",
+            icon: offer.icon || offer.banner || "",
+            banner: offer.banner || offer.icon || "",
+            reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
+            clickUrl: offer.clickUrl || offer.url || "",
+            provider: offer.provider || "bitlabs",
+          }));
 
           setOffers(mappedOffers);
           setPagination({
@@ -194,31 +207,40 @@ export default function NonGamingOffers() {
         }
       } else {
         // Get all non-game offers from admin route
+        const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
         response = await surveyAPIs.getBitLabNonGameOffers({
           type: "all",
           page,
           limit: pagination.itemsPerPage,
+          country: countryFilter,
+          devices: devices,
         });
 
         if (response.success && response.data) {
           // Admin route returns: { data: offers[], categorized: {}, breakdown: {}, total: number, estimatedEarnings: number }
           const allOffers = response.data || [];
           const mappedOffers = allOffers.map((offer) => ({
-            id: offer.id || offer.offerId,
-            offerId: offer.offerId || offer.id,
-            title: offer.title || offer.name,
+            id: offer.id || offer.offerId || offer.surveyId,
+            offerId: offer.offerId || offer.id || offer.surveyId,
+            title: offer.title || offer.name || "Untitled Offer",
             description: offer.description || "",
             type: offer.type || "other",
             category:
               typeof offer.category === "string"
                 ? offer.category
                 : offer.category?.name || "General",
-            icon: offer.icon || "",
-            banner: offer.banner || "",
+            icon: offer.icon || offer.banner || "",
+            banner: offer.banner || offer.icon || "",
             reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
-            clickUrl: offer.clickUrl || offer.downloadUrl || "",
+            clickUrl:
+              offer.clickUrl ||
+              offer.surveyUrl ||
+              offer.downloadUrl ||
+              offer.url ||
+              "",
             provider: offer.provider || "bitlabs",
-            estimatedTime: offer.estimatedTime || 0,
+            estimatedTime: offer.estimatedTime || offer.duration || 0,
+            isAvailable: offer.isAvailable !== false,
           }));
 
           setOffers(mappedOffers);
@@ -285,10 +307,12 @@ export default function NonGamingOffers() {
   useEffect(() => {
     console.log("NonGamingOffers: Filter changed, fetching offers...", {
       typeFilter,
+      countryFilter,
+      deviceFilter,
     });
     setSelectedOffers([]); // Clear selection when filter changes
     fetchOffers(1, typeFilter);
-  }, [typeFilter]);
+  }, [typeFilter, countryFilter, deviceFilter]);
 
   const handlePageChange = (newPage) => {
     fetchOffers(newPage, typeFilter);
@@ -333,14 +357,21 @@ export default function NonGamingOffers() {
           toast.error("Could not find offer to delete");
         }
       } else {
-        // Sync the offer with device filter
+        // Sync the offer with device and country filter
         const backendType = getBackendOfferType(offer.type || typeFilter);
         const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
-        console.log("Syncing offer:", { offerId, backendType, devices });
+        const country = countryFilter;
+        console.log("Syncing offer:", {
+          offerId,
+          backendType,
+          devices,
+          country,
+        });
         const response = await surveyAPIs.syncSingleBitLabOffer(
           offerId,
           backendType === "all" ? "survey" : backendType,
-          devices
+          devices,
+          country
         );
         console.log("Sync response:", response);
         toast.success("Offer added successfully");
@@ -408,11 +439,13 @@ export default function NonGamingOffers() {
     try {
       const backendType = getBackendOfferType(typeFilter);
       const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
+      const country = countryFilter;
       const response = await surveyAPIs.syncBitLabOffers({
         offerIds: selectedOffers,
         offerType: backendType === "all" ? "all" : backendType,
         autoActivate: true,
         devices: devices,
+        country: country,
       });
 
       if (response.success) {
@@ -442,10 +475,12 @@ export default function NonGamingOffers() {
     try {
       const backendType = getBackendOfferType(typeFilter);
       const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
+      const country = countryFilter;
       const response = await surveyAPIs.syncBitLabOffers({
         offerType: backendType === "all" ? "all" : backendType,
         autoActivate: true,
         devices: devices,
+        country: country,
       });
 
       if (response.success) {
@@ -482,6 +517,11 @@ export default function NonGamingOffers() {
     { value: "android", label: "Android" },
     { value: "iphone", label: "iPhone" },
     { value: "ipad", label: "iPad" },
+  ];
+
+  const countryOptions = [
+    { value: "US", label: "United States" },
+    { value: "CA", label: "Canada" },
   ];
 
   return (
@@ -693,6 +733,24 @@ export default function NonGamingOffers() {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
               {deviceOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Country Filter */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-2">
+              Filter by Country
+            </label>
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+            >
+              {countryOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

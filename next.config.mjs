@@ -3,12 +3,12 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'c.animaapp.com',
+        protocol: "https",
+        hostname: "c.animaapp.com",
       },
       {
-        protocol: 'https',
-        hostname: '**', // Allow all HTTPS images (for user avatars from various sources)
+        protocol: "https",
+        hostname: "**", // Allow all HTTPS images (for user avatars from various sources)
       },
     ],
   },

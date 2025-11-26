@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { gamesAPI } from '../data/games';
+import { useState, useCallback } from "react";
+import { gamesAPI } from "../data/games";
 
 export function useGames() {
   const [games, setGames] = useState([]);
@@ -9,7 +9,7 @@ export function useGames() {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 10
+    itemsPerPage: 10,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,12 +23,18 @@ export function useGames() {
       const params = {
         page,
         limit,
-        search: filters.search || '',
-        country: filters.country && filters.country !== 'all' ? filters.country : '',
-        sdkProvider: filters.sdk && filters.sdk !== 'all' ? filters.sdk : '',
-        xptr: filters.xpTier && filters.xpTier !== 'all' ? filters.xpTier : '',
-        adGame: filters.adGame && filters.adGame !== 'all' ? filters.adGame : '',
-        status: filters.status && filters.status !== 'all' ? filters.status : 'all'
+        search: filters.search || "",
+        country:
+          filters.country && filters.country !== "all" ? filters.country : "",
+        sdkProvider: filters.sdk && filters.sdk !== "all" ? filters.sdk : "",
+        xpTier:
+          filters.xpTier && filters.xpTier !== "all" ? filters.xpTier : "",
+        adGame:
+          filters.adGame && filters.adGame !== "all" ? filters.adGame : "",
+        status:
+          filters.status && filters.status !== "all"
+            ? filters.status.toLowerCase()
+            : "all",
       };
 
       const response = await gamesAPI.getGames(params);
@@ -36,8 +42,8 @@ export function useGames() {
       setGames(response.games);
       setPagination(response.pagination);
     } catch (err) {
-      setError('Failed to load games. Please try again.');
-      console.error('Error fetching games:', err);
+      setError("Failed to load games. Please try again.");
+      console.error("Error fetching games:", err);
     } finally {
       setLoading(false);
     }
@@ -50,11 +56,11 @@ export function useGames() {
 
     try {
       const newGame = await gamesAPI.createGame(gameData);
-      setGames(prev => [...prev, newGame]);
+      setGames((prev) => [...prev, newGame]);
       return newGame;
     } catch (err) {
-      setError('Failed to create game. Please try again.');
-      console.error('Error creating game:', err);
+      setError("Failed to create game. Please try again.");
+      console.error("Error creating game:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -68,11 +74,13 @@ export function useGames() {
 
     try {
       const updatedGame = await gamesAPI.updateGame(gameId, gameData);
-      setGames(prev => prev.map(game => game.id === gameId ? updatedGame : game));
+      setGames((prev) =>
+        prev.map((game) => (game.id === gameId ? updatedGame : game))
+      );
       return updatedGame;
     } catch (err) {
-      setError('Failed to update game. Please try again.');
-      console.error('Error updating game:', err);
+      setError("Failed to update game. Please try again.");
+      console.error("Error updating game:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -86,11 +94,11 @@ export function useGames() {
 
     try {
       await gamesAPI.deleteGame(gameId);
-      setGames(prev => prev.filter(game => game.id !== gameId));
+      setGames((prev) => prev.filter((game) => game.id !== gameId));
       return true;
     } catch (err) {
-      setError('Failed to delete game. Please try again.');
-      console.error('Error deleting game:', err);
+      setError("Failed to delete game. Please try again.");
+      console.error("Error deleting game:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -106,8 +114,8 @@ export function useGames() {
       const game = await gamesAPI.getGameById(gameId);
       return game;
     } catch (err) {
-      setError('Failed to load game. Please try again.');
-      console.error('Error fetching game:', err);
+      setError("Failed to load game. Please try again.");
+      console.error("Error fetching game:", err);
       throw err;
     } finally {
       setLoading(false);
@@ -123,6 +131,6 @@ export function useGames() {
     createGame,
     updateGame,
     deleteGame,
-    getGameById
+    getGameById,
   };
 }

@@ -47,7 +47,7 @@ export default function PrizePoolConfiguration({
       .sort((a, b) => (a.order || 0) - (b.order || 0)); // Sort by order
   }, [rewards, searchTerm, statusFilter, typeFilter]);
 
-  const rewardTypes = ['Coins', 'XP', 'Coupons'];
+  const rewardTypes = ['Coins', 'XP'];
   const tierOptions = ['All Tiers', 'Bronze', 'Gold', 'Platinum'];
 
   const handleAddReward = async (rewardData) => {
@@ -283,7 +283,7 @@ export default function PrizePoolConfiguration({
                         <Bars3Icon className="h-5 w-5 text-gray-400 cursor-move" title="Drag to reorder" />
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8 mr-3 bg-gray-100 rounded-full flex items-center justify-center">
                           {reward.icon ? (
@@ -291,13 +291,14 @@ export default function PrizePoolConfiguration({
                           ) : (
                             <span className="text-xs font-medium text-gray-600">
                               {reward.type === 'Coins' ? '🪙' : 
-                               reward.type === 'XP' ? '⭐' : 
-                               reward.type === 'Coupons' ? '🎫' : '🎁'}
+                               reward.type === 'XP' ? '⭐' : '🎁'}
                             </span>
                           )}
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{reward.label}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 truncate" title={reward.label}>
+                            {reward.label}
+                          </div>
                         </div>
                       </div>
                     </td>

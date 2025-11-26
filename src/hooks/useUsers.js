@@ -35,6 +35,9 @@ export const useUsers = () => {
       });
 
       if (response.success) {
+        console.log('🟢 useUsers Hook - Response data:', response.data);
+        console.log('🟢 useUsers Hook - Users array:', response.data.users);
+        console.log('🟢 useUsers Hook - First user example:', response.data.users?.[0]);
         setUsers(response.data.users);
         setPagination({
           currentPage: response.data.pagination.currentPage,

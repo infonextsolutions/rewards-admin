@@ -57,9 +57,13 @@ export default function TransactionLog({ onSneakPeek }) {
         );
         const statusData = await statusResponse.json();
         if (statusData.success) {
+          // SW-35: Filter to only show relevant statuses (exclude 'processing')
+          const relevantStatuses = statusData.data.filter(
+            (s) => s !== "processing"
+          );
           // Capitalize first letter for display
           setStatusOptions(
-            statusData.data.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+            relevantStatuses.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
           );
         }
 
@@ -70,26 +74,33 @@ export default function TransactionLog({ onSneakPeek }) {
         );
         const typesData = await typesResponse.json();
         if (typesData.success) {
+          // SW-35: Filter to only show commonly used transaction types
+          const commonTypes = typesData.data.filter((t) =>
+            [
+              "credit",
+              "debit",
+              "reward",
+              "redemption",
+              "adjustment",
+              "bonus",
+            ].includes(t)
+          );
           // Capitalize first letter for display
           setTransactionTypes(
-            typesData.data.map((t) => t.charAt(0).toUpperCase() + t.slice(1))
+            commonTypes.map((t) => t.charAt(0).toUpperCase() + t.slice(1))
           );
         }
       } catch (error) {
         console.error("Error fetching filter options:", error);
-        // Fallback to default options
-        setStatusOptions(["Completed", "Pending", "Failed"]);
+        // SW-35: Fallback to limited, relevant options only
+        setStatusOptions(["Completed", "Pending", "Failed", "Rejected"]);
         setTransactionTypes([
           "Credit",
           "Debit",
           "Reward",
-          "Xp",
           "Redemption",
-          "Spin",
           "Adjustment",
-          "Refund",
           "Bonus",
-          "Penalty",
         ]);
       } finally {
         setLoadingOptions(false);
@@ -100,65 +111,133 @@ export default function TransactionLog({ onSneakPeek }) {
   }, []);
 
   // Fetch transactions from API
-  const fetchTransactions = useCallback(async (page = 1) => {
-    setLoadingTransactions(true);
-    try {
-      const token = localStorage.getItem("token");
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: "10",
-        search: searchTerm || "",
-        type: filters.type ? filters.type.toLowerCase() : "",
-        status: filters.status ? filters.status.toLowerCase() : "",
-      });
+  const fetchTransactions = useCallback(
+    async (page = 1) => {
+      setLoadingTransactions(true);
+      try {
+        const token = localStorage.getItem("token");
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: "10",
+          search: searchTerm || "",
+          type: filters.type ? filters.type.toLowerCase() : "",
+          status: filters.status ? filters.status.toLowerCase() : "",
+        });
 
-      const response = await fetch(
-        `https://rewardsapi.hireagent.co/api/admin/transactions?${params}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        // Add date range filter (SW-33)
+        if (filters.dateRange) {
+          const dateRange = getDateRangeFilter(filters.dateRange);
+          const now = new Date();
+          let startDate;
+
+          switch (filters.dateRange) {
+            case "Last 7 days":
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "Last 30 days":
+              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              break;
+            case "Last 3 months":
+              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+              break;
+            default:
+              startDate = null;
+          }
+
+          if (startDate) {
+            params.append("startDate", startDate.toISOString());
+            params.append("endDate", now.toISOString());
+          }
         }
-      );
 
-      const result = await response.json();
+        // Add approval filter (SW-34)
+        if (filters.approval) {
+          if (filters.approval === "Approved") {
+            params.append("approvalStatus", "approved");
+          } else if (filters.approval === "Pending") {
+            params.append("approvalStatus", "pending");
+          } else if (filters.approval === "Rejected") {
+            params.append("approvalStatus", "rejected");
+          }
+        }
 
-      if (result.success && result.data) {
-        // Transform API data to component format
-        const transformedTransactions = result.data.transactions.map((t) => ({
-          id: t.transactionId || t.referenceId || t._id,
-          userId: t.userId || t.user?._id || "-",
-          userName:
-            t.userName ||
-            `${t.user?.firstName || ""} ${t.user?.lastName || ""}`.trim() ||
-            "-",
-          userEmail: t.userEmail || t.user?.email || "-",
-          type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
-          amount: `${t.amount} ${t.balanceType || "coins"}`,
-          description: t.description || "-",
-          createdOn: new Date(t.createdAt).toLocaleDateString("en-GB"),
-          approvedOn:
-            t.approval?.status === "approved" && t.updatedAt
-              ? new Date(t.updatedAt).toLocaleDateString("en-GB")
+        const response = await fetch(
+          `https://rewardsapi.hireagent.co/api/admin/transactions?${params}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          // Transform API data to component format
+          // SW-36: Backend already filters out processing transactions
+          const transformedTransactions = result.data.transactions.map((t) => ({
+            id: t.transactionId || t.referenceId || t._id,
+            userId: t.userId || t.user?._id || "-",
+            userName:
+              t.userName ||
+              `${t.user?.firstName || ""} ${t.user?.lastName || ""}`.trim() ||
+              "-",
+            userEmail: t.userEmail || t.user?.email || "-",
+            type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
+            amount: `${t.amount} ${t.balanceType || "coins"}`,
+            description: t.description || "-",
+            createdOn: t.createdAt
+              ? (() => {
+                  const date = new Date(t.createdAt);
+                  return !isNaN(date.getTime())
+                    ? date.toLocaleDateString("en-GB", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      })
+                    : "-";
+                })()
               : "-",
-          status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
-          approval: t.isApproved ? "Yes" : "No",
-          approvalRequired: t.approval?.required || false,
-          approvalStatus:
-            t.approvalStatus || t.approval?.status || "not_required",
-          rawData: t, // Store raw data for reference
-        }));
+            approvedOn:
+              t.approval?.status === "approved" && t.updatedAt
+                ? (() => {
+                    const date = new Date(t.updatedAt);
+                    return !isNaN(date.getTime())
+                      ? date.toLocaleDateString("en-GB", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                        })
+                      : "-";
+                  })()
+                : "-",
+            status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
+            approval: t.isApproved ? "Yes" : "No",
+            approvalRequired: t.approval?.required || false,
+            approvalStatus:
+              t.approvalStatus || t.approval?.status || "not_required",
+            rawData: t, // Store raw data for reference
+          }));
 
-        setTransactions(transformedTransactions);
-        setPagination(result.data.pagination);
+          setTransactions(transformedTransactions);
+          setPagination(result.data.pagination);
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        toast.error("Failed to fetch transactions");
+      } finally {
+        setLoadingTransactions(false);
       }
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-    } finally {
-      setLoadingTransactions(false);
-    }
-  }, [searchTerm, filters.type, filters.status]);
+    },
+    [
+      searchTerm,
+      filters.type,
+      filters.status,
+      filters.dateRange,
+      filters.approval,
+    ]
+  );
 
   // Fetch transactions on mount and when filters change
   useEffect(() => {
@@ -188,29 +267,82 @@ export default function TransactionLog({ onSneakPeek }) {
 
   const handleExport = () => {
     // Export functionality - exports current page transactions
+    const formatDateForCSV = (dateValue) => {
+      if (!dateValue) return "N/A";
+
+      // If it's already a formatted string and not "xxxxx", use it
+      if (
+        typeof dateValue === "string" &&
+        dateValue !== "xxxxx" &&
+        dateValue !== "Invalid Date"
+      ) {
+        return dateValue;
+      }
+
+      // If we have rawData with createdAt, use that
+      if (dateValue?.rawData?.createdAt) {
+        const date = new Date(dateValue.rawData.createdAt);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString("en-GB", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+      }
+
+      // Try to parse as date
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString("en-GB", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      return "N/A";
+    };
+
     const csvContent = [
       ["Transaction ID", "User ID", "Type", "Amount", "Created On", "Status"],
-      // ['Transaction ID', 'User ID', 'Type', 'Amount', 'Created On', 'Approved On', 'Status', 'Approval'],
-      ...displayTransactions.map((t) => [
-        t.id,
-        t.userId,
-        t.type,
-        t.amount,
-        t.createdOn,
-        t.status,
-        // t.id, t.userId, t.type, t.amount, t.createdOn, t.approvedOn, t.status, t.approval
-      ]),
+      ...displayTransactions.map((t) => {
+        // Get the date from rawData if available, otherwise use createdOn
+        const dateValue = t.rawData?.createdAt || t.createdOn;
+        const formattedDate = formatDateForCSV({
+          rawData: t.rawData,
+          createdOn: dateValue,
+        });
+
+        return [
+          t.id || "N/A",
+          t.userId || "N/A",
+          t.type || "N/A",
+          t.amount || "N/A",
+          formattedDate,
+          t.status || "N/A",
+        ];
+      }),
     ]
-      .map((row) => row.join(","))
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      )
       .join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "transactions.csv";
+    link.download = `transactions-${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     link.click();
     URL.revokeObjectURL(url);
+    toast.success("Transactions exported successfully!");
   };
 
   const handleApprovalClick = (transaction, action) => {
@@ -274,11 +406,14 @@ export default function TransactionLog({ onSneakPeek }) {
       Completed: "bg-green-100 text-green-800",
       Pending: "bg-yellow-100 text-yellow-800",
       Failed: "bg-red-100 text-red-800",
+      Rejected: "bg-red-100 text-red-800",
+      Processing: "bg-blue-100 text-blue-800",
     };
-
     return (
       <span
-        className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full min-w-[80px] ${styles[status]}`}
+        className={`inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-full min-w-[80px] ${
+          styles[status] || "bg-gray-100 text-gray-800"
+        }`}
       >
         {status}
       </span>
@@ -320,7 +455,7 @@ export default function TransactionLog({ onSneakPeek }) {
           <FilterDropdown
             filterId="approval"
             label="Approval"
-            options={["Yes", "No"]}
+            options={["Approved", "Pending", "Rejected"]}
             value={filters.approval}
             onChange={handleFilterChange}
           />
@@ -382,28 +517,28 @@ export default function TransactionLog({ onSneakPeek }) {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Transaction ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   User ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Created On
                 </th>
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Approved On
                 </th> */}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Status
                 </th>
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Approval
                 </th> */}
               </tr>
@@ -427,7 +562,7 @@ export default function TransactionLog({ onSneakPeek }) {
               ) : (
                 displayTransactions.map((transaction) => (
                   <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
                       <button
                         onClick={() =>
                           window.open(
@@ -437,41 +572,43 @@ export default function TransactionLog({ onSneakPeek }) {
                             "_blank"
                           )
                         }
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        className="text-blue-600 hover:text-blue-800 font-medium mx-auto"
                       >
                         {transaction.id}
                       </button>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
                       <button
                         onClick={() =>
                           window.open(`/users/${transaction.userId}`, "_blank")
                         }
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        className="text-blue-600 hover:text-blue-800 font-medium mx-auto"
                       >
                         {transaction.userId}
                       </button>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
                       <span className="text-sm text-gray-900">
                         {transaction.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
                       <span className="font-medium text-gray-900">
                         {transaction.amount}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
                       <span className="text-gray-900">
                         {transaction.createdOn}
                       </span>
                     </td>
-                    {/* <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4 text-center">
                     <span className="text-gray-900">{transaction.approvedOn}</span>
                   </td> */}
-                    <td className="px-6 py-4">
-                      {getStatusBadge(transaction.status)}
+                    <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
+                      <div className="flex items-center justify-center">
+                        {getStatusBadge(transaction.status)}
+                      </div>
                     </td>
                     {/* <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
