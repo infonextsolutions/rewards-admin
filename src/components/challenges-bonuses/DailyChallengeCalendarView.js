@@ -1,17 +1,24 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { 
-  ChevronLeftIcon, 
-  ChevronRightIcon, 
+import React, { useState, useMemo } from "react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
   PlusIcon,
   CalendarDaysIcon,
   EyeIcon,
-  EyeSlashIcon
-} from '@heroicons/react/24/outline';
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
 
-const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey', 'Referral', 'Watch Ad', 'SDK Game'];
-const CLAIM_TYPES = ['Watch Ad', 'Auto'];
+const CHALLENGE_TYPES = [
+  "Spin",
+  "Game",
+  "Survey",
+  "Referral",
+  "Watch Ad",
+  "SDK Game",
+];
+const CLAIM_TYPES = ["Watch Ad", "Auto"];
 
 export default function DailyChallengeCalendarView({
   challenges = [],
@@ -20,21 +27,23 @@ export default function DailyChallengeCalendarView({
   onDeleteChallenge,
   selectedDate,
   onDateSelect,
-  loading = false
+  loading = false,
 }) {
   const [currentDate, setCurrentDate] = useState(selectedDate || new Date());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [dateRangeFilter, setDateRangeFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('month'); // month, week, day
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateRangeFilter, setDateRangeFilter] = useState("all");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [viewMode, setViewMode] = useState("month"); // month, week, day
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [selectedDateChallenges, setSelectedDateChallenges] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
   const today = new Date();
-  
+
   // Get current month and year
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -48,30 +57,31 @@ export default function DailyChallengeCalendarView({
   // Generate calendar days
   const calendarDays = useMemo(() => {
     const days = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth, day);
 
       // Create date string in YYYY-MM-DD format using local date components
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const dayStr = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const dayStr = String(date.getDate()).padStart(2, "0");
       const dateString = `${year}-${month}-${dayStr}`;
 
       // Match challenges by date - handle both ISO string and Date object formats
-      const dayChallenges = challenges.filter(challenge => {
+      const dayChallenges = challenges.filter((challenge) => {
         if (!challenge.date) return false;
 
         // Normalize the challenge date to YYYY-MM-DD format
-        const challengeDateString = typeof challenge.date === 'string'
-          ? challenge.date.split('T')[0]
-          : new Date(challenge.date).toISOString().split('T')[0];
+        const challengeDateString =
+          typeof challenge.date === "string"
+            ? challenge.date.split("T")[0]
+            : new Date(challenge.date).toISOString().split("T")[0];
 
         return challengeDateString === dateString;
       });
@@ -81,89 +91,171 @@ export default function DailyChallengeCalendarView({
         day,
         challenges: dayChallenges,
         isToday: date.toDateString() === today.toDateString(),
-        isSelected: selectedDate && date.toDateString() === selectedDate.toDateString()
+        isSelected:
+          selectedDate && date.toDateString() === selectedDate.toDateString(),
       });
     }
-    
+
     return days;
-  }, [currentYear, currentMonth, daysInMonth, startingDayOfWeek, challenges, selectedDate, today]);
+  }, [
+    currentYear,
+    currentMonth,
+    daysInMonth,
+    startingDayOfWeek,
+    challenges,
+    selectedDate,
+    today,
+  ]);
 
   // Filter challenges for search
   const filteredCalendarDays = useMemo(() => {
-    if (!searchTerm && typeFilter === 'all' && statusFilter === 'all' && dateRangeFilter === 'all') {
+    if (
+      !searchTerm &&
+      typeFilter === "all" &&
+      statusFilter === "all" &&
+      dateRangeFilter === "all"
+    ) {
       return calendarDays;
     }
 
-    return calendarDays.map(day => {
+    return calendarDays.map((day) => {
       if (!day) return day;
-      
+
       // Apply date range filter to the day itself
       let dayMatchesRange = true;
-      if (dateRangeFilter !== 'all') {
+      if (dateRangeFilter !== "all") {
         const dayDate = day.date;
         const today = new Date();
-        const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+        const startOfWeek = new Date(
+          today.setDate(today.getDate() - today.getDay())
+        );
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
-        
+
         switch (dateRangeFilter) {
-          case 'this-week':
+          case "this-week":
             dayMatchesRange = dayDate >= startOfWeek && dayDate <= endOfWeek;
             break;
-          case 'this-month':
-            dayMatchesRange = dayDate.getMonth() === new Date().getMonth() && 
-                             dayDate.getFullYear() === new Date().getFullYear();
+          case "this-month":
+            dayMatchesRange =
+              dayDate.getMonth() === new Date().getMonth() &&
+              dayDate.getFullYear() === new Date().getFullYear();
             break;
-          case 'next-month':
+          case "next-month":
             const nextMonth = new Date();
             nextMonth.setMonth(nextMonth.getMonth() + 1);
-            dayMatchesRange = dayDate.getMonth() === nextMonth.getMonth() && 
-                             dayDate.getFullYear() === nextMonth.getFullYear();
+            dayMatchesRange =
+              dayDate.getMonth() === nextMonth.getMonth() &&
+              dayDate.getFullYear() === nextMonth.getFullYear();
             break;
-          case 'past-week':
+          case "past-week":
             const pastWeekStart = new Date(startOfWeek);
             pastWeekStart.setDate(pastWeekStart.getDate() - 7);
             const pastWeekEnd = new Date(pastWeekStart);
             pastWeekEnd.setDate(pastWeekStart.getDate() + 6);
-            dayMatchesRange = dayDate >= pastWeekStart && dayDate <= pastWeekEnd;
+            dayMatchesRange =
+              dayDate >= pastWeekStart && dayDate <= pastWeekEnd;
+            break;
+          case "custom":
+            if (customStartDate && customEndDate) {
+              // Parse date strings manually to avoid timezone issues
+              // customStartDate and customEndDate are in YYYY-MM-DD format
+              const [startYear, startMonth, startDay] = customStartDate
+                .split("-")
+                .map(Number);
+              const [endYear, endMonth, endDay] = customEndDate
+                .split("-")
+                .map(Number);
+
+              const startDate = new Date(
+                startYear,
+                startMonth - 1,
+                startDay,
+                0,
+                0,
+                0,
+                0
+              );
+              const endDate = new Date(
+                endYear,
+                endMonth - 1,
+                endDay,
+                23,
+                59,
+                59,
+                999
+              );
+
+              // Normalize dayDate to start of day for comparison
+              const dayDateNormalized = new Date(dayDate);
+              dayDateNormalized.setHours(0, 0, 0, 0);
+
+              dayMatchesRange =
+                dayDateNormalized >= startDate && dayDateNormalized <= endDate;
+            } else {
+              // If dates not set, show all (same as 'all')
+              dayMatchesRange = true;
+            }
             break;
           default:
             dayMatchesRange = true;
         }
       }
-      
+
       if (!dayMatchesRange) {
         return {
           ...day,
-          challenges: []
+          challenges: [],
+          isFilteredOut: true, // Mark days outside the date range
         };
       }
-      
-      const filteredChallenges = day.challenges.filter(challenge => {
-        const matchesSearch = !searchTerm || 
+
+      const filteredChallenges = day.challenges.filter((challenge) => {
+        const matchesSearch =
+          !searchTerm ||
           challenge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           challenge.type.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const matchesType = typeFilter === 'all' || challenge.type === typeFilter;
-        
-        const matchesStatus = statusFilter === 'all' || challenge.status === statusFilter;
-        
+
+        const matchesType =
+          typeFilter === "all" || challenge.type === typeFilter;
+
+        const matchesStatus =
+          statusFilter === "all" || challenge.status === statusFilter;
+
         return matchesSearch && matchesType && matchesStatus;
       });
-      
+
       return {
         ...day,
-        challenges: filteredChallenges
+        challenges: filteredChallenges,
       };
     });
-  }, [calendarDays, searchTerm, typeFilter, statusFilter, dateRangeFilter]);
+  }, [
+    calendarDays,
+    searchTerm,
+    typeFilter,
+    statusFilter,
+    dateRangeFilter,
+    customStartDate,
+    customEndDate,
+  ]);
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
@@ -179,10 +271,10 @@ export default function DailyChallengeCalendarView({
 
   const handleDateClick = (dayData) => {
     if (!dayData) return;
-    
+
     onDateSelect?.(dayData.date);
     setSelectedDateChallenges(dayData.challenges);
-    
+
     // If there are no challenges for this date, open add modal
     if (dayData.challenges.length === 0) {
       onAddChallenge();
@@ -206,15 +298,16 @@ export default function DailyChallengeCalendarView({
 
       // Create date string using local date components to avoid timezone issues
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const dayStr = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const dayStr = String(date.getDate()).padStart(2, "0");
       const dateString = `${year}-${month}-${dayStr}`;
 
-      const dayChallenges = challenges.filter(challenge => {
+      const dayChallenges = challenges.filter((challenge) => {
         if (!challenge.date) return false;
-        const challengeDateString = typeof challenge.date === 'string'
-          ? challenge.date.split('T')[0]
-          : new Date(challenge.date).toISOString().split('T')[0];
+        const challengeDateString =
+          typeof challenge.date === "string"
+            ? challenge.date.split("T")[0]
+            : new Date(challenge.date).toISOString().split("T")[0];
         return challengeDateString === dateString;
       });
 
@@ -223,7 +316,8 @@ export default function DailyChallengeCalendarView({
         day: date.getDate(),
         challenges: dayChallenges,
         isToday: date.toDateString() === today.toDateString(),
-        isSelected: selectedDate && date.toDateString() === selectedDate.toDateString()
+        isSelected:
+          selectedDate && date.toDateString() === selectedDate.toDateString(),
       });
     }
     return days;
@@ -233,15 +327,16 @@ export default function DailyChallengeCalendarView({
   const getDayView = () => {
     // Create date string using local date components to avoid timezone issues
     const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const dayStr = String(currentDate.getDate()).padStart(2, '0');
+    const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+    const dayStr = String(currentDate.getDate()).padStart(2, "0");
     const dateString = `${year}-${month}-${dayStr}`;
 
-    const dayChallenges = challenges.filter(challenge => {
+    const dayChallenges = challenges.filter((challenge) => {
       if (!challenge.date) return false;
-      const challengeDateString = typeof challenge.date === 'string'
-        ? challenge.date.split('T')[0]
-        : new Date(challenge.date).toISOString().split('T')[0];
+      const challengeDateString =
+        typeof challenge.date === "string"
+          ? challenge.date.split("T")[0]
+          : new Date(challenge.date).toISOString().split("T")[0];
       return challengeDateString === dateString;
     });
 
@@ -250,32 +345,34 @@ export default function DailyChallengeCalendarView({
       day: currentDate.getDate(),
       challenges: dayChallenges,
       isToday: currentDate.toDateString() === today.toDateString(),
-      isSelected: selectedDate && currentDate.toDateString() === selectedDate.toDateString()
+      isSelected:
+        selectedDate &&
+        currentDate.toDateString() === selectedDate.toDateString(),
     };
   };
 
   const getStatusColor = (status, date) => {
     const challengeDate = new Date(date);
     const today = new Date();
-    
+
     // Auto-update status based on date
     let actualStatus = status;
     if (challengeDate.toDateString() === today.toDateString()) {
-      actualStatus = 'Live';
+      actualStatus = "Live";
     } else if (challengeDate > today) {
-      actualStatus = 'Scheduled';
+      actualStatus = "Scheduled";
     } else if (challengeDate < today) {
-      actualStatus = 'Expired';
+      actualStatus = "Expired";
     }
 
     const statusColors = {
-      'Scheduled': 'bg-blue-100 text-blue-800 border-blue-200',
-      'Live': 'bg-green-100 text-green-800 border-green-200',
-      'Pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'Expired': 'bg-gray-100 text-gray-800 border-gray-200'
+      Scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+      Live: "bg-green-100 text-green-800 border-green-200",
+      Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      Expired: "bg-gray-100 text-gray-800 border-gray-200",
     };
-    
-    return statusColors[actualStatus] || statusColors['Pending'];
+
+    return statusColors[actualStatus] || statusColors["Pending"];
   };
 
   // Render functions for different view modes
@@ -283,8 +380,11 @@ export default function DailyChallengeCalendarView({
     <>
       {/* Day Headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {dayNames.map(day => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+        {dayNames.map((day) => (
+          <div
+            key={day}
+            className="p-2 text-center text-sm font-medium text-gray-500"
+          >
             {day}
           </div>
         ))}
@@ -296,15 +396,21 @@ export default function DailyChallengeCalendarView({
           <div
             key={index}
             className={`min-h-[120px] border border-gray-200 rounded-lg p-2 cursor-pointer transition-all duration-200 ${
-              !dayData 
-                ? 'bg-gray-50 cursor-default' 
-                : dayData.isToday 
-                  ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100' 
-                  : dayData.isSelected 
-                    ? 'bg-blue-50 border-blue-200' 
-                    : 'bg-white hover:bg-gray-50'
+              !dayData
+                ? "bg-gray-50 cursor-default"
+                : dayData.isFilteredOut
+                ? "bg-gray-100 opacity-50 cursor-not-allowed"
+                : dayData.isToday
+                ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
+                : dayData.isSelected
+                ? "bg-blue-50 border-blue-200"
+                : "bg-white hover:bg-gray-50"
             }`}
-            onClick={() => handleDateClick(dayData)}
+            onClick={() => {
+              if (!dayData?.isFilteredOut) {
+                handleDateClick(dayData);
+              }
+            }}
           >
             {dayData && renderDayContent(dayData)}
           </div>
@@ -315,13 +421,16 @@ export default function DailyChallengeCalendarView({
 
   const renderWeekView = () => {
     const weekDays = getWeekDays();
-    
+
     return (
       <>
         {/* Week Headers */}
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {dayNames.map(day => (
-            <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+          {dayNames.map((day) => (
+            <div
+              key={day}
+              className="p-2 text-center text-sm font-medium text-gray-500"
+            >
               {day}
             </div>
           ))}
@@ -333,11 +442,11 @@ export default function DailyChallengeCalendarView({
             <div
               key={index}
               className={`min-h-[200px] border border-gray-200 rounded-lg p-3 cursor-pointer transition-all duration-200 ${
-                dayData.isToday 
-                  ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100' 
-                  : dayData.isSelected 
-                    ? 'bg-blue-50 border-blue-200' 
-                    : 'bg-white hover:bg-gray-50'
+                dayData.isToday
+                  ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
+                  : dayData.isSelected
+                  ? "bg-blue-50 border-blue-200"
+                  : "bg-white hover:bg-gray-50"
               }`}
               onClick={() => handleDateClick(dayData)}
             >
@@ -351,26 +460,29 @@ export default function DailyChallengeCalendarView({
 
   const renderDayView = () => {
     const dayData = getDayView();
-    
+
     return (
       <div className="max-w-4xl mx-auto">
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-semibold text-gray-900">
-                {dayData.date.toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {dayData.date.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
                 })}
               </h3>
               {dayData.isToday && (
-                <span className="text-sm text-emerald-600 font-medium">Today</span>
+                <span className="text-sm text-emerald-600 font-medium">
+                  Today
+                </span>
               )}
             </div>
             <div className="text-sm text-gray-500">
-              {dayData.challenges.length} challenge{dayData.challenges.length !== 1 ? 's' : ''}
+              {dayData.challenges.length} challenge
+              {dayData.challenges.length !== 1 ? "s" : ""}
             </div>
           </div>
 
@@ -391,14 +503,25 @@ export default function DailyChallengeCalendarView({
               dayData.challenges.map((challenge, idx) => (
                 <div
                   key={challenge.id}
-                  className={`p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition-all duration-200 ${getStatusColor(challenge.status, challenge.date)}`}
-                  onClick={() => handleChallengeClick(challenge, { stopPropagation: () => {} })}
+                  className={`p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition-all duration-200 ${getStatusColor(
+                    challenge.status,
+                    challenge.date
+                  )}`}
+                  onClick={() =>
+                    handleChallengeClick(challenge, {
+                      stopPropagation: () => {},
+                    })
+                  }
                   title={`Click to edit ${challenge.title}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{challenge.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{challenge.type}</p>
+                      <h4 className="font-medium text-gray-900">
+                        {challenge.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {challenge.type}
+                      </p>
                     </div>
                     <div className="flex items-center space-x-4 text-sm">
                       <div className="flex items-center">
@@ -409,7 +532,9 @@ export default function DailyChallengeCalendarView({
                         <span className="mr-1">⭐</span>
                         <span>{challenge.xpReward}</span>
                       </div>
-                      <span className="text-xs text-gray-500">{challenge.claimType}</span>
+                      <span className="text-xs text-gray-500">
+                        {challenge.claimType}
+                      </span>
                       {!challenge.visibility && (
                         <EyeSlashIcon className="h-4 w-4 text-gray-400" />
                       )}
@@ -427,13 +552,15 @@ export default function DailyChallengeCalendarView({
   const renderDayContent = (dayData) => (
     <>
       {/* Day Number */}
-      <div className={`text-sm font-medium mb-2 ${
-        dayData.isToday 
-          ? 'text-emerald-600' 
-          : dayData.isSelected 
-            ? 'text-blue-600' 
-            : 'text-gray-900'
-      }`}>
+      <div
+        className={`text-sm font-medium mb-2 ${
+          dayData.isToday
+            ? "text-emerald-600"
+            : dayData.isSelected
+            ? "text-blue-600"
+            : "text-gray-900"
+        }`}
+      >
         {dayData.day}
         {dayData.isToday && (
           <span className="ml-1 text-xs text-emerald-600">(Today)</span>
@@ -445,7 +572,10 @@ export default function DailyChallengeCalendarView({
         {dayData.challenges.slice(0, 3).map((challenge, idx) => (
           <div
             key={challenge.id}
-            className={`px-2 py-1 rounded text-xs border cursor-pointer hover:shadow-sm transition-all duration-200 ${getStatusColor(challenge.status, challenge.date)}`}
+            className={`px-2 py-1 rounded text-xs border cursor-pointer hover:shadow-sm transition-all duration-200 ${getStatusColor(
+              challenge.status,
+              challenge.date
+            )}`}
             title={`${challenge.title} - ${challenge.type} (${challenge.claimType}) - Click to edit`}
             onClick={(e) => handleChallengeClick(challenge, e)}
           >
@@ -466,14 +596,14 @@ export default function DailyChallengeCalendarView({
             </div>
           </div>
         ))}
-        
+
         {/* Show more indicator */}
         {dayData.challenges.length > 3 && (
           <div className="px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded text-center">
             +{dayData.challenges.length - 3} more
           </div>
         )}
-        
+
         {/* Add challenge button for empty days */}
         {dayData.challenges.length === 0 && (
           <div className="flex items-center justify-center h-16 text-gray-400 hover:text-gray-600">
@@ -494,12 +624,14 @@ export default function DailyChallengeCalendarView({
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Daily Challenge Calendar (Calendar View)</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Daily Challenge Calendar (Calendar View)
+              </h2>
               <p className="mt-1 text-sm text-gray-600">
                 Visual calendar view for managing daily challenges
               </p>
             </div>
-            
+
             {/* Calendar Navigation */}
             <div className="flex items-center space-x-4">
               <button
@@ -508,41 +640,41 @@ export default function DailyChallengeCalendarView({
               >
                 Today
               </button>
-              
+
               {/* View Mode Controls */}
               <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-lg">
                 <button
-                  onClick={() => setViewMode('day')}
+                  onClick={() => setViewMode("day")}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                    viewMode === 'day'
-                      ? 'bg-white text-emerald-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                    viewMode === "day"
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
                   Day
                 </button>
                 <button
-                  onClick={() => setViewMode('week')}
+                  onClick={() => setViewMode("week")}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                    viewMode === 'week'
-                      ? 'bg-white text-emerald-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                    viewMode === "week"
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
                   Week
                 </button>
                 <button
-                  onClick={() => setViewMode('month')}
+                  onClick={() => setViewMode("month")}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 ${
-                    viewMode === 'month'
-                      ? 'bg-white text-emerald-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                    viewMode === "month"
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
                   }`}
                 >
                   Month
                 </button>
               </div>
-              
+
               <div className="flex items-center space-x-1">
                 <button
                   onClick={goToPreviousMonth}
@@ -550,11 +682,11 @@ export default function DailyChallengeCalendarView({
                 >
                   <ChevronLeftIcon className="h-5 w-5" />
                 </button>
-                
+
                 <h3 className="text-lg font-semibold text-gray-900 min-w-[200px] text-center">
                   {monthNames[currentMonth]} {currentYear}
                 </h3>
-                
+
                 <button
                   onClick={goToNextMonth}
                   className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-md"
@@ -580,8 +712,18 @@ export default function DailyChallengeCalendarView({
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
               </div>
@@ -589,26 +731,60 @@ export default function DailyChallengeCalendarView({
 
             {/* Filters */}
             <div className="flex items-center space-x-4">
-              <select
-                value={dateRangeFilter}
-                onChange={(e) => setDateRangeFilter(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
-              >
-                <option value="all">All Dates</option>
-                <option value="this-week">This Week</option>
-                <option value="this-month">This Month</option>
-                <option value="next-month">Next Month</option>
-                <option value="past-week">Past Week</option>
-                <option value="custom">Custom Range</option>
-              </select>
+              <div className="flex items-center space-x-2">
+                <select
+                  value={dateRangeFilter}
+                  onChange={(e) => {
+                    setDateRangeFilter(e.target.value);
+                    // Reset custom dates when switching away from custom
+                    if (e.target.value !== "custom") {
+                      setCustomStartDate("");
+                      setCustomEndDate("");
+                    }
+                  }}
+                  className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                  <option value="all">All Dates</option>
+                  <option value="this-week">This Week</option>
+                  <option value="this-month">This Month</option>
+                  <option value="next-month">Next Month</option>
+                  <option value="past-week">Past Week</option>
+                  <option value="custom">Custom Range</option>
+                </select>
+                {dateRangeFilter === "custom" && (
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1">
+                      <label className="text-sm text-gray-600">From:</label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <label className="text-sm text-gray-600">To:</label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        min={customStartDate || undefined}
+                        className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="all">All Types</option>
-                {CHALLENGE_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {CHALLENGE_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
               <select
@@ -628,27 +804,37 @@ export default function DailyChallengeCalendarView({
 
         {/* Calendar Views */}
         <div className="p-6">
-          {viewMode === 'month' && renderMonthView()}
-          {viewMode === 'week' && renderWeekView()}
-          {viewMode === 'day' && renderDayView()}
+          {viewMode === "month" && renderMonthView()}
+          {viewMode === "week" && renderWeekView()}
+          {viewMode === "day" && renderDayView()}
         </div>
 
         {/* Calendar Pagination */}
-        {viewMode !== 'day' && (
+        {viewMode !== "day" && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                {viewMode === 'month' ? 
-                  `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}` :
-                  `Week of ${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                }
+                {viewMode === "month"
+                  ? `${
+                      monthNames[currentDate.getMonth()]
+                    } ${currentDate.getFullYear()}`
+                  : `Week of ${currentDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}`}
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
-                    if (viewMode === 'month') {
-                      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+                    if (viewMode === "month") {
+                      setCurrentDate(
+                        new Date(
+                          currentDate.getFullYear(),
+                          currentDate.getMonth() - 1,
+                          1
+                        )
+                      );
                     } else {
                       const newDate = new Date(currentDate);
                       newDate.setDate(currentDate.getDate() - 7);
@@ -659,15 +845,21 @@ export default function DailyChallengeCalendarView({
                 >
                   Previous
                 </button>
-                
+
                 <span className="px-3 py-1 text-sm text-gray-600 bg-white border border-gray-300 rounded">
                   Page {currentPage}
                 </span>
-                
+
                 <button
                   onClick={() => {
-                    if (viewMode === 'month') {
-                      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+                    if (viewMode === "month") {
+                      setCurrentDate(
+                        new Date(
+                          currentDate.getFullYear(),
+                          currentDate.getMonth() + 1,
+                          1
+                        )
+                      );
                     } else {
                       const newDate = new Date(currentDate);
                       newDate.setDate(currentDate.getDate() + 7);
@@ -708,7 +900,7 @@ export default function DailyChallengeCalendarView({
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2 text-gray-600">
               <EyeSlashIcon className="h-4 w-4" />
               <span>Hidden from users</span>

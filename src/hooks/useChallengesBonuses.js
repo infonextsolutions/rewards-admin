@@ -98,13 +98,15 @@ export function useChallengesBonuses() {
     setError(null);
     
     try {
-      const updatedChallenge = await challengesBonusesAPI.toggleChallengeVisibility(id, visibility);
+      const updatedVisibility = await challengesBonusesAPI.toggleChallengeVisibility(id, visibility);
       setChallenges(prev => 
         prev.map(challenge => 
-          challenge.id === id ? updatedChallenge : challenge
+          challenge.id === id 
+            ? { ...challenge, visibility: updatedVisibility.visibility } 
+            : challenge
         )
       );
-      return updatedChallenge;
+      return updatedVisibility;
     } catch (err) {
       setError('Failed to update challenge visibility. Please try again.');
       console.error('Error toggling challenge visibility:', err);
