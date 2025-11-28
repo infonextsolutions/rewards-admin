@@ -5,6 +5,7 @@ import { useSearch } from "../../contexts/SearchContext";
 import Pagination from "../../components/ui/Pagination";
 import apiClient from "../../lib/apiClient";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const Frame = ({
   filters,
@@ -264,6 +265,16 @@ const Table = ({
   totalItems,
   onPageChange,
 }) => {
+  const router = useRouter();
+
+  const handleUserIdClick = (row) => {
+    const userId =
+      row.userId?._id || row.userId || row.user?._id || row.user?.userId;
+    if (userId && userId !== "N/A") {
+      router.push(`/users/${userId}`);
+    }
+  };
+
   return (
     <div className="bg-white rounded-[10px] border border-gray-200 w-full">
       <div className="overflow-x-auto">
@@ -346,7 +357,18 @@ const Table = ({
                   </td>
 
                   <td className="py-4 px-2">
-                    <div className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5">
+                    <div
+                      className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 cursor-pointer hover:text-[#00a389] transition-colors"
+                      onClick={() => handleUserIdClick(row)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleUserIdClick(row);
+                        }
+                      }}
+                    >
                       {row.userId?._id ||
                         row.userId ||
                         row.user?._id ||
