@@ -25,7 +25,7 @@ export default function UsersHeader({
         <div className="relative flex-grow lg:flex-grow-0 lg:w-64">
           <input
             type="text"
-            placeholder="Search by name, email, or ID..."
+            placeholder="Search by email, or ID..."
             value={searchValue}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
             className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-[42px] text-sm"

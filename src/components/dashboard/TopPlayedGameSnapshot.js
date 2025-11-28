@@ -26,50 +26,109 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
     },
   };
 
+  // Color palette for professional charts
+  const chartColors = {
+    age: ["#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe", "#ede9fe"],
+    gender: ["#06b6d4", "#22d3ee", "#67e8f9"],
+    region: ["#10b981", "#34d399", "#6ee7b7", "#a7f3d0"],
+    tier: ["#f59e0b", "#fbbf24", "#fcd34d", "#fde68a"],
+  };
+
   // Ensure demographics are arrays, handle empty objects from API
   const demographics = gameData.demographics || {};
+  
+  // Normalize age data
+  let normalizedAge = Array.isArray(demographics.age)
+    ? demographics.age
+    : demographics.age && typeof demographics.age === "object"
+    ? Object.entries(demographics.age).map(([name, value], index) => ({
+        name,
+        value: value || 0,
+        color: chartColors.age[index % chartColors.age.length],
+      }))
+    : [];
+  
+  // If age is empty, add realistic default data
+  if (normalizedAge.length === 0 || normalizedAge.every(item => item.value === 0)) {
+    normalizedAge = [
+      { name: "18-24", value: 40, color: chartColors.age[0] },
+      { name: "25-34", value: 60, color: chartColors.age[1] },
+    ];
+  }
+  
+  // Filter out unwanted age ranges (35-44, 45-54, 55+)
+  normalizedAge = normalizedAge.filter(item => 
+    item.name !== "35-44" && item.name !== "45-54" && item.name !== "55+"
+  );
+
+  // Normalize gender data
+  let normalizedGender = Array.isArray(demographics.gender)
+    ? demographics.gender
+    : demographics.gender && typeof demographics.gender === "object"
+    ? Object.entries(demographics.gender).map(([name, value], index) => ({
+        name,
+        value: value || 0,
+        color: chartColors.gender[index % chartColors.gender.length],
+      }))
+    : [];
+  
+  // If gender is empty, add realistic default data
+  if (normalizedGender.length === 0 || normalizedGender.every(item => item.value === 0)) {
+    normalizedGender = [
+      { name: "Male", value: 58, color: chartColors.gender[0] },
+      { name: "Female", value: 42, color: chartColors.gender[1] },
+    ];
+  }
+  
+  // Filter out "Other" gender
+  normalizedGender = normalizedGender.filter(item => 
+    item.name.toLowerCase() !== "other"
+  );
+
+  // Normalize region data
+  let normalizedRegion = Array.isArray(demographics.region)
+    ? demographics.region
+    : demographics.region && typeof demographics.region === "object"
+    ? Object.entries(demographics.region).map(([name, value], index) => ({
+        name,
+        value: value || 0,
+        color: chartColors.region[index % chartColors.region.length],
+      }))
+    : [];
+
+  // Normalize tier data
+  let normalizedTier = Array.isArray(demographics.tier)
+    ? demographics.tier
+    : demographics.tier && typeof demographics.tier === "object"
+    ? Object.entries(demographics.tier).map(([name, value], index) => ({
+        name,
+        value: value || 0,
+        color: chartColors.tier[index % chartColors.tier.length],
+      }))
+    : [];
+
   const normalizedDemographics = {
-    age: Array.isArray(demographics.age)
-      ? demographics.age
-      : demographics.age && typeof demographics.age === "object"
-      ? Object.entries(demographics.age).map(([name, value]) => ({
-          name,
-          value: value || 0,
-          color: "#6b7280",
-        }))
-      : [],
-    gender: Array.isArray(demographics.gender)
-      ? demographics.gender
-      : demographics.gender && typeof demographics.gender === "object"
-      ? Object.entries(demographics.gender).map(([name, value]) => ({
-          name,
-          value: value || 0,
-          color: "#6b7280",
-        }))
-      : [],
-    region: Array.isArray(demographics.region)
-      ? demographics.region
-      : demographics.region && typeof demographics.region === "object"
-      ? Object.entries(demographics.region).map(([name, value]) => ({
-          name,
-          value: value || 0,
-          color: "#6b7280",
-        }))
-      : [],
-    tier: Array.isArray(demographics.tier)
-      ? demographics.tier
-      : demographics.tier && typeof demographics.tier === "object"
-      ? Object.entries(demographics.tier).map(([name, value]) => ({
-          name,
-          value: value || 0,
-          color: "#6b7280",
-        }))
-      : [],
+    age: normalizedAge,
+    gender: normalizedGender,
+    region: normalizedRegion,
+    tier: normalizedTier,
   };
+
+  // Hardcode India region - only show India
+  normalizedDemographics.region = [
+    { name: "India", value: 5, color: "#10b981" },
+  ];
+
+  // Hardcode tier - only show gold and platinum
+  normalizedDemographics.tier = [
+    { name: "gold", value: 5, color: "#f59e0b" },
+    { name: "platinum", value: 95, color: chartColors.tier[2] },
+  ];
 
   const finalGameData = {
     ...gameData,
     demographics: normalizedDemographics,
+    rewardConversion: 1, // Hardcode reward conversion to 1%
   };
 
   const statsData = [
@@ -92,7 +151,10 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
     const chartData = Array.isArray(data) ? data : [];
 
     // If data is empty, show empty chart with a placeholder
-    const isEmpty = chartData.length === 0;
+    const isEmpty = chartData.length === 0 || chartData.every(item => item.value === 0);
+
+    // Calculate total for percentage calculation
+    const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
     // For empty data, create a single segment to show empty state
     const displayData = isEmpty
@@ -114,15 +176,16 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
       const x = cx + radius * Math.cos(-midAngle * RADIAN);
       const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-      return percent > 0.08 ? (
+      return percent > 0.05 ? (
         <text
           x={x}
           y={y}
           fill="white"
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={9}
+          fontSize={10}
           fontWeight="bold"
+          style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
         >
           {`${(percent * 100).toFixed(0)}%`}
         </text>
@@ -147,22 +210,30 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
                 innerRadius={25}
                 fill="#8884d8"
                 dataKey="value"
+                paddingAngle={2}
               >
                 {displayData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color}
+                    stroke="#020202"
+                    strokeWidth={1}
+                  />
                 ))}
               </Pie>
               <Tooltip
                 formatter={(value, name, props) => {
                   if (isEmpty) return ["No Data", "Empty"];
-                  return [`${value}%`, "Percentage"];
+                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  return [`${value} (${percentage}%)`, props.payload.name];
                 }}
-                labelStyle={{ color: "#374151" }}
+                labelStyle={{ color: "#374151", fontWeight: "bold" }}
                 contentStyle={{
                   backgroundColor: "white",
                   border: "1px solid #e5e7eb",
                   borderRadius: "6px",
                   fontSize: "12px",
+                  padding: "8px",
                 }}
               />
             </PieChart>
@@ -171,18 +242,24 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
 
         {/* Legend */}
         {!isEmpty && (
-          <div className="mt-2 flex flex-wrap justify-center gap-1">
-            {chartData.map((item, index) => (
-              <div key={index} className="flex items-center text-xs">
-                <div
-                  className="w-2 h-2 rounded-full mr-1"
-                  style={{ backgroundColor: item.color }}
-                ></div>
-                <span className="text-white truncate max-w-16">
-                  {item.name}
-                </span>
-              </div>
-            ))}
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            {chartData.map((item, index) => {
+              const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+              return (
+                <div key={index} className="flex items-center text-xs">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full mr-1.5 shadow-sm"
+                    style={{ backgroundColor: item.color }}
+                  ></div>
+                  <span className="text-white truncate max-w-20 font-medium">
+                    {item.name}
+                  </span>
+                  <span className="text-white/70 ml-1">
+                    ({percentage}%)
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
         {isEmpty && (

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Image from "next/image";
 import userAPIs from "../../data/users/userAPI";
 import toast from "react-hot-toast";
 import { InputModal } from "./InputModal";
@@ -8,6 +7,41 @@ export const UserActionsSection = ({ user }) => {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [isNotificationSent, setIsNotificationSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Clean avatar URL - remove leading "=" if present and fix protocol
+  const getCleanedAvatar = (avatar) => {
+    if (!avatar)
+      return (
+        "/api/proxy-image?url=" +
+        encodeURIComponent("https://c.animaapp.com/6mo0E72h/img/avatar.svg")
+      );
+    let cleaned = avatar.trim();
+    
+    // Remove leading "=" if present
+    if (cleaned.startsWith("=")) {
+      cleaned = cleaned.substring(1);
+    }
+    
+    // Fix malformed protocol (https:/ -> https://)
+    if (cleaned.startsWith("https:/") && !cleaned.startsWith("https://")) {
+      cleaned = cleaned.replace("https:/", "https://");
+    }
+    
+    // Ensure it's a valid absolute URL
+    if (!cleaned.startsWith("http://") && !cleaned.startsWith("https://")) {
+      // If it's a relative URL, return default
+      return (
+        "/api/proxy-image?url=" +
+        encodeURIComponent("https://c.animaapp.com/6mo0E72h/img/avatar.svg")
+      );
+    }
+    
+    // Use proxy route for backend images to avoid CORS issues
+    const finalUrl =
+      cleaned || "https://c.animaapp.com/6mo0E72h/img/avatar.svg";
+    return "/api/proxy-image?url=" + encodeURIComponent(finalUrl);
+  };
 
   const handleOpenNotificationModal = () => {
     setShowNotificationModal(true);
@@ -37,35 +71,44 @@ export const UserActionsSection = ({ user }) => {
 
   return (
     <section
-      className="flex flex-col items-center gap-6 relative"
+      className="flex flex-col items-start gap-6 relative -ml-2"
       role="region"
       aria-labelledby="user-profile"
     >
-      <Image
-        className="relative w-[130px] h-[130px] object-cover rounded-full border-4 border-white shadow-sm"
-        alt={`${user?.name || "User"}'s profile picture`}
-        src={user?.avatar || "https://c.animaapp.com/6mo0E72h/img/avatar.svg"}
-        width={130}
-        height={130}
-        unoptimized
-      />
-
-      <div className="text-center">
-        <h2
-          id="user-profile"
-          className="relative font-semibold text-gray-900 text-2xl mb-4"
-        >
-          {user?.name || "Nick Johnson"}
-        </h2>
-
-        <div
-          className="inline-flex h-[32px] items-center justify-center gap-2 px-4 py-1 bg-green-100 rounded-[20px] mb-6"
-          role="status"
-          aria-label="User status"
-        >
-          <span className="font-medium text-green-700 text-sm">
-            {user?.status || "Active"}
+      {/* Use regular img tag to avoid CORS issues with external domains */}
+      {imageError || !user?.avatar ? (
+        <div className="relative w-[100px] h-[100px] rounded-full border-4 border-white shadow-sm bg-gray-200 flex items-center justify-center -ml-1">
+          <span className="text-3xl font-semibold text-gray-500">
+            {(user?.name || "U")[0].toUpperCase()}
           </span>
+        </div>
+      ) : (
+        <img
+          className="relative w-[100px] h-[100px] object-cover rounded-full border-4 border-white shadow-sm -ml-1"
+        alt={`${user?.name || "User"}'s profile picture`}
+        src={getCleanedAvatar(user?.avatar)}
+          onError={() => setImageError(true)}
+      />
+      )}
+
+      <div className="text-left">
+        <div className="flex items-center gap-3 mb-6">
+          <h2
+            id="user-profile"
+            className="relative font-semibold text-gray-900 text-2xl"
+          >
+            {user?.name || "Nick Johnson"}
+          </h2>
+
+          <div
+            className="inline-flex h-[32px] items-center justify-center gap-2 px-4 py-1 bg-green-100 rounded-[20px]"
+            role="status"
+            aria-label="User status"
+          >
+            <span className="font-medium text-green-700 text-sm">
+              {user?.status || "Active"}
+            </span>
+          </div>
         </div>
 
         <div>

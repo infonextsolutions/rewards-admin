@@ -126,8 +126,9 @@ export const ActivitySummarySection = ({ user }) => {
       isCount: true
     },
     {
-      label: "Last Task Completed",
-      value: user?.lastTaskCompleted || "N/A",
+      label: "Current Wallet Balance",
+      value: user?.walletBalance !== undefined ? `${user.walletBalance.toLocaleString()} coins` : user?.coinBalance !== undefined ? `${user.coinBalance.toLocaleString()} coins` : user?.wallet?.balance !== undefined ? `${user.wallet.balance.toLocaleString()} coins` : "0 coins",
+      isHighlighted: true
     },
     {
       label: "Offers Redeemed + Last Offer Claimed",
@@ -136,7 +137,7 @@ export const ActivitySummarySection = ({ user }) => {
     },
     {
       label: "Total Coins Earned",
-      value: user?.totalCoinsEarned !== undefined ? `${user.totalCoinsEarned.toLocaleString()} coins earned` : "0 coins earned",
+      value: user?.totalCoinsEarned !== undefined && user.totalCoinsEarned > 0 ? `${user.totalCoinsEarned.toLocaleString()} coins earned` : user?.coinBalance !== undefined && user.coinBalance > 0 ? `${user.coinBalance.toLocaleString()} coins ` : user?.wallet?.balance !== undefined && user.wallet.balance > 0 ? `${user.wallet.balance.toLocaleString()} coins` : "0 coins earned",
       isHighlighted: true
     },
     {
@@ -145,15 +146,13 @@ export const ActivitySummarySection = ({ user }) => {
       isHighlighted: true
     },
     {
+      label: "Daily Challenges Completed",
+      value: user?.dailyChallengesCompleted !== undefined ? `${user.dailyChallengesCompleted} challenge${user.dailyChallengesCompleted !== 1 ? 's' : ''} completed` : user?.challengeProgress?.totalChallengesCompleted !== undefined ? `${user.challengeProgress.totalChallengesCompleted} challenge${user.challengeProgress.totalChallengesCompleted !== 1 ? 's' : ''} completed` : "0 challenges completed",
+    },
+    {
       label: "Redemptions Made (Summary View)",
       value: redemptionData.total,
       additionalInfo: redemptionData.breakdown
-    },
-    {
-      label: "Challenge Progress",
-      value: challengeProgress.name,
-      isProgress: challengeProgress.showProgress,
-      progressPercentage: challengeProgress.percentage
     },
     {
       label: "Spin Usage History",
@@ -163,27 +162,46 @@ export const ActivitySummarySection = ({ user }) => {
   ];
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full">
       {/* Header with Export Button */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <h3 className="text-lg font-semibold text-gray-800">Activity Summary</h3>
         <button
           onClick={() => {
-            const csvContent = [
-              ['Activity Type', 'Details', 'Additional Info'],
-              ...activityData.map(item => [
-                item.label, 
-                item.value, 
-                item.additionalInfo || ''
-              ])
-            ].map(row => row.join(',')).join('\n');
+            // Filter out empty items and prepare data for export
+            const validData = activityData.filter((item) => item && item.label);
 
-            const blob = new Blob([csvContent], { type: 'text/csv' });
+            // Create CSV content with proper formatting
+            const csvContent = [
+              ["Activity Type", "Details", "Additional Info"],
+              ...validData.map((item) => {
+                // Format value for CSV (handle special characters)
+                let formattedValue = item.value || "";
+                // Escape quotes and wrap in quotes if contains comma
+                if (formattedValue.includes(",") || formattedValue.includes('"')) {
+                  formattedValue = `"${formattedValue.replace(/"/g, '""')}"`;
+                }
+
+                // Format additional info
+                let formattedInfo = item.additionalInfo || "";
+                if (formattedInfo.includes(",") || formattedInfo.includes('"')) {
+                  formattedInfo = `"${formattedInfo.replace(/"/g, '""')}"`;
+                }
+
+                return [item.label, formattedValue, formattedInfo];
+              }),
+            ]
+              .map((row) => row.join(","))
+              .join("\n");
+
+            const blob = new Blob([csvContent], {
+              type: "text/csv;charset=utf-8;",
+            });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
+            const a = document.createElement("a");
+            a.style.display = "none";
             a.href = url;
-            a.download = `user_activity_${user?.userId || 'unknown'}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `user_activity_${user?.userId || user?.id || "unknown"}_${new Date().toISOString().split("T")[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -198,55 +216,10 @@ export const ActivitySummarySection = ({ user }) => {
           Export
         </button>
       </div>
-      {/* Activity Data - First Column */}
+      {/* Activity Data - Single Column Layout */}
       <div className="space-y-[30px]">
-        {activityData.slice(0, 5).map((item, index) => (
+        {activityData.filter((item) => item && item.label).map((item, index) => (
           <div key={index} className="flex items-start gap-8">
-            <dt className="w-[280px] flex-shrink-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
-              {item.label}
-            </dt>
-            <dd className="flex-1 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]">
-              {item.isTimestamp ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-green-600">🟢</span>
-                  <span>{item.value}</span>
-                </div>
-              ) : item.isCount ? (
-                <div className="flex items-center gap-2">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">
-                    {item.value.split(' ')[0]}
-                  </span>
-                  <span className="text-gray-600 text-xs">{item.value.split(' ').slice(1).join(' ')}</span>
-                </div>
-              ) : item.isHighlighted ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded px-2 py-1 inline-block">
-                  <span className="font-semibold text-yellow-800">{item.value}</span>
-                </div>
-              ) : item.isProgress ? (
-                <div className="space-y-1">
-                  <span>{item.value}</span>
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${item.progressPercentage || 0}%` }}></div>
-                  </div>
-                  <span className="text-xs text-gray-500">{item.progressPercentage?.toFixed(1) || 0}% complete</span>
-                </div>
-              ) : (
-                <div>
-                  <div>{item.value}</div>
-                  {item.additionalInfo && (
-                    <div className="text-xs text-gray-500 mt-1">{item.additionalInfo}</div>
-                  )}
-                </div>
-              )}
-            </dd>
-          </div>
-        ))}
-      </div>
-
-      {/* Activity Data - Second Column */}
-      <div className="space-y-[30px]">
-        {activityData.slice(5).map((item, index) => (
-          <div key={index + 5} className="flex items-start gap-8">
             <dt className="w-[280px] flex-shrink-0 [font-family:'DM_Sans-Medium',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
               {item.label}
             </dt>

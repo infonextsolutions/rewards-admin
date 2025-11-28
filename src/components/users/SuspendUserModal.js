@@ -1,9 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 
 const SuspendUserModal = ({ user, isOpen, onClose, onSuspend }) => {
+  // Clean avatar URL - remove leading "=" if present and fix protocol
+  const getCleanedAvatar = (avatar) => {
+    if (!avatar) return null;
+    let cleaned = avatar.trim();
+
+    if (cleaned.startsWith("=")) {
+      cleaned = cleaned.substring(1);
+    }
+
+    if (cleaned.startsWith("https:/") && !cleaned.startsWith("https://")) {
+      cleaned = cleaned.replace("https:/", "https://");
+    }
+
+    if (!cleaned.startsWith("http://") && !cleaned.startsWith("https://")) {
+      return null;
+    }
+
+    // Use proxy route for backend images to avoid CORS issues
+    return "/api/proxy-image?url=" + encodeURIComponent(cleaned);
+  };
   const [reason, setReason] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -142,16 +161,19 @@ const SuspendUserModal = ({ user, isOpen, onClose, onSuspend }) => {
         {/* User Information */}
         <div className="mb-4 p-3 bg-gray-50 rounded-md">
           <div className="flex items-center space-x-3">
-            {user.avatar ? (
-              <Image
-                src={user.avatar}
+            {getCleanedAvatar(user.avatar) ? (
+              <img
+                src={getCleanedAvatar(user.avatar)}
                 alt={`${user.name} avatar`}
                 className="w-10 h-10 rounded-full object-cover"
-                width={40}
-                height={40}
+                style={{ width: "40px", height: "40px", objectFit: "cover" }}
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
+                }}
               />
             ) : (
-              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-gray-500 text-lg">👤</span>
               </div>
             )}

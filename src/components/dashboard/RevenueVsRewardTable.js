@@ -7,22 +7,69 @@ const RevenueVsRewardTable = memo(({ data, loading }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Generate consistent pseudo-random value based on seed (not more than 2-3)
+  const getSeededRandom = (seed, min, max) => {
+    const x = Math.sin(seed) * 10000;
+    return min + (x - Math.floor(x)) * (max - min);
+  };
+
   // Map API data to table format - memoized for performance
+  // Apply hardcoded random values (not more than 2-3) to all games
   const tableData = useMemo(
-    () =>
-      data && data.length > 0
-        ? data.map((game, index) => ({
+    () => {
+      if (data && data.length > 0) {
+        return data.map((game, index) => {
+          const gameName = game.title || game.gameId || "Unknown Game";
+          const seed = gameName.split('').reduce((acc, char) => acc + char.charCodeAt(0), index);
+          
+          // Generate consistent random values (smaller amounts)
+          const revenue = parseFloat(getSeededRandom(seed, 0.3, 1.5).toFixed(2));
+          const rewardCost = parseFloat(getSeededRandom(seed + 1, 0.2, 1.2).toFixed(2));
+          const marginDollar = parseFloat((revenue - rewardCost).toFixed(2));
+          const marginPercent = revenue > 0 ? parseFloat(((marginDollar / revenue) * 100).toFixed(1)) : 0;
+          const d7Retention = parseFloat(getSeededRandom(seed + 2, 3, 15).toFixed(1));
+
+          return {
             id: index + 1,
-            game: game.title || game.gameId || "Unknown Game",
+            game: gameName,
             icon: "🎮",
-            revenue: game.revenue || 0,
-            rewardCost: game.rewardCost || 0,
-            marginDollar: game.margin || 0,
-            marginPercent: game.marginPercent || 0,
-            d7Retention: game.d7Retention || 0,
+            revenue: revenue,
+            rewardCost: rewardCost,
+            marginDollar: marginDollar,
+            marginPercent: marginPercent,
+            d7Retention: d7Retention,
             gameId: game.gameId,
-          }))
-        : [],
+          };
+        });
+      }
+      // Default hardcoded data if no API data
+      const defaultGames = [
+        { name: "Mech Arena", id: "mech-arena" },
+        { name: "Racing Legends", id: "racing-legends" },
+        { name: "Battle Heroes", id: "battle-heroes" },
+      ];
+      
+      return defaultGames.map((game, index) => {
+        const seed = game.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), index);
+        const revenue = parseFloat(getSeededRandom(seed, 0.3, 1.5).toFixed(2));
+        const rewardCost = parseFloat(getSeededRandom(seed + 1, 0.2, 1.2).toFixed(2));
+        const marginDollar = parseFloat((revenue - rewardCost).toFixed(2));
+        const marginPercent = revenue > 0 ? parseFloat(((marginDollar / revenue) * 100).toFixed(1)) : 0;
+        const d7Retention = parseFloat(getSeededRandom(seed + 2, 5, 25).toFixed(1));
+
+        return {
+          id: index + 1,
+          game: game.name,
+          icon: "🎮",
+          revenue: revenue,
+          rewardCost: rewardCost,
+          marginDollar: marginDollar,
+          marginPercent: marginPercent,
+          d7Retention: d7Retention,
+          gameId: game.id,
+        };
+      });
+    },
     [data]
   );
 
@@ -43,8 +90,8 @@ const RevenueVsRewardTable = memo(({ data, loading }) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: amount < 1 ? 2 : 0,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 

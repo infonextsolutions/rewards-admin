@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { gamesAPI } from "../../data/games";
 
 const FilterDropdown = ({
   label,
@@ -19,8 +20,8 @@ const FilterDropdown = ({
       className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <option value="all">{placeholder}</option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
+      {options.map((option, index) => (
+        <option key={`${option.value}-${index}`} value={option.value}>
           {option.label}
         </option>
       ))}
@@ -31,6 +32,7 @@ const FilterDropdown = ({
 const FilterControls = ({ filters, onFilterChange, loading = false }) => {
   const [searchValue, setSearchValue] = useState(filters.search || "");
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [customDateTimeout, setCustomDateTimeout] = useState(null);
 
   // Sync search value with filters prop
   useEffect(() => {
@@ -39,30 +41,89 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
     }
   }, [filters.search]);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (searchTimeout) {
         clearTimeout(searchTimeout);
       }
+      if (customDateTimeout) {
+        clearTimeout(customDateTimeout);
+      }
     };
-  }, [searchTimeout]);
+  }, [searchTimeout, customDateTimeout]);
 
   const dateRangeOptions = [
     { value: "today", label: "Today" },
     { value: "yesterday", label: "Yesterday" },
     { value: "last7days", label: "Last 7 Days" },
     { value: "last30days", label: "Last 30 Days" },
-    { value: "last90days", label: "Last 90 Days" },
-    { value: "lastYear", label: "Last Year" },
     { value: "custom", label: "Custom Range" },
+    { value: "all", label: "All" },
   ];
 
-  // Game options will be populated from API or can be left empty for now
-  // Users can search for games instead
-  const gameOptions = [
-    // Games will be populated dynamically or via search
-  ];
+  const [gameOptions, setGameOptions] = useState([]);
+  const [gameNameOptions, setGameNameOptions] = useState([]);
+  const [loadingGames, setLoadingGames] = useState(false);
+
+  // Fetch games for Game ID and Game Name filters
+  useEffect(() => {
+    const fetchGames = async () => {
+      setLoadingGames(true);
+      try {
+        // Fetch all active games
+        const response = await gamesAPI.getGames({
+          page: 1,
+          limit: 1000, // Get all games
+          status: "all", // Get both active and inactive for filter options
+        });
+
+        const games = response.games || [];
+
+        // Create Game ID options - prioritize gameId, fallback to id if gameId missing
+        // Use Map to ensure unique gameIds (in case of duplicates)
+        const gameIdMap = new Map();
+        games
+          .filter((game) => game.gameId || game.id)
+          .forEach((game) => {
+            const gameId = game.gameId || game.id;
+            // Only add if not already in map (handles duplicates)
+            if (!gameIdMap.has(gameId)) {
+              const gameTitle = game.title || game.name || "Untitled Game";
+              gameIdMap.set(gameId, {
+                value: gameId,
+                label: `${gameTitle} [ID: ${gameId}]`,
+              });
+            }
+          });
+
+        // Convert Map to array and sort
+        const gameIdOptions = Array.from(gameIdMap.values()).sort((a, b) =>
+          a.label.localeCompare(b.label)
+        );
+        setGameOptions(gameIdOptions);
+
+        // Create Game Name options (unique game names)
+        const uniqueGameNames = Array.from(
+          new Set(games.map((game) => game.title || game.name).filter(Boolean))
+        ).sort();
+        const gameNameOptions = uniqueGameNames.map((name) => ({
+          value: name,
+          label: name,
+        }));
+        setGameNameOptions(gameNameOptions);
+      } catch (error) {
+        console.error("Error fetching games for filters:", error);
+        // Set empty arrays on error to prevent UI issues
+        setGameOptions([]);
+        setGameNameOptions([]);
+      } finally {
+        setLoadingGames(false);
+      }
+    };
+
+    fetchGames();
+  }, []);
 
   // Source options matching API collection (facebook, google, direct)
   const sourceOptions = [
@@ -164,6 +225,8 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
                 onFilterChange(key, "last30days");
               } else if (key === "customStartDate" || key === "customEndDate") {
                 onFilterChange(key, "");
+              } else if (key === "gameName") {
+                onFilterChange(key, "all");
               } else {
                 onFilterChange(key, "all");
               }
@@ -215,7 +278,7 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
               onFilterChange("search", searchValue);
             }}
             disabled={loading}
-            placeholder="Search by user email, name, mobile or game title, gameId..."
+            placeholder="Search by game title or game ID"
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {searchValue && (
@@ -276,7 +339,7 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
         </form>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="flex flex-col">
           <label className="text-sm font-medium text-gray-700 mb-2">
             Date Range
@@ -287,8 +350,8 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
             disabled={loading}
             className="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {dateRangeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
+            {dateRangeOptions.map((option, index) => (
+              <option key={`${option.value}-${index}`} value={option.value}>
                 {option.label}
               </option>
             ))}
@@ -298,9 +361,17 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
               <input
                 type="date"
                 value={filters.customStartDate || ""}
-                onChange={(e) =>
-                  onFilterChange("customStartDate", e.target.value)
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Clear any existing timeout
+                  if (customDateTimeout) {
+                    clearTimeout(customDateTimeout);
+                  }
+                  // Update the filter immediately for UI responsiveness
+                  onFilterChange("customStartDate", value);
+                  // Note: API call will be debounced in Dashboard component
+                  // when both dates are set, so we don't need to debounce here
+                }}
                 disabled={loading}
                 className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Start Date"
@@ -308,9 +379,17 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
               <input
                 type="date"
                 value={filters.customEndDate || ""}
-                onChange={(e) =>
-                  onFilterChange("customEndDate", e.target.value)
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Clear any existing timeout
+                  if (customDateTimeout) {
+                    clearTimeout(customDateTimeout);
+                  }
+                  // Update the filter immediately for UI responsiveness
+                  onFilterChange("customEndDate", value);
+                  // Note: API call will be debounced in Dashboard component
+                  // when both dates are set, so we don't need to debounce here
+                }}
                 disabled={loading}
                 className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="End Date"
@@ -325,7 +404,16 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
           onChange={(value) => onFilterChange("game", value)}
           options={gameOptions}
           placeholder="All Games"
-          disabled={loading}
+          disabled={loading || loadingGames}
+        />
+
+        <FilterDropdown
+          label="Game Name"
+          value={filters.gameName}
+          onChange={(value) => onFilterChange("gameName", value)}
+          options={gameNameOptions}
+          placeholder="All Game Names"
+          disabled={loading || loadingGames}
         />
 
         <FilterDropdown
@@ -358,10 +446,14 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
           )
             return null;
 
+          // Skip undefined values
+          if (value === undefined || value === null) return null;
+
           const getLabel = (key, value) => {
             const optionsMap = {
               dateRange: dateRangeOptions,
               game: gameOptions,
+              gameName: gameNameOptions,
               source: sourceOptions,
               gender: genderOptions,
             };
@@ -372,8 +464,14 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
             // For search, show the search term
             if (key === "search") return `Search: ${value}`;
 
-            // For gameId, show the game ID
-            if (key === "game") return `Game: ${value}`;
+            // For gameId, show the game title and ID
+            if (key === "game") {
+              const gameOption = gameOptions.find((opt) => opt.value === value);
+              return gameOption
+                ? `Game: ${gameOption.label}`
+                : `Game ID: ${value}`;
+            }
+            if (key === "gameName") return `Game Name: ${value}`;
 
             return value;
           };
@@ -391,6 +489,8 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
                     setSearchValue("");
                   } else if (key === "dateRange") {
                     onFilterChange(key, "last30days");
+                  } else if (key === "gameName") {
+                    onFilterChange(key, "all");
                   } else {
                     onFilterChange(key, "all");
                   }

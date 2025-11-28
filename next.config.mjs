@@ -8,7 +8,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "**", // Allow all HTTPS images (for user avatars from various sources)
+        hostname: "rewardsapi.hireagent.co",
+      },
+      {
+        protocol: "https",
+        hostname: "*.hireagent.co",
       },
     ],
   },

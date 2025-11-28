@@ -44,15 +44,24 @@ export const UserDetailPage = ({ user }) => {
             Last updated: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+        <div className="flex items-center gap-3">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
             user?.status === 'Active' 
               ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
+              : user?.status === 'Inactive'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
           }`}>
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              {user?.status === 'Active' ? (
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              ) : (
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              )}
+            </svg>
             {user?.status || 'Unknown'}
           </span>
-          <span className="text-sm text-gray-500">ID: {user?.userId}</span>
+          <span className="text-sm text-gray-600 font-medium">Active ID: {user?.userId || user?.id || 'N/A'}</span>
         </div>
       </div>
 

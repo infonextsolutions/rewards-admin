@@ -225,6 +225,13 @@ export default function ConversionSettings() {
         <h3 className="text-md font-semibold text-gray-900 mb-4">
           Default Conversion Rule
         </h3>
+        <div className="mb-3">
+          <p className="text-sm text-blue-700 bg-blue-50 p-2 rounded">
+            This is the default conversion rule that will be used for all
+            currencies unless a custom rule is set below. If users' currency
+            does not match any custom rule, this rule applies.
+          </p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="text-sm text-gray-600 mb-1">Coins Per Dollar</div>
@@ -354,31 +361,7 @@ export default function ConversionSettings() {
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Coins Per Dollar <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={editFormData.coinsPerDollar}
-                    onChange={(e) =>
-                      setEditFormData({
-                        ...editFormData,
-                        coinsPerDollar: e.target.value,
-                      })
-                    }
-                    placeholder="100"
-                    min="1"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Number of coins equal to $1
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Coins Per Unit <span className="text-red-500">*</span>
+                    Coins Per Dollor <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -396,7 +379,7 @@ export default function ConversionSettings() {
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Number of coins in the conversion unit
+                    Number of coins per Dollor
                   </p>
                 </div>
 

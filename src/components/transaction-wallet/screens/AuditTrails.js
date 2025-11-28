@@ -98,11 +98,19 @@ export default function AuditTrails() {
         // Load actions
         const actionsResponse = await TRANSACTION_API.getAuditActions();
         if (actionsResponse.data?.success && actionsResponse.data?.data) {
-          setAvailableActions(
-            Array.isArray(actionsResponse.data.data)
-              ? actionsResponse.data.data
-              : []
-          );
+          // Filter out actions that should be hidden
+          const hiddenActions = [
+            'ADJUST_BALANCE',
+            'EXPORT_DATA',
+            'FREEZE_WALLET',
+            'UNFREEZE_WALLET'
+          ];
+          const filteredActions = Array.isArray(actionsResponse.data.data)
+            ? actionsResponse.data.data.filter(
+                (action) => !hiddenActions.includes(action)
+              )
+            : [];
+          setAvailableActions(filteredActions);
         }
 
         // Load admins and users for filter dropdowns

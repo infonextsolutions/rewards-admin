@@ -6,18 +6,12 @@ export const BalanceTierSection = ({ user }) => {
     { label: "Current XP (Read-only)", value: user?.currentXP || "2,850 XP" },
     { label: "Current Coin Balance (Read-only)", value: user?.coinBalance || "15,200 Coins" },
     { label: "XP Tier & Badge", value: user?.tier || "Gold", isBadge: true },
-    { label: "Redemption Count & Types", value: user?.redemptionCount || "3 redemptions (2 PayPal, 1 Gift Card)" },
-    { label: "Redemption Preference", value: user?.redemptionPreference || "PayPal", isPreference: true },
+    { label: "Redemption Count & Types", value: user?.redemptionCountAndTypes || "0 redemptions" },
+    { label: "Redemption Preference", value: user?.redemptionPreference && user?.redemptionPreference !== "NONE" && user?.redemptionPreference !== "N/A" ? user.redemptionPreference : "N/A", isPreference: true },
   ];
 
   const engagementData = [
-    { label: "Most Played Game", value: user?.mostPlayedGame || "Spin Master" },
-    { label: "Last Game Played", value: user?.lastGamePlayed || "Coin Tycoon – May 27" },
     { label: "Total Games Downloaded", value: user?.totalGamesDownloaded || "17 games" },
-    { label: "Avg. Session Duration", value: user?.avgSessionDuration || "12 minutes" },
-    { label: "Primary Earning Source", value: user?.primaryEarningSource || "Surveys (BitLabs)" },
-    { label: "Preferred Game Category", value: user?.preferredGameCategory || "Puzzle & Trivia" },
-    { label: "Onboarding Goal Selected", value: user?.onboardingGoal || "Earn Extra Income" },
     { label: "Notification Settings", value: user?.notificationSettings || "Push Enabled, Email Disabled" },
   ];
 
@@ -63,7 +57,7 @@ export const BalanceTierSection = ({ user }) => {
                   className={`inline-flex h-[30px] items-center gap-1.5 px-3 py-1.5 absolute ${topPositions[index]} left-0 bg-[#fff2ab] rounded-[20px] border border-solid border-[#ffde5b]`}
                 >
                   <div className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans',Helvetica] font-semibold text-[#464154] text-sm tracking-[0] leading-[normal]">
-                    Gold
+                    {user?.tier || "Gold"}
                   </div>
                   <Image
                     className="relative w-5 h-5 mt-[-1.00px] mb-[-1.00px] aspect-[1]"
@@ -122,7 +116,7 @@ export const BalanceTierSection = ({ user }) => {
               key={index}
               className="relative w-fit mt-[-1.00px] [font-family:'DM_Sans',Helvetica] font-medium text-black text-sm tracking-[0] leading-[normal]"
             >
-              {index === 7 ? ( // Notification settings with icon
+              {item.label === "Notification Settings" ? ( // Notification settings with icon
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center px-2 py-1 rounded text-xs ${
                     item.value.includes('Push Enabled') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'

@@ -57,9 +57,9 @@ export default function TransactionLog({ onSneakPeek }) {
         );
         const statusData = await statusResponse.json();
         if (statusData.success) {
-          // SW-35: Filter to only show relevant statuses (exclude 'processing')
+          // SW-35: Filter to only show relevant statuses (exclude 'processing' and 'pending')
           const relevantStatuses = statusData.data.filter(
-            (s) => s !== "processing"
+            (s) => s !== "processing" && s !== "pending"
           );
           // Capitalize first letter for display
           setStatusOptions(
@@ -76,14 +76,7 @@ export default function TransactionLog({ onSneakPeek }) {
         if (typesData.success) {
           // SW-35: Filter to only show commonly used transaction types
           const commonTypes = typesData.data.filter((t) =>
-            [
-              "credit",
-              "debit",
-              "reward",
-              "redemption",
-              "adjustment",
-              "bonus",
-            ].includes(t)
+            ["credit", "debit", "redemption", "adjustment"].includes(t)
           );
           // Capitalize first letter for display
           setTransactionTypes(
@@ -93,15 +86,8 @@ export default function TransactionLog({ onSneakPeek }) {
       } catch (error) {
         console.error("Error fetching filter options:", error);
         // SW-35: Fallback to limited, relevant options only
-        setStatusOptions(["Completed", "Pending", "Failed", "Rejected"]);
-        setTransactionTypes([
-          "Credit",
-          "Debit",
-          "Reward",
-          "Redemption",
-          "Adjustment",
-          "Bonus",
-        ]);
+        setStatusOptions(["Completed", "Failed", "Rejected"]);
+        setTransactionTypes(["Credit", "Debit", "Redemption", "Adjustment"]);
       } finally {
         setLoadingOptions(false);
       }
@@ -123,6 +109,11 @@ export default function TransactionLog({ onSneakPeek }) {
           type: filters.type ? filters.type.toLowerCase() : "",
           status: filters.status ? filters.status.toLowerCase() : "",
         });
+
+        // Always exclude pending status transactions unless specifically filtered
+        if (!filters.status || filters.status.toLowerCase() !== "pending") {
+          params.append("excludeStatus", "pending");
+        }
 
         // Add date range filter (SW-33)
         if (filters.dateRange) {
@@ -174,9 +165,14 @@ export default function TransactionLog({ onSneakPeek }) {
         const result = await response.json();
 
         if (result.success && result.data) {
+          // Filter out transactions with status "pending"
+          const filteredTransactions = result.data.transactions.filter(
+            (t) => t.status?.toLowerCase() !== "pending"
+          );
+
           // Transform API data to component format
           // SW-36: Backend already filters out processing transactions
-          const transformedTransactions = result.data.transactions.map((t) => ({
+          const transformedTransactions = filteredTransactions.map((t) => ({
             id: t.transactionId || t.referenceId || t._id,
             userId: t.userId || t.user?._id || "-",
             userName:
@@ -455,7 +451,7 @@ export default function TransactionLog({ onSneakPeek }) {
           <FilterDropdown
             filterId="approval"
             label="Approval"
-            options={["Approved", "Pending", "Rejected"]}
+            options={["Approved", "Rejected"]}
             value={filters.approval}
             onChange={handleFilterChange}
           />

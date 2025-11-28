@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSearch } from '../../contexts/SearchContext';
-import { useUsers } from '../../hooks/useUsers';
-import { usePagination } from '../../hooks/usePagination';
-import { USER_FILTER_OPTIONS } from '../../data/users';
-import UsersHeader from '../../components/users/UsersHeader';
-import UsersResultsSummary from '../../components/users/UsersResultsSummary';
-import BulkActionsBar from '../../components/ui/BulkActionsBar';
-import UsersTable from '../../components/users/UsersTable';
-import Pagination from '../../components/ui/Pagination';
-import EditUserModal from '../../components/users/EditUserModal';
-import SuspendUserModal from '../../components/users/SuspendUserModal';
-import toast from 'react-hot-toast';
-import userAPIs from '../../data/users/userAPI';
+import { useState, useEffect } from "react";
+import { useSearch } from "../../contexts/SearchContext";
+import { useUsers } from "../../hooks/useUsers";
+import { usePagination } from "../../hooks/usePagination";
+import { USER_FILTER_OPTIONS } from "../../data/users";
+import UsersHeader from "../../components/users/UsersHeader";
+import UsersResultsSummary from "../../components/users/UsersResultsSummary";
+import BulkActionsBar from "../../components/ui/BulkActionsBar";
+import UsersTable from "../../components/users/UsersTable";
+import Pagination from "../../components/ui/Pagination";
+import EditUserModal from "../../components/users/EditUserModal";
+import SuspendUserModal from "../../components/users/SuspendUserModal";
+import toast from "react-hot-toast";
+import userAPIs from "../../data/users/userAPI";
 
 export default function UsersPage() {
   const { searchTerm, registerSearchHandler } = useSearch();
@@ -27,7 +27,7 @@ export default function UsersPage() {
     bulkAction,
     handlePageChange: apiHandlePageChange,
     handleItemsPerPageChange,
-    applyFilters
+    applyFilters,
   } = useUsers();
 
   const [selectedFilters, setSelectedFilters] = useState({
@@ -39,24 +39,52 @@ export default function UsersPage() {
     ageRange: "",
   });
 
-  const [localSearchTerm, setLocalSearchTerm] = useState('');
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
 
   const [editingUser, setEditingUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [suspendingUser, setSuspendingUser] = useState(null);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [dynamicFilterOptions, setDynamicFilterOptions] =
+    useState(USER_FILTER_OPTIONS);
 
   // API handles filtering, use users directly
   const paginatedUsers = users;
 
+  // Effect to dynamically update location filter options
+  useEffect(() => {
+    if (users && users.length > 0) {
+      const uniqueLocations = [
+        ...new Set(
+          users
+            .map((user) => user.location)
+            .filter((location) => location && location !== "N/A")
+        ),
+      ].sort();
+
+      setDynamicFilterOptions((prevOptions) =>
+        prevOptions.map((filter) => {
+          if (filter.id === "location") {
+            return {
+              ...filter,
+              options:
+                uniqueLocations.length > 0 ? uniqueLocations : filter.options,
+            };
+          }
+          return filter;
+        })
+      );
+    }
+  }, [users]);
+
   // Console log users data from backend
   useEffect(() => {
-    console.log('🟡 Users Page - Users data:', users);
-    console.log('🟡 Users Page - First user example:', users?.[0]);
+    console.log("🟡 Users Page - Users data:", users);
+    console.log("🟡 Users Page - First user example:", users?.[0]);
     if (users?.[0]) {
-      console.log('🟡 Users Page - User ID field:', users[0].id);
-      console.log('🟡 Users Page - User userId field:', users[0].userId);
+      console.log("🟡 Users Page - User ID field:", users[0].id);
+      console.log("🟡 Users Page - User userId field:", users[0].userId);
     }
   }, [users]);
 
@@ -70,7 +98,7 @@ export default function UsersPage() {
     selectedFilters.memberSince,
     selectedFilters.status,
     selectedFilters.gender,
-    selectedFilters.ageRange
+    selectedFilters.ageRange,
   ]);
 
   const handleFilterChange = (filterId, value) => {
@@ -82,17 +110,19 @@ export default function UsersPage() {
 
   const handleExport = async () => {
     try {
-      toast.loading('Exporting users...', { id: 'export-users' });
-      await userAPIs.exportUsers('csv');
-      toast.success('Users exported successfully!', { id: 'export-users' });
+      toast.loading("Exporting users...", { id: "export-users" });
+      await userAPIs.exportUsers("csv");
+      toast.success("Users exported successfully!", { id: "export-users" });
     } catch (error) {
-      console.error('Error exporting users:', error);
-      toast.error(error.message || 'Failed to export users', { id: 'export-users' });
+      console.error("Error exporting users:", error);
+      toast.error(error.message || "Failed to export users", {
+        id: "export-users",
+      });
     }
   };
 
   const handleClearFilters = () => {
-    setLocalSearchTerm('');
+    setLocalSearchTerm("");
     setSelectedFilters({
       tierLevel: "",
       location: "",
@@ -110,29 +140,66 @@ export default function UsersPage() {
 
   const handleSaveUser = async (updatedUserData) => {
     try {
-      // Check if account status changed
-      const statusChanged = editingUser.status !== updatedUserData.accountStatus;
+      // Map frontend field names to backend field names
+      const backendData = {};
 
-      // Update user profile (without status)
-      const { accountStatus, ...userDataWithoutStatus } = updatedUserData;
-      const response = await userAPIs.updateUser(editingUser.id, userDataWithoutStatus);
-
-      // If status changed, call the status API separately
-      if (statusChanged && accountStatus) {
-        const newStatus = accountStatus === 'Active' ? 'active' : 'inactive';
-        await userAPIs.updateUserStatus(editingUser.id, newStatus, '');
+      // Map firstName and lastName (already in correct format from form)
+      if (updatedUserData.firstName) {
+        backendData.firstName = updatedUserData.firstName;
+      }
+      // Only include lastName if it's provided (not undefined or empty)
+      if (
+        updatedUserData.lastName !== undefined &&
+        updatedUserData.lastName !== ""
+      ) {
+        backendData.lastName = updatedUserData.lastName;
       }
 
+      // Map email
+      if (updatedUserData.email) {
+        backendData.email = updatedUserData.email;
+      }
+
+      // Map phoneNumber to mobile (backend accepts both mobile and phone)
+      if (updatedUserData.phoneNumber) {
+        backendData.mobile = updatedUserData.phoneNumber;
+        backendData.phone = updatedUserData.phoneNumber; // Also set phone as alias
+      }
+
+      // Map gender
+      if (updatedUserData.gender) {
+        backendData.gender = updatedUserData.gender;
+      }
+
+      // Map location
+      if (updatedUserData.location) {
+        backendData.location = updatedUserData.location;
+        backendData.country = updatedUserData.location; // Also set country
+      }
+
+      // Map currentTier to tier
+      if (updatedUserData.currentTier) {
+        backendData.tier = updatedUserData.currentTier;
+      }
+
+      // Map accountStatus to status
+      if (updatedUserData.accountStatus) {
+        backendData.status = updatedUserData.accountStatus;
+      }
+
+      // Update user profile
+      const response = await userAPIs.updateUser(editingUser.id, backendData);
+
       if (response.success) {
-        toast.success('User profile updated successfully!');
+        toast.success("User profile updated successfully!");
         setShowEditModal(false);
         setEditingUser(null);
         // Refresh users list
         await applyFilters(localSearchTerm, selectedFilters);
       }
     } catch (error) {
-      console.error('Error saving user:', error);
-      toast.error(error.message || 'Failed to update user profile');
+      console.error("Error saving user:", error);
+      toast.error(error.message || "Failed to update user profile");
       throw error;
     }
   };
@@ -148,15 +215,15 @@ export default function UsersPage() {
       setShowSuspendModal(false);
       setSuspendingUser(null);
     } catch (error) {
-      console.error('Error suspending user:', error);
+      console.error("Error suspending user:", error);
       throw error;
     }
   };
 
   const handleSelectUser = (userId) => {
-    setSelectedUsers(prev => {
+    setSelectedUsers((prev) => {
       if (prev.includes(userId)) {
-        return prev.filter(id => id !== userId);
+        return prev.filter((id) => id !== userId);
       } else {
         return [...prev, userId];
       }
@@ -167,14 +234,14 @@ export default function UsersPage() {
     if (selectedUsers.length === paginatedUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(paginatedUsers.map(user => user.id));
+      setSelectedUsers(paginatedUsers.map((user) => user.id));
     }
   };
 
   const handleBulkAction = async (action) => {
     const selectedCount = selectedUsers.length;
     if (selectedCount === 0) {
-      toast.error('Please select at least one user');
+      toast.error("Please select at least one user");
       return;
     }
 
@@ -193,7 +260,7 @@ export default function UsersPage() {
   return (
     <div className="w-full">
       <UsersHeader
-        filterOptions={USER_FILTER_OPTIONS}
+        filterOptions={dynamicFilterOptions}
         selectedFilters={selectedFilters}
         onFilterChange={handleFilterChange}
         onExport={handleExport}

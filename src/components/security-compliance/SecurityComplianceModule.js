@@ -8,12 +8,12 @@ import EditSecuritySettingsModal from "./EditSecuritySettingsModal";
 import { useSecuritySettings } from "../../hooks/useSecuritySettings";
 
 const TABS = [
-  { id: "biometric", label: "Biometric & Retry Settings", icon: "🔐" },
+  // { id: "biometric", label: "Biometric & Retry Settings", icon: "🔐" },
   { id: "gdpr", label: "GDPR & Legal Compliance", icon: "📋" },
 ];
 
 export default function SecurityComplianceModule({ userData = [] }) {
-  const [activeTab, setActiveTab] = useState("biometric");
+  const [activeTab, setActiveTab] = useState("gdpr");
   const [notification, setNotification] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedSetting, setSelectedSetting] = useState(null);
@@ -194,8 +194,7 @@ export default function SecurityComplianceModule({ userData = [] }) {
           Security, Consent & Compliance
         </h1>
         <p className="text-gray-600 mt-1">
-          Manage biometric authentication, retry settings, GDPR compliance, and
-          legal disclosures
+          Manage GDPR compliance and legal disclosures
         </p>
       </div>
 

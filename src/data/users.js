@@ -247,7 +247,7 @@ export const USER_FILTER_OPTIONS = [
   {
     id: "status",
     label: "Status",
-    options: ["Active", "Inactive", "Paused"],
+    options: ["Active", "Inactive"],
   },
   {
     id: "gender",

@@ -3,39 +3,51 @@ import NextImage from "next/image";
 import { useState, useEffect } from "react";
 
 function UserAvatar({ src, alt, className }) {
-  const [imgError, setImgError] = useState(false);
+  const getCleanedSrc = (url) => {
+    if (!url) return null;
+    let cleaned = url.trim();
 
-  useEffect(() => {
-    if (!src) {
-      setImgError(true);
-      return;
+    if (cleaned.startsWith("=")) {
+      cleaned = cleaned.substring(1);
     }
 
-    // Use native browser Image constructor (not Next.js Image component)
-    const img = new window.Image();
-    img.onerror = () => setImgError(true);
-    img.onload = () => setImgError(false);
-    img.src = src;
-  }, [src]);
+    if (cleaned.startsWith("https:/") && !cleaned.startsWith("https://")) {
+      cleaned = cleaned.replace("https:/", "https://");
+    }
 
-  if (imgError || !src) {
-    return (
-      <div
-        className={`${className} bg-gray-200 rounded-full items-center justify-center text-sm flex flex-shrink-0`}
-      >
-        👤
-      </div>
-    );
+    if (!cleaned.startsWith("http://") && !cleaned.startsWith("https://")) {
+      return null;
+    }
+
+    // Use proxy route for backend images to avoid CORS issues
+    return "/api/proxy-image?url=" + encodeURIComponent(cleaned);
+  };
+
+  const cleanedSrc = getCleanedSrc(src);
+
+  if (!cleanedSrc) {
+    return null;
   }
 
   return (
-    <NextImage
-      className={className}
-      src={src}
+    <img
+      className={`${className} rounded-full object-cover`}
+      src={cleanedSrc}
       alt={alt}
-      width={40}
-      height={40}
-      unoptimized
+      style={{
+        width: "28px",
+        height: "28px",
+        minWidth: "28px",
+        maxWidth: "28px",
+        minHeight: "28px",
+        maxHeight: "28px",
+        objectFit: "cover",
+        display: "block",
+        flexShrink: 0,
+      }}
+      onError={(e) => {
+        e.target.style.display = "none";
+      }}
     />
   );
 }
@@ -68,16 +80,16 @@ export default function UsersTable({
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
               </th> */}
-              <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[140px]">
+              <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[180px]">
                 Name
               </th>
               <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden xl:table-cell min-w-[80px]">
                 User ID
               </th>
-              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[160px]">
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[160px]">
                 Email ID
               </th>
-              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell min-w-[110px]">
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden lg:table-cell min-w-[110px]">
                 Phone
               </th>
               <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden xl:table-cell min-w-[60px]">
@@ -86,7 +98,7 @@ export default function UsersTable({
               <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden xl:table-cell min-w-[60px]">
                 Age
               </th>
-              <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden md:table-cell min-w-[120px]">
+              <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] hidden md:table-cell min-w-[120px]">
                 Location
               </th>
               <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[80px]">
@@ -119,15 +131,15 @@ export default function UsersTable({
                 </td> */}
 
                 {/* Name Column */}
-                <td className="py-4 px-3">
-                  <div className="flex items-center gap-2">
+                <td className="py-4 px-3 text-center">
+                  <div className="flex items-center justify-center gap-2.5">
                     <UserAvatar
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
+                      className="w-7 h-7 rounded-full object-cover flex-shrink-0"
                       src={row.avatar}
                       alt={`${row.name} avatar`}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-black text-sm tracking-[0.1px] leading-5 truncate">
+                      <div className="font-medium text-black text-sm tracking-[0.1px] leading-5 truncate text-center">
                         {row.name}
                       </div>
                     </div>
@@ -142,7 +154,7 @@ export default function UsersTable({
                 </td>
 
                 {/* Email Column */}
-                <td className="py-4 px-2">
+                <td className="py-4 px-2 text-center">
                   <div
                     className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate"
                     title={row.email}
@@ -152,7 +164,7 @@ export default function UsersTable({
                 </td>
 
                 {/* Phone Column */}
-                <td className="py-4 px-2 hidden lg:table-cell">
+                <td className="py-4 px-2 text-center hidden lg:table-cell">
                   <div
                     className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate"
                     title={row.phone}
@@ -176,7 +188,7 @@ export default function UsersTable({
                 </td>
 
                 {/* Location Column */}
-                <td className="py-4 px-2 hidden md:table-cell">
+                <td className="py-4 px-2 text-center hidden md:table-cell">
                   <div
                     className="font-medium text-[#333333] text-sm tracking-[0.1px] leading-5 truncate"
                     title={row.location}

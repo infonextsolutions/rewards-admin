@@ -13,9 +13,9 @@ const menuItems = [
     icon: '/Offers.png',
     href: '/offers',
     subItems: [
-      { id: 'offers-listing', label: 'Offers Listing', href: '/offers' },
+      // { id: 'offers-listing', label: 'Offers Listing', href: '/offers' },
       { id: 'games-listing', label: 'Games Listing', href: '/offers/games' },
-      { id: 'view-tasks', label: 'View Tasks', href: '/offers/tasks' },
+      // { id: 'view-tasks', label: 'View Tasks', href: '/offers/tasks' },
       { id: 'display-rules', label: 'Game Display Rules', href: '/offers/display-rules' },
       { id: 'progression-rules', label: 'Task Progression Rules', href: '/offers/progression-rules' },
       { id: 'gameplay-settings', label: 'Welcome Bonus Timer Rules', href: '/offers/gameplay-settings' }
@@ -24,7 +24,7 @@ const menuItems = [
   { id: 'surveys-offers', label: 'Surveys & Non-Gaming Offers', icon: '/Offers.png', href: '/surveys-offers' },
   { id: 'challenges-bonuses', label: 'Daily Challenges & Bonuses', icon: '/Rewards.png', href: '/challenges-bonuses' },
   { id: 'analytics', label: 'Marketing Attribution and Analytics', icon: '/Analytics and Reports.png', href: '/analytics' },
-  { id: 'creative-management', label: 'Creative Management', icon: '/Fraud Monitoring.png', href: '/creative-management' },
+  // { id: 'creative-management', label: 'Creative Management', icon: '/Fraud Monitoring.png', href: '/creative-management' },
   { id: 'transaction-wallet', label: 'Transaction & Wallet Manager', icon: '/Transactions.png', href: '/transaction-wallet' },
   { id: 'rewards', label: 'Rewards', icon: '/Rewards.png', href: '/rewards' },
   { id: 'spin-wheel', label: 'Spin Wheel Manager', icon: '/Rewards.png', href: '/spin-wheel' },
@@ -34,7 +34,7 @@ const menuItems = [
   // { id: 'remote-config', label: 'Remote Config', icon: '/Settings.png', href: '/remote-config' },
   //  { id: 'push-notifications', label: 'Push Notification Center', icon: '/Settings.png', href: '/push-notifications' },
   { id: 'security-compliance', label: 'Security & Compliance', icon: '/Settings.png', href: '/security-compliance' },
-  { id: 'settings-integrations', label: 'Settings & Integrations', icon: '/Integrations.png', href: '/settings-integrations' },
+  // { id: 'settings-integrations', label: 'Settings & Integrations', icon: '/Integrations.png', href: '/settings-integrations' },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {

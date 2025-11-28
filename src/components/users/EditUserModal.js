@@ -5,11 +5,11 @@ import Image from 'next/image';
 
 const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phoneNumber: '',
     gender: '',
-    dateOfBirth: '',
     location: '',
     currentTier: '',
     accountStatus: ''
@@ -19,20 +19,31 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const genderOptions = ['male', 'female'];
-  const countryOptions = ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Spain', 'Italy', 'India', 'Japan', 'Other'];
-  const tierOptions = ['Bronze', 'Silver', 'Gold', 'Platinum'];
+  const genderOptions = ['male', 'female', 'other'];
+  const tierOptions = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Free'];
   const statusOptions = ['Active', 'Inactive'];
 
   // Initialize form data when user prop changes
   useEffect(() => {
     if (user && isOpen) {
+      // Split name into firstName and lastName
+      let firstName = '';
+      let lastName = '';
+      if (user.name) {
+        const nameParts = user.name.trim().split(/\s+/);
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      } else if (user.firstName) {
+        firstName = user.firstName || '';
+        lastName = user.lastName || '';
+      }
+
       setFormData({
-        name: user.name || '',
+        firstName: firstName,
+        lastName: lastName,
         email: user.email || '',
-        phoneNumber: user.phone || user.phoneNumber || '',
+        phoneNumber: user.phone || user.mobile || user.phoneNumber || '',
         gender: user.gender?.toLowerCase() || '',
-        dateOfBirth: user.dateOfBirth || '',
         location: user.location || user.country || '',
         currentTier: user.tier || user.currentTier || '',
         accountStatus: user.status || user.accountStatus || 'Active'
@@ -61,16 +72,42 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required';
+    // First name validation (required)
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = "First name must be at least 2 characters";
+    } else if (formData.firstName.trim().length > 50) {
+      newErrors.firstName = "First name must be less than 50 characters";
+    }
+
+    // Last name validation (optional, but if provided must not be empty)
+    if (formData.lastName && formData.lastName.trim().length === 0) {
+      newErrors.lastName = "Last name cannot be empty if provided";
+    } else if (formData.lastName && formData.lastName.trim().length > 50) {
+      newErrors.lastName = "Last name must be less than 50 characters";
     }
 
     // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
+    } else if (formData.email.length > 255) {
+      newErrors.email = "Email must be less than 255 characters";
+    }
+
+    // Phone validation (optional but validate format if provided)
+    if (formData.phoneNumber && formData.phoneNumber.trim()) {
+      const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(formData.phoneNumber.trim())) {
+        newErrors.phoneNumber = "Please enter a valid phone number";
+      }
+    }
+
+    // Location validation (optional but validate length if provided)
+    if (formData.location && formData.location.trim().length > 100) {
+      newErrors.location = "Location must be less than 100 characters";
     }
 
     setErrors(newErrors);
@@ -89,11 +126,11 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
     try {
       // Prepare data for submission matching backend structure
       const submitData = {
-        name: formData.name.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim() || undefined, // Send undefined if empty instead of empty string
         email: formData.email.toLowerCase().trim(),
         phoneNumber: formData.phoneNumber.trim(),
         gender: formData.gender,
-        dateOfBirth: formData.dateOfBirth,
         location: formData.location,
         currentTier: formData.currentTier,
         accountStatus: formData.accountStatus
@@ -148,23 +185,46 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Full Name */}
+            {/* First Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name <span className="text-red-500">*</span>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                First Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="name"
-                name="name"
-                value={formData.name}
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleChange}
-                placeholder="John Doe"
+                placeholder="John"
                 className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
-                  errors.name ? 'border-red-300' : ''
+                  errors.firstName ? 'border-red-300' : ''
                 }`}
               />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+              {errors.firstName && (
+                <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+              )}
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Doe"
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
+                  errors.lastName ? 'border-red-300' : ''
+                }`}
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+              )}
             </div>
 
             {/* Email Address */}
@@ -183,7 +243,9 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                   errors.email ? 'border-red-300' : ''
                 }`}
               />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
             </div>
 
             {/* Phone Number */}
@@ -198,8 +260,13 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 placeholder="+1-202-555-0189"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black"
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
+                  errors.phoneNumber ? 'border-red-300' : ''
+                }`}
               />
+              {errors.phoneNumber && (
+                <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
+              )}
             </div>
 
             {/* Gender */}
@@ -214,45 +281,32 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
               >
-                <option value="">Claude content</option>
+                <option value="">Select gender</option>
                 {genderOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
+                  <option key={option} value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
                 ))}
               </select>
             </div>
 
-            {/* Date of Birth */}
-            <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                id="dateOfBirth"
-                name="dateOfBirth"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black"
-              />
-            </div>
-
-            {/* Location */}
+            {/* Location/Country */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location
+                Country / Location
               </label>
-              <select
+              <input
+                type="text"
                 id="location"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
-              >
-                <option value="">Select location</option>
-                {countryOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
+                placeholder="Enter country name (e.g., United States, India)"
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
+                  errors.location ? 'border-red-300' : ''
+                }`}
+              />
+              {errors.location && (
+                <p className="mt-1 text-sm text-red-600">{errors.location}</p>
+              )}
             </div>
 
             {/* Current Tier */}

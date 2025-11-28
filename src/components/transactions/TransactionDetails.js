@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeftIcon, UserIcon, ClockIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeftIcon,
+  UserIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 
 export default function TransactionDetails({ transactionId }) {
   const router = useRouter();
   const [transaction, setTransaction] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Decode the transaction ID in case it was URL encoded
   const decodedTransactionId = decodeURIComponent(transactionId);
 
@@ -17,47 +23,59 @@ export default function TransactionDetails({ transactionId }) {
     const fetchTransactionDetails = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         const response = await fetch(
-          `https://rewardsapi.hireagent.co/api/admin/transactions?search=${encodeURIComponent(decodedTransactionId)}`,
+          `http://localhost:4001/api/admin/transactions?search=${encodeURIComponent(
+            decodedTransactionId
+          )}`,
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
         );
 
         const result = await response.json();
 
-        if (result.success && result.data && result.data.transactions.length > 0) {
+        if (
+          result.success &&
+          result.data &&
+          result.data.transactions.length > 0
+        ) {
           const t = result.data.transactions[0]; // Get first transaction from search results
 
           // Transform API data to component format
           const transformedTransaction = {
             id: t.transactionId || t.referenceId || t._id,
-            userId: t.userId || t.user?._id || '-',
-            userName: t.userName || `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.trim() || '-',
-            userEmail: t.userEmail || t.user?.email || '-',
-            userMobile: t.user?.mobile || '-',
+            userId: t.userId || t.user?._id || "-",
+            userName:
+              t.userName ||
+              `${t.user?.firstName || ""} ${t.user?.lastName || ""}`.trim() ||
+              "-",
+            userEmail: t.userEmail || t.user?.email || "-",
+            userMobile: t.user?.mobile || "-",
             type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
-            amount: `${t.amount} ${t.balanceType || 'coins'}`,
-            description: t.description || '-',
+            amount: `${t.amount} ${t.balanceType || "coins"}`,
+            description: t.description || "-",
             status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
-            approval: t.isApproved ? 'Yes' : 'No',
-            createdOn: new Date(t.createdAt).toLocaleString('en-GB'),
-            approvedOn: t.approval?.status === 'approved' && t.updatedAt ? new Date(t.updatedAt).toLocaleString('en-GB') : '-',
-            approvedBy: t.approval?.approvedBy || '-',
-            adminName: t.approval?.approverName || '-',
-            paymentMethod: t.paymentProvider || 'Internal',
+            approval: t.isApproved ? "Yes" : "No",
+            createdOn: new Date(t.createdAt).toLocaleString("en-GB"),
+            approvedOn:
+              t.approval?.status === "approved" && t.updatedAt
+                ? new Date(t.updatedAt).toLocaleString("en-GB")
+                : "-",
+            approvedBy: t.approval?.approvedBy || "-",
+            adminName: t.approval?.approverName || "-",
+            paymentMethod: t.paymentProvider || "Internal",
             referenceNumber: t.referenceId || t.transactionId || t._id,
-            category: t.metadata?.category || 'General',
-            source: t.metadata?.source || 'System',
-            notes: t.metadata?.notes || '-',
+            category: t.metadata?.category || "General",
+            source: t.metadata?.source || "System",
+            notes: t.metadata?.notes || "-",
 
             // Wallet info
             walletBalance: t.user?.wallet?.balance || 0,
-            walletCurrency: t.user?.wallet?.currency || 'coins',
+            walletCurrency: t.user?.wallet?.currency || "coins",
 
             // XP info
             xpCurrent: t.user?.xp?.current || 0,
@@ -71,21 +89,33 @@ export default function TransactionDetails({ transactionId }) {
             // Timeline based on available data
             timeline: [
               {
-                action: 'Transaction Initiated',
-                timestamp: new Date(t.createdAt).toLocaleString('en-GB'),
-                description: `${t.type.charAt(0).toUpperCase() + t.type.slice(1)} transaction created`
+                action: "Transaction Initiated",
+                timestamp: new Date(t.createdAt).toLocaleString("en-GB"),
+                description: `${
+                  t.type.charAt(0).toUpperCase() + t.type.slice(1)
+                } transaction created`,
               },
-              ...(t.updatedAt && t.updatedAt !== t.createdAt ? [{
-                action: 'Transaction Updated',
-                timestamp: new Date(t.updatedAt).toLocaleString('en-GB'),
-                description: `Status: ${t.status}`
-              }] : []),
-              ...(t.approval?.status === 'approved' ? [{
-                action: 'Transaction Approved',
-                timestamp: new Date(t.updatedAt).toLocaleString('en-GB'),
-                description: t.approval.approverName ? `Approved by ${t.approval.approverName}` : 'Approved'
-              }] : [])
-            ]
+              ...(t.updatedAt && t.updatedAt !== t.createdAt
+                ? [
+                    {
+                      action: "Transaction Updated",
+                      timestamp: new Date(t.updatedAt).toLocaleString("en-GB"),
+                      description: `Status: ${t.status}`,
+                    },
+                  ]
+                : []),
+              ...(t.approval?.status === "approved"
+                ? [
+                    {
+                      action: "Transaction Approved",
+                      timestamp: new Date(t.updatedAt).toLocaleString("en-GB"),
+                      description: t.approval.approverName
+                        ? `Approved by ${t.approval.approverName}`
+                        : "Approved",
+                    },
+                  ]
+                : []),
+            ],
           };
 
           setTransaction(transformedTransaction);
@@ -93,7 +123,7 @@ export default function TransactionDetails({ transactionId }) {
           setTransaction(null);
         }
       } catch (error) {
-        console.error('Error fetching transaction details:', error);
+        console.error("Error fetching transaction details:", error);
         setTransaction(null);
       } finally {
         setLoading(false);
@@ -121,8 +151,13 @@ export default function TransactionDetails({ transactionId }) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <XCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Transaction Not Found</h2>
-          <p className="text-gray-600 mb-6">The transaction ID &quot;{decodedTransactionId}&quot; could not be found.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Transaction Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            The transaction ID &quot;{decodedTransactionId}&quot; could not be
+            found.
+          </p>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
@@ -136,11 +171,11 @@ export default function TransactionDetails({ transactionId }) {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Completed':
+      case "Completed":
         return <CheckCircleIcon className="w-5 h-5 text-green-500" />;
-      case 'Pending':
+      case "Pending":
         return <ClockIcon className="w-5 h-5 text-yellow-500" />;
-      case 'Failed':
+      case "Failed":
         return <XCircleIcon className="w-5 h-5 text-red-500" />;
       default:
         return null;
@@ -149,13 +184,15 @@ export default function TransactionDetails({ transactionId }) {
 
   const getStatusBadge = (status) => {
     const styles = {
-      'Completed': 'bg-green-100 text-green-800',
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Failed': 'bg-red-100 text-red-800'
+      Completed: "bg-green-100 text-green-800",
+      Pending: "bg-yellow-100 text-yellow-800",
+      Failed: "bg-red-100 text-red-800",
     };
-    
+
     return (
-      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${styles[status]}`}>
+      <span
+        className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${styles[status]}`}
+      >
         {getStatusIcon(status)}
         <span className="ml-1">{status}</span>
       </span>
@@ -174,15 +211,17 @@ export default function TransactionDetails({ transactionId }) {
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Back to Transaction Log
           </button>
-          
+
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Transaction Details</h1>
-              <p className="text-gray-600 mt-1">Transaction ID: {transaction.id}</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Transaction Details
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Transaction ID: {transaction.id}
+              </p>
             </div>
-            <div>
-              {getStatusBadge(transaction.status)}
-            </div>
+            <div>{getStatusBadge(transaction.status)}</div>
           </div>
         </div>
 
@@ -191,58 +230,98 @@ export default function TransactionDetails({ transactionId }) {
           <div className="lg:col-span-2 space-y-6">
             {/* Transaction Info */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Transaction Information</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Transaction Information
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Transaction ID</label>
-                  <p className="text-sm font-semibold text-gray-900">{transaction.id}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Transaction ID
+                  </label>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {transaction.id}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Type</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Type
+                  </label>
                   <p className="text-sm text-gray-900">{transaction.type}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Amount</label>
-                  <p className="text-sm font-semibold text-emerald-600">{transaction.amount}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Amount
+                  </label>
+                  <p className="text-sm font-semibold text-emerald-600">
+                    {transaction.amount}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Category</label>
-                  <p className="text-sm text-gray-900">{transaction.category}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Category
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {transaction.category}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Source</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Source
+                  </label>
                   <p className="text-sm text-gray-900">{transaction.source}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Payment Method</label>
-                  <p className="text-sm text-gray-900">{transaction.paymentMethod}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Payment Method
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {transaction.paymentMethod}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Reference Number</label>
-                  <p className="text-sm font-mono text-gray-900">{transaction.referenceNumber}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Reference Number
+                  </label>
+                  <p className="text-sm font-mono text-gray-900">
+                    {transaction.referenceNumber}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Created On</label>
-                  <p className="text-sm text-gray-900">{transaction.createdOn}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Created On
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {transaction.createdOn}
+                  </p>
                 </div>
                 {transaction.approvedOn && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Approved On</label>
-                    <p className="text-sm text-gray-900">{transaction.approvedOn}</p>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Approved On
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {transaction.approvedOn}
+                    </p>
                   </div>
                 )}
               </div>
-              
+
               {transaction.description && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Description</label>
-                  <p className="text-sm text-gray-900">{transaction.description}</p>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Description
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {transaction.description}
+                  </p>
                 </div>
               )}
-              
+
               {transaction.notes && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-500 mb-1">Notes</label>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Notes
+                  </label>
                   <p className="text-sm text-gray-900">{transaction.notes}</p>
                 </div>
               )}
@@ -250,17 +329,25 @@ export default function TransactionDetails({ transactionId }) {
 
             {/* Timeline */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Transaction Timeline</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Transaction Timeline
+              </h2>
               <div className="space-y-4">
                 {transaction.timeline.map((event, index) => (
                   <div key={index} className="flex items-start space-x-3">
                     <div className="flex-shrink-0 w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-medium text-gray-900">{event.action}</h3>
-                        <span className="text-xs text-gray-500">{event.timestamp}</span>
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {event.action}
+                        </h3>
+                        <span className="text-xs text-gray-500">
+                          {event.timestamp}
+                        </span>
                       </div>
-                      <p className="text-sm text-gray-600">{event.description}</p>
+                      <p className="text-sm text-gray-600">
+                        {event.description}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -272,52 +359,74 @@ export default function TransactionDetails({ transactionId }) {
           <div className="space-y-6">
             {/* User Info */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">User Information</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                User Information
+              </h2>
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
                   <UserIcon className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{transaction.userName}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {transaction.userName}
+                  </p>
                   <p className="text-sm text-gray-500">{transaction.userId}</p>
                 </div>
               </div>
 
               <div className="space-y-2 mb-4">
-                {transaction.userEmail && transaction.userEmail !== '-' && (
+                {transaction.userEmail && transaction.userEmail !== "-" && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-500">Email</label>
-                    <p className="text-sm text-gray-900">{transaction.userEmail}</p>
+                    <label className="block text-xs font-medium text-gray-500">
+                      Email
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {transaction.userEmail}
+                    </p>
                   </div>
                 )}
-                {transaction.userMobile && transaction.userMobile !== '-' && (
+                {transaction.userMobile && transaction.userMobile !== "-" && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-500">Mobile</label>
-                    <p className="text-sm text-gray-900">{transaction.userMobile}</p>
+                    <label className="block text-xs font-medium text-gray-500">
+                      Mobile
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {transaction.userMobile}
+                    </p>
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs font-medium text-gray-500">Wallet Balance</label>
+                  <label className="block text-xs font-medium text-gray-500">
+                    Wallet Balance
+                  </label>
                   <p className="text-sm font-semibold text-emerald-600">
                     {transaction.walletBalance} {transaction.walletCurrency}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500">XP Level</label>
+                  <label className="block text-xs font-medium text-gray-500">
+                    XP Level
+                  </label>
                   <p className="text-sm text-gray-900">
                     {transaction.xpCurrent} XP (Tier {transaction.xpTier})
                   </p>
                 </div>
                 {transaction.xpReward > 0 && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-500">XP Reward</label>
-                    <p className="text-sm text-emerald-600">+{transaction.xpReward} XP</p>
+                    <label className="block text-xs font-medium text-gray-500">
+                      XP Reward
+                    </label>
+                    <p className="text-sm text-emerald-600">
+                      +{transaction.xpReward} XP
+                    </p>
                   </div>
                 )}
               </div>
 
               <button
-                onClick={() => window.open(`/users/${transaction.userId}`, '_blank')}
+                onClick={() =>
+                  window.open(`/users/${transaction.userId}`, "_blank")
+                }
                 className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
               >
                 View User Profile
@@ -325,40 +434,57 @@ export default function TransactionDetails({ transactionId }) {
             </div>
 
             {/* Admin Info */}
-            {transaction.adminName && transaction.adminName !== '-' && (
+            {transaction.adminName && transaction.adminName !== "-" && (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Admin Information</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Admin Information
+                </h2>
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Admin Name</label>
-                    <p className="text-sm text-gray-900">{transaction.adminName}</p>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Admin Name
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {transaction.adminName}
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Admin ID</label>
-                    <p className="text-sm text-gray-900">{transaction.approvedBy}</p>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Admin ID
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {transaction.approvedBy}
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Additional Metadata */}
-            {transaction.metadata && Object.keys(transaction.metadata).length > 0 && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Details</h2>
-                <div className="space-y-2">
-                  {Object.entries(transaction.metadata).map(([key, value]) => (
-                    <div key={key}>
-                      <label className="block text-xs font-medium text-gray-500 capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </label>
-                      <p className="text-sm text-gray-900">
-                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                      </p>
-                    </div>
-                  ))}
+            {transaction.metadata &&
+              Object.keys(transaction.metadata).length > 0 && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Additional Details
+                  </h2>
+                  <div className="space-y-2">
+                    {Object.entries(transaction.metadata).map(
+                      ([key, value]) => (
+                        <div key={key}>
+                          <label className="block text-xs font-medium text-gray-500 capitalize">
+                            {key.replace(/([A-Z])/g, " $1").trim()}
+                          </label>
+                          <p className="text-sm text-gray-900">
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </p>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </div>

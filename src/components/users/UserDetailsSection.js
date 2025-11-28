@@ -4,16 +4,28 @@ import { ActivitySummarySection } from "./ActivitySummarySection";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { InputModal } from "./InputModal";
 import SuspendUserModal from "./SuspendUserModal";
-import { showSuccessNotification, showErrorNotification, showInfoNotification } from "./NotificationSystem";
-import userAPIs from '../../data/users/userAPI';
-import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import {
+  showSuccessNotification,
+  showErrorNotification,
+  showInfoNotification,
+} from "./NotificationSystem";
+import userAPIs from "../../data/users/userAPI";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export const UserDetailsSection = ({ user }) => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Profile");
-  const [confirmationModal, setConfirmationModal] = useState({ isOpen: false, action: null, data: {} });
-  const [inputModal, setInputModal] = useState({ isOpen: false, action: null, data: {} });
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    action: null,
+    data: {},
+  });
+  const [inputModal, setInputModal] = useState({
+    isOpen: false,
+    action: null,
+    data: {},
+  });
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -25,26 +37,28 @@ export const UserDetailsSection = ({ user }) => {
 
   // Helper function to format gender
   const formatGender = (gender) => {
-    if (!gender || gender === 'N/A') return 'N/A';
+    if (!gender || gender === "N/A") return "N/A";
     return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
   };
 
   // Helper function to format game preferences (What types of games do you enjoy playing)
   const formatGamePreferences = (preferences) => {
-    if (!preferences || preferences.length === 0) return 'Not specified';
+    if (!preferences || preferences.length === 0) return "Not specified";
     // Capitalize first letter of each game type
-    return preferences.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ');
+    return preferences
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(", ");
   };
 
   // Helper function to format game style (What kind of games do you prefer)
   const formatGameStyle = (gameStyle) => {
-    if (!gameStyle) return 'Not specified';
+    if (!gameStyle) return "Not specified";
     return gameStyle.charAt(0).toUpperCase() + gameStyle.slice(1);
   };
 
   // Helper function to format improvement area (Which of these sounds most like you)
   const formatImprovementArea = (improvementArea) => {
-    if (!improvementArea) return 'Not specified';
+    if (!improvementArea) return "Not specified";
     return improvementArea.charAt(0).toUpperCase() + improvementArea.slice(1);
   };
 
@@ -52,40 +66,67 @@ export const UserDetailsSection = ({ user }) => {
   const getNotificationStatus = () => {
     // Check profile.notifications (boolean) first, then notificationSettings (string)
     if (user?.profile?.notifications !== undefined) {
-      return user.profile.notifications ? 'Enabled' : 'Disabled';
+      return user.profile.notifications ? "Enabled" : "Disabled";
     }
     if (user?.notificationSettings) {
       return user.notificationSettings;
     }
-    return 'Disabled';
+    return "Disabled";
   };
 
   const userFields = [
-    { label: "User ID", value: user?.userId || "USR-202589" },
-    { label: "Full Name", value: user?.name || "Nick Johnson" },
-    { label: "Email", value: user?.email || "nickjohson12@gmail.com", isEmail: true },
-    { label: "Phone", value: user?.phone || "+33 6 45 32 19 87" },
-    { label: "Registration Date", value: user?.registrationDate || "March 12, 2025" },
-    { label: "Age Range", value: user?.age || "25–34" },
-    { label: "Gender", value: formatGender(user?.gender || user?.onboarding?.gender) },
-    { label: "Country/Region (IP Signup)", value: user?.signupCountry || user?.country || "France" },
-    { label: "Current Location", value: user?.location || "Lyon, France" },
+    { label: "User ID", value: user?.userId || "N/A" },
+    { label: "Full Name", value: user?.name || "N/A" },
+    { label: "Email", value: user?.email || "N/A", isEmail: true },
+    { label: "Phone", value: user?.phone || "N/A" },
+    { label: "Registration Date", value: user?.registrationDate || "N/A" },
+    { label: "Age Range", value: user?.age || "N/A" },
+    {
+      label: "Gender",
+      value: formatGender(user?.gender || user?.onboarding?.gender),
+    },
+    {
+      label: "Country/Region (IP Signup)",
+      value: user?.signupCountry || user?.country || "N/A",
+    },
+    { label: "Current Location", value: user?.location || "N/A" },
     // PHASE 2: Device and Security info temporarily hidden
     // { label: "Device Type", value: user?.device || "Android – Samsung Galaxy M13" },
-    { label: "App Version", value: user?.appVersion || "1.1.3.7" },
-    { label: "Current Account Status", value: user?.accountStatus || user?.status || "Active", isBadge: true },
-    { label: "Face Verification Status", value: user?.faceVerification || "Verified", isVerification: true },
-    { label: "Last Active Timestamp", value: user?.lastActive || "12:08 AM on May 23, 2025" },
+    { label: "App Version", value: user?.appVersion || "N/A" },
+    {
+      label: "Current Account Status",
+      value: user?.accountStatus || user?.status || "N/A",
+      isBadge: true,
+    },
+    {
+      label: "Face Verification Status",
+      value: user?.faceVerification || "N/A",
+      isVerification: true,
+    },
+    {
+      label: "Last Active Timestamp",
+      value: user?.lastActive,
+    },
     // PHASE 2: IP Address info temporarily hidden
     // { label: "Last Login IP Address", value: user?.lastLoginIp || user?.ipAddress || "182.77.56.14" },
     // { label: "Last Login Location", value: user?.lastLoginLocation || "Lyon, France" },
-    { label: "Member Since", value: user?.memberSince || "January 12, 2025" },
+    { label: "Member Since", value: user?.memberSince || "N/A" },
     // Onboarding questionnaire fields (current app version)
-    { label: "Game Types Enjoyed", value: formatGamePreferences(user?.onboarding?.gamePreferences) },
-    { label: "Preferred Game Style", value: formatGameStyle(user?.onboarding?.gameStyle) },
-    { label: "User Motivation", value: formatImprovementArea(user?.onboarding?.improvementArea) },
+    {
+      label: "Game Types Enjoyed",
+      value: formatGamePreferences(user?.onboarding?.gamePreferences),
+    },
+    {
+      label: "Preferred Game Style",
+      value: formatGameStyle(user?.onboarding?.gameStyle),
+    },
+    // { label: "User Motivation", value: formatImprovementArea(user?.onboarding?.improvementArea) },
     // Notification settings
-    { label: "Notification Settings", value: getNotificationStatus(), isBadge: true },
+    {
+      label: "Notification Settings",
+      value: getNotificationStatus(),
+      isBadge: true,
+    },
   ];
 
   // Action buttons per requirements - dynamically generated based on user status
@@ -100,8 +141,12 @@ export const UserDetailsSection = ({ user }) => {
     // }
 
     // Only show Suspend button if user is Active
-    if (user?.status === 'Active') {
-      buttons.push({ text: "Suspend Account", bgColor: "bg-yellow-600 hover:bg-yellow-700", action: "suspend" });
+    if (user?.status === "Active") {
+      buttons.push({
+        text: "Suspend Account",
+        bgColor: "bg-yellow-600 hover:bg-yellow-700",
+        action: "suspend",
+      });
     }
 
     // EXCLUDED: Delete User (hard-delete) not supported per requirements
@@ -145,7 +190,7 @@ export const UserDetailsSection = ({ user }) => {
         });
         break;
       */
-      case 'suspend':
+      case "suspend":
         setShowSuspendModal(true);
         break;
       /* EXCLUDED: Delete User (hard-delete) not supported per requirements
@@ -161,16 +206,18 @@ export const UserDetailsSection = ({ user }) => {
         });
         break;
       */
-      case 'adjustBalance':
+      case "adjustBalance":
         setInputModal({
           isOpen: true,
-          action: 'adjustBalance',
+          action: "adjustBalance",
           data: {
-            title: 'Adjust User Balance',
-            message: `Current balance: ${user?.coinBalance || '15,200 Coins'}. Enter the adjustment amount:`,
-            type: 'number',
-            placeholder: 'Enter amount (use + for add, - for subtract)'
-          }
+            title: "Adjust User Balance",
+            message: `Current balance: ${
+              user?.coinBalance || "15,200 Coins"
+            }. Enter the adjustment amount:`,
+            type: "number",
+            placeholder: "Enter amount (use + for add, - for subtract)",
+          },
         });
         break;
       default:
@@ -204,7 +251,7 @@ export const UserDetailsSection = ({ user }) => {
           showSuccessNotification(`User ${user?.name || 'account'} has been deleted successfully`);
           break;
         */
-        case 'suspend':
+        case "suspend":
           // This case is now handled by the SuspendUserModal
           break;
         default:
@@ -212,7 +259,11 @@ export const UserDetailsSection = ({ user }) => {
       }
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
-      showErrorNotification(`Failed to ${action.replace(/([A-Z])/g, ' $1').toLowerCase()}. Please try again.`);
+      showErrorNotification(
+        `Failed to ${action
+          .replace(/([A-Z])/g, " $1")
+          .toLowerCase()}. Please try again.`
+      );
     } finally {
       setConfirmationModal({ isOpen: false, action: null, data: {} });
     }
@@ -223,26 +274,26 @@ export const UserDetailsSection = ({ user }) => {
     try {
       const response = await userAPIs.updateUserStatus(
         user.id,
-        'inactive',
-        suspendData.reason || ''
+        "inactive",
+        suspendData.reason || ""
       );
 
       if (response.success) {
         // Override API message to use consistent terminology
-        const message = response.message?.toLowerCase().includes('inactivated')
-          ? 'Account Suspended'
-          : (response.message || 'Account Suspended');
+        const message = response.message?.toLowerCase().includes("inactivated")
+          ? "Account Suspended"
+          : response.message || "Account Suspended";
         toast.success(message);
         setShowSuspendModal(false);
 
         // Redirect to users page after suspension
         setTimeout(() => {
-          router.push('/users');
+          router.push("/users");
         }, 1500);
       }
     } catch (error) {
-      console.error('Error suspending user:', error);
-      toast.error(error.message || 'Failed to suspend user');
+      console.error("Error suspending user:", error);
+      toast.error(error.message || "Failed to suspend user");
       throw error;
     } finally {
       setLoading(false);
@@ -252,38 +303,46 @@ export const UserDetailsSection = ({ user }) => {
   const handleInputAction = async (action, inputValue) => {
     try {
       switch (action) {
-        case 'changeTier':
+        case "changeTier":
           console.log(`Changing user tier to: ${inputValue}`);
           // TODO: API call to update user tier
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise((resolve) => setTimeout(resolve, 800));
           showSuccessNotification(`User tier changed to ${inputValue}`);
           break;
-        case 'sendNotification':
+        case "sendNotification":
           const response = await userAPIs.sendNotification(
             user.id,
             inputValue,
-            'info'
+            "info"
           );
           if (response.success) {
-            toast.success(response.message || 'Notification sent successfully');
+            toast.success(response.message || "Notification sent successfully");
             showInfoNotification(`Message: "${inputValue}"`);
           }
           break;
-        case 'adjustBalance':
+        case "adjustBalance":
           console.log(`Adjusting user balance by: ${inputValue}`);
           // TODO: API call to adjust user balance
-          await new Promise(resolve => setTimeout(resolve, 800));
-          const isPositive = !inputValue.startsWith('-');
-          const amount = Math.abs(parseFloat(inputValue.replace(/[+-]/g, '')));
-          const actionText = isPositive ? 'added to' : 'deducted from';
-          showSuccessNotification(`${amount} coins ${actionText} ${user?.name || 'user'}'s balance successfully`);
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          const isPositive = !inputValue.startsWith("-");
+          const amount = Math.abs(parseFloat(inputValue.replace(/[+-]/g, "")));
+          const actionText = isPositive ? "added to" : "deducted from";
+          showSuccessNotification(
+            `${amount} coins ${actionText} ${
+              user?.name || "user"
+            }'s balance successfully`
+          );
           break;
         default:
           console.log(`Input action: ${action}, value: ${inputValue}`);
       }
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
-      showErrorNotification(`Failed to ${action.replace(/([A-Z])/g, ' $1').toLowerCase()}. Please try again.`);
+      showErrorNotification(
+        `Failed to ${action
+          .replace(/([A-Z])/g, " $1")
+          .toLowerCase()}. Please try again.`
+      );
     } finally {
       setInputModal({ isOpen: false, action: null, data: {} });
     }
@@ -294,7 +353,10 @@ export const UserDetailsSection = ({ user }) => {
       return (
         <div className="flex flex-col gap-[30px] relative self-stretch w-full flex-[0_0_auto]">
           {userFields.map((field, index) => (
-            <div key={`field-${index}`} className="flex items-center gap-14 relative self-stretch w-full">
+            <div
+              key={`field-${index}`}
+              className="flex items-center gap-14 relative self-stretch w-full"
+            >
               <div className="relative w-48 [font-family:'DM_Sans',Helvetica] font-medium text-gray-600 text-sm tracking-[0] leading-[normal]">
                 {field.label}
               </div>
@@ -310,26 +372,51 @@ export const UserDetailsSection = ({ user }) => {
                     {field.value}
                   </a>
                 ) : field.isBadge ? (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    field.value === 'Active' ? 'bg-green-100 text-green-800' :
-                    field.value === 'Inactive' ? 'bg-red-100 text-red-800' :
-                    field.value === 'Paused' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      field.value === "Active"
+                        ? "bg-green-100 text-green-800"
+                        : field.value === "Inactive"
+                        ? "bg-red-100 text-red-800"
+                        : field.value === "Paused"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
                     {field.value}
                   </span>
                 ) : field.isVerification ? (
                   <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      field.value === 'Verified' || field.value === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {field.value === 'Verified' || field.value === 'Yes' ? (
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        field.value === "Verified" || field.value === "Yes"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {field.value === "Verified" || field.value === "Yes" ? (
+                        <svg
+                          className="w-3 h-3 mr-1"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        <svg
+                          className="w-3 h-3 mr-1"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                       {field.value}
@@ -351,11 +438,7 @@ export const UserDetailsSection = ({ user }) => {
   };
 
   return (
-    <section
-      className="flex-1 space-y-8"
-      role="main"
-      aria-label="User Details"
-    >
+    <section className="flex-1 space-y-8" role="main" aria-label="User Details">
       {/* Tab Navigation */}
       <nav
         className="flex items-center gap-4"
@@ -373,13 +456,19 @@ export const UserDetailsSection = ({ user }) => {
             onClick={() => handleTabClick(tab.name)}
             role="tab"
             aria-selected={tab.name === activeTab}
-            aria-controls={`tabpanel-${tab.name.toLowerCase().replace(/\s+/g, "-")}`}
+            aria-controls={`tabpanel-${tab.name
+              .toLowerCase()
+              .replace(/\s+/g, "-")}`}
             tabIndex={tab.name === activeTab ? 0 : -1}
           >
             <span>{tab.name}</span>
             {tab.name === activeTab && (
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
             )}
           </button>
@@ -419,7 +508,9 @@ export const UserDetailsSection = ({ user }) => {
       {/* Modals */}
       <ConfirmationModal
         isOpen={confirmationModal.isOpen}
-        onClose={() => setConfirmationModal({ isOpen: false, action: null, data: {} })}
+        onClose={() =>
+          setConfirmationModal({ isOpen: false, action: null, data: {} })
+        }
         onConfirm={() => handleConfirmAction(confirmationModal.action)}
         title={confirmationModal.data.title}
         message={confirmationModal.data.message}

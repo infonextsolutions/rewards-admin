@@ -367,6 +367,7 @@ export const gamesAPI = {
       const transformedGames = response.data.data.games.map((game) => {
         return {
           id: game._id,
+          gameId: game.gameId, // Include gameId from API
           name: game.title || "Untitled Game", // For dropdowns and selectors
           title: game.title || "Untitled Game",
           sdk: game.sdkProvider || "N/A",
