@@ -1,45 +1,52 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { exportToCSV, exportToJSON } from '../../utils/export';
-import QuillRichTextEditor from '../ui/QuillRichTextEditor';
+import { useState, useRef, useEffect } from "react";
+import { exportToCSV, exportToJSON } from "../../utils/export";
+import QuillRichTextEditor from "../ui/QuillRichTextEditor";
 
-const EXPORT_FORMATS = ['JSON', 'CSV'];
+const EXPORT_FORMATS = ["JSON", "CSV"];
 
 export default function GDPRLegalScreen({ onSave, userData = [] }) {
   const [formData, setFormData] = useState({
     enableGDPRConsent: true,
-    exportFormat: 'JSON',
-    legalVersion: 'v1.0',
-    legalDisclosure: ''
+    exportFormat: "JSON",
+    legalVersion: "v1.0",
+    legalDisclosure: "",
   });
 
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedUser, setSelectedUser] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef(null);
 
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.legalVersion.trim()) {
-      newErrors.legalVersion = 'Legal version is required';
+      newErrors.legalVersion = "Legal version is required";
     }
 
     // For Markdown editor, we need to check plain text content
     const getPlainTextLength = (markdown) => {
       if (!markdown) return 0;
       // Remove markdown syntax to get approximate text length
-      const plainText = markdown.replace(/[#*_`\[\]()]/g, '').replace(/\n/g, ' ').trim();
+      const plainText = markdown
+        .replace(/[#*_`\[\]()]/g, "")
+        .replace(/\n/g, " ")
+        .trim();
       return plainText.length;
     };
 
     const plainTextLength = getPlainTextLength(formData.legalDisclosure);
-    
+
     if (plainTextLength === 0) {
-      newErrors.legalDisclosure = 'Legal disclosure text is required';
+      newErrors.legalDisclosure = "Legal disclosure text is required";
     } else if (plainTextLength < 50) {
-      newErrors.legalDisclosure = 'Legal disclosure must be at least 50 characters';
+      newErrors.legalDisclosure =
+        "Legal disclosure must be at least 50 characters";
     }
 
     setErrors(newErrors);
@@ -48,7 +55,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -58,7 +65,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
       await onSave?.(formData);
       // Success notification would be handled by parent
     } catch (error) {
-      console.error('Failed to save GDPR settings:', error);
+      console.error("Failed to save GDPR settings:", error);
     } finally {
       setIsSaving(false);
     }
@@ -69,59 +76,104 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
     try {
       // Get data based on selected user or all users
       let dataToExport = userData;
-      
+
       if (selectedUser) {
-        dataToExport = userData.filter(user => user.userId === selectedUser);
+        dataToExport = userData.filter((user) => user.userId === selectedUser);
       }
 
       if (dataToExport.length === 0) {
-        alert('No data available for export');
+        alert("No data available for export");
         return;
       }
 
       // Export based on format
-      if (formData.exportFormat === 'CSV') {
-        exportToCSV(dataToExport, 'user_data_export');
+      if (formData.exportFormat === "CSV") {
+        exportToCSV(dataToExport, "user_data_export");
       } else {
-        exportToJSON(dataToExport, 'user_data_export');
+        exportToJSON(dataToExport, "user_data_export");
       }
 
       // Log export action for audit trail
-      console.log('Data export completed:', {
+      console.log("Data export completed:", {
         format: formData.exportFormat,
         recordCount: dataToExport.length,
         timestamp: new Date().toISOString(),
-        selectedUser: selectedUser || 'all_users'
+        selectedUser: selectedUser || "all_users",
       });
-
     } catch (error) {
-      console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      console.error("Export failed:", error);
+      alert("Export failed. Please try again.");
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
+  };
+
+  // Filter users based on search term
+  const filteredUsers = userData.filter((user) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    const name = (user.name || "").toLowerCase();
+    const email = (user.email || "").toLowerCase();
+    const userId = (user.userId || "").toLowerCase();
+    return (
+      name.includes(searchLower) ||
+      email.includes(searchLower) ||
+      userId.includes(searchLower)
+    );
+  });
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+        setSearchTerm("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleUserSelect = (userId) => {
+    setSelectedUser(userId);
+    setIsDropdownOpen(false);
+    setSearchTerm("");
+  };
+
+  const getSelectedUserName = () => {
+    if (!selectedUser) return "All Users";
+    const user = userData.find((u) => u.userId === selectedUser);
+    return user ? `${user.name} (${user.email})` : "All Users";
   };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">GDPR & Legal Compliance Configuration</h2>
-        <p className="text-gray-600 text-sm mt-1">Manage GDPR consent settings, legal disclosures, and data export functionality</p>
+        <h2 className="text-xl font-semibold text-gray-900">
+          GDPR & Legal Compliance Configuration
+        </h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Manage GDPR consent settings, legal disclosures, and data export
+          functionality
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -187,8 +239,10 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
 
         {/* Data Export Section */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Data Export for GDPR Compliance</h3>
-          
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Data Export for GDPR Compliance
+          </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -196,11 +250,15 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
               </label>
               <select
                 value={formData.exportFormat}
-                onChange={(e) => handleInputChange('exportFormat', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("exportFormat", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
               >
-                {EXPORT_FORMATS.map(format => (
-                  <option key={format} value={format}>{format}</option>
+                {EXPORT_FORMATS.map((format) => (
+                  <option key={format} value={format}>
+                    {format}
+                  </option>
                 ))}
               </select>
             </div>
@@ -209,18 +267,104 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select User (Optional)
               </label>
-              <select
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white"
-              >
-                <option value="">All Users</option>
-                {userData.map(user => (
-                  <option key={user.userId} value={user.userId}>
-                    {user.name} ({user.email})
-                  </option>
-                ))}
-              </select>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 bg-white text-left flex items-center justify-between"
+                >
+                  <span className="truncate">{getSelectedUserName()}</span>
+                  <svg
+                    className={`w-5 h-5 text-gray-400 transition-transform ${
+                      isDropdownOpen ? "transform rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-hidden flex flex-col">
+                    {/* Search Input */}
+                    <div className="p-2 border-b border-gray-200">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search by name, email, or ID..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                          autoFocus
+                        />
+                        <svg
+                          className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* User List */}
+                    <div className="overflow-y-auto max-h-64">
+                      <button
+                        type="button"
+                        onClick={() => handleUserSelect("")}
+                        className={`w-full px-3 py-2 text-left hover:bg-gray-100 transition-colors ${
+                          !selectedUser
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        All Users
+                      </button>
+                      {filteredUsers.length > 0 ? (
+                        filteredUsers.map((user) => (
+                          <button
+                            key={user.userId}
+                            type="button"
+                            onClick={() => handleUserSelect(user.userId)}
+                            className={`w-full px-3 py-2 text-left hover:bg-gray-100 transition-colors text-sm ${
+                              selectedUser === user.userId
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "text-gray-900"
+                            }`}
+                          >
+                            <div className="truncate">
+                              <span className="font-medium">
+                                {user.name || "Unknown"}
+                              </span>
+                              <span className="text-gray-500 ml-1">
+                                ({user.email || "No email"})
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                          No users found
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-end">
@@ -231,23 +375,50 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
               >
                 {isExporting && (
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                 )}
-                <span>{isExporting ? 'Exporting...' : 'Export Now'}</span>
+                <span>{isExporting ? "Exporting..." : "Export Now"}</span>
               </button>
             </div>
           </div>
 
           <div className="bg-blue-100 border border-blue-200 rounded-lg p-3">
             <div className="flex items-center">
-              <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-5 w-5 text-blue-600 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <p className="text-sm text-blue-800">
-                Data exports are logged for audit compliance. Exported data includes user profiles, activity history, and preferences.
+                Data exports are logged for audit compliance. Exported data
+                includes user profiles, activity history, and preferences.
               </p>
             </div>
           </div>
@@ -260,9 +431,9 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
             onClick={() => {
               setFormData({
                 enableGDPRConsent: true,
-                exportFormat: 'JSON',
-                legalVersion: 'v1.0',
-                legalDisclosure: ''
+                exportFormat: "JSON",
+                legalVersion: "v1.0",
+                legalDisclosure: "",
               });
               setErrors({});
             }}
@@ -270,19 +441,35 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
           >
             Reset
           </button>
-          
+
           <button
             type="submit"
             disabled={isSaving}
             className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
           >
             {isSaving && (
-              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
             )}
-            <span>{isSaving ? 'Saving...' : 'Save Legal Config'}</span>
+            <span>{isSaving ? "Saving..." : "Save Legal Config"}</span>
           </button>
         </div>
       </form>
