@@ -9,6 +9,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import apiClient from "../../lib/apiClient";
 
 export default function TransactionDetails({ transactionId }) {
   const router = useRouter();
@@ -23,27 +24,32 @@ export default function TransactionDetails({ transactionId }) {
     const fetchTransactionDetails = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          `http://localhost:4001/api/admin/transactions?search=${encodeURIComponent(
-            decodedTransactionId
-          )}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+        let t = null;
+        
+        // First, try to fetch by direct ID (MongoDB ObjectId)
+        try {
+          const directResponse = await apiClient.get(
+            `/admin/transactions/${decodedTransactionId}`
+          );
+          if (directResponse.data?.success && directResponse.data?.data) {
+            t = directResponse.data.data;
           }
-        );
+        } catch (directError) {
+          // If direct ID lookup fails, try search endpoint
+          console.log("Direct ID lookup failed, trying search endpoint...");
+          const searchResponse = await apiClient.get(
+            `/admin/transactions?search=${encodeURIComponent(decodedTransactionId)}`
+          );
+          
+          if (
+            searchResponse.data?.success &&
+            searchResponse.data?.data?.transactions?.length > 0
+          ) {
+            t = searchResponse.data.data.transactions[0]; // Get first transaction from search results
+          }
+        }
 
-        const result = await response.json();
-
-        if (
-          result.success &&
-          result.data &&
-          result.data.transactions.length > 0
-        ) {
-          const t = result.data.transactions[0]; // Get first transaction from search results
+        if (t) {
 
           // Transform API data to component format
           const transformedTransaction = {
@@ -55,10 +61,10 @@ export default function TransactionDetails({ transactionId }) {
               "-",
             userEmail: t.userEmail || t.user?.email || "-",
             userMobile: t.user?.mobile || "-",
-            type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
+            type: t.type ? t.type.charAt(0).toUpperCase() + t.type.slice(1) : "Unknown",
             amount: `${t.amount} ${t.balanceType || "coins"}`,
             description: t.description || "-",
-            status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
+            status: t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown",
             approval: t.isApproved ? "Yes" : "No",
             createdOn: new Date(t.createdAt).toLocaleString("en-GB"),
             approvedOn:
@@ -92,7 +98,7 @@ export default function TransactionDetails({ transactionId }) {
                 action: "Transaction Initiated",
                 timestamp: new Date(t.createdAt).toLocaleString("en-GB"),
                 description: `${
-                  t.type.charAt(0).toUpperCase() + t.type.slice(1)
+                  t.type ? t.type.charAt(0).toUpperCase() + t.type.slice(1) : "Transaction"
                 } transaction created`,
               },
               ...(t.updatedAt && t.updatedAt !== t.createdAt
@@ -125,6 +131,10 @@ export default function TransactionDetails({ transactionId }) {
       } catch (error) {
         console.error("Error fetching transaction details:", error);
         setTransaction(null);
+        // Show error toast if needed
+        if (error.response?.status !== 404) {
+          console.error("Failed to load transaction:", error.response?.data?.error || error.message);
+        }
       } finally {
         setLoading(false);
       }

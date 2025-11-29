@@ -469,7 +469,7 @@ export default function PaymentsPage() {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedPayoutId, setSelectedPayoutId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
 
   // Helper function to calculate date range
   const getDateRange = (range) => {
