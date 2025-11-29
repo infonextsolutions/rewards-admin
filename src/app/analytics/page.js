@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Pagination from "../../components/ui/Pagination";
 import { useSearch } from "../../contexts/SearchContext";
+import { ANALYTICS_API } from "../../data/analytics";
+import toast from "react-hot-toast";
 
 const Frame = ({ onExportCSV }) => {
   return (
@@ -42,25 +44,15 @@ const Frame = ({ onExportCSV }) => {
   );
 };
 
-const FiltersSection = ({ filters, onFilterChange }) => {
-  const acquisitionSources = [
-    'Facebook', 'Google Ads', 'TikTok Ads', 'Organic', 'YouTube', 'Instagram', 'Snapchat', 'Unity Ads'
+const FiltersSection = ({ filters, onFilterChange, filterOptions = {} }) => {
+  const acquisitionSources = filterOptions.acquisitionSources || [
+    'Facebook', 'Google Ads', 'Organic'
   ];
   
-  const gameList = [
-    'Lords Mobile', 'Coin Run', 'Puzzle Quest', 'Battle Royale', 'City Builder', 'Racing Thunder'
-  ];
-  
-  const advertiserList = [
-    'Azur', 'Gameloft', 'King Digital', 'Supercell', 'Machine Zone'
-  ];
+  const advertiserList = filterOptions.advertisers || [];
 
-  const platformList = [
+  const platformList = filterOptions.platforms || [
     'iOS', 'Android', 'Web'
-  ];
-
-  const countryList = [
-    'United States', 'India', 'United Kingdom', 'Germany', 'Japan', 'Brazil', 'Canada', 'Australia', 'France', 'South Korea'
   ];
 
   return (
@@ -428,7 +420,16 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
               </tr>
             </thead>
             <tbody>
-              {data.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-3"></div>
+                      <p className="text-gray-600">Loading analytics data...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : data.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
@@ -471,7 +472,7 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                     <div className="font-normal text-[#333333] text-sm">
                       <span className="text-green-600">{row.retentionD1}%</span>
                       <span className="text-gray-400 mx-1">/</span>
-                      <span className="text-blue-600">{row.retentionD7}%</span>
+                      <span className="text-blue-600">{row.retentionD7 > 0 ? `${row.retentionD7}%` : 'N/A'}</span>
                     </div>
                   </td>
                   <td className="px-4 py-4 text-center">
@@ -565,157 +566,85 @@ export default function AnalyticsPage() {
     setSearchQuery(searchTerm);
   }, [searchTerm]);
 
-  // Mock data that matches requirements
-  const mockData = [
-    {
-      gameTitle: "Lords Mobile",
-      acquisitionSource: "Facebook",
-      installs: 13400,
-      retentionD1: 33,
-      retentionD7: 12,
-      revenue: 48000,
-      rewards: 12000,
-      roas: "125.5",
-      qualityScore: "8.2",
-      advertiser: "Azur",
-      platform: "iOS",
-      country: "United States"
-    },
-    {
-      gameTitle: "Coin Run",
-      acquisitionSource: "Google Ads",
-      installs: 9800,
-      retentionD1: 28,
-      retentionD7: 15,
-      revenue: 35000,
-      rewards: 8500,
-      roas: "98.7",
-      qualityScore: "7.8",
-      advertiser: "Gameloft",
-      platform: "Android",
-      country: "India"
-    },
-    {
-      gameTitle: "Puzzle Quest",
-      acquisitionSource: "TikTok Ads",
-      installs: 15600,
-      retentionD1: 41,
-      retentionD7: 18,
-      revenue: 62000,
-      rewards: 18000,
-      roas: "156.2",
-      qualityScore: "9.1",
-      advertiser: "King Digital",
-      platform: "iOS",
-      country: "United Kingdom"
-    },
-    {
-      gameTitle: "Battle Royale",
-      acquisitionSource: "Organic",
-      installs: 22000,
-      retentionD1: 45,
-      retentionD7: 22,
-      revenue: 88000,
-      rewards: 0,
-      roas: "∞",
-      qualityScore: "9.8",
-      advertiser: "Supercell",
-      platform: "iOS",
-      country: "Japan"
-    },
-    {
-      gameTitle: "City Builder",
-      acquisitionSource: "YouTube",
-      installs: 7200,
-      retentionD1: 25,
-      retentionD7: 9,
-      revenue: 24000,
-      rewards: 6000,
-      roas: "88.9",
-      qualityScore: "6.5",
-      advertiser: "Machine Zone",
-      platform: "Android",
-      country: "Brazil"
-    },
-    {
-      gameTitle: "Racing Thunder",
-      acquisitionSource: "Instagram",
-      installs: 11500,
-      retentionD1: 36,
-      retentionD7: 14,
-      revenue: 41000,
-      rewards: 11000,
-      roas: "112.3",
-      qualityScore: "8.0",
-      advertiser: "Azur",
-      platform: "Web",
-      country: "Germany"
-    },
-    {
-      gameTitle: "Lords Mobile",
-      acquisitionSource: "Snapchat",
-      installs: 5400,
-      retentionD1: 29,
-      retentionD7: 11,
-      revenue: 19000,
-      rewards: 5000,
-      roas: "95.0",
-      qualityScore: "7.2",
-      advertiser: "Azur",
-      platform: "Android",
-      country: "Canada"
-    },
-    {
-      gameTitle: "Coin Run",
-      acquisitionSource: "Unity Ads",
-      installs: 8900,
-      retentionD1: 31,
-      retentionD7: 13,
-      revenue: 31000,
-      rewards: 8000,
-      roas: "108.6",
-      qualityScore: "7.9",
-      advertiser: "Gameloft",
-      platform: "iOS",
-      country: "Australia"
-    },
-    {
-      gameTitle: "Puzzle Quest",
-      acquisitionSource: "Facebook",
-      installs: 12200,
-      retentionD1: 38,
-      retentionD7: 16,
-      revenue: 54000,
-      rewards: 14000,
-      roas: "132.1",
-      qualityScore: "8.5",
-      advertiser: "King Digital",
-      platform: "Android",
-      country: "France"
-    },
-    {
-      gameTitle: "Battle Royale",
-      acquisitionSource: "Google Ads",
-      installs: 18500,
-      retentionD1: 42,
-      retentionD7: 20,
-      revenue: 76000,
-      rewards: 19000,
-      roas: "145.8",
-      qualityScore: "9.3",
-      advertiser: "Supercell",
-      platform: "Web",
-      country: "South Korea"
-    }
-  ];
+  // State for analytics data
+  const [analyticsData, setAnalyticsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterOptions, setFilterOptions] = useState({
+    acquisitionSources: [],
+    advertisers: [],
+    platforms: [],
+  });
 
-  // Filter data based on current filters and search query
-  const filteredData = mockData.filter(row => {
-    // Apply search filter
+  // Fetch analytics data from API
+  const fetchAnalyticsData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const apiFilters = {
+        startDate: filters.dateRange.start || undefined,
+        endDate: filters.dateRange.end || undefined,
+        // Note: Multiple acquisition sources filtering is done client-side
+        // Single source can be filtered server-side if needed
+        advertiser: filters.advertiser || undefined,
+        platform: filters.platform || undefined,
+      };
+
+      const response = await ANALYTICS_API.getAttributionData(apiFilters);
+      
+      if (response.data?.success && response.data?.data?.attribution) {
+        // Map API attribution data to component format
+        const mappedData = response.data.data.attribution.map((item) => {
+          // Map source names to display names
+          const sourceMap = {
+            google: "Google Ads",
+            facebook: "Facebook",
+            direct: "Organic",
+          };
+          
+          return {
+            acquisitionSource: sourceMap[item.source] || item.source.charAt(0).toUpperCase() + item.source.slice(1),
+            installs: item.installs || 0,
+            retentionD1: item.d1Retention || 0,
+            retentionD7: 0, // D7 retention not available in attribution data
+            revenue: item.revenue || 0,
+            rewards: item.rewardCost || 0,
+            advertiser: "N/A", // Not available in attribution data
+            platform: "N/A", // Not available in attribution data
+            country: "N/A", // Not available in attribution data
+          };
+        });
+
+        setAnalyticsData(mappedData);
+
+        // Extract unique filter options from data
+        const sources = [...new Set(mappedData.map(item => item.acquisitionSource))];
+        setFilterOptions(prev => ({
+          ...prev,
+          acquisitionSources: sources,
+        }));
+      } else {
+        setAnalyticsData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching analytics data:", error);
+      toast.error("Failed to fetch analytics data");
+      setAnalyticsData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  // Fetch data when filters change
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
+
+  // Filter data based on current filters and search query (client-side filtering for search only)
+  // Most filtering is done server-side via API, but we do client-side search filtering
+  const filteredData = analyticsData.filter(row => {
+    // Apply search filter (client-side)
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
-        row.gameTitle.toLowerCase().includes(query) ||
         row.acquisitionSource.toLowerCase().includes(query) ||
         row.advertiser.toLowerCase().includes(query) ||
         row.platform.toLowerCase().includes(query) ||
@@ -728,23 +657,12 @@ export default function AnalyticsPage() {
       }
     }
     
-    // Apply other filters
+    // Apply client-side filters for acquisition sources (multi-select)
     if (filters.acquisitionSources.length > 0 && !filters.acquisitionSources.includes(row.acquisitionSource)) {
       return false;
     }
-    // EXCLUDED: Game title filtering disabled per requirements
-    // if (filters.gamesTitles.length > 0 && !filters.gamesTitles.includes(row.gameTitle)) {
-    //   return false;
-    // }
-    if (filters.advertiser && row.advertiser !== filters.advertiser) {
-      return false;
-    }
-    if (filters.platform && row.platform !== filters.platform) {
-      return false;
-    }
-    if (filters.country && row.country !== filters.country) {
-      return false;
-    }
+    
+    // Other filters are handled server-side via API
     return true;
   });
 
@@ -835,7 +753,8 @@ export default function AnalyticsPage() {
       <Frame onExportCSV={exportToCSV} />
       <FiltersSection 
         filters={filters} 
-        onFilterChange={handleFilterChange} 
+        onFilterChange={handleFilterChange}
+        filterOptions={filterOptions}
       />
       <Table
         currentPage={currentPage}

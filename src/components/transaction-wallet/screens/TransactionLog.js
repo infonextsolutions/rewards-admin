@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { getDateRangeFilter } from "@/utils/dateFilters";
 import toast from "react-hot-toast";
+import apiClient from "@/lib/apiClient";
 
 export default function TransactionLog({ onSneakPeek }) {
   const [filters, setFilters] = useState({
@@ -44,21 +45,13 @@ export default function TransactionLog({ onSneakPeek }) {
     const fetchFilterOptions = async () => {
       setLoadingOptions(true);
       try {
-        const token = localStorage.getItem("token");
-        const headers = {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        };
-
         // Fetch statuses
-        const statusResponse = await fetch(
-          "https://rewardsapi.hireagent.co/api/admin/transactions/meta/statuses",
-          { headers }
+        const statusResponse = await apiClient.get(
+          "/admin/transactions/meta/statuses"
         );
-        const statusData = await statusResponse.json();
-        if (statusData.success) {
+        if (statusResponse.data.success) {
           // SW-35: Filter to only show relevant statuses (exclude 'processing' and 'pending')
-          const relevantStatuses = statusData.data.filter(
+          const relevantStatuses = statusResponse.data.data.filter(
             (s) => s !== "processing" && s !== "pending"
           );
           // Capitalize first letter for display
@@ -68,14 +61,12 @@ export default function TransactionLog({ onSneakPeek }) {
         }
 
         // Fetch transaction types
-        const typesResponse = await fetch(
-          "https://rewardsapi.hireagent.co/api/admin/transactions/meta/types",
-          { headers }
+        const typesResponse = await apiClient.get(
+          "/admin/transactions/meta/types"
         );
-        const typesData = await typesResponse.json();
-        if (typesData.success) {
+        if (typesResponse.data.success) {
           // SW-35: Filter to only show commonly used transaction types
-          const commonTypes = typesData.data.filter((t) =>
+          const commonTypes = typesResponse.data.data.filter((t) =>
             ["credit", "debit", "redemption", "adjustment"].includes(t)
           );
           // Capitalize first letter for display
@@ -101,7 +92,6 @@ export default function TransactionLog({ onSneakPeek }) {
     async (page = 1) => {
       setLoadingTransactions(true);
       try {
-        const token = localStorage.getItem("token");
         const params = new URLSearchParams({
           page: page.toString(),
           limit: "10",
@@ -152,17 +142,11 @@ export default function TransactionLog({ onSneakPeek }) {
           }
         }
 
-        const response = await fetch(
-          `https://rewardsapi.hireagent.co/api/admin/transactions?${params}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
+        const response = await apiClient.get(
+          `/admin/transactions?${params.toString()}`
         );
 
-        const result = await response.json();
+        const result = response.data;
 
         if (result.success && result.data) {
           // Filter out transactions with status "pending"

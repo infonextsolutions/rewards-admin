@@ -25,49 +25,6 @@ import toast from "react-hot-toast";
 const STATUS_TYPES = ["Active", "Inactive", "Testing", "Paused"];
 const XP_TIERS = ["Junior", "Mid", "Senior", "All"];
 
-// mock data (includes fields used in screenshot)
-const mockGames = [
-  {
-    id: "PUZZLE_001",
-    title: "Puzzle Master",
-    sdk: "PUZZLE_001",
-    xptrRules: "Solve 10 puzzles",
-    taskCount: 5,
-    activeTasks: 3,
-    countries: ["US", "CA", "UK"],
-    status: "Active",
-    rewardXP: 750,
-    rewardCoins: 150,
-    adSupported: true,
-    engagementTime: "45 min",
-    retentionRate: 78,
-    clickRate: 15,
-    installRate: 9.2,
-    marketingChannel: "TikTok",
-    campaign: "Gaming Promo",
-    xpTier: "Senior",
-    tier: "Gold",
-  },
-  {
-    id: "GAME002",
-    title: "Survey Master Pro",
-    sdk: "BitLabs",
-    xptrRules: "Complete 3 surveys worth 100+ points each",
-    taskCount: 5,
-    activeTasks: 3,
-    countries: ["US", "CA", "UK"],
-    status: "Active",
-    engagementTime: "30 min",
-    retentionRate: 65,
-    clickRate: 10,
-    installRate: 6.5,
-    marketingChannel: "Facebook",
-    campaign: "Survey Boost",
-    xpTier: "Mid",
-    tier: "Platinum",
-  },
-];
-
 export default function GamesListingModule() {
   const {
     games: apiGames,

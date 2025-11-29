@@ -39,10 +39,43 @@ const userAPIs = {
   // Get user details by ID
   async getUserDetails(userId) {
     try {
+      console.log('🔵 [UserAPI] Fetching user details for ID:', userId);
       const response = await apiClient.get(`/admin/users/${userId}`);
+      
+      // Debug: Log full response
+      console.log('🔵 [UserAPI] Full API Response:', response.data);
+      console.log('🔵 [UserAPI] Response Success:', response.data?.success);
+      console.log('🔵 [UserAPI] User Data:', response.data?.data);
+      
+      // Debug: Log specific fields we care about
+      const userData = response.data?.data;
+      if (userData) {
+        console.log('🔵 [UserAPI] Redemption Data:', {
+          redemptionsMade: userData.redemptionsMade,
+          redemptionBreakdown: userData.redemptionBreakdown,
+          redemptionCount: userData.redemptionBreakdown?.count,
+          totalCoins: userData.redemptionBreakdown?.totalCoins,
+          lastRedeemed: userData.redemptionBreakdown?.lastRedeemed
+        });
+        
+        console.log('🔵 [UserAPI] Spin Data:', {
+          spinUsage: userData.spinUsage,
+          spinCount: userData.spinCount,
+          lastSpinAt: userData.lastSpinAt,
+          userSpinCount: userData.user?.spinCount
+        });
+        
+        console.log('🔵 [UserAPI] Wallet Data:', {
+          wallet: userData.wallet,
+          walletBalance: userData.wallet?.balance,
+          walletTransactions: userData.wallet?.transactions?.length || 0
+        });
+      }
+      
       return response.data;
     } catch (error) {
-      console.error('Get user details error:', error);
+      console.error('❌ [UserAPI] Get user details error:', error);
+      console.error('❌ [UserAPI] Error response:', error.response?.data);
       throw error.response?.data || error;
     }
   },

@@ -2,66 +2,16 @@
 
 import { useState, useCallback } from "react";
 
-// Mock data for development
-const mockRewards = [
-  {
-    id: 1,
-    label: "100 Coins",
-    type: "Coins",
-    amount: 100,
-    probability: 25,
-    tierVisibility: ["All Tiers"],
-    icon: null,
-    active: true,
-    order: 1,
-  },
-  {
-    id: 2,
-    label: "50 XP",
-    type: "XP",
-    amount: 50,
-    probability: 30,
-    tierVisibility: ["Bronze", "Platinum"],
-    icon: null,
-    active: true,
-    order: 2,
-  },
-  {
-    id: 3,
-    label: "10% Discount Coupon",
-    type: "Coupons",
-    amount: 10,
-    probability: 15,
-    tierVisibility: ["Gold"],
-    icon: null,
-    active: true,
-    order: 3,
-  },
-  {
-    id: 4,
-    label: "500 Coins Bonus",
-    type: "Coins",
-    amount: 500,
-    probability: 5,
-    tierVisibility: ["Gold"],
-    icon: null,
-    active: false,
-    order: 4,
-  },
-];
-
-const mockSettings = {
-  spinMode: "free",
-  cooldownPeriod: 6, // in hours
-  maxSpinsPerDay: 3,
-  eligibleTiers: ["All Tiers"],
-  startDate: "",
-  endDate: "",
-};
-
 export function useSpinWheel() {
   const [rewards, setRewards] = useState([]);
-  const [settings, setSettings] = useState(mockSettings);
+  const [settings, setSettings] = useState({
+    spinMode: "free",
+    cooldownPeriod: 6, // in hours
+    maxSpinsPerDay: 3,
+    eligibleTiers: ["All Tiers"],
+    startDate: "",
+    endDate: "",
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

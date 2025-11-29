@@ -171,6 +171,21 @@ export default function UserDetail() {
         if (response.success) {
           // Map API response to component structure
           const userData = response.data;
+          
+          // Debug: Log raw user data from API
+          console.log('🟢 [UserDetailPage] Raw userData from API:', userData);
+          console.log('🟢 [UserDetailPage] Redemption fields:', {
+            redemptionsMade: userData.redemptionsMade,
+            redemptionBreakdown: userData.redemptionBreakdown,
+            redemptionCount: userData.redemptionBreakdown?.count,
+            totalCoins: userData.redemptionBreakdown?.totalCoins
+          });
+          console.log('🟢 [UserDetailPage] Spin fields:', {
+            spinUsage: userData.spinUsage,
+            spinCount: userData.spinCount,
+            lastSpinAt: userData.lastSpinAt
+          });
+          
           const mappedUser = {
             id: userData.id,
             name: userData.name,
@@ -225,12 +240,35 @@ export default function UserDetail() {
             lastOfferClaimed: userData.lastOfferClaimed || "N/A",
             totalCoinsEarned: userData.totalCoinsEarned || 0,
             totalXPEarned: userData.totalXPEarned || 0,
-            redemptionsMade: userData.redemptionsMade || 0,
-            redemptionBreakdown: userData.redemptionBreakdown || { count: 0, totalCoins: 0, lastRedeemed: null },
+            redemptionsMade: (() => {
+              const value = typeof userData.redemptionsMade === 'number' ? userData.redemptionsMade : 0;
+              console.log('🟢 [UserDetailPage] Mapped redemptionsMade:', value, 'from:', userData.redemptionsMade);
+              return value;
+            })(),
+            redemptionCount: (() => {
+              const value = typeof userData.redemptionsMade === 'number' ? userData.redemptionsMade : (userData.redemptionBreakdown?.count || 0);
+              console.log('🟢 [UserDetailPage] Mapped redemptionCount:', value);
+              return value;
+            })(),
+            redemptionBreakdown: (() => {
+              const value = userData.redemptionBreakdown || { count: 0, totalCoins: 0, lastRedeemed: null };
+              console.log('🟢 [UserDetailPage] Mapped redemptionBreakdown:', value);
+              return value;
+            })(),
+            redemptionHistory: userData.redemptionHistory || [],
             challengeProgress: userData.challengeProgress || {},
-            dailyChallengesCompleted: userData.dailyChallengesCompleted,
-            spinUsage: userData.spinUsage || 0,
-            lastSpinAt: userData.lastSpinAt,
+            dailyChallengesCompleted: typeof userData.dailyChallengesCompleted === 'number' ? userData.dailyChallengesCompleted : 0,
+            spinUsage: (() => {
+              const value = typeof userData.spinUsage === 'number' ? userData.spinUsage : (typeof userData.spinCount === 'number' ? userData.spinCount : 0);
+              console.log('🟢 [UserDetailPage] Mapped spinUsage:', value, 'from:', { spinUsage: userData.spinUsage, spinCount: userData.spinCount });
+              return value;
+            })(),
+            spinCount: (() => {
+              const value = typeof userData.spinCount === 'number' ? userData.spinCount : (typeof userData.spinUsage === 'number' ? userData.spinUsage : 0);
+              console.log('🟢 [UserDetailPage] Mapped spinCount:', value);
+              return value;
+            })(),
+            lastSpinAt: userData.lastSpinAt || null,
 
             // Additional data from API
             vip: userData.vip,
@@ -241,6 +279,19 @@ export default function UserDetail() {
             tasksCompleted: userData.tasksCompleted,
             surveysCompleted: userData.surveysCompleted,
           };
+
+          // Debug: Log final mapped user object
+          console.log('🟢 [UserDetailPage] Final mappedUser:', mappedUser);
+          console.log('🟢 [UserDetailPage] Final redemption data:', {
+            redemptionsMade: mappedUser.redemptionsMade,
+            redemptionCount: mappedUser.redemptionCount,
+            redemptionBreakdown: mappedUser.redemptionBreakdown
+          });
+          console.log('🟢 [UserDetailPage] Final spin data:', {
+            spinUsage: mappedUser.spinUsage,
+            spinCount: mappedUser.spinCount,
+            lastSpinAt: mappedUser.lastSpinAt
+          });
 
           setUser(mappedUser);
         }

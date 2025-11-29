@@ -48,13 +48,8 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
       }))
     : [];
   
-  // If age is empty, add realistic default data
-  if (normalizedAge.length === 0 || normalizedAge.every(item => item.value === 0)) {
-    normalizedAge = [
-      { name: "18-24", value: 40, color: chartColors.age[0] },
-      { name: "25-34", value: 60, color: chartColors.age[1] },
-    ];
-  }
+  // If age is empty, show empty state (no hardcoded fallback data)
+  // The DonutChart component will handle empty state display
   
   // Filter out unwanted age ranges (35-44, 45-54, 55+)
   normalizedAge = normalizedAge.filter(item => 
@@ -72,13 +67,8 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
       }))
     : [];
   
-  // If gender is empty, add realistic default data
-  if (normalizedGender.length === 0 || normalizedGender.every(item => item.value === 0)) {
-    normalizedGender = [
-      { name: "Male", value: 58, color: chartColors.gender[0] },
-      { name: "Female", value: 42, color: chartColors.gender[1] },
-    ];
-  }
+  // If gender is empty, show empty state (no hardcoded fallback data)
+  // The DonutChart component will handle empty state display
   
   // Filter out "Other" gender
   normalizedGender = normalizedGender.filter(item => 
@@ -114,21 +104,12 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
     tier: normalizedTier,
   };
 
-  // Hardcode India region - only show India
-  normalizedDemographics.region = [
-    { name: "India", value: 5, color: "#10b981" },
-  ];
-
-  // Hardcode tier - only show gold and platinum
-  normalizedDemographics.tier = [
-    { name: "gold", value: 5, color: "#f59e0b" },
-    { name: "platinum", value: 95, color: chartColors.tier[2] },
-  ];
-
+  // Use real data from API - no hardcoded overrides
   const finalGameData = {
     ...gameData,
     demographics: normalizedDemographics,
-    rewardConversion: 1, // Hardcode reward conversion to 1%
+    // Use rewardConversion from API data (passed from Dashboard component)
+    rewardConversion: gameData.rewardConversion || 0,
   };
 
   const statsData = [
