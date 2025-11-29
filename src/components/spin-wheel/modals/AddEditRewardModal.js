@@ -1,7 +1,11 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { XMarkIcon, PhotoIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  XMarkIcon,
+  PhotoIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
 
 export default function AddEditRewardModal({
   isOpen,
@@ -10,50 +14,50 @@ export default function AddEditRewardModal({
   reward = null,
   rewardTypes = [],
   tierOptions = [],
-  existingRewards = []
+  existingRewards = [],
 }) {
   const isEdit = !!reward;
-  
+
   const [formData, setFormData] = useState({
-    label: '',
-    type: 'Coins',
-    amount: '',
-    probability: '',
-    tierVisibility: ['All Tiers'],
+    label: "",
+    type: "Coins",
+    amount: "",
+    probability: "",
+    tierVisibility: ["All Tiers"],
     icon: null,
-    iconUrl: '',
-    active: true
+    iconUrl: "",
+    active: true,
   });
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [iconPreview, setIconPreview] = useState('');
+  const [iconPreview, setIconPreview] = useState("");
 
   useEffect(() => {
     if (reward) {
       setFormData({
-        label: reward.label || '',
-        type: reward.type || 'Coins',
-        amount: reward.amount || '',
-        probability: reward.probability || '',
-        tierVisibility: reward.tierVisibility || ['All Tiers'],
+        label: reward.label || "",
+        type: reward.type || "Coins",
+        amount: reward.amount || "",
+        probability: reward.probability || "",
+        tierVisibility: reward.tierVisibility || ["All Tiers"],
         icon: null,
-        iconUrl: reward.icon || '',
-        active: reward.active !== undefined ? reward.active : true
+        iconUrl: reward.icon || "",
+        active: reward.active !== undefined ? reward.active : true,
       });
-      setIconPreview(reward.icon || '');
+      setIconPreview(reward.icon || "");
     } else {
       setFormData({
-        label: '',
-        type: 'Coins',
-        amount: '',
-        probability: '',
-        tierVisibility: ['All Tiers'],
+        label: "",
+        type: "Coins",
+        amount: "",
+        probability: "",
+        tierVisibility: ["All Tiers"],
         icon: null,
-        iconUrl: '',
-        active: true
+        iconUrl: "",
+        active: true,
       });
-      setIconPreview('');
+      setIconPreview("");
     }
     setErrors({});
   }, [reward, isOpen]);
@@ -61,7 +65,7 @@ export default function AddEditRewardModal({
   // Calculate remaining probability
   const remainingProbability = useMemo(() => {
     const usedProbability = existingRewards
-      .filter(r => r.active && (!isEdit || r.id !== reward?.id))
+      .filter((r) => r.active && (!isEdit || r.id !== reward?.id))
       .reduce((sum, r) => sum + (r.probability || 0), 0);
     return 100 - usedProbability;
   }, [existingRewards, isEdit, reward?.id]);
@@ -71,42 +75,45 @@ export default function AddEditRewardModal({
 
     // Label validation
     if (!formData.label.trim()) {
-      newErrors.label = 'Reward label is required';
-    } else if (formData.label.length > 10) {
-      newErrors.label = 'Reward label must be 10 characters or less';
+      newErrors.label = "Reward label is required";
+    } else if (formData.label.length > 20) {
+      newErrors.label = "Reward label must be 20 characters or less";
     } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.label)) {
-      newErrors.label = 'Reward label must contain only alphanumeric characters and spaces';
+      newErrors.label =
+        "Reward label must contain only alphanumeric characters and spaces";
     }
 
     // Check for duplicate labels
-    const duplicateLabel = existingRewards.find(r => 
-      r.label.toLowerCase() === formData.label.toLowerCase() && 
-      (!isEdit || r.id !== reward?.id)
+    const duplicateLabel = existingRewards.find(
+      (r) =>
+        r.label.toLowerCase() === formData.label.toLowerCase() &&
+        (!isEdit || r.id !== reward?.id)
     );
     if (duplicateLabel) {
-      newErrors.label = 'A reward with this label already exists';
+      newErrors.label = "A reward with this label already exists";
     }
 
     // Amount validation
     if (!formData.amount || formData.amount <= 0) {
-      newErrors.amount = 'Amount must be greater than 0';
+      newErrors.amount = "Amount must be greater than 0";
     } else if (formData.amount > 1000000) {
-      newErrors.amount = 'Amount must be 1,000,000 or less';
+      newErrors.amount = "Amount must be 1,000,000 or less";
     }
 
     // Probability validation
     if (!formData.probability || formData.probability <= 0) {
-      newErrors.probability = 'Probability must be greater than 0';
+      newErrors.probability = "Probability must be greater than 0";
     } else if (formData.probability > 100) {
-      newErrors.probability = 'Probability cannot exceed 100%';
+      newErrors.probability = "Probability cannot exceed 100%";
     } else if (formData.probability > remainingProbability && formData.active) {
       newErrors.probability = `Probability cannot exceed ${remainingProbability}% (remaining available)`;
     } else {
       // Check for duplicate probability (only for active rewards)
-      const duplicateProbability = existingRewards.find(r => 
-        r.active && 
-        Math.abs(r.probability - parseFloat(formData.probability)) < 0.01 && // Allow for floating point precision
-        (!isEdit || r.id !== reward?.id)
+      const duplicateProbability = existingRewards.find(
+        (r) =>
+          r.active &&
+          Math.abs(r.probability - parseFloat(formData.probability)) < 0.01 && // Allow for floating point precision
+          (!isEdit || r.id !== reward?.id)
       );
       if (duplicateProbability) {
         newErrors.probability = `A reward with ${formData.probability}% probability already exists. Please deactivate the existing reward first or use a different probability.`;
@@ -115,7 +122,7 @@ export default function AddEditRewardModal({
 
     // Tier visibility validation
     if (!formData.tierVisibility.length) {
-      newErrors.tierVisibility = 'At least one tier must be selected';
+      newErrors.tierVisibility = "At least one tier must be selected";
     }
 
     setErrors(newErrors);
@@ -123,13 +130,13 @@ export default function AddEditRewardModal({
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     // Clear error for this field when user starts typing
     if (errors[field]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
@@ -138,29 +145,29 @@ export default function AddEditRewardModal({
   };
 
   const handleTierChange = (tier, checked) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       let newTiers = [...prev.tierVisibility];
-      
-      if (tier === 'All Tiers') {
-        newTiers = checked ? ['All Tiers'] : [];
+
+      if (tier === "All Tiers") {
+        newTiers = checked ? ["All Tiers"] : [];
       } else {
         if (checked) {
-          newTiers = newTiers.filter(t => t !== 'All Tiers');
+          newTiers = newTiers.filter((t) => t !== "All Tiers");
           newTiers.push(tier);
         } else {
-          newTiers = newTiers.filter(t => t !== tier);
+          newTiers = newTiers.filter((t) => t !== tier);
         }
-        
+
         if (newTiers.length === 0) {
-          newTiers = ['All Tiers'];
+          newTiers = ["All Tiers"];
         }
       }
-      
+
       return { ...prev, tierVisibility: newTiers };
     });
     // Clear tier visibility error when user makes changes
     if (errors.tierVisibility) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors.tierVisibility;
         return newErrors;
@@ -172,23 +179,30 @@ export default function AddEditRewardModal({
     const file = event.target.files[0];
     if (file) {
       // Validate file type - only allow specific formats
-      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+      const allowedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/svg+xml",
+      ];
       if (!allowedTypes.includes(file.type)) {
-        setErrors(prev => ({ ...prev, icon: 'Please select a valid image file (.png, .jpg, .svg only)' }));
+        setErrors((prev) => ({
+          ...prev,
+          icon: "Please select a valid image file (.png, .jpg, .svg only)",
+        }));
         return;
       }
-
 
       const reader = new FileReader();
       reader.onload = (e) => {
         setIconPreview(e.target.result);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           icon: file,
-          iconUrl: e.target.result
+          iconUrl: e.target.result,
         }));
         // Remove icon error by creating new object without the icon property
-        setErrors(prev => {
+        setErrors((prev) => {
           const { icon, ...rest } = prev;
           return rest;
         });
@@ -199,7 +213,7 @@ export default function AddEditRewardModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -209,11 +223,11 @@ export default function AddEditRewardModal({
       await onSave({
         ...formData,
         amount: parseFloat(formData.amount),
-        probability: parseFloat(formData.probability)
+        probability: parseFloat(formData.probability),
       });
     } catch (error) {
-      console.error('Error saving reward:', error);
-      setErrors({ submit: 'Failed to save reward. Please try again.' });
+      console.error("Error saving reward:", error);
+      setErrors({ submit: "Failed to save reward. Please try again." });
     } finally {
       setSaving(false);
     }
@@ -226,7 +240,7 @@ export default function AddEditRewardModal({
       <div className="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium text-gray-900">
-            {isEdit ? 'Edit Reward' : 'Add New Reward'}
+            {isEdit ? "Edit Reward" : "Add New Reward"}
           </h3>
           <button
             onClick={onClose}
@@ -246,15 +260,15 @@ export default function AddEditRewardModal({
               <input
                 type="text"
                 value={formData.label}
-                onChange={(e) => handleInputChange('label', e.target.value)}
+                onChange={(e) => handleInputChange("label", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                  errors.label ? 'border-red-300' : 'border-gray-300'
+                  errors.label ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="200 Coins"
-                maxLength={10}
+                maxLength={20}
               />
               <p className="mt-1 text-xs text-gray-500">
-                {formData.label.length}/10 characters
+                {formData.label.length}/20 characters
               </p>
               {errors.label && (
                 <p className="mt-1 text-sm text-red-600">{errors.label}</p>
@@ -267,11 +281,13 @@ export default function AddEditRewardModal({
               </label>
               <select
                 value={formData.type}
-                onChange={(e) => handleInputChange('type', e.target.value)}
+                onChange={(e) => handleInputChange("type", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
               >
-                {rewardTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {rewardTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
             </div>
@@ -286,9 +302,9 @@ export default function AddEditRewardModal({
                 type="number"
                 min="1"
                 value={formData.amount}
-                onChange={(e) => handleInputChange('amount', e.target.value)}
+                onChange={(e) => handleInputChange("amount", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                  errors.amount ? 'border-red-300' : 'border-gray-300'
+                  errors.amount ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="200"
               />
@@ -307,14 +323,18 @@ export default function AddEditRewardModal({
                 max="100"
                 step="0.1"
                 value={formData.probability}
-                onChange={(e) => handleInputChange('probability', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("probability", e.target.value)
+                }
                 className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                  errors.probability ? 'border-red-300' : 'border-gray-300'
+                  errors.probability ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="20"
               />
               {errors.probability && (
-                <p className="mt-1 text-sm text-red-600">{errors.probability}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.probability}
+                </p>
               )}
             </div>
           </div>
@@ -324,7 +344,9 @@ export default function AddEditRewardModal({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Tier Visibility *
             </label>
-            <p className="text-xs text-gray-500 mb-3">Select one or more tiers that can see this reward</p>
+            <p className="text-xs text-gray-500 mb-3">
+              Select one or more tiers that can see this reward
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {tierOptions.map((tier) => (
                 <label key={tier} className="flex items-center">
@@ -339,7 +361,9 @@ export default function AddEditRewardModal({
               ))}
             </div>
             {errors.tierVisibility && (
-              <p className="mt-1 text-sm text-red-600">{errors.tierVisibility}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.tierVisibility}
+              </p>
             )}
           </div>
 
@@ -393,13 +417,14 @@ export default function AddEditRewardModal({
               <input
                 type="checkbox"
                 checked={formData.active}
-                onChange={(e) => handleInputChange('active', e.target.checked)}
+                onChange={(e) => handleInputChange("active", e.target.checked)}
                 className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
               />
               <span className="ml-2 text-sm text-gray-700">Active</span>
             </label>
             <p className="mt-1 text-xs text-gray-500">
-              Inactive rewards won&apos;t be available for spinning but will retain historical data
+              Inactive rewards won&apos;t be available for spinning but will
+              retain historical data
             </p>
           </div>
 
@@ -409,11 +434,15 @@ export default function AddEditRewardModal({
               <div className="flex">
                 <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mt-0.5" />
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
+                  <h3 className="text-sm font-medium text-red-800">
+                    Please fix the following errors:
+                  </h3>
                   <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
-                    {Object.values(errors).filter(Boolean).map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
+                    {Object.values(errors)
+                      .filter(Boolean)
+                      .map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
                   </ul>
                 </div>
               </div>
@@ -437,10 +466,12 @@ export default function AddEditRewardModal({
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {isEdit ? 'Updating...' : 'Adding...'}
+                  {isEdit ? "Updating..." : "Adding..."}
                 </>
+              ) : isEdit ? (
+                "Update Reward"
               ) : (
-                isEdit ? 'Update Reward' : 'Add Reward'
+                "Add Reward"
               )}
             </button>
           </div>

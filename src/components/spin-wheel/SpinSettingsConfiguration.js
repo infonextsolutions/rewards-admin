@@ -1,18 +1,30 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import {
+  CheckIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
-export default function SpinSettingsConfiguration({ settings = {}, onUpdateSettings, loading }) {
+export default function SpinSettingsConfiguration({
+  settings = {},
+  onUpdateSettings,
+  loading,
+}) {
   const [formData, setFormData] = useState({
-    spinMode: 'free',
+    spinMode: "free",
     cooldownPeriod: 6, // in hours
     maxSpinsPerDay: 3,
-    eligibleTiers: ['All Tiers'],
-    startDate: '',
-    endDate: '',
-    ...settings
+    eligibleTiers: ["All Tiers"],
+    startDate: "",
+    endDate: "",
+    vipMultipliers: {
+      bronze: 1.0,
+      gold: 1.5,
+      platinum: 2.0,
+    },
+    ...settings,
   });
 
   const [hasChanges, setHasChanges] = useState(false);
@@ -21,60 +33,61 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, ...settings }));
+    setFormData((prev) => ({ ...prev, ...settings }));
   }, [settings]);
 
   useEffect(() => {
-    const isChanged = JSON.stringify(formData) !== JSON.stringify({ ...formData, ...settings });
+    const isChanged =
+      JSON.stringify(formData) !== JSON.stringify({ ...formData, ...settings });
     setHasChanges(isChanged);
   }, [formData, settings]);
 
-  const tierOptions = [
-    'All Tiers',
-    'Bronze',
-    'Gold',
-    'Platinum'
-  ];
-
+  const tierOptions = ["All Tiers", "Bronze", "Gold", "Platinum"];
 
   const validateForm = () => {
     const newErrors = {};
 
     if (formData.cooldownPeriod < 1 || formData.cooldownPeriod > 24) {
-      newErrors.cooldownPeriod = 'Cooldown period must be between 1-24 hours';
+      newErrors.cooldownPeriod = "Cooldown period must be between 1-24 hours";
     }
 
-    if (formData.maxSpinsPerDay && (formData.maxSpinsPerDay < 1 || formData.maxSpinsPerDay > 50)) {
-      newErrors.maxSpinsPerDay = 'Max spins per day must be between 1-50';
+    if (
+      formData.maxSpinsPerDay &&
+      (formData.maxSpinsPerDay < 1 || formData.maxSpinsPerDay > 50)
+    ) {
+      newErrors.maxSpinsPerDay = "Max spins per day must be between 1-50";
     }
 
-    if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
-      newErrors.dateRange = 'Start date must be before end date';
+    if (
+      formData.startDate &&
+      formData.endDate &&
+      new Date(formData.startDate) >= new Date(formData.endDate)
+    ) {
+      newErrors.dateRange = "Start date must be before end date";
     }
-    
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     setSaveSuccess(false);
     // Clear error for this field when user starts typing
     if (errors[field]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
     }
     // Clear dateRange error when either date changes
-    if (field === 'startDate' || field === 'endDate') {
+    if (field === "startDate" || field === "endDate") {
       if (errors.dateRange) {
-        setErrors(prev => {
+        setErrors((prev) => {
           const newErrors = { ...prev };
           delete newErrors.dateRange;
           return newErrors;
@@ -84,24 +97,24 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
   };
 
   const handleTierChange = (tier, checked) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       let newTiers = [...prev.eligibleTiers];
-      
-      if (tier === 'All Tiers') {
-        newTiers = checked ? ['All Tiers'] : [];
+
+      if (tier === "All Tiers") {
+        newTiers = checked ? ["All Tiers"] : [];
       } else {
         if (checked) {
-          newTiers = newTiers.filter(t => t !== 'All Tiers');
+          newTiers = newTiers.filter((t) => t !== "All Tiers");
           newTiers.push(tier);
         } else {
-          newTiers = newTiers.filter(t => t !== tier);
+          newTiers = newTiers.filter((t) => t !== tier);
         }
-        
+
         if (newTiers.length === 0) {
-          newTiers = ['All Tiers'];
+          newTiers = ["All Tiers"];
         }
       }
-      
+
       return { ...prev, eligibleTiers: newTiers };
     });
     setSaveSuccess(false);
@@ -115,13 +128,13 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
     setSaving(true);
     try {
       await onUpdateSettings(formData);
-      toast.success('Settings saved successfully');
+      toast.success("Settings saved successfully");
       setSaveSuccess(true);
       setHasChanges(false);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      console.error('Error saving settings:', error);
-      toast.error(error.message || 'Failed to save settings');
+      console.error("Error saving settings:", error);
+      toast.error(error.message || "Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -129,13 +142,18 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
 
   const handleReset = () => {
     setFormData({
-      spinMode: 'free',
+      spinMode: "free",
       cooldownPeriod: 6, // in hours
       maxSpinsPerDay: 3,
-      eligibleTiers: ['All Tiers'],
-      startDate: '',
-      endDate: '',
-      ...settings
+      eligibleTiers: ["All Tiers"],
+      startDate: "",
+      endDate: "",
+      vipMultipliers: {
+        bronze: 1.0,
+        gold: 1.5,
+        platinum: 2.0,
+      },
+      ...settings,
     });
     setHasChanges(false);
     setErrors({});
@@ -149,15 +167,20 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Spin Settings Configuration</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Spin Settings Configuration
+              </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Configure spin modes, cooldowns, eligibility, and advanced settings
+                Configure spin modes, cooldowns, eligibility, and advanced
+                settings
               </p>
             </div>
             {saveSuccess && (
               <div className="flex items-center text-emerald-600">
                 <CheckIcon className="h-5 w-5 mr-2" />
-                <span className="text-sm font-medium">Settings saved successfully</span>
+                <span className="text-sm font-medium">
+                  Settings saved successfully
+                </span>
               </div>
             )}
           </div>
@@ -175,8 +198,10 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                     type="radio"
                     name="spinMode"
                     value="free"
-                    checked={formData.spinMode === 'free'}
-                    onChange={(e) => handleInputChange('spinMode', e.target.value)}
+                    checked={formData.spinMode === "free"}
+                    onChange={(e) =>
+                      handleInputChange("spinMode", e.target.value)
+                    }
                     className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
                   />
                   <span className="ml-3 text-sm text-gray-700">Free Spin</span>
@@ -186,18 +211,27 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                     type="radio"
                     name="spinMode"
                     value="ad-based"
-                    checked={formData.spinMode === 'ad-based' || formData.spinMode === 'ad_based'}
-                    onChange={(e) => handleInputChange('spinMode', e.target.value)}
+                    checked={
+                      formData.spinMode === "ad-based" ||
+                      formData.spinMode === "ad_based"
+                    }
+                    onChange={(e) =>
+                      handleInputChange("spinMode", e.target.value)
+                    }
                     className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
                   />
-                  <span className="ml-3 text-sm text-gray-700">Ad-Based Spin</span>
+                  <span className="ml-3 text-sm text-gray-700">
+                    Ad-Based Spin
+                  </span>
                 </label>
               </div>
             </div>
 
             {/* Cooldown & Frequency */}
             <div className="space-y-4">
-              <h3 className="text-base font-medium text-gray-900">Frequency Controls</h3>
+              <h3 className="text-base font-medium text-gray-900">
+                Frequency Controls
+              </h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -208,14 +242,23 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                     min="1"
                     max="24"
                     value={formData.cooldownPeriod}
-                    onChange={(e) => handleInputChange('cooldownPeriod', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "cooldownPeriod",
+                        parseInt(e.target.value)
+                      )
+                    }
                     className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                      errors.cooldownPeriod ? 'border-red-300' : 'border-gray-300'
+                      errors.cooldownPeriod
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                     placeholder="6"
                   />
                   {errors.cooldownPeriod && (
-                    <p className="mt-1 text-sm text-red-600">{errors.cooldownPeriod}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.cooldownPeriod}
+                    </p>
                   )}
                 </div>
 
@@ -228,14 +271,23 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                     min="1"
                     max="50"
                     value={formData.maxSpinsPerDay}
-                    onChange={(e) => handleInputChange('maxSpinsPerDay', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "maxSpinsPerDay",
+                        parseInt(e.target.value)
+                      )
+                    }
                     className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                      errors.maxSpinsPerDay ? 'border-red-300' : 'border-gray-300'
+                      errors.maxSpinsPerDay
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                     placeholder="3"
                   />
                   {errors.maxSpinsPerDay && (
-                    <p className="mt-1 text-sm text-red-600">{errors.maxSpinsPerDay}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.maxSpinsPerDay}
+                    </p>
                   )}
                 </div>
               </div>
@@ -244,8 +296,12 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
 
           {/* Eligibility Settings */}
           <div>
-            <h3 className="text-base font-medium text-gray-900 mb-1">Eligible XP Tiers</h3>
-            <p className="text-xs text-gray-500 mb-4">Select one or more tiers that can access the spin wheel</p>
+            <h3 className="text-base font-medium text-gray-900 mb-1">
+              Eligible XP Tiers
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Select one or more tiers that can access the spin wheel
+            </p>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {tierOptions.map((tier) => (
                 <label key={tier} className="flex items-center">
@@ -261,18 +317,22 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
             </div>
           </div>
 
-
           {/* Date Range Settings */}
           <div>
             <div className="mb-4">
-              <h3 className="text-base font-medium text-gray-900 mb-1">Campaign Duration (Optional)</h3>
+              <h3 className="text-base font-medium text-gray-900 mb-1">
+                Campaign Duration (Optional)
+              </h3>
               <p className="text-sm text-gray-600 mb-2">
-                Set a time window when the spin wheel will be available to users. Leave empty to make it always available.
+                Set a time window when the spin wheel will be available to
+                users. Leave empty to make it always available.
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-xs text-blue-800">
-                  <strong>How it works:</strong> The spin wheel will only be accessible to users between the start and end dates. 
-                  If no dates are set, the spin wheel is always available (subject to other settings like cooldown and daily limits).
+                  <strong>How it works:</strong> The spin wheel will only be
+                  accessible to users between the start and end dates. If no
+                  dates are set, the spin wheel is always available (subject to
+                  other settings like cooldown and daily limits).
                 </p>
               </div>
             </div>
@@ -284,9 +344,11 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                 <input
                   type="datetime-local"
                   value={formData.startDate}
-                  onChange={(e) => handleInputChange('startDate', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("startDate", e.target.value)
+                  }
                   className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                    errors.dateRange ? 'border-red-300' : 'border-gray-300'
+                    errors.dateRange ? "border-red-300" : "border-gray-300"
                   }`}
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -301,9 +363,9 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                 <input
                   type="datetime-local"
                   value={formData.endDate}
-                  onChange={(e) => handleInputChange('endDate', e.target.value)}
+                  onChange={(e) => handleInputChange("endDate", e.target.value)}
                   className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                    errors.dateRange ? 'border-red-300' : 'border-gray-300'
+                    errors.dateRange ? "border-red-300" : "border-gray-300"
                   }`}
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -317,14 +379,61 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
             {formData.startDate && formData.endDate && (
               <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
                 <p className="text-xs text-emerald-800">
-                  <strong>Active Period:</strong> The spin wheel will be available from{' '}
-                  {new Date(formData.startDate).toLocaleString()} to{' '}
-                  {new Date(formData.endDate).toLocaleString()}
+                  <strong>Active Period:</strong> The spin wheel will be
+                  available from {new Date(formData.startDate).toLocaleString()}{" "}
+                  to {new Date(formData.endDate).toLocaleString()}
                 </p>
               </div>
             )}
           </div>
 
+          {/* VIP Multipliers */}
+          <div>
+            <h3 className="text-base font-medium text-gray-900 mb-1">
+              VIP Tier Multipliers
+            </h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Configure reward multipliers for each VIP tier. These multipliers
+              determine how much users receive when they win rewards from the
+              spin wheel.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-blue-800">
+                <strong>How it works:</strong> When a user wins a reward, the
+                reward amount is multiplied by their tier's multiplier. For
+                example, if a Bronze user wins 100 coins with a 1.0x multiplier,
+                they receive 100 coins. If a Gold user wins 100 coins with a
+                1.5x multiplier, they receive 150 coins.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {["bronze", "gold", "platinum"].map((tier) => (
+                <div key={tier}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                    {tier} Multiplier
+                  </label>
+                  <input
+                    type="number"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                    value={formData.vipMultipliers?.[tier] || 1.0}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 1.0;
+                      setFormData((prev) => ({
+                        ...prev,
+                        vipMultipliers: {
+                          ...prev.vipMultipliers,
+                          [tier]: value,
+                        },
+                      }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Validation Messages */}
           {Object.keys(errors).length > 0 && (
@@ -332,7 +441,9 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
               <div className="flex">
                 <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mt-0.5" />
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
+                  <h3 className="text-sm font-medium text-red-800">
+                    Please fix the following errors:
+                  </h3>
                   <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
                     {Object.values(errors).map((error, index) => (
                       <li key={index}>{error}</li>
@@ -363,7 +474,7 @@ export default function SpinSettingsConfiguration({ settings = {}, onUpdateSetti
                   Saving...
                 </>
               ) : (
-                'Save Settings'
+                "Save Settings"
               )}
             </button>
           </div>

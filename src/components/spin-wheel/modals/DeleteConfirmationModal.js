@@ -1,17 +1,20 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import React from "react";
+import {
+  ExclamationTriangleIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 export default function DeleteConfirmationModal({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Confirm Deletion',
-  message = 'Are you sure you want to delete this item? This action cannot be undone.',
-  confirmButtonText = 'Delete',
-  cancelButtonText = 'Cancel',
-  loading = false
+  title = "Confirm Deletion",
+  message = "Are you sure you want to delete this item? This action cannot be undone.",
+  confirmButtonText = "Delete",
+  cancelButtonText = "Cancel",
+  loading = false,
 }) {
   if (!isOpen) return null;
 

@@ -42,8 +42,10 @@ export function useSpinWheel() {
             bonus_task: "Bonus Task",
             premium_feature: "Premium",
           };
-          const displayType = typeMap[reward.type] || reward.type.charAt(0).toUpperCase() + reward.type.slice(1);
-          
+          const displayType =
+            typeMap[reward.type] ||
+            reward.type.charAt(0).toUpperCase() + reward.type.slice(1);
+
           return {
             id: reward._id,
             label: reward.name,
@@ -84,6 +86,7 @@ export function useSpinWheel() {
 
       if (response.success && response.data) {
         // Map API response to component format
+        const rawData = response.data.raw || response.data;
         const mappedSettings = {
           spinMode: response.data.spinMode,
           cooldownPeriod: response.data.cooldownPeriod,
@@ -95,6 +98,11 @@ export function useSpinWheel() {
           endDate: response.data.endDate
             ? new Date(response.data.endDate).toISOString().slice(0, 16)
             : "",
+          vipMultipliers: rawData.vipMultipliers || {
+            bronze: 1.0,
+            gold: 1.5,
+            platinum: 2.0,
+          },
         };
 
         setSettings(mappedSettings);
@@ -129,7 +137,8 @@ export function useSpinWheel() {
           "Bonus Task": "bonus_task",
           Premium: "premium_feature",
         };
-        const normalizedType = typeMap[rewardData.type] || rewardData.type.toLowerCase();
+        const normalizedType =
+          typeMap[rewardData.type] || rewardData.type.toLowerCase();
         formData.append("type", normalizedType);
         formData.append("amount", rewardData.amount);
         formData.append("probability", rewardData.probability);
@@ -200,7 +209,8 @@ export function useSpinWheel() {
           "Bonus Task": "bonus_task",
           Premium: "premium_feature",
         };
-        const normalizedType = typeMap[rewardData.type] || rewardData.type.toLowerCase();
+        const normalizedType =
+          typeMap[rewardData.type] || rewardData.type.toLowerCase();
         formData.append("type", normalizedType);
         formData.append("amount", rewardData.amount);
         formData.append("probability", rewardData.probability);
@@ -286,15 +296,22 @@ export function useSpinWheel() {
         setError(null);
 
         // Prepare API payload
+        const nameMap = {
+          free: "Main Spin Wheel",
+          "ad-based": "Ad-Based Spin Wheel",
+          ad_based: "Ad-Based Spin Wheel",
+        };
         const payload = {
-          name:
-            settingsData.spinMode === "free"
-              ? "Main Spin Wheel"
-              : "Ad-Based Spin Wheel",
+          name: nameMap[settingsData.spinMode] || "Main Spin Wheel",
           spinMode: settingsData.spinMode,
           cooldownPeriod: settingsData.cooldownPeriod,
           maxSpinsPerDay: settingsData.maxSpinsPerDay,
           eligibleTiers: settingsData.eligibleTiers || [],
+          vipMultipliers: settingsData.vipMultipliers || {
+            bronze: 1.0,
+            gold: 1.5,
+            platinum: 2.0,
+          },
         };
 
         // Add dates if provided

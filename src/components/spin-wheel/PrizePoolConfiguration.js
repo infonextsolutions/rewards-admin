@@ -1,104 +1,137 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
-import AddEditRewardModal from './modals/AddEditRewardModal';
-import DeleteConfirmationModal from './modals/DeleteConfirmationModal';
-import TierBadge from '../ui/TierBadge';
+import React, { useState, useMemo } from "react";
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  Bars3Icon,
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
+import AddEditRewardModal from "./modals/AddEditRewardModal";
+import DeleteConfirmationModal from "./modals/DeleteConfirmationModal";
+import TierBadge from "../ui/TierBadge";
 
-export default function PrizePoolConfiguration({ 
-  rewards = [], 
-  onAddReward, 
-  onUpdateReward, 
-  onDeleteReward, 
+export default function PrizePoolConfiguration({
+  rewards = [],
+  onAddReward,
+  onUpdateReward,
+  onDeleteReward,
   onReorderRewards,
-  loading 
+  onRefresh,
+  loading,
 }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingReward, setEditingReward] = useState(null);
   const [deletingReward, setDeletingReward] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
 
   // Calculate total probability
   const totalProbability = useMemo(() => {
     return rewards
-      .filter(reward => reward.active)
+      .filter((reward) => reward.active)
       .reduce((sum, reward) => sum + (reward.probability || 0), 0);
   }, [rewards]);
 
   // Filter rewards
   const filteredRewards = useMemo(() => {
+    if (!rewards || rewards.length === 0) {
+      return [];
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
+
     return rewards
-      .filter(reward => {
-        const matchesSearch = reward.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             reward.type.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || 
-                             (statusFilter === 'active' && reward.active) ||
-                             (statusFilter === 'inactive' && !reward.active);
-        const matchesType = typeFilter === 'all' || reward.type === typeFilter;
-        
+      .filter((reward) => {
+        // Search filter - search across label, type, and amount
+        let matchesSearch = true;
+        if (searchLower) {
+          const labelMatch =
+            reward.label?.toLowerCase().includes(searchLower) || false;
+          const typeMatch =
+            reward.type?.toLowerCase().includes(searchLower) || false;
+          const amountMatch =
+            reward.amount?.toString().includes(searchLower) || false;
+          const probabilityMatch =
+            reward.probability?.toString().includes(searchLower) || false;
+
+          matchesSearch =
+            labelMatch || typeMatch || amountMatch || probabilityMatch;
+        }
+
+        // Status filter
+        const matchesStatus =
+          statusFilter === "all" ||
+          (statusFilter === "active" && reward.active === true) ||
+          (statusFilter === "inactive" && reward.active === false);
+
+        // Type filter - case insensitive
+        const matchesType =
+          typeFilter === "all" ||
+          reward.type?.toLowerCase() === typeFilter.toLowerCase();
+
         return matchesSearch && matchesStatus && matchesType;
       })
       .sort((a, b) => (a.order || 0) - (b.order || 0)); // Sort by order
   }, [rewards, searchTerm, statusFilter, typeFilter]);
 
-  const rewardTypes = ['Coins', 'XP'];
-  const tierOptions = ['All Tiers', 'Bronze', 'Gold', 'Platinum'];
+  const rewardTypes = ["Coins", "XP"];
+  const tierOptions = ["All Tiers", "Bronze", "Gold", "Platinum"];
 
   const handleAddReward = async (rewardData) => {
     try {
       await onAddReward(rewardData);
-      toast.success('Reward created successfully');
+      toast.success("Reward created successfully");
       setShowAddModal(false);
     } catch (error) {
-      console.error('Error adding reward:', error);
-      toast.error(error.message || 'Failed to create reward');
+      console.error("Error adding reward:", error);
+      toast.error(error.message || "Failed to create reward");
     }
   };
 
   const handleUpdateReward = async (id, rewardData) => {
     try {
       await onUpdateReward(id, rewardData);
-      toast.success('Reward updated successfully');
+      toast.success("Reward updated successfully");
       setEditingReward(null);
     } catch (error) {
-      console.error('Error updating reward:', error);
-      toast.error(error.message || 'Failed to update reward');
+      console.error("Error updating reward:", error);
+      toast.error(error.message || "Failed to update reward");
     }
   };
 
   const handleDeleteReward = async (id) => {
     try {
       await onDeleteReward(id);
-      toast.success('Reward deleted successfully');
+      toast.success("Reward deleted successfully");
       setDeletingReward(null);
     } catch (error) {
-      console.error('Error deleting reward:', error);
-      toast.error(error.message || 'Failed to delete reward');
+      console.error("Error deleting reward:", error);
+      toast.error(error.message || "Failed to delete reward");
     }
   };
 
   const getProbabilityColor = () => {
-    if (totalProbability > 100) return 'text-red-600 bg-red-50 border-red-200';
-    if (totalProbability === 100) return 'text-emerald-600 bg-emerald-50 border-emerald-200';
-    return 'text-amber-600 bg-amber-50 border-amber-200';
+    if (totalProbability > 100) return "text-red-600 bg-red-50 border-red-200";
+    if (totalProbability === 100)
+      return "text-emerald-600 bg-emerald-50 border-emerald-200";
+    return "text-amber-600 bg-amber-50 border-amber-200";
   };
 
   // Drag and drop handlers
   const handleDragStart = (e, reward) => {
     setDraggedItem(reward);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", ""); // Required for Firefox
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
   };
 
   const handleDragEnter = (e, reward) => {
@@ -117,8 +150,12 @@ export default function PrizePoolConfiguration({
 
   const handleDrop = async (e, targetReward) => {
     e.preventDefault();
-    
-    if (!draggedItem || !onReorderRewards || draggedItem.id === targetReward.id) {
+
+    if (
+      !draggedItem ||
+      !onReorderRewards ||
+      draggedItem.id === targetReward.id
+    ) {
       setDraggedItem(null);
       setDragOverItem(null);
       return;
@@ -126,14 +163,18 @@ export default function PrizePoolConfiguration({
 
     try {
       // Find indexes in the filtered list
-      const draggedIndex = filteredRewards.findIndex(r => r.id === draggedItem.id);
-      const targetIndex = filteredRewards.findIndex(r => r.id === targetReward.id);
+      const draggedIndex = filteredRewards.findIndex(
+        (r) => r.id === draggedItem.id
+      );
+      const targetIndex = filteredRewards.findIndex(
+        (r) => r.id === targetReward.id
+      );
 
       if (draggedIndex !== -1 && targetIndex !== -1) {
         await onReorderRewards(draggedIndex, targetIndex);
       }
     } catch (error) {
-      console.error('Error reordering rewards:', error);
+      console.error("Error reordering rewards:", error);
     } finally {
       setDraggedItem(null);
       setDragOverItem(null);
@@ -152,14 +193,18 @@ export default function PrizePoolConfiguration({
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Prize Pool Configuration</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Prize Pool Configuration
+              </h2>
               <p className="mt-1 text-sm text-gray-600">
                 Manage rewards, probabilities, and prize pool settings
               </p>
             </div>
             <div className="flex items-center space-x-3">
               {/* Total Probability Indicator */}
-              <div className={`px-3 py-2 rounded-lg border text-sm font-medium ${getProbabilityColor()}`}>
+              <div
+                className={`px-3 py-2 rounded-lg border text-sm font-medium ${getProbabilityColor()}`}
+              >
                 Total Probability: {totalProbability.toFixed(1)}%
                 {totalProbability > 100 && (
                   <span className="ml-2 text-xs">(Exceeds 100%)</span>
@@ -190,8 +235,18 @@ export default function PrizePoolConfiguration({
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
               </div>
@@ -202,7 +257,7 @@ export default function PrizePoolConfiguration({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500 bg-white"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -211,13 +266,30 @@ export default function PrizePoolConfiguration({
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500 bg-white"
               >
                 <option value="all">All Types</option>
-                {rewardTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {rewardTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
+              {(searchTerm ||
+                statusFilter !== "all" ||
+                typeFilter !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setStatusFilter("all");
+                    setTypeFilter("all");
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-800 underline"
+                  title="Clear all filters"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -256,19 +328,40 @@ export default function PrizePoolConfiguration({
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRewards.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' 
-                      ? 'No rewards match your current filters.' 
-                      : 'No rewards configured yet. Add your first reward to get started.'}
+                  <td
+                    colSpan="8"
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    {searchTerm ||
+                    statusFilter !== "all" ||
+                    typeFilter !== "all" ? (
+                      <div className="flex flex-col items-center space-y-2">
+                        <p>No rewards match your search criteria.</p>
+                        <button
+                          onClick={() => {
+                            setSearchTerm("");
+                            setStatusFilter("all");
+                            setTypeFilter("all");
+                          }}
+                          className="text-sm text-emerald-600 hover:text-emerald-700 underline font-medium"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
+                    ) : (
+                      "No rewards configured yet. Add your first reward to get started."
+                    )}
                   </td>
                 </tr>
               ) : (
                 filteredRewards.map((reward, index) => (
-                  <tr 
-                    key={reward.id} 
+                  <tr
+                    key={reward.id}
                     className={`hover:bg-gray-50 transition-colors cursor-move ${
-                      dragOverItem?.id === reward.id ? 'bg-blue-50 border-l-4 border-blue-400' : ''
-                    } ${draggedItem?.id === reward.id ? 'opacity-50' : ''}`}
+                      dragOverItem?.id === reward.id
+                        ? "bg-blue-50 border-l-4 border-blue-400"
+                        : ""
+                    } ${draggedItem?.id === reward.id ? "opacity-50" : ""}`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, reward)}
                     onDragOver={handleDragOver}
@@ -277,26 +370,41 @@ export default function PrizePoolConfiguration({
                     onDrop={(e) => handleDrop(e, reward)}
                     onDragEnd={handleDragEnd}
                   >
-                    <td className="px-6
-                     py-4 whitespace-nowrap">
+                    <td
+                      className="px-6
+                     py-4 whitespace-nowrap"
+                    >
                       <div className="flex items-center">
-                        <Bars3Icon className="h-5 w-5 text-gray-400 cursor-move" title="Drag to reorder" />
+                        <Bars3Icon
+                          className="h-5 w-5 text-gray-400 cursor-move"
+                          title="Drag to reorder"
+                        />
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8 mr-3 bg-gray-100 rounded-full flex items-center justify-center">
                           {reward.icon ? (
-                            <img className="h-8 w-8 rounded-full" src={reward.icon} alt={reward.label} />
+                            <img
+                              className="h-8 w-8 rounded-full"
+                              src={reward.icon}
+                              alt={reward.label}
+                            />
                           ) : (
                             <span className="text-xs font-medium text-gray-600">
-                              {reward.type === 'Coins' ? '🪙' : 
-                               reward.type === 'XP' ? '⭐' : '🎁'}
+                              {reward.type === "Coins"
+                                ? "🪙"
+                                : reward.type === "XP"
+                                ? "⭐"
+                                : "🎁"}
                             </span>
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-gray-900 truncate" title={reward.label}>
+                          <div
+                            className="text-sm font-medium text-gray-900 truncate"
+                            title={reward.label}
+                          >
                             {reward.label}
                           </div>
                         </div>
@@ -321,16 +429,85 @@ export default function PrizePoolConfiguration({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium min-w-[70px] ${
-                        reward.active 
-                          ? 'bg-emerald-100 text-emerald-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {reward.active ? 'Active' : 'Inactive'}
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium min-w-[70px] ${
+                          reward.active
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {reward.active ? "Active" : "Inactive"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center space-x-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { default: spinWheelAPIs } = await import(
+                                "../../data/spinWheel/spinWheelAPI"
+                              );
+                              await spinWheelAPIs.toggleReward(reward.id);
+                              toast.success(
+                                `Reward ${
+                                  reward.active ? "deactivated" : "activated"
+                                } successfully`
+                              );
+                              if (onRefresh) {
+                                onRefresh();
+                              } else {
+                                // Fallback: reload page if no refresh callback
+                                window.location.reload();
+                              }
+                            } catch (error) {
+                              console.error("Error toggling reward:", error);
+                              toast.error(
+                                error.message ||
+                                  "Failed to toggle reward status"
+                              );
+                            }
+                          }}
+                          className={`p-1 rounded-md ${
+                            reward.active
+                              ? "text-amber-600 hover:text-amber-900 hover:bg-amber-50"
+                              : "text-emerald-600 hover:text-emerald-900 hover:bg-emerald-50"
+                          }`}
+                          title={
+                            reward.active
+                              ? "Deactivate reward"
+                              : "Activate reward"
+                          }
+                        >
+                          {reward.active ? (
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </button>
                         <button
                           onClick={() => setEditingReward(reward)}
                           className="text-emerald-600 hover:text-emerald-900 p-1 rounded-md hover:bg-emerald-50"
