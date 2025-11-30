@@ -332,7 +332,7 @@ const TrendModal = ({ isOpen, onClose, selectedRow }) => {
   */
 };
 
-const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowClick, sortConfig, onSort }) => {
+const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowClick, sortConfig, onSort, loading }) => {
   const getSortIcon = (column) => {
     if (sortConfig.key === column) {
       return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
@@ -765,6 +765,7 @@ export default function AnalyticsPage() {
         onRowClick={handleRowClick}
         sortConfig={sortConfig}
         onSort={handleSort}
+        loading={loading}
       />
       <TrendModal 
         isOpen={modalOpen} 
