@@ -281,8 +281,8 @@ export default function SecurityComplianceModule({ userData = [] }) {
       )}
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200">
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="border-b border-gray-200 overflow-hidden rounded-t-lg">
           <nav className="flex space-x-8 px-6" aria-label="Tabs">
             {TABS.map((tab) => (
               <button
@@ -304,7 +304,7 @@ export default function SecurityComplianceModule({ userData = [] }) {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-visible">
           {loading && (
             <div className="text-center py-8">
               <div className="text-gray-500">Loading security settings...</div>

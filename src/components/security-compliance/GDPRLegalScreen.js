@@ -267,7 +267,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select User (Optional)
               </label>
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative z-50" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -292,7 +292,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-hidden flex flex-col">
+                  <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-hidden flex flex-col">
                     {/* Search Input */}
                     <div className="p-2 border-b border-gray-200">
                       <div className="relative">
@@ -425,7 +425,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        {/* <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={() => {
@@ -471,7 +471,7 @@ export default function GDPRLegalScreen({ onSave, userData = [] }) {
             )}
             <span>{isSaving ? "Saving..." : "Save Legal Config"}</span>
           </button>
-        </div>
+        </div> */}
       </form>
     </div>
   );
