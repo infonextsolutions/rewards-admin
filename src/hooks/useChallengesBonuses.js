@@ -48,7 +48,17 @@ export function useChallengesBonuses() {
       setChallenges(prev => [...prev, newChallenge]);
       return newChallenge;
     } catch (err) {
-      setError('Failed to create challenge. Please try again.');
+      // Try to surface backend validation/message (e.g., duplicate date 409)
+      const message =
+        err?.message ||
+        err?.error ||
+        (typeof err === 'string' ? err : null);
+
+      if (message) {
+        setError(message);
+      } else {
+        setError('Failed to create challenge. Please try again.');
+      }
       console.error('Error creating challenge:', err);
       throw err;
     } finally {
@@ -69,7 +79,16 @@ export function useChallengesBonuses() {
       );
       return updatedChallenge;
     } catch (err) {
-      setError('Failed to update challenge. Please try again.');
+      const message =
+        err?.message ||
+        err?.error ||
+        (typeof err === 'string' ? err : null);
+
+      if (message) {
+        setError(message);
+      } else {
+        setError('Failed to update challenge. Please try again.');
+      }
       console.error('Error updating challenge:', err);
       throw err;
     } finally {
