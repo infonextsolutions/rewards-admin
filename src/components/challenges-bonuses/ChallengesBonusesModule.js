@@ -111,6 +111,7 @@ export default function ChallengesBonusesModule() {
       setShowChallengeModal(false);
       setEditingChallenge(null);
     } catch (error) {
+      // Let the modal decide how to present backend errors (e.g., duplicate date)
       console.error("Error saving challenge:", error);
       throw error;
     }
