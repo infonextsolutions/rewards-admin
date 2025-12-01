@@ -24,7 +24,55 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Mock data for challenges
+// Helper to build a human-readable segment label from targetAudience
+const buildSegmentLabel = (targetAudience) => {
+  if (!targetAudience) return "All Users";
+
+  const genders = Array.isArray(targetAudience.gender)
+    ? targetAudience.gender
+    : [];
+  const countries = Array.isArray(targetAudience.countries)
+    ? targetAudience.countries
+    : [];
+  const ageRange = targetAudience.ageRange || {};
+
+  const parts = [];
+
+  // Country
+  if (countries.length > 0) {
+    parts.push(countries.join(", "));
+  }
+
+  // Age
+  if (typeof ageRange.min === "number" || typeof ageRange.max === "number") {
+    const min = typeof ageRange.min === "number" ? ageRange.min : null;
+    const max = typeof ageRange.max === "number" ? ageRange.max : null;
+    if (min !== null && max !== null) {
+      parts.push(`${min}-${max}`);
+    } else if (min !== null) {
+      parts.push(`${min}+`);
+    } else if (max !== null) {
+      parts.push(`<=${max}`);
+    }
+  }
+
+  // Gender
+  if (genders.length > 0) {
+    const prettyGender = genders
+      .map((g) => {
+        const lower = String(g).toLowerCase();
+        if (lower === "male") return "Male";
+        if (lower === "female") return "Female";
+        if (lower === "other") return "Other";
+        return g;
+      })
+      .join("/");
+    parts.push(prettyGender);
+  }
+
+  if (parts.length === 0) return "All Users";
+  return parts.join(" · ");
+};
 const mockChallenges = [
   {
     id: "1",
@@ -303,8 +351,12 @@ export const challengesBonusesAPI = {
           : "Scheduled",
         gameId: apiData.gameId || null,
         sdkProvider: apiData.sdkProvider || null,
+        // Timer-based game configuration
+        playTimeMinutes: apiData.requirements?.timeLimit || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt,
+        targetAudience: apiData.targetAudience || null,
+        segmentLabel: buildSegmentLabel(apiData.targetAudience),
       }));
 
       // Return both challenges and pagination
@@ -353,6 +405,15 @@ export const challengesBonusesAPI = {
         ...(challengeData.sdkProvider && {
           sdkProvider: challengeData.sdkProvider,
         }),
+        ...(challengeData.type === "Game" &&
+          typeof challengeData.playTimeMinutes === "number" && {
+            requirements: {
+              timeLimit: challengeData.playTimeMinutes,
+            },
+          }),
+        ...(challengeData.targetAudience && {
+          targetAudience: challengeData.targetAudience,
+        }),
       };
 
       const response = await apiClient.post(
@@ -383,6 +444,8 @@ export const challengesBonusesAPI = {
         sdkProvider: apiData.sdkProvider || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt,
+        targetAudience: apiData.targetAudience || null,
+        segmentLabel: buildSegmentLabel(apiData.targetAudience),
       };
     } catch (error) {
       console.error("Create challenge error:", error);
@@ -433,6 +496,15 @@ export const challengesBonusesAPI = {
         ...(challengeData.gameId && { gameId: challengeData.gameId }),
         ...(challengeData.sdkProvider && {
           sdkProvider: challengeData.sdkProvider,
+        }),
+        ...(challengeData.type === "Game" &&
+          typeof challengeData.playTimeMinutes === "number" && {
+            requirements: {
+              timeLimit: challengeData.playTimeMinutes,
+            },
+          }),
+        ...(challengeData.targetAudience && {
+          targetAudience: challengeData.targetAudience,
         }),
       };
 
