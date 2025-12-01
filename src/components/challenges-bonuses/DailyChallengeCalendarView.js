@@ -64,6 +64,7 @@ export default function DailyChallengeCalendarView({
   const [selectedDateChallenges, setSelectedDateChallenges] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [segmentFilter, setSegmentFilter] = useState("all");
 
   const today = new Date();
 
@@ -145,6 +146,12 @@ export default function DailyChallengeCalendarView({
     const actualStatus = getActualStatus(challenge.status, challenge.date);
     const matchesStatus =
       statusFilter === "all" || actualStatus === statusFilter;
+
+    // Segment filter (simple text match on pre-computed label)
+    const segmentLabel = (challenge.segmentLabel || "All Users").toLowerCase();
+    const matchesSegment =
+      segmentFilter === "all" ||
+      segmentLabel.includes(segmentFilter.toLowerCase());
 
     // Date range filter (only applied in month view; week/day views control the visible range)
     let matchesDateRange = true;
@@ -235,7 +242,13 @@ export default function DailyChallengeCalendarView({
       }
     }
 
-    return matchesSearch && matchesType && matchesStatus && matchesDateRange;
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesStatus &&
+      matchesDateRange &&
+      matchesSegment
+    );
   };
 
   // Filter challenges for search / filters in MONTH view
@@ -605,6 +618,11 @@ export default function DailyChallengeCalendarView({
               <div className="truncate flex-1">
                 <span className="font-medium">{challenge.title}</span>
               </div>
+              {challenge.segmentLabel && (
+                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-white/70 text-gray-600 border border-gray-200 max-w-[80px] truncate">
+                  {challenge.segmentLabel}
+                </span>
+              )}
               {!challenge.visibility && (
                 <EyeSlashIcon className="h-3 w-3 text-gray-400 ml-1 flex-shrink-0" />
               )}
@@ -839,6 +857,19 @@ export default function DailyChallengeCalendarView({
                 <option value="Live">Live</option>
                 <option value="Pending">Pending</option>
                 <option value="Expired">Expired</option>
+              </select>
+              <select
+                value={segmentFilter}
+                onChange={(e) => setSegmentFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="all">All Segments</option>
+                <option value="all users">All Users</option>
+                <option value="vip">VIP Users</option>
+                <option value="new users">New Users</option>
+                <option value="returning users">Returning Users</option>
+                <option value="high engagement">High Engagement</option>
+                <option value="low engagement">Low Engagement</option>
               </select>
             </div>
           </div>

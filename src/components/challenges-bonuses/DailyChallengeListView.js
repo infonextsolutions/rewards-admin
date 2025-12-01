@@ -49,6 +49,7 @@ export default function DailyChallengeListView({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [segmentFilter, setSegmentFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [editingChallenge, setEditingChallenge] = useState(null);
@@ -65,10 +66,15 @@ export default function DailyChallengeListView({
 
       const matchesStatus = statusFilter === 'all' || actualStatus === statusFilter;
       const matchesType = typeFilter === 'all' || challenge.type === typeFilter;
+      const matchesSegment =
+        segmentFilter === 'all' ||
+        (challenge.segmentLabel || 'All Users')
+          .toLowerCase()
+          .includes(segmentFilter.toLowerCase());
 
-      return matchesSearch && matchesStatus && matchesType;
+      return matchesSearch && matchesStatus && matchesType && matchesSegment;
     }).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [challenges, searchTerm, statusFilter, typeFilter]);
+  }, [challenges, searchTerm, statusFilter, typeFilter, segmentFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredChallenges.length / itemsPerPage);
@@ -177,6 +183,19 @@ export default function DailyChallengeListView({
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
+              <select
+                value={segmentFilter}
+                onChange={(e) => setSegmentFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="all">All Segments</option>
+                <option value="all users">All Users</option>
+                <option value="vip">VIP Users</option>
+                <option value="new users">New Users</option>
+                <option value="returning users">Returning Users</option>
+                <option value="high engagement">High Engagement</option>
+                <option value="low engagement">Low Engagement</option>
+              </select>
             </div>
           </div>
         </div>
@@ -206,6 +225,9 @@ export default function DailyChallengeListView({
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Segment
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Visibility
@@ -260,6 +282,11 @@ export default function DailyChallengeListView({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(challenge.status, challenge.date)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 max-w-[160px] truncate">
+                        {challenge.segmentLabel || 'All Users'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
