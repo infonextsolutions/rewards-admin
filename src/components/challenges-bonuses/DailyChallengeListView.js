@@ -9,6 +9,34 @@ const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey', 'Referral', 'Watch Ad', 'SDK 
 const CLAIM_TYPES = ['Watch Ad', 'Auto'];
 const STATUS_TYPES = ['Scheduled', 'Live', 'Pending', 'Expired'];
 
+// Helper to keep status calculation consistent across filters and UI.
+// If an explicit status is set, we respect it; otherwise we derive it from the date.
+const getActualStatus = (status, date) => {
+  if (STATUS_TYPES.includes(status)) {
+    return status;
+  }
+
+  const today = new Date();
+  const challengeDate = new Date(date);
+
+  if (Number.isNaN(challengeDate.getTime())) {
+    // Fallback if date is invalid
+    return status || 'Pending';
+  }
+
+  if (challengeDate.toDateString() === today.toDateString()) {
+    return 'Live';
+  }
+  if (challengeDate > today) {
+    return 'Scheduled';
+  }
+  if (challengeDate < today) {
+    return 'Expired';
+  }
+
+  return status || 'Pending';
+};
+
 export default function DailyChallengeListView({
   challenges = [],
   onAddChallenge,
@@ -28,11 +56,13 @@ export default function DailyChallengeListView({
   // Filter challenges
   const filteredChallenges = useMemo(() => {
     return challenges.filter(challenge => {
+      const actualStatus = getActualStatus(challenge.status, challenge.date);
+
       const matchesSearch =
         (challenge.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (challenge.type?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
-      const matchesStatus = statusFilter === 'all' || challenge.status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || actualStatus === statusFilter;
       const matchesType = typeFilter === 'all' || challenge.type === typeFilter;
 
       return matchesSearch && matchesStatus && matchesType;
@@ -45,18 +75,7 @@ export default function DailyChallengeListView({
   const paginatedChallenges = filteredChallenges.slice(startIndex, startIndex + itemsPerPage);
 
   const getStatusBadge = (status, date) => {
-    const today = new Date();
-    const challengeDate = new Date(date);
-    
-    // Auto-update status based on date
-    let actualStatus = status;
-    if (challengeDate.toDateString() === today.toDateString()) {
-      actualStatus = 'Live';
-    } else if (challengeDate > today) {
-      actualStatus = 'Scheduled';
-    } else if (challengeDate < today) {
-      actualStatus = 'Expired';
-    }
+    const actualStatus = getActualStatus(status, date);
 
     const statusStyles = {
       'Scheduled': 'bg-blue-100 text-blue-800',
