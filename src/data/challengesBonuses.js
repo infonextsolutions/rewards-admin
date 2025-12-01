@@ -351,6 +351,8 @@ export const challengesBonusesAPI = {
           : "Scheduled",
         gameId: apiData.gameId || null,
         sdkProvider: apiData.sdkProvider || null,
+        // Timer-based game configuration
+        playTimeMinutes: apiData.requirements?.timeLimit || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt,
         targetAudience: apiData.targetAudience || null,
@@ -403,6 +405,12 @@ export const challengesBonusesAPI = {
         ...(challengeData.sdkProvider && {
           sdkProvider: challengeData.sdkProvider,
         }),
+        ...(challengeData.type === "Game" &&
+          typeof challengeData.playTimeMinutes === "number" && {
+            requirements: {
+              timeLimit: challengeData.playTimeMinutes,
+            },
+          }),
         ...(challengeData.targetAudience && {
           targetAudience: challengeData.targetAudience,
         }),
@@ -489,6 +497,12 @@ export const challengesBonusesAPI = {
         ...(challengeData.sdkProvider && {
           sdkProvider: challengeData.sdkProvider,
         }),
+        ...(challengeData.type === "Game" &&
+          typeof challengeData.playTimeMinutes === "number" && {
+            requirements: {
+              timeLimit: challengeData.playTimeMinutes,
+            },
+          }),
         ...(challengeData.targetAudience && {
           targetAudience: challengeData.targetAudience,
         }),

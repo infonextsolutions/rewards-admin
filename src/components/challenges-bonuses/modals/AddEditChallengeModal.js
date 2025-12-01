@@ -31,6 +31,8 @@ export default function AddEditChallengeModal({
     status: "Scheduled",
     gameId: "",
     sdkProvider: "",
+    // Timer-based challenge configuration (Game type)
+    playTimeMinutes: "",
     // Target audience (age / country / gender only)
     countriesInput: "",
     ageMin: "",
@@ -62,6 +64,15 @@ export default function AddEditChallengeModal({
         status: challenge.status || "Scheduled",
         gameId: challenge.gameId || "",
         sdkProvider: challenge.sdkProvider || "",
+        // Timer-based challenge: required play time (minutes)
+        playTimeMinutes:
+          challenge.playTimeMinutes !== undefined &&
+          challenge.playTimeMinutes !== null
+            ? String(challenge.playTimeMinutes)
+            : challenge.requirements?.timeLimit !== undefined &&
+              challenge.requirements?.timeLimit !== null
+            ? String(challenge.requirements.timeLimit)
+            : "",
         countriesInput: (challenge.targetAudience?.countries || []).join(", "),
         ageMin:
           challenge.targetAudience?.ageRange?.min !== undefined
@@ -175,13 +186,23 @@ export default function AddEditChallengeModal({
       newErrors.xpReward = "XP reward must be 0 or greater";
     }
 
-    // Validate game and SDK provider for Game/SDK Game types
+    // Validate game-specific requirements for Game/SDK Game types
     if (formData.type === "Game" || formData.type === "SDK Game") {
       if (!formData.sdkProvider) {
         newErrors.sdkProvider = "SDK Provider is required for Game challenges";
       }
       if (!formData.gameId) {
         newErrors.gameId = "Game is required for Game challenges";
+      }
+      // Timer-based game: require positive play time in minutes
+      if (
+        formData.type === "Game" &&
+        (formData.playTimeMinutes === "" ||
+          Number.isNaN(Number(formData.playTimeMinutes)) ||
+          Number(formData.playTimeMinutes) <= 0)
+      ) {
+        newErrors.playTimeMinutes =
+          "Required play time (minutes) must be greater than 0";
       }
     }
 
@@ -262,6 +283,13 @@ export default function AddEditChallengeModal({
       status: formData.status || "Scheduled",
       ...(formData.gameId && { gameId: formData.gameId }),
       ...(formData.sdkProvider && { sdkProvider: formData.sdkProvider }),
+      // Timer-based game configuration: required play time in minutes
+      ...(formData.type === "Game" &&
+        formData.playTimeMinutes &&
+        !Number.isNaN(Number(formData.playTimeMinutes)) &&
+        Number(formData.playTimeMinutes) > 0 && {
+          playTimeMinutes: Number(formData.playTimeMinutes),
+        }),
       targetAudience,
     };
 
@@ -315,6 +343,7 @@ export default function AddEditChallengeModal({
       status: "Scheduled",
       gameId: "",
       sdkProvider: "",
+      playTimeMinutes: "",
       countriesInput: "",
       ageMin: "",
       ageMax: "",
@@ -611,6 +640,61 @@ export default function AddEditChallengeModal({
                 {errors.gameId && (
                   <p className="mt-1 text-sm text-red-600">{errors.gameId}</p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Game Timer-Based Configuration (only for Game type) */}
+          {formData.type === "Game" && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Game Challenge Type
+              </h3>
+              <p className="text-xs text-gray-500">
+                This daily challenge uses a{" "}
+                <span className="font-semibold">Timer-Based Challenge</span>.
+                Users must play the selected game for the required minutes to
+                earn the reward.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Challenge Mechanic
+                  </label>
+                  <input
+                    type="text"
+                    value="Timer-Based Challenge"
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Required Play Time (minutes) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.playTimeMinutes}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        playTimeMinutes: e.target.value,
+                      })
+                    }
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                      errors.playTimeMinutes
+                        ? "border-red-300"
+                        : "border-gray-300"
+                    }`}
+                    placeholder="e.g., 15"
+                  />
+                  {errors.playTimeMinutes && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.playTimeMinutes}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           )}
