@@ -10,14 +10,8 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 
-const CHALLENGE_TYPES = [
-  "Spin",
-  "Game",
-  "Survey",
-  "Referral",
-  "Watch Ad",
-  "SDK Game",
-];
+// Only expose supported challenge types in the calendar filters
+const CHALLENGE_TYPES = ["Spin", "Game", "Survey"];
 const CLAIM_TYPES = ["Watch Ad", "Auto"];
 const STATUS_TYPES = ["Scheduled", "Live", "Pending", "Expired"];
 

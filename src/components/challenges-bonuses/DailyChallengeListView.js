@@ -5,7 +5,8 @@ import { PlusIcon, PencilIcon, TrashIcon, CalendarIcon, EyeIcon, EyeSlashIcon } 
 import FilterDropdown from '../ui/FilterDropdown';
 import Pagination from '../ui/Pagination';
 
-const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey', 'Referral', 'Watch Ad', 'SDK Game'];
+// Only expose the currently supported challenge types in the dropdown/filter
+const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey'];
 const CLAIM_TYPES = ['Watch Ad', 'Auto'];
 const STATUS_TYPES = ['Scheduled', 'Live', 'Pending', 'Expired'];
 

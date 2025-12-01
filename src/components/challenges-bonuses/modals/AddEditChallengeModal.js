@@ -5,7 +5,8 @@ import { XMarkIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { useMasterData } from '../../../hooks/useMasterData';
 import { gamesAPI } from '../../../data/games';
 
-const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey', 'Referral', 'Watch Ad', 'SDK Game'];
+// Only allow creation of supported challenge types
+const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey'];
 const CLAIM_TYPES = ['Watch Ad', 'Auto'];
 
 export default function AddEditChallengeModal({
