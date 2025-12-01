@@ -10,15 +10,38 @@ import {
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
 
-const CHALLENGE_TYPES = [
-  "Spin",
-  "Game",
-  "Survey",
-  "Referral",
-  "Watch Ad",
-  "SDK Game",
-];
+// Only expose supported challenge types in the calendar filters
+const CHALLENGE_TYPES = ["Spin", "Game", "Survey"];
 const CLAIM_TYPES = ["Watch Ad", "Auto"];
+const STATUS_TYPES = ["Scheduled", "Live", "Pending", "Expired"];
+
+// Keep status handling consistent with the List View:
+// - If a valid explicit status is set, respect it
+// - Otherwise, derive status from the date
+const getActualStatus = (status, date) => {
+  if (STATUS_TYPES.includes(status)) {
+    return status;
+  }
+
+  const today = new Date();
+  const challengeDate = new Date(date);
+
+  if (Number.isNaN(challengeDate.getTime())) {
+    return status || "Pending";
+  }
+
+  if (challengeDate.toDateString() === today.toDateString()) {
+    return "Live";
+  }
+  if (challengeDate > today) {
+    return "Scheduled";
+  }
+  if (challengeDate < today) {
+    return "Expired";
+  }
+
+  return status || "Pending";
+};
 
 export default function DailyChallengeCalendarView({
   challenges = [],
@@ -107,59 +130,72 @@ export default function DailyChallengeCalendarView({
     today,
   ]);
 
-  // Filter challenges for search
-  const filteredCalendarDays = useMemo(() => {
-    if (
-      !searchTerm &&
-      typeFilter === "all" &&
-      statusFilter === "all" &&
-      dateRangeFilter === "all"
-    ) {
-      return calendarDays;
-    }
+  // Common predicate used by all views (month / week / day)
+  const challengeMatchesFilters = (challenge) => {
+    // Search filter
+    const matchesSearch =
+      !searchTerm ||
+      challenge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      challenge.type.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return calendarDays.map((day) => {
-      if (!day) return day;
+    // Type filter
+    const matchesType = typeFilter === "all" || challenge.type === typeFilter;
 
-      // Apply date range filter to the day itself
-      let dayMatchesRange = true;
-      if (dateRangeFilter !== "all") {
-        const dayDate = day.date;
-        const today = new Date();
-        const startOfWeek = new Date(
-          today.setDate(today.getDate() - today.getDay())
-        );
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
+    // Status filter (using computed status)
+    const actualStatus = getActualStatus(challenge.status, challenge.date);
+    const matchesStatus =
+      statusFilter === "all" || actualStatus === statusFilter;
+
+    // Date range filter (only applied in month view; week/day views control the visible range)
+    let matchesDateRange = true;
+    if (viewMode === "month" && dateRangeFilter !== "all") {
+      if (!challenge.date) {
+        matchesDateRange = false;
+      } else {
+        const challengeDate = new Date(challenge.date);
+        challengeDate.setHours(0, 0, 0, 0);
+
+        const baseToday = new Date();
+        baseToday.setHours(0, 0, 0, 0);
+
+        const startOfThisWeek = new Date(baseToday);
+        startOfThisWeek.setDate(baseToday.getDate() - baseToday.getDay());
+        const endOfThisWeek = new Date(startOfThisWeek);
+        endOfThisWeek.setDate(startOfThisWeek.getDate() + 6);
 
         switch (dateRangeFilter) {
-          case "this-week":
-            dayMatchesRange = dayDate >= startOfWeek && dayDate <= endOfWeek;
+          case "this-week": {
+            matchesDateRange =
+              challengeDate >= startOfThisWeek &&
+              challengeDate <= endOfThisWeek;
             break;
-          case "this-month":
-            dayMatchesRange =
-              dayDate.getMonth() === new Date().getMonth() &&
-              dayDate.getFullYear() === new Date().getFullYear();
+          }
+          case "past-week": {
+            const startOfPastWeek = new Date(startOfThisWeek);
+            startOfPastWeek.setDate(startOfPastWeek.getDate() - 7);
+            const endOfPastWeek = new Date(startOfPastWeek);
+            endOfPastWeek.setDate(startOfPastWeek.getDate() + 6);
+            matchesDateRange =
+              challengeDate >= startOfPastWeek &&
+              challengeDate <= endOfPastWeek;
             break;
-          case "next-month":
-            const nextMonth = new Date();
+          }
+          case "this-month": {
+            matchesDateRange =
+              challengeDate.getMonth() === baseToday.getMonth() &&
+              challengeDate.getFullYear() === baseToday.getFullYear();
+            break;
+          }
+          case "next-month": {
+            const nextMonth = new Date(baseToday);
             nextMonth.setMonth(nextMonth.getMonth() + 1);
-            dayMatchesRange =
-              dayDate.getMonth() === nextMonth.getMonth() &&
-              dayDate.getFullYear() === nextMonth.getFullYear();
+            matchesDateRange =
+              challengeDate.getMonth() === nextMonth.getMonth() &&
+              challengeDate.getFullYear() === nextMonth.getFullYear();
             break;
-          case "past-week":
-            const pastWeekStart = new Date(startOfWeek);
-            pastWeekStart.setDate(pastWeekStart.getDate() - 7);
-            const pastWeekEnd = new Date(pastWeekStart);
-            pastWeekEnd.setDate(pastWeekStart.getDate() + 6);
-            dayMatchesRange =
-              dayDate >= pastWeekStart && dayDate <= pastWeekEnd;
-            break;
-          case "custom":
+          }
+          case "custom": {
             if (customStartDate && customEndDate) {
-              // Parse date strings manually to avoid timezone issues
-              // customStartDate and customEndDate are in YYYY-MM-DD format
               const [startYear, startMonth, startDay] = customStartDate
                 .split("-")
                 .map(Number);
@@ -186,44 +222,37 @@ export default function DailyChallengeCalendarView({
                 999
               );
 
-              // Normalize dayDate to start of day for comparison
-              const dayDateNormalized = new Date(dayDate);
-              dayDateNormalized.setHours(0, 0, 0, 0);
-
-              dayMatchesRange =
-                dayDateNormalized >= startDate && dayDateNormalized <= endDate;
+              matchesDateRange =
+                challengeDate >= startDate && challengeDate <= endDate;
             } else {
-              // If dates not set, show all (same as 'all')
-              dayMatchesRange = true;
+              matchesDateRange = true;
             }
             break;
+          }
           default:
-            dayMatchesRange = true;
+            matchesDateRange = true;
         }
       }
+    }
 
-      if (!dayMatchesRange) {
-        return {
-          ...day,
-          challenges: [],
-          isFilteredOut: true, // Mark days outside the date range
-        };
-      }
+    return matchesSearch && matchesType && matchesStatus && matchesDateRange;
+  };
 
-      const filteredChallenges = day.challenges.filter((challenge) => {
-        const matchesSearch =
-          !searchTerm ||
-          challenge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          challenge.type.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter challenges for search / filters in MONTH view
+  const filteredCalendarDays = useMemo(() => {
+    if (
+      !searchTerm &&
+      typeFilter === "all" &&
+      statusFilter === "all" &&
+      dateRangeFilter === "all"
+    ) {
+      return calendarDays;
+    }
 
-        const matchesType =
-          typeFilter === "all" || challenge.type === typeFilter;
+    return calendarDays.map((day) => {
+      if (!day) return day;
 
-        const matchesStatus =
-          statusFilter === "all" || challenge.status === statusFilter;
-
-        return matchesSearch && matchesType && matchesStatus;
-      });
+      const filteredChallenges = day.challenges.filter(challengeMatchesFilters);
 
       return {
         ...day,
@@ -302,14 +331,16 @@ export default function DailyChallengeCalendarView({
       const dayStr = String(date.getDate()).padStart(2, "0");
       const dateString = `${year}-${month}-${dayStr}`;
 
-      const dayChallenges = challenges.filter((challenge) => {
-        if (!challenge.date) return false;
-        const challengeDateString =
-          typeof challenge.date === "string"
-            ? challenge.date.split("T")[0]
-            : new Date(challenge.date).toISOString().split("T")[0];
-        return challengeDateString === dateString;
-      });
+      const dayChallenges = challenges
+        .filter((challenge) => {
+          if (!challenge.date) return false;
+          const challengeDateString =
+            typeof challenge.date === "string"
+              ? challenge.date.split("T")[0]
+              : new Date(challenge.date).toISOString().split("T")[0];
+          return challengeDateString === dateString;
+        })
+        .filter(challengeMatchesFilters);
 
       days.push({
         date,
@@ -331,14 +362,16 @@ export default function DailyChallengeCalendarView({
     const dayStr = String(currentDate.getDate()).padStart(2, "0");
     const dateString = `${year}-${month}-${dayStr}`;
 
-    const dayChallenges = challenges.filter((challenge) => {
-      if (!challenge.date) return false;
-      const challengeDateString =
-        typeof challenge.date === "string"
-          ? challenge.date.split("T")[0]
-          : new Date(challenge.date).toISOString().split("T")[0];
-      return challengeDateString === dateString;
-    });
+    const dayChallenges = challenges
+      .filter((challenge) => {
+        if (!challenge.date) return false;
+        const challengeDateString =
+          typeof challenge.date === "string"
+            ? challenge.date.split("T")[0]
+            : new Date(challenge.date).toISOString().split("T")[0];
+        return challengeDateString === dateString;
+      })
+      .filter(challengeMatchesFilters);
 
     return {
       date: currentDate,
@@ -352,18 +385,7 @@ export default function DailyChallengeCalendarView({
   };
 
   const getStatusColor = (status, date) => {
-    const challengeDate = new Date(date);
-    const today = new Date();
-
-    // Auto-update status based on date
-    let actualStatus = status;
-    if (challengeDate.toDateString() === today.toDateString()) {
-      actualStatus = "Live";
-    } else if (challengeDate > today) {
-      actualStatus = "Scheduled";
-    } else if (challengeDate < today) {
-      actualStatus = "Expired";
-    }
+    const actualStatus = getActualStatus(status, date);
 
     const statusColors = {
       Scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -735,9 +757,29 @@ export default function DailyChallengeCalendarView({
                 <select
                   value={dateRangeFilter}
                   onChange={(e) => {
-                    setDateRangeFilter(e.target.value);
+                    const value = e.target.value;
+                    setDateRangeFilter(value);
+
+                    // When in week view, move the visible week for quick navigation
+                    if (viewMode === "week") {
+                      const todayForWeek = new Date();
+                      todayForWeek.setHours(0, 0, 0, 0);
+                      const startOfThisWeek = new Date(todayForWeek);
+                      startOfThisWeek.setDate(
+                        todayForWeek.getDate() - todayForWeek.getDay()
+                      );
+
+                      if (value === "this-week") {
+                        setCurrentDate(todayForWeek);
+                      } else if (value === "past-week") {
+                        const startOfPastWeek = new Date(startOfThisWeek);
+                        startOfPastWeek.setDate(startOfPastWeek.getDate() - 7);
+                        setCurrentDate(startOfPastWeek);
+                      }
+                    }
+
                     // Reset custom dates when switching away from custom
-                    if (e.target.value !== "custom") {
+                    if (value !== "custom") {
                       setCustomStartDate("");
                       setCustomEndDate("");
                     }
