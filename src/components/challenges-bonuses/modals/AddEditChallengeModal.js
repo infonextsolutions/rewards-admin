@@ -203,6 +203,22 @@ export default function AddEditChallengeModal({
       await onSave(challengeData);
     } catch (error) {
       console.error('Error saving challenge:', error);
+
+      // Try to surface specific backend message about duplicate daily challenge
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        (typeof error === 'string' ? error : null);
+
+      if (
+        backendMessage &&
+        backendMessage.toLowerCase().includes('daily challenge already exists')
+      ) {
+        setErrors((prev) => ({
+          ...prev,
+          date: 'A daily challenge already exists for the selected date',
+        }));
+      }
     }
   };
 
