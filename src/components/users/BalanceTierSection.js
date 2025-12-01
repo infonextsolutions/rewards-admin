@@ -36,7 +36,11 @@ export const BalanceTierSection = ({ user }) => {
       label: "Current Coin Balance (Read-only)",
       value: user?.coinBalance || "0 Coins",
     },
-    { label: "XP Tier & Badge", value: user?.tier || "Bronze", isBadge: true },
+    {
+      label: "XP Tier & Subscription",
+      value: user?.tier || "Bronze",
+      isBadge: true,
+    },
     { label: "Redemption Count & Types", value: redemptionDisplay },
     // { label: "Redemption Preference", value: user?.redemptionPreference && user?.redemptionPreference !== "NONE" && user?.redemptionPreference !== "N/A" ? user.redemptionPreference : "N/A", isPreference: true },
     {
@@ -50,10 +54,6 @@ export const BalanceTierSection = ({ user }) => {
     {
       label: "Total Games Downloaded",
       value: user?.totalGamesDownloaded || "17 games",
-    },
-    {
-      label: "Notification Settings",
-      value: user?.notificationSettings || "Push Enabled, Email Disabled",
     },
   ];
 

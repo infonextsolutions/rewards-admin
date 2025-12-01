@@ -20,7 +20,7 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
   const [hasChanges, setHasChanges] = useState(false);
 
   const genderOptions = ['male', 'female', 'other'];
-  const tierOptions = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Free'];
+  const tierOptions = ['Bronze', 'Gold', 'Platinum', 'Free'];
   const statusOptions = ['Active', 'Inactive'];
 
   // Initialize form data when user prop changes
@@ -288,26 +288,6 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
               </select>
             </div>
 
-            {/* Location/Country */}
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Country / Location
-              </label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="Enter country name (e.g., United States, India)"
-                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
-                  errors.location ? 'border-red-300' : ''
-                }`}
-              />
-              {errors.location && (
-                <p className="mt-1 text-sm text-red-600">{errors.location}</p>
-              )}
-            </div>
 
             {/* Current Tier */}
             <div>
