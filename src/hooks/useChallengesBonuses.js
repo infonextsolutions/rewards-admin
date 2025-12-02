@@ -8,7 +8,9 @@ export function useChallengesBonuses() {
   const [multipliers, setMultipliers] = useState([]);
   const [bonusDays, setBonusDays] = useState([]);
   const [pauseRules, setPauseRules] = useState([]);
+  const [streakBonusConfig, setStreakBonusConfig] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStreakConfig, setLoadingStreakConfig] = useState(false);
   const [error, setError] = useState(null);
 
   // Refresh all data
@@ -383,13 +385,56 @@ export function useChallengesBonuses() {
     }
   }, [pauseRules.length]);
 
+  // Streak bonus config operations
+  const fetchStreakBonusConfig = useCallback(async () => {
+    if (streakBonusConfig) return; // Already loaded
+    setLoadingStreakConfig(true);
+    try {
+      const data = await challengesBonusesAPI.getStreakBonusConfig();
+      setStreakBonusConfig(data);
+    } catch (err) {
+      setError('Failed to load streak bonus configuration');
+      console.error('Error fetching streak bonus config:', err);
+    } finally {
+      setLoadingStreakConfig(false);
+    }
+  }, [streakBonusConfig]);
+
+  const updateStreakBonusConfig = useCallback(async (configData) => {
+    setLoadingStreakConfig(true);
+    setError(null);
+    
+    try {
+      const updatedConfig = await challengesBonusesAPI.updateStreakBonusConfig(configData);
+      setStreakBonusConfig(updatedConfig);
+      return updatedConfig;
+    } catch (err) {
+      const message =
+        err?.message ||
+        err?.error ||
+        (typeof err === 'string' ? err : null);
+
+      if (message) {
+        setError(message);
+      } else {
+        setError('Failed to update streak bonus configuration. Please try again.');
+      }
+      console.error('Error updating streak bonus config:', err);
+      throw err;
+    } finally {
+      setLoadingStreakConfig(false);
+    }
+  }, []);
+
   return {
     // State
     challenges,
     multipliers,
     bonusDays,
     pauseRules,
+    streakBonusConfig,
     loading,
+    loadingStreakConfig,
     error,
 
     // Actions
@@ -398,6 +443,7 @@ export function useChallengesBonuses() {
     fetchMultipliers,
     fetchBonusDays,
     fetchPauseRules,
+    fetchStreakBonusConfig,
 
     // Challenge operations
     addChallenge,
@@ -415,6 +461,9 @@ export function useChallengesBonuses() {
     addBonusDay,
     updateBonusDay,
     deleteBonusDay,
+
+    // Streak bonus config operations
+    updateStreakBonusConfig,
 
     // Pause rule operations
     addPauseRule,

@@ -1,14 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon, CalendarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import StreakBonusConfiguration from './StreakBonusConfiguration';
 
 export default function BonusDayConfiguration({
   bonusDays = [],
   onAddBonusDay,
   onUpdateBonusDay,
   onDeleteBonusDay,
-  loading = false
+  loading = false,
+  // Streak bonus config props
+  streakBonusConfig = null,
+  onSaveStreakBonusConfig = null,
+  loadingStreakConfig = false
 }) {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,6 +25,11 @@ export default function BonusDayConfiguration({
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // Toggles for Bonus Days section
+  const [bonusDayConfigEnabled, setBonusDayConfigEnabled] = useState(true);
+  const [streakBonusConfigEnabled, setStreakBonusConfigEnabled] = useState(false);
+  const [showStreakConfig, setShowStreakConfig] = useState(false);
 
   const rewardTypes = ['Coins', 'Giftcard', 'XP'];
 
@@ -131,28 +141,132 @@ export default function BonusDayConfiguration({
 
   const sortedBonusDays = [...bonusDays].sort((a, b) => a.bonusDay - b.bonusDay);
 
+  // If showing streak config, render that component
+  if (showStreakConfig) {
+    return (
+      <div className="space-y-6">
+        <StreakBonusConfiguration
+          config={streakBonusConfig}
+          onSave={async (data) => {
+            if (onSaveStreakBonusConfig) {
+              await onSaveStreakBonusConfig(data);
+            }
+          }}
+          onCancel={() => setShowStreakConfig(false)}
+          loading={loadingStreakConfig}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Bonus Days Section Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Bonus Day Configuration</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Configure bonus rewards for milestone days (e.g., Day 7, Day 30) to boost user retention
-              </p>
-            </div>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-              disabled={showAddForm || editingId}
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Bonus Day
-            </button>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Bonus Days</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Configure bonus rewards for daily challenges and streak milestones
+            </p>
           </div>
         </div>
+
+        {/* Two Independent Toggles */}
+        <div className="px-6 py-4 space-y-4 border-b border-gray-200">
+          {/* Bonus Day Configuration Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-gray-900">Bonus Day Configuration</h3>
+              <p className="mt-1 text-xs text-gray-600">
+                Configure bonus rewards for normal Daily Challenge bonus days
+              </p>
+            </div>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={bonusDayConfigEnabled}
+                onChange={(e) => setBonusDayConfigEnabled(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                  bonusDayConfigEnabled ? 'bg-emerald-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    bonusDayConfigEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+            </label>
+          </div>
+
+          {/* 30-Day Streak Bonus Configuration Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-gray-900">30-Day Streak Bonus Configuration</h3>
+              <p className="mt-1 text-xs text-gray-600">
+                Configure milestone rewards for users who maintain a continuous 30-day streak
+              </p>
+            </div>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={streakBonusConfigEnabled}
+                onChange={(e) => setStreakBonusConfigEnabled(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                  streakBonusConfigEnabled ? 'bg-emerald-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    streakBonusConfigEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+            </label>
+          </div>
+
+          {/* CTA Button for Streak Configuration */}
+          {streakBonusConfigEnabled && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowStreakConfig(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+              >
+                <Cog6ToothIcon className="h-4 w-4 mr-2" />
+                Configure 30-Day Streak Bonus
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Bonus Day Configuration Content */}
+        {bonusDayConfigEnabled && (
+          <>
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-md font-medium text-gray-900">Daily Challenge Bonus Days</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Configure bonus rewards for milestone days (e.g., Day 7, Day 30) to boost user retention
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                  disabled={showAddForm || editingId}
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Bonus Day
+                </button>
+              </div>
+            </div>
 
         {/* Add Form */}
         {showAddForm && (
@@ -465,17 +579,26 @@ export default function BonusDayConfiguration({
           </table>
         </div>
 
-        {/* Summary */}
-        {sortedBonusDays.length > 0 && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                Total: {sortedBonusDays.length} bonus days | Reset on miss: {sortedBonusDays.filter(b => b.resetRule).length}
-              </span>
-              <span className="text-xs">
-                Bonus days help boost user retention and engagement
-              </span>
-            </div>
+            {/* Summary */}
+            {sortedBonusDays.length > 0 && (
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>
+                    Total: {sortedBonusDays.length} bonus days | Reset on miss: {sortedBonusDays.filter(b => b.resetRule).length}
+                  </span>
+                  <span className="text-xs">
+                    Bonus days help boost user retention and engagement
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Message when both toggles are off */}
+        {!bonusDayConfigEnabled && !streakBonusConfigEnabled && (
+          <div className="px-6 py-8 text-center text-gray-500">
+            <p>Enable at least one configuration option above to get started.</p>
           </div>
         )}
       </div>
