@@ -49,11 +49,47 @@ export default function DailyChallengeListView({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [segmentFilter, setSegmentFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [ageFilter, setAgeFilter] = useState('all');
+  const [genderFilter, setGenderFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [editingChallenge, setEditingChallenge] = useState(null);
   const [deletingChallenge, setDeletingChallenge] = useState(null);
+
+  // Get unique countries, age ranges, and genders from challenges for filter options
+  const filterOptions = useMemo(() => {
+    const countries = new Set();
+    const genders = new Set();
+    const ageRanges = new Set();
+
+    challenges.forEach(challenge => {
+      const audience = challenge.targetAudience || {};
+      
+      // Collect countries
+      if (Array.isArray(audience.countries) && audience.countries.length > 0) {
+        audience.countries.forEach(country => countries.add(country));
+      }
+      
+      // Collect genders
+      if (Array.isArray(audience.gender) && audience.gender.length > 0) {
+        audience.gender.forEach(g => genders.add(g));
+      }
+      
+      // Collect age ranges as strings
+      if (audience.ageRange) {
+        const min = audience.ageRange.min || 13;
+        const max = audience.ageRange.max || 100;
+        ageRanges.add(`${min}-${max}`);
+      }
+    });
+
+    return {
+      countries: Array.from(countries).sort(),
+      genders: Array.from(genders).sort(),
+      ageRanges: Array.from(ageRanges).sort(),
+    };
+  }, [challenges]);
 
   // Filter challenges
   const filteredChallenges = useMemo(() => {
@@ -66,15 +102,37 @@ export default function DailyChallengeListView({
 
       const matchesStatus = statusFilter === 'all' || actualStatus === statusFilter;
       const matchesType = typeFilter === 'all' || challenge.type === typeFilter;
-      const matchesSegment =
-        segmentFilter === 'all' ||
-        (challenge.segmentLabel || 'All Users')
-          .toLowerCase()
-          .includes(segmentFilter.toLowerCase());
+      
+      // Country filter
+      const matchesCountry = (() => {
+        if (countryFilter === 'all') return true;
+        const audience = challenge.targetAudience || {};
+        const countries = Array.isArray(audience.countries) ? audience.countries : [];
+        // Only match if the challenge explicitly has the selected country
+        return countries.length > 0 && countries.includes(countryFilter);
+      })();
+      
+      // Age filter
+      const matchesAge = (() => {
+        if (ageFilter === 'all') return true;
+        const audience = challenge.targetAudience || {};
+        const ageRange = audience.ageRange || { min: 13, max: 100 };
+        const [min, max] = ageFilter.split('-').map(Number);
+        return ageRange.min === min && ageRange.max === max;
+      })();
+      
+      // Gender filter
+      const matchesGender = (() => {
+        if (genderFilter === 'all') return true;
+        const audience = challenge.targetAudience || {};
+        const genders = Array.isArray(audience.gender) ? audience.gender : [];
+        // Only match if the challenge explicitly has the selected gender
+        return genders.length > 0 && genders.includes(genderFilter);
+      })();
 
-      return matchesSearch && matchesStatus && matchesType && matchesSegment;
+      return matchesSearch && matchesStatus && matchesType && matchesCountry && matchesAge && matchesGender;
     }).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [challenges, searchTerm, statusFilter, typeFilter, segmentFilter]);
+  }, [challenges, searchTerm, statusFilter, typeFilter, countryFilter, ageFilter, genderFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredChallenges.length / itemsPerPage);
@@ -162,7 +220,7 @@ export default function DailyChallengeListView({
             </div>
 
             {/* Filters */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 flex-wrap">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -184,17 +242,36 @@ export default function DailyChallengeListView({
                 ))}
               </select>
               <select
-                value={segmentFilter}
-                onChange={(e) => setSegmentFilter(e.target.value)}
+                value={countryFilter}
+                onChange={(e) => setCountryFilter(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="all">All Segments</option>
-                <option value="all users">All Users</option>
-                <option value="vip">VIP Users</option>
-                <option value="new users">New Users</option>
-                <option value="returning users">Returning Users</option>
-                <option value="high engagement">High Engagement</option>
-                <option value="low engagement">Low Engagement</option>
+                <option value="all">All Countries</option>
+                {filterOptions.countries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+              <select
+                value={ageFilter}
+                onChange={(e) => setAgeFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="all">All Ages</option>
+                {filterOptions.ageRanges.map(ageRange => (
+                  <option key={ageRange} value={ageRange}>{ageRange}</option>
+                ))}
+              </select>
+              <select
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="all">All Genders</option>
+                {filterOptions.genders.map(gender => (
+                  <option key={gender} value={gender}>
+                    {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -240,8 +317,8 @@ export default function DailyChallengeListView({
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedChallenges.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+                  <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
+                    {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || countryFilter !== 'all' || ageFilter !== 'all' || genderFilter !== 'all'
                       ? 'No challenges match your current filters.'
                       : 'No challenges configured yet. Add your first challenge to get started.'}
                   </td>
