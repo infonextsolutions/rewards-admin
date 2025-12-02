@@ -603,19 +603,9 @@ export default function AddEditChallengeModal({
                 <select
                   value={formData.gameId}
                   onChange={(e) => {
-                    const selectedGameId = e.target.value;
-                    const selectedGame = gamesList.find(
-                      (game) => (game.gameId || game.id) === selectedGameId
-                    );
-                    // Auto-fill title with game name when game is selected
                     setFormData({
                       ...formData,
-                      gameId: selectedGameId,
-                      title: selectedGame
-                        ? selectedGame.title ||
-                          selectedGame.name ||
-                          formData.title
-                        : formData.title,
+                      gameId: e.target.value,
                     });
                   }}
                   disabled={!formData.sdkProvider || loadingGames}
