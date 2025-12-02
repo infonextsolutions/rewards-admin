@@ -857,6 +857,32 @@ export const challengesBonusesAPI = {
     return true;
   },
 
+  // 30-Day Streak Bonus Configuration operations
+  async getStreakBonusConfig() {
+    try {
+      const response = await apiClient.get(
+        "/admin/daily-challenges/streak-bonus-config"
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Get streak bonus config error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  async updateStreakBonusConfig(configData) {
+    try {
+      const response = await apiClient.put(
+        "/admin/daily-challenges/streak-bonus-config",
+        configData
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Update streak bonus config error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
   // Pause rule operations
   async getPauseRules() {
     await delay(400);

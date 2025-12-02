@@ -38,7 +38,9 @@ export default function ChallengesBonusesModule() {
     multipliers,
     bonusDays,
     pauseRules,
+    streakBonusConfig,
     loading,
+    loadingStreakConfig,
     error,
     addChallenge,
     updateChallenge,
@@ -59,6 +61,8 @@ export default function ChallengesBonusesModule() {
     fetchMultipliers,
     fetchBonusDays,
     fetchPauseRules,
+    fetchStreakBonusConfig,
+    updateStreakBonusConfig,
   } = useChallengesBonuses();
 
   // Fetch data based on active view (lazy loading)
@@ -69,6 +73,7 @@ export default function ChallengesBonusesModule() {
         break;
       case VIEW_MODES.BONUS_DAY:
         fetchBonusDays();
+        fetchStreakBonusConfig();
         break;
       case VIEW_MODES.LIST:
       case VIEW_MODES.CALENDAR:
@@ -176,6 +181,9 @@ export default function ChallengesBonusesModule() {
             onUpdateBonusDay={updateBonusDay}
             onDeleteBonusDay={deleteBonusDay}
             loading={loading}
+            streakBonusConfig={streakBonusConfig}
+            onSaveStreakBonusConfig={updateStreakBonusConfig}
+            loadingStreakConfig={loadingStreakConfig}
           />
         );
       case VIEW_MODES.PAUSE_RULES:
