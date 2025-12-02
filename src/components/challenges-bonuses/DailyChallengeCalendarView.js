@@ -13,7 +13,7 @@ import {
 // Only expose supported challenge types in the calendar filters
 const CHALLENGE_TYPES = ["Spin", "Game", "Survey"];
 const CLAIM_TYPES = ["Watch Ad", "Auto"];
-const STATUS_TYPES = ["Scheduled", "Live", "Pending", "Expired"];
+const STATUS_TYPES = ["Scheduled", "Live", "Expired"];
 
 // Keep status handling consistent with the List View:
 // - If a valid explicit status is set, respect it
@@ -855,7 +855,6 @@ export default function DailyChallengeCalendarView({
                 <option value="all">All Status</option>
                 <option value="Scheduled">Scheduled</option>
                 <option value="Live">Live</option>
-                <option value="Pending">Pending</option>
                 <option value="Expired">Expired</option>
               </select>
               <select
@@ -962,10 +961,6 @@ export default function DailyChallengeCalendarView({
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>
                   <span className="text-gray-600">Live</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded"></div>
-                  <span className="text-gray-600">Pending</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>

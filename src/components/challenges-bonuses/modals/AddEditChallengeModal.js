@@ -775,7 +775,6 @@ export default function AddEditChallengeModal({
               >
                 <option value="Scheduled">Scheduled</option>
                 <option value="Live">Live</option>
-                <option value="Pending">Pending</option>
                 <option value="Expired">Expired</option>
               </select>
             </div>

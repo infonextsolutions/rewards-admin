@@ -8,7 +8,7 @@ import Pagination from '../ui/Pagination';
 // Only expose the currently supported challenge types in the dropdown/filter
 const CHALLENGE_TYPES = ['Spin', 'Game', 'Survey'];
 const CLAIM_TYPES = ['Watch Ad', 'Auto'];
-const STATUS_TYPES = ['Scheduled', 'Live', 'Pending', 'Expired'];
+const STATUS_TYPES = ['Scheduled', 'Live', 'Expired'];
 
 // Helper to keep status calculation consistent across filters and UI.
 // If an explicit status is set, we respect it; otherwise we derive it from the date.
