@@ -10,10 +10,10 @@ export default function StreakBonusConfiguration({
   loading = false
 }) {
   const [milestones, setMilestones] = useState([
-    { day: 7, active: true, rewardType: 'coins', rewardValue: 0, claimMode: 'auto' },
-    { day: 14, active: true, rewardType: 'coins', rewardValue: 0, claimMode: 'auto' },
-    { day: 21, active: true, rewardType: 'coins', rewardValue: 0, claimMode: 'auto' },
-    { day: 30, active: true, rewardType: 'coins', rewardValue: 0, claimMode: 'auto' }
+    { day: 7, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' },
+    { day: 14, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' },
+    { day: 21, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' },
+    { day: 30, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' }
   ]);
   const [errors, setErrors] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
@@ -22,7 +22,23 @@ export default function StreakBonusConfiguration({
   useEffect(() => {
     if (config && config.milestones) {
       // Sort milestones by day to ensure correct order
-      const sortedMilestones = [...config.milestones].sort((a, b) => a.day - b.day);
+      const sortedMilestones = [...config.milestones].sort((a, b) => a.day - b.day).map(milestone => {
+        // Handle backward compatibility: convert old format (rewardType/rewardValue) to new format (rewards array)
+        if (milestone.rewardType && milestone.rewardValue !== undefined) {
+          return {
+            ...milestone,
+            rewards: [{ type: milestone.rewardType, value: milestone.rewardValue }]
+          };
+        }
+        // Ensure rewards array exists
+        if (!milestone.rewards || !Array.isArray(milestone.rewards) || milestone.rewards.length === 0) {
+          return {
+            ...milestone,
+            rewards: [{ type: 'coins', value: 0 }]
+          };
+        }
+        return milestone;
+      });
       setMilestones(sortedMilestones);
       setHasChanges(false);
     }
@@ -47,13 +63,59 @@ export default function StreakBonusConfiguration({
     }
   };
 
+  const handleRewardChange = (day, rewardIndex, field, value) => {
+    setMilestones(prev => {
+      const updated = prev.map(m => {
+        if (m.day === day) {
+          const newRewards = [...m.rewards];
+          newRewards[rewardIndex] = { ...newRewards[rewardIndex], [field]: value };
+          return { ...m, rewards: newRewards };
+        }
+        return m;
+      });
+      setHasChanges(true);
+      return updated;
+    });
+  };
+
+  const addReward = (day) => {
+    setMilestones(prev => {
+      const updated = prev.map(m => 
+        m.day === day 
+          ? { ...m, rewards: [...m.rewards, { type: 'coins', value: 0 }] }
+          : m
+      );
+      setHasChanges(true);
+      return updated;
+    });
+  };
+
+  const removeReward = (day, rewardIndex) => {
+    setMilestones(prev => {
+      const updated = prev.map(m => {
+        if (m.day === day && m.rewards.length > 1) {
+          return { ...m, rewards: m.rewards.filter((_, idx) => idx !== rewardIndex) };
+        }
+        return m;
+      });
+      setHasChanges(true);
+      return updated;
+    });
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
     milestones.forEach(milestone => {
       if (milestone.active) {
-        if (!milestone.rewardValue || milestone.rewardValue < 0) {
-          newErrors[`${milestone.day}_rewardValue`] = 'Reward value must be at least 0';
+        if (!milestone.rewards || milestone.rewards.length === 0) {
+          newErrors[`${milestone.day}_rewards`] = 'At least one reward is required';
+        } else {
+          milestone.rewards.forEach((reward, idx) => {
+            if (reward.value === undefined || reward.value < 0) {
+              newErrors[`${milestone.day}_reward_${idx}_value`] = 'Reward value must be at least 0';
+            }
+          });
         }
       }
     });
@@ -76,7 +138,22 @@ export default function StreakBonusConfiguration({
   const handleCancel = () => {
     // Reset to original config
     if (config && config.milestones) {
-      const sortedMilestones = [...config.milestones].sort((a, b) => a.day - b.day);
+      const sortedMilestones = [...config.milestones].sort((a, b) => a.day - b.day).map(milestone => {
+        // Handle backward compatibility
+        if (milestone.rewardType && milestone.rewardValue !== undefined) {
+          return {
+            ...milestone,
+            rewards: [{ type: milestone.rewardType, value: milestone.rewardValue }]
+          };
+        }
+        if (!milestone.rewards || !Array.isArray(milestone.rewards) || milestone.rewards.length === 0) {
+          return {
+            ...milestone,
+            rewards: [{ type: 'coins', value: 0 }]
+          };
+        }
+        return milestone;
+      });
       setMilestones(sortedMilestones);
     }
     setHasChanges(false);
@@ -87,6 +164,8 @@ export default function StreakBonusConfiguration({
   const getRewardIcon = (rewardType) => {
     return rewardType === 'coins' ? '🪙' : '⭐';
   };
+
+  const rewardTypes = ['coins', 'xp'];
 
   return (
     <div className="space-y-6">
@@ -149,55 +228,100 @@ export default function StreakBonusConfiguration({
                 </div>
 
                 {milestone.active && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Reward Type */}
+                  <div className="space-y-4">
+                    {/* Rewards Section */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reward Type *
-                      </label>
-                      <select
-                        value={milestone.rewardType}
-                        onChange={(e) =>
-                          handleMilestoneChange(milestone.day, 'rewardType', e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                      >
-                        <option value="coins">Coins</option>
-                        <option value="xp">XP</option>
-                      </select>
-                    </div>
-
-                    {/* Reward Value */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Reward Value *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          min="0"
-                          value={milestone.rewardValue}
-                          onChange={(e) =>
-                            handleMilestoneChange(
-                              milestone.day,
-                              'rewardValue',
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                          className={`w-full px-3 py-2 pr-12 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                            errors[`${milestone.day}_rewardValue`]
-                              ? 'border-red-300'
-                              : 'border-gray-300'
-                          }`}
-                          placeholder="0"
-                        />
-                        <span className="absolute right-3 top-2.5 text-xs text-gray-500">
-                          {getRewardIcon(milestone.rewardType)}
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Rewards *
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => addReward(milestone.day)}
+                          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                        >
+                          + Add Reward
+                        </button>
                       </div>
-                      {errors[`${milestone.day}_rewardValue`] && (
+                      <div className="space-y-3">
+                        {milestone.rewards.map((reward, rewardIndex) => (
+                          <div
+                            key={rewardIndex}
+                            className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-md"
+                          >
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Reward Type */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Reward Type
+                                </label>
+                                <select
+                                  value={reward.type}
+                                  onChange={(e) =>
+                                    handleRewardChange(milestone.day, rewardIndex, 'type', e.target.value)
+                                  }
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                                >
+                                  {rewardTypes.map(type => (
+                                    <option key={type} value={type}>
+                                      {type === 'coins' ? 'Coins' : 'XP'}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Reward Value */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                  Reward Value
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={reward.value}
+                                    onChange={(e) =>
+                                      handleRewardChange(
+                                        milestone.day,
+                                        rewardIndex,
+                                        'value',
+                                        parseInt(e.target.value) || 0
+                                      )
+                                    }
+                                    className={`w-full px-3 py-2 pr-10 text-sm border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                                      errors[`${milestone.day}_reward_${rewardIndex}_value`]
+                                        ? 'border-red-300'
+                                        : 'border-gray-300'
+                                    }`}
+                                    placeholder="0"
+                                  />
+                                  <span className="absolute right-3 top-2.5 text-xs text-gray-500">
+                                    {getRewardIcon(reward.type)}
+                                  </span>
+                                </div>
+                                {errors[`${milestone.day}_reward_${rewardIndex}_value`] && (
+                                  <p className="mt-1 text-xs text-red-600">
+                                    {errors[`${milestone.day}_reward_${rewardIndex}_value`]}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {milestone.rewards.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeReward(milestone.day, rewardIndex)}
+                                className="mt-6 text-red-600 hover:text-red-700"
+                                title="Remove reward"
+                              >
+                                <XMarkIcon className="h-5 w-5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {errors[`${milestone.day}_rewards`] && (
                         <p className="mt-1 text-sm text-red-600">
-                          {errors[`${milestone.day}_rewardValue`]}
+                          {errors[`${milestone.day}_rewards`]}
                         </p>
                       )}
                     </div>
