@@ -442,6 +442,9 @@ export const challengesBonusesAPI = {
           : "Scheduled",
         gameId: apiData.gameId || null,
         sdkProvider: apiData.sdkProvider || null,
+        // Timer-based game configuration: include requirements for playTimeMinutes
+        playTimeMinutes: apiData.requirements?.timeLimit || null,
+        requirements: apiData.requirements || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt,
         targetAudience: apiData.targetAudience || null,
@@ -534,8 +537,12 @@ export const challengesBonusesAPI = {
           : "Scheduled",
         gameId: apiData.gameId || null,
         sdkProvider: apiData.sdkProvider || null,
+        // Timer-based game configuration: include requirements for playTimeMinutes
+        playTimeMinutes: apiData.requirements?.timeLimit || null,
+        requirements: apiData.requirements || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt,
+        targetAudience: apiData.targetAudience || null,
       };
     } catch (error) {
       console.error("Update challenge error:", error);
