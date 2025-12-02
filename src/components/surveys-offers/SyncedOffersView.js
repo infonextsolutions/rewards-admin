@@ -251,7 +251,13 @@ export default function SyncedOffersView() {
                       Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reward
+                      Coins
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      XP
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Time (min)
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -271,7 +277,7 @@ export default function SyncedOffersView() {
                   {syncedOffers.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="7"
+                        colSpan="9"
                         className="px-6 py-4 text-center text-gray-500"
                       >
                         {searchQuery
@@ -298,14 +304,19 @@ export default function SyncedOffersView() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {offer.coinReward || 0} coins
+                          <div className="text-sm font-medium text-emerald-600">
+                            {offer.coinReward || offer.userRewardCoins || offer.reward?.coins || 0} coins
                           </div>
-                          {offer.estimatedTime && (
-                            <div className="text-xs text-gray-500">
-                              {offer.estimatedTime} min
-                            </div>
-                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-blue-600">
+                            {offer.userRewardXP || offer.reward?.xp || 0} XP
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {offer.estimatedTime || offer.loi || 0} min
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -321,7 +332,7 @@ export default function SyncedOffersView() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs text-gray-500 font-mono">
+                          <div className="text-xs text-gray-500 font-mono break-all max-w-xs">
                             {offer.externalId || "N/A"}
                           </div>
                         </td>

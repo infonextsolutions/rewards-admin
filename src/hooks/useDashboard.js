@@ -39,6 +39,9 @@ export function useDashboard() {
     topPlayedGame: null,
     revenueByGame: [],
     attribution: [],
+    alerts: [],
+    search: null,
+    filters: null,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -60,24 +63,11 @@ export function useDashboard() {
 
       try {
         const filtersToUse = filters;
-        const startTime = performance.now();
-
-        // Log the API call for debugging
-        console.log("[Dashboard] Fetching data with filters:", filtersToUse);
-        console.log("[Dashboard] API endpoint: /admin/dashboard");
 
         const response = await DASHBOARD_API.getDashboardData(
           filtersToUse,
           signal
         );
-        const endTime = performance.now();
-        console.log(
-          `[Dashboard] API call took ${(endTime - startTime).toFixed(2)}ms`
-        );
-        console.log("[Dashboard] Response received:", {
-          success: response.data?.success,
-          hasData: !!response.data?.data,
-        });
 
         if (response.data?.success) {
           const apiData = response.data.data;
@@ -126,6 +116,9 @@ export function useDashboard() {
             topPlayedGame: apiData.topPlayedGame || null,
             revenueByGame: apiData.revenueByGame || [],
             attribution: apiData.attribution || [],
+            alerts: apiData.alerts || [],
+            search: apiData.search || null,
+            filters: apiData.filters || null,
           };
 
           setDashboardData(mappedData);
@@ -143,23 +136,18 @@ export function useDashboard() {
           err.code === "ERR_CANCELED" ||
           err.message === "canceled"
         ) {
-          console.log(
-            "[Dashboard] Request was canceled (likely due to filter change or component unmount)"
-          );
           setLoading(false);
           return;
         }
 
-        // Enhanced error logging for debugging
-        console.error("[Dashboard] Error fetching data:", {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          url: err.config?.url,
-          baseURL: err.config?.baseURL,
-          fullURL: err.config?.baseURL + err.config?.url,
-        });
+        // Log errors only in development
+        if (process.env.NODE_ENV === "development") {
+          console.error("[Dashboard] Error fetching data:", {
+            message: err.message,
+            response: err.response?.data,
+            status: err.response?.status,
+          });
+        }
 
         const errorMessage =
           err.response?.data?.message ||

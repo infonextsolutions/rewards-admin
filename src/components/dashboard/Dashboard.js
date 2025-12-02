@@ -18,9 +18,9 @@ const Dashboard = () => {
   const [filters, setFilters] = useState({
     dateRange: "last30days",
     game: "all",
-    gameName: "all",
     source: "all",
     gender: "all",
+    age: "all",
     search: "",
     customStartDate: "",
     customEndDate: "",
@@ -79,14 +79,11 @@ const Dashboard = () => {
       startDate: startDate ? startDate.toISOString() : undefined,
       endDate: endDate ? endDate.toISOString() : undefined,
       gameId: filters.game && filters.game !== "all" ? filters.game : undefined,
-      gameName:
-        filters.gameName && filters.gameName !== "all"
-          ? filters.gameName
-          : undefined,
       source:
         filters.source && filters.source !== "all" ? filters.source : undefined,
       gender:
         filters.gender && filters.gender !== "all" ? filters.gender : undefined,
+      age: filters.age && filters.age !== "all" ? filters.age : undefined,
       search:
         filters.search && filters.search.trim() !== ""
           ? filters.search.trim()
@@ -95,9 +92,9 @@ const Dashboard = () => {
   }, [
     filters.dateRange,
     filters.game,
-    filters.gameName,
     filters.source,
     filters.gender,
+    filters.age,
     filters.search,
     filters.customStartDate,
     filters.customEndDate,
@@ -110,7 +107,6 @@ const Dashboard = () => {
     (filtersToUse, isSearch = false) => {
       // Cancel previous request if exists (only for filter changes, not initial mount)
       if (abortControllerRef.current && !isInitialMount.current) {
-        console.log("[Dashboard] Aborting previous request for filter change");
         abortControllerRef.current.abort();
       }
 
@@ -149,26 +145,17 @@ const Dashboard = () => {
       prev.startDate !== current.startDate ||
       prev.endDate !== current.endDate ||
       prev.gameId !== current.gameId ||
-      prev.gameName !== current.gameName ||
       prev.source !== current.source ||
       prev.gender !== current.gender ||
+      prev.age !== current.age ||
       prev.search !== current.search
     );
   }, []);
 
   // Refetch data when filters change (with optimized debouncing)
   useEffect(() => {
-    console.log("[Dashboard] useEffect triggered", {
-      apiFilters,
-      isInitialMount: isInitialMount.current,
-      prevFilters: prevFiltersRef.current,
-    });
-
     // Skip API call if apiFilters is null (incomplete custom date range)
     if (apiFilters === null) {
-      console.log(
-        "[Dashboard] Skipping API call - apiFilters is null (incomplete custom date range)"
-      );
       return;
     }
 
@@ -178,33 +165,23 @@ const Dashboard = () => {
       !isInitialMount.current &&
       !filtersChanged(prevFiltersRef.current, apiFilters)
     ) {
-      console.log("[Dashboard] Skipping API call - filters haven't changed");
       return;
     }
 
     if (isInitialMount.current) {
       // First load - fetch immediately without debounce
-      console.log("[Dashboard] Initial mount - fetching dashboard data");
       isInitialMount.current = false;
 
       // Don't abort previous request on initial mount (handles React Strict Mode)
       // Just create a new controller if needed
-      if (abortControllerRef.current) {
-        // Don't abort - this might be from React Strict Mode double render
-        console.log(
-          "[Dashboard] Previous controller exists, but not aborting on initial mount"
-        );
+      if (!abortControllerRef.current) {
+        abortControllerRef.current = new AbortController();
       }
-      abortControllerRef.current = new AbortController();
 
       fetchDashboardData(apiFilters, abortControllerRef.current.signal);
       prevFiltersRef.current = apiFilters;
     } else {
       // Subsequent changes - not initial mount
-      console.log(
-        "[Dashboard] Filter change detected - fetching dashboard data"
-      );
-
       // Check if this is a custom date change (needs debouncing)
       const isCustomDateChange =
         filters.dateRange === "custom" &&
@@ -217,7 +194,6 @@ const Dashboard = () => {
 
       // For custom date changes, add debounce to prevent double API calls
       if (isCustomDateChange) {
-        console.log("[Dashboard] Custom date change - debouncing API call");
         // Clear existing timeout
         if (filterTimeoutRef.current) {
           clearTimeout(filterTimeoutRef.current);
@@ -236,16 +212,12 @@ const Dashboard = () => {
         filterTimeoutRef.current = setTimeout(() => {
           // Double-check filters haven't changed during debounce
           if (filtersChanged(prevFiltersRef.current, apiFilters)) {
-            console.log("[Dashboard] Executing debounced API call");
             fetchDashboardData(apiFilters, abortControllerRef.current?.signal);
             prevFiltersRef.current = apiFilters;
           }
         }, 600);
       } else {
         // For other filter changes, use optimized fetch (instant for dropdowns)
-        console.log(
-          "[Dashboard] Regular filter change - calling API immediately"
-        );
         optimizedFetch(apiFilters, isSearchChange);
         prevFiltersRef.current = apiFilters;
       }
@@ -258,12 +230,6 @@ const Dashboard = () => {
         clearTimeout(filterTimeoutRef.current);
         filterTimeoutRef.current = null;
       }
-      // Don't abort requests in cleanup - React Strict Mode causes double renders
-      // Only abort explicitly when filters change (handled in optimizedFetch)
-      // This prevents canceling requests during React Strict Mode development
-      console.log(
-        "[Dashboard] Cleanup triggered (not aborting - React Strict Mode safe)"
-      );
     };
   }, [
     apiFilters,

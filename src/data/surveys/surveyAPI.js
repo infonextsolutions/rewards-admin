@@ -187,13 +187,16 @@ const surveyAPIs = {
     country,
   } = {}) {
     try {
-      console.log("API Call: getBitLabNonGameOffers", {
+      const requestParams = {
         type,
         devices,
         country,
+      };
+      console.log("🟢 [ADMIN API CLIENT] Request parameters:", {
+        url: "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
+        params: requestParams,
         page,
         limit,
-        url: "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
       });
       // Configure paramsSerializer to handle arrays correctly
       // Arrays will be serialized as devices[]=android&devices[]=iphone
@@ -204,15 +207,18 @@ const surveyAPIs = {
       const response = await apiClient.get(
         "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
         {
-          params: {
-            type,
-            devices,
-            country,
-          },
+          params: requestParams,
           paramsSerializer: paramsSerializer,
         }
       );
-      console.log("API Response: getBitLabNonGameOffers", response.data);
+      console.log("🟢 [ADMIN API CLIENT] Response received:", {
+        success: response.data?.success,
+        hasData: !!response.data?.data,
+        hasCategorized: !!response.data?.categorized,
+        surveysCount: response.data?.categorized?.surveys?.length || 0,
+        totalOffers: response.data?.total || 0,
+        fullResponse: response.data,
+      });
       return response.data;
     } catch (error) {
       console.error("Get BitLab non-game offers error:", error);
@@ -331,6 +337,41 @@ const surveyAPIs = {
       return response.data;
     } catch (error) {
       console.error("Delete offer error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Update survey status (active/inactive)
+  async updateSurveyStatus(surveyId, status) {
+    try {
+      // First, find the survey by externalId
+      const configuredResponse = await apiClient.get(
+        "/admin/game-offers/non-game-offers/configured/bitlabs",
+        {
+          params: {
+            offerType: "survey",
+            status: "all",
+          },
+        }
+      );
+
+      const surveys = configuredResponse.data?.data?.configuredOffers || [];
+      const survey = surveys.find((s) => s.externalId === surveyId);
+
+      if (!survey) {
+        throw new Error(
+          "Survey not found in configured offers. Please sync it first."
+        );
+      }
+
+      // Update status using admin-surveys endpoint
+      const response = await apiClient.patch(
+        `/admin/surveys/offers/${survey._id || survey.id}/status`,
+        { status }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Update survey status error:", error);
       throw error.response?.data || error;
     }
   },

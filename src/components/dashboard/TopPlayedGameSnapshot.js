@@ -1,129 +1,134 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, memo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
-const TopPlayedGameSnapshot = ({ data, loading }) => {
-  // Data Integration Points (as per requirements):
-  // - Game DB: Game name, banner image
-  // EXCLUDED: Real-time XP Engine service linkage not supported per requirements
-  // - XP Engine integration disabled per requirements
-  // - Reward DB: Reward conversion percentage
-  // - User DB: Demographics (age, gender, region segmentation)
-  // - Analytics DB: User behavior and tier distribution
+// Color palette for professional charts - moved outside component
+const chartColors = {
+  age: ["#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe", "#ede9fe"],
+  gender: ["#06b6d4", "#22d3ee", "#67e8f9"],
+  region: ["#10b981", "#34d399", "#6ee7b7", "#a7f3d0"],
+  tier: ["#f59e0b", "#fbbf24", "#fcd34d", "#fde68a"],
+};
 
-  // Use provided data or default empty structure
-  const gameData = data || {
-    name: "N/A",
-    banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
-    avgXP: 0,
-    rewardConversion: 0,
-    demographics: {
-      age: [],
-      gender: [],
-      region: [],
-      tier: [],
-    },
-  };
+const TopPlayedGameSnapshot = memo(({ data, loading }) => {
+  // Memoize normalized demographics to avoid recalculation on every render
+  const normalizedDemographics = useMemo(() => {
+    const gameData = data || {
+      name: "N/A",
+      banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
+      avgXP: 0,
+      rewardConversion: 0,
+      demographics: {
+        age: [],
+        gender: [],
+        region: [],
+        tier: [],
+      },
+    };
 
-  // Color palette for professional charts
-  const chartColors = {
-    age: ["#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe", "#ede9fe"],
-    gender: ["#06b6d4", "#22d3ee", "#67e8f9"],
-    region: ["#10b981", "#34d399", "#6ee7b7", "#a7f3d0"],
-    tier: ["#f59e0b", "#fbbf24", "#fcd34d", "#fde68a"],
-  };
+    const demographics = gameData.demographics || {};
 
-  // Ensure demographics are arrays, handle empty objects from API
-  const demographics = gameData.demographics || {};
-  
-  // Normalize age data
-  let normalizedAge = Array.isArray(demographics.age)
-    ? demographics.age
-    : demographics.age && typeof demographics.age === "object"
-    ? Object.entries(demographics.age).map(([name, value], index) => ({
-        name,
-        value: value || 0,
-        color: chartColors.age[index % chartColors.age.length],
-      }))
-    : [];
-  
-  // If age is empty, show empty state (no hardcoded fallback data)
-  // The DonutChart component will handle empty state display
-  
-  // Filter out unwanted age ranges (35-44, 45-54, 55+)
-  normalizedAge = normalizedAge.filter(item => 
-    item.name !== "35-44" && item.name !== "45-54" && item.name !== "55+"
+    // Normalize age data
+    let normalizedAge = Array.isArray(demographics.age)
+      ? demographics.age
+      : demographics.age && typeof demographics.age === "object"
+      ? Object.entries(demographics.age).map(([name, value], index) => ({
+          name,
+          value: value || 0,
+          color: chartColors.age[index % chartColors.age.length],
+        }))
+      : [];
+
+    // Filter out unwanted age ranges (35-44, 45-54, 55+)
+    normalizedAge = normalizedAge.filter(
+      (item) =>
+        item.name !== "35-44" && item.name !== "45-54" && item.name !== "55+"
+    );
+
+    // Normalize gender data
+    let normalizedGender = Array.isArray(demographics.gender)
+      ? demographics.gender
+      : demographics.gender && typeof demographics.gender === "object"
+      ? Object.entries(demographics.gender).map(([name, value], index) => ({
+          name,
+          value: value || 0,
+          color: chartColors.gender[index % chartColors.gender.length],
+        }))
+      : [];
+
+    // Filter out "Other" gender
+    normalizedGender = normalizedGender.filter(
+      (item) => item.name.toLowerCase() !== "other"
+    );
+
+    // Normalize region data
+    let normalizedRegion = Array.isArray(demographics.region)
+      ? demographics.region
+      : demographics.region && typeof demographics.region === "object"
+      ? Object.entries(demographics.region).map(([name, value], index) => ({
+          name,
+          value: value || 0,
+          color: chartColors.region[index % chartColors.region.length],
+        }))
+      : [];
+
+    // Normalize tier data
+    let normalizedTier = Array.isArray(demographics.tier)
+      ? demographics.tier
+      : demographics.tier && typeof demographics.tier === "object"
+      ? Object.entries(demographics.tier).map(([name, value], index) => ({
+          name,
+          value: value || 0,
+          color: chartColors.tier[index % chartColors.tier.length],
+        }))
+      : [];
+
+    return {
+      age: normalizedAge,
+      gender: normalizedGender,
+      region: normalizedRegion,
+      tier: normalizedTier,
+    };
+  }, [data]);
+
+  // Memoize final game data
+  const finalGameData = useMemo(() => {
+    const gameData = data || {
+      name: "N/A",
+      banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
+      avgXP: 0,
+      rewardConversion: 0,
+      demographics: {
+        age: [],
+        gender: [],
+        region: [],
+        tier: [],
+      },
+    };
+
+    return {
+      ...gameData,
+      demographics: normalizedDemographics,
+      rewardConversion: gameData.rewardConversion || 0,
+    };
+  }, [data, normalizedDemographics]);
+
+  const statsData = useMemo(
+    () => [
+      {
+        value: finalGameData.avgXP,
+        label: "Avg. XP",
+        color: "#00a389",
+      },
+      {
+        value: `${finalGameData.rewardConversion}%`,
+        label: "Reward\nConversion",
+        color: "#00a389",
+      },
+    ],
+    [finalGameData.avgXP, finalGameData.rewardConversion]
   );
-
-  // Normalize gender data
-  let normalizedGender = Array.isArray(demographics.gender)
-    ? demographics.gender
-    : demographics.gender && typeof demographics.gender === "object"
-    ? Object.entries(demographics.gender).map(([name, value], index) => ({
-        name,
-        value: value || 0,
-        color: chartColors.gender[index % chartColors.gender.length],
-      }))
-    : [];
-  
-  // If gender is empty, show empty state (no hardcoded fallback data)
-  // The DonutChart component will handle empty state display
-  
-  // Filter out "Other" gender
-  normalizedGender = normalizedGender.filter(item => 
-    item.name.toLowerCase() !== "other"
-  );
-
-  // Normalize region data
-  let normalizedRegion = Array.isArray(demographics.region)
-    ? demographics.region
-    : demographics.region && typeof demographics.region === "object"
-    ? Object.entries(demographics.region).map(([name, value], index) => ({
-        name,
-        value: value || 0,
-        color: chartColors.region[index % chartColors.region.length],
-      }))
-    : [];
-
-  // Normalize tier data
-  let normalizedTier = Array.isArray(demographics.tier)
-    ? demographics.tier
-    : demographics.tier && typeof demographics.tier === "object"
-    ? Object.entries(demographics.tier).map(([name, value], index) => ({
-        name,
-        value: value || 0,
-        color: chartColors.tier[index % chartColors.tier.length],
-      }))
-    : [];
-
-  const normalizedDemographics = {
-    age: normalizedAge,
-    gender: normalizedGender,
-    region: normalizedRegion,
-    tier: normalizedTier,
-  };
-
-  // Use real data from API - no hardcoded overrides
-  const finalGameData = {
-    ...gameData,
-    demographics: normalizedDemographics,
-    // Use rewardConversion from API data (passed from Dashboard component)
-    rewardConversion: gameData.rewardConversion || 0,
-  };
-
-  const statsData = [
-    {
-      value: finalGameData.avgXP,
-      label: "Avg. XP",
-      color: "#00a389",
-    },
-    {
-      value: `${finalGameData.rewardConversion}%`,
-      label: "Reward\nConversion",
-      color: "#00a389",
-    },
-  ];
 
   const DonutChart = ({ data, title }) => {
     const RADIAN = Math.PI / 180;
@@ -132,7 +137,8 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
     const chartData = Array.isArray(data) ? data : [];
 
     // If data is empty, show empty chart with a placeholder
-    const isEmpty = chartData.length === 0 || chartData.every(item => item.value === 0);
+    const isEmpty =
+      chartData.length === 0 || chartData.every((item) => item.value === 0);
 
     // Calculate total for percentage calculation
     const total = chartData.reduce((sum, item) => sum + item.value, 0);
@@ -194,8 +200,8 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
                 paddingAngle={2}
               >
                 {displayData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
+                  <Cell
+                    key={`cell-${index}`}
                     fill={entry.color}
                     stroke="#020202"
                     strokeWidth={1}
@@ -205,7 +211,8 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
               <Tooltip
                 formatter={(value, name, props) => {
                   if (isEmpty) return ["No Data", "Empty"];
-                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  const percentage =
+                    total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                   return [`${value} (${percentage}%)`, props.payload.name];
                 }}
                 labelStyle={{ color: "#374151", fontWeight: "bold" }}
@@ -225,7 +232,8 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
         {!isEmpty && (
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             {chartData.map((item, index) => {
-              const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+              const percentage =
+                total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
               return (
                 <div key={index} className="flex items-center text-xs">
                   <div
@@ -235,9 +243,7 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
                   <span className="text-white truncate max-w-20 font-medium">
                     {item.name}
                   </span>
-                  <span className="text-white/70 ml-1">
-                    ({percentage}%)
-                  </span>
+                  <span className="text-white/70 ml-1">({percentage}%)</span>
                 </div>
               );
             })}
@@ -351,6 +357,8 @@ const TopPlayedGameSnapshot = ({ data, loading }) => {
       </div>
     </div>
   );
-};
+});
+
+TopPlayedGameSnapshot.displayName = "TopPlayedGameSnapshot";
 
 export default TopPlayedGameSnapshot;

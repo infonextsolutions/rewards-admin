@@ -9,37 +9,36 @@ const RevenueVsRewardTable = memo(({ data, loading }) => {
 
   // Map API data to table format - memoized for performance
   // Use real data from backend API
-  const tableData = useMemo(
-    () => {
-      if (data && data.length > 0) {
-        return data.map((game, index) => {
-          const gameName = game.title || game.gameId || "Unknown Game";
-          
-          // Use real data from API
-          const revenue = game.revenue || 0;
-          const rewardCost = game.rewardCost || 0;
-          const marginDollar = game.margin || (revenue - rewardCost);
-          const marginPercent = game.marginPercent || (revenue > 0 ? ((marginDollar / revenue) * 100) : 0);
-          const d7Retention = game.d7Retention || 0;
+  const tableData = useMemo(() => {
+    if (data && data.length > 0) {
+      return data.map((game, index) => {
+        const gameName = game.title || game.gameId || "Unknown Game";
 
-          return {
-            id: index + 1,
-            game: gameName,
-            icon: "🎮",
-            revenue: revenue,
-            rewardCost: rewardCost,
-            marginDollar: marginDollar,
-            marginPercent: marginPercent,
-            d7Retention: d7Retention,
-            gameId: game.gameId,
-          };
-        });
-      }
-      // Return empty array if no data
-      return [];
-    },
-    [data]
-  );
+        // Use real data from API
+        const revenue = game.revenue || 0;
+        const rewardCost = game.rewardCost || 0;
+        const marginDollar = game.margin || revenue - rewardCost;
+        const marginPercent =
+          game.marginPercent ||
+          (revenue > 0 ? (marginDollar / revenue) * 100 : 0);
+        const d7Retention = game.d7Retention || 0;
+
+        return {
+          id: index + 1,
+          game: gameName,
+          icon: "🎮",
+          revenue: revenue,
+          rewardCost: rewardCost,
+          marginDollar: marginDollar,
+          marginPercent: marginPercent,
+          d7Retention: d7Retention,
+          gameId: game.gameId,
+        };
+      });
+    }
+    // Return empty array if no data
+    return [];
+  }, [data]);
 
   // Reset to page 1 when data changes
   useEffect(() => {
@@ -50,17 +49,27 @@ const RevenueVsRewardTable = memo(({ data, loading }) => {
   const totalPages = Math.ceil(tableData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedData = tableData.slice(startIndex, endIndex);
+  const paginatedData = useMemo(
+    () => tableData.slice(startIndex, endIndex),
+    [tableData, startIndex, endIndex]
+  );
 
   const hasData = tableData.length > 0;
 
+  // Memoize currency formatter instance to avoid recreation
+  const currencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }),
+    []
+  );
+
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: amount < 1 ? 2 : 0,
-      maximumFractionDigits: 2,
-    }).format(amount);
+    return currencyFormatter.format(amount);
   };
 
   // EXCLUDED: Red/green visual margin indicators & automatic underperformer flagging not supported per requirements

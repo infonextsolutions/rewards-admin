@@ -63,7 +63,6 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
   ];
 
   const [gameOptions, setGameOptions] = useState([]);
-  const [gameNameOptions, setGameNameOptions] = useState([]);
   const [loadingGames, setLoadingGames] = useState(false);
 
   // Fetch games for Game ID and Game Name filters
@@ -102,21 +101,10 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
           a.label.localeCompare(b.label)
         );
         setGameOptions(gameIdOptions);
-
-        // Create Game Name options (unique game names)
-        const uniqueGameNames = Array.from(
-          new Set(games.map((game) => game.title || game.name).filter(Boolean))
-        ).sort();
-        const gameNameOptions = uniqueGameNames.map((name) => ({
-          value: name,
-          label: name,
-        }));
-        setGameNameOptions(gameNameOptions);
       } catch (error) {
         console.error("Error fetching games for filters:", error);
         // Set empty arrays on error to prevent UI issues
         setGameOptions([]);
-        setGameNameOptions([]);
       } finally {
         setLoadingGames(false);
       }
@@ -132,10 +120,21 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
     { value: "direct", label: "Direct" },
   ];
 
-  // Gender options matching API collection (male, female)
+  // Gender options matching API collection (male, female, other)
   const genderOptions = [
     { value: "male", label: "Male" },
     { value: "female", label: "Female" },
+    { value: "other", label: "Other" },
+  ];
+
+  // Age options matching API collection
+  const ageOptions = [
+    { value: "18-24", label: "18-24" },
+    { value: "25-34", label: "25-34" },
+    { value: "35-44", label: "35-44" },
+    { value: "45-54", label: "45-54" },
+    { value: "55-64", label: "55-64" },
+    { value: "65+", label: "65+" },
   ];
 
   const handleSearchClear = () => {
@@ -225,7 +224,7 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
                 onFilterChange(key, "last30days");
               } else if (key === "customStartDate" || key === "customEndDate") {
                 onFilterChange(key, "");
-              } else if (key === "gameName") {
+              } else if (key === "age") {
                 onFilterChange(key, "all");
               } else {
                 onFilterChange(key, "all");
@@ -408,15 +407,6 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
         />
 
         <FilterDropdown
-          label="Game Name"
-          value={filters.gameName}
-          onChange={(value) => onFilterChange("gameName", value)}
-          options={gameNameOptions}
-          placeholder="All Game Names"
-          disabled={loading || loadingGames}
-        />
-
-        <FilterDropdown
           label="Source"
           value={filters.source}
           onChange={(value) => onFilterChange("source", value)}
@@ -431,6 +421,15 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
           onChange={(value) => onFilterChange("gender", value)}
           options={genderOptions}
           placeholder="All Genders"
+          disabled={loading}
+        />
+
+        <FilterDropdown
+          label="Age"
+          value={filters.age}
+          onChange={(value) => onFilterChange("age", value)}
+          options={ageOptions}
+          placeholder="All Ages"
           disabled={loading}
         />
       </div>
@@ -453,9 +452,9 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
             const optionsMap = {
               dateRange: dateRangeOptions,
               game: gameOptions,
-              gameName: gameNameOptions,
               source: sourceOptions,
               gender: genderOptions,
+              age: ageOptions,
             };
 
             const option = optionsMap[key]?.find((opt) => opt.value === value);
@@ -471,7 +470,6 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
                 ? `Game: ${gameOption.label}`
                 : `Game ID: ${value}`;
             }
-            if (key === "gameName") return `Game Name: ${value}`;
 
             return value;
           };
@@ -489,7 +487,7 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
                     setSearchValue("");
                   } else if (key === "dateRange") {
                     onFilterChange(key, "last30days");
-                  } else if (key === "gameName") {
+                  } else if (key === "age") {
                     onFilterChange(key, "all");
                   } else {
                     onFilterChange(key, "all");

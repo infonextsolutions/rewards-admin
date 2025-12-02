@@ -689,7 +689,6 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                           case 'Gold': return 'bg-yellow-100 text-yellow-800';
                           case 'Platinum': return 'bg-purple-100 text-purple-800';
                           case 'Bronze': return 'bg-amber-100 text-amber-800';
-                          case 'Silver': return 'bg-gray-200 text-gray-800';
                           case 'Free': return 'bg-green-100 text-green-800';
                           case 'All': return 'bg-blue-100 text-blue-800';
                           default: return 'bg-gray-100 text-gray-800';
@@ -701,7 +700,6 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                           case 'Gold': return '🟡';
                           case 'Platinum': return '🟣';
                           case 'Bronze': return '🟤';
-                          case 'Silver': return '⚪';
                           case 'Free': return '🟢';
                           case 'All': return '🔵';
                           default: return '⚫';

@@ -2,6 +2,28 @@
 
 import { memo, useMemo } from "react";
 
+// Memoize formatters outside component to avoid recreation
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+const numberFormatter = new Intl.NumberFormat("en-US");
+
+const formatValue = (val, type) => {
+  if (type === "currency") {
+    return currencyFormatter.format(val);
+  }
+
+  if (type === "number") {
+    return numberFormatter.format(val);
+  }
+
+  return val;
+};
+
 const KPICard = memo(({ title, value, icon, loading }) => {
   if (loading) {
     return (
@@ -16,23 +38,6 @@ const KPICard = memo(({ title, value, icon, loading }) => {
       </div>
     );
   }
-
-  const formatValue = (val, type) => {
-    if (type === "currency") {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(val);
-    }
-
-    if (type === "number") {
-      return new Intl.NumberFormat("en-US").format(val);
-    }
-
-    return val;
-  };
 
   return (
     <div className="bg-white p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
@@ -53,41 +58,45 @@ const KPICard = memo(({ title, value, icon, loading }) => {
   );
 });
 
-KPICard.displayName = 'KPICard';
+KPICard.displayName = "KPICard";
 
 const KPICards = ({ data, loading }) => {
-  const kpiConfig = useMemo(() => [
-    {
-      key: "totalRegisteredUsers",
-      title: "Total Registered Users",
-      icon: { emoji: "👥", bgColor: "bg-blue-100", type: "number" },
-      value: data?.kpis?.totalRegisteredUsers || data?.overview?.totalUsers || 0,
-    },
-    {
-      key: "activeUsersToday",
-      title: "Active Users Today",
-      icon: { emoji: "👑", bgColor: "bg-purple-100", type: "number" },
-      value: data?.kpis?.activeUsersToday || 0,
-    },
-    {
-      key: "totalRewardsIssued",
-      title: "Total Rewards Issued",
-      icon: { emoji: "🎁", bgColor: "bg-green-100", type: "number" },
-      value: data?.kpis?.totalRewardsIssued || 0,
-    },
-    {
-      key: "totalRedemptions",
-      title: "Total Redemptions",
-      icon: { emoji: "✅", bgColor: "bg-emerald-100", type: "number" },
-      value: data?.kpis?.totalRedemptions || 0,
-    },
-    {
-      key: "avgXPPerUser",
-      title: "Avg XP Per User",
-      icon: { emoji: "💰", bgColor: "bg-yellow-100", type: "number" },
-      value: data?.kpis?.avgXPPerUser || 0,
-    },
-  ], [data]);
+  const kpiConfig = useMemo(
+    () => [
+      {
+        key: "totalRegisteredUsers",
+        title: "Total Registered Users",
+        icon: { emoji: "👥", bgColor: "bg-blue-100", type: "number" },
+        value:
+          data?.kpis?.totalRegisteredUsers || data?.overview?.totalUsers || 0,
+      },
+      {
+        key: "activeUsersToday",
+        title: "Active Users Today",
+        icon: { emoji: "👑", bgColor: "bg-purple-100", type: "number" },
+        value: data?.kpis?.activeUsersToday || 0,
+      },
+      {
+        key: "totalRewardsIssued",
+        title: "Total Rewards Issued",
+        icon: { emoji: "🎁", bgColor: "bg-green-100", type: "number" },
+        value: data?.kpis?.totalRewardsIssued || 0,
+      },
+      {
+        key: "totalRedemptions",
+        title: "Total Redemptions",
+        icon: { emoji: "✅", bgColor: "bg-emerald-100", type: "number" },
+        value: data?.kpis?.totalRedemptions || 0,
+      },
+      {
+        key: "avgXPPerUser",
+        title: "Avg XP Per User",
+        icon: { emoji: "💰", bgColor: "bg-yellow-100", type: "number" },
+        value: data?.kpis?.avgXPPerUser || 0,
+      },
+    ],
+    [data]
+  );
 
   return (
     <div className="mb-6">
