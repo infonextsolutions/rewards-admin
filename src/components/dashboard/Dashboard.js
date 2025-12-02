@@ -100,7 +100,8 @@ const Dashboard = () => {
     filters.customEndDate,
   ]);
 
-  const { dashboardData, loading, error, fetchDashboardData } = useDashboard();
+  const { dashboardData, loading, loadingStates, error, fetchDashboardData } =
+    useDashboard();
 
   // Optimized fetch function - instant for dropdowns, debounced for search
   const optimizedFetch = useCallback(
@@ -346,7 +347,7 @@ const Dashboard = () => {
       />
 
       {/* KPI Cards - Show immediately with loading state */}
-      <KPICards data={dashboardData} loading={loading} />
+      <KPICards data={dashboardData} loading={loadingStates.kpis} />
 
       {/* Retention Trend Graph Section */}
       <div className="mb-6">
@@ -354,22 +355,38 @@ const Dashboard = () => {
           data={retentionData}
           retentionCurrent={retentionCurrent}
           filters={filters}
-          loading={loading}
+          loading={loadingStates.retention}
         />
       </div>
 
       {/* Top Played Game Section */}
       <div className="mb-6">
-        <TopPlayedGameSnapshot data={topGameData} loading={loading} />
+        <TopPlayedGameSnapshot
+          data={topGameData}
+          loading={loadingStates.topGame}
+        />
       </div>
 
       {/* Tables Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Revenue vs Reward Cost Table */}
-        <RevenueVsRewardTable data={revenueByGame} loading={loading} />
+        <RevenueVsRewardTable
+          data={revenueByGame}
+          pagination={dashboardData.revenuePagination}
+          loading={loadingStates.revenue}
+          filters={apiFilters}
+          onPageChange={(page) => {
+            if (apiFilters) {
+              fetchRevenuePage(apiFilters, page);
+            }
+          }}
+        />
 
         {/* Attribution Performance Table */}
-        <AttributionPerformanceTable data={attributionData} loading={loading} />
+        <AttributionPerformanceTable
+          data={attributionData}
+          loading={loadingStates.attribution}
+        />
       </div>
     </div>
   );
