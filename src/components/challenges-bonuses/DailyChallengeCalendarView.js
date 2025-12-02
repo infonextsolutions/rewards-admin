@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -13,7 +13,7 @@ import {
 // Only expose supported challenge types in the calendar filters
 const CHALLENGE_TYPES = ["Spin", "Game", "Survey"];
 const CLAIM_TYPES = ["Watch Ad", "Auto"];
-const STATUS_TYPES = ["Scheduled", "Live", "Pending", "Expired"];
+const STATUS_TYPES = ["Scheduled", "Live", "Expired"];
 
 // Keep status handling consistent with the List View:
 // - If a valid explicit status is set, respect it
@@ -64,9 +64,45 @@ export default function DailyChallengeCalendarView({
   const [selectedDateChallenges, setSelectedDateChallenges] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [segmentFilter, setSegmentFilter] = useState("all");
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [ageFilter, setAgeFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
 
   const today = new Date();
+
+  // Get unique countries, age ranges, and genders from challenges for filter options
+  const filterOptions = useMemo(() => {
+    const countries = new Set();
+    const genders = new Set();
+    const ageRanges = new Set();
+
+    challenges.forEach(challenge => {
+      const audience = challenge.targetAudience || {};
+      
+      // Collect countries
+      if (Array.isArray(audience.countries) && audience.countries.length > 0) {
+        audience.countries.forEach(country => countries.add(country));
+      }
+      
+      // Collect genders
+      if (Array.isArray(audience.gender) && audience.gender.length > 0) {
+        audience.gender.forEach(g => genders.add(g));
+      }
+      
+      // Collect age ranges as strings
+      if (audience.ageRange) {
+        const min = audience.ageRange.min || 13;
+        const max = audience.ageRange.max || 100;
+        ageRanges.add(`${min}-${max}`);
+      }
+    });
+
+    return {
+      countries: Array.from(countries).sort(),
+      genders: Array.from(genders).sort(),
+      ageRanges: Array.from(ageRanges).sort(),
+    };
+  }, [challenges]);
 
   // Get current month and year
   const currentMonth = currentDate.getMonth();
@@ -132,7 +168,7 @@ export default function DailyChallengeCalendarView({
   ]);
 
   // Common predicate used by all views (month / week / day)
-  const challengeMatchesFilters = (challenge) => {
+  const challengeMatchesFilters = useCallback((challenge) => {
     // Search filter
     const matchesSearch =
       !searchTerm ||
@@ -147,11 +183,32 @@ export default function DailyChallengeCalendarView({
     const matchesStatus =
       statusFilter === "all" || actualStatus === statusFilter;
 
-    // Segment filter (simple text match on pre-computed label)
-    const segmentLabel = (challenge.segmentLabel || "All Users").toLowerCase();
-    const matchesSegment =
-      segmentFilter === "all" ||
-      segmentLabel.includes(segmentFilter.toLowerCase());
+    // Country filter
+    const matchesCountry = (() => {
+      if (countryFilter === "all") return true;
+      const audience = challenge.targetAudience || {};
+      const countries = Array.isArray(audience.countries) ? audience.countries : [];
+      // Only match if the challenge explicitly has the selected country
+      return countries.length > 0 && countries.includes(countryFilter);
+    })();
+    
+    // Age filter
+    const matchesAge = (() => {
+      if (ageFilter === "all") return true;
+      const audience = challenge.targetAudience || {};
+      const ageRange = audience.ageRange || { min: 13, max: 100 };
+      const [min, max] = ageFilter.split("-").map(Number);
+      return ageRange.min === min && ageRange.max === max;
+    })();
+    
+    // Gender filter
+    const matchesGender = (() => {
+      if (genderFilter === "all") return true;
+      const audience = challenge.targetAudience || {};
+      const genders = Array.isArray(audience.gender) ? audience.gender : [];
+      // Only match if the challenge explicitly has the selected gender
+      return genders.length > 0 && genders.includes(genderFilter);
+    })();
 
     // Date range filter (only applied in month view; week/day views control the visible range)
     let matchesDateRange = true;
@@ -247,9 +304,11 @@ export default function DailyChallengeCalendarView({
       matchesType &&
       matchesStatus &&
       matchesDateRange &&
-      matchesSegment
+      matchesCountry &&
+      matchesAge &&
+      matchesGender
     );
-  };
+  }, [searchTerm, typeFilter, statusFilter, dateRangeFilter, customStartDate, customEndDate, viewMode, countryFilter, ageFilter, genderFilter]);
 
   // Filter challenges for search / filters in MONTH view
   const filteredCalendarDays = useMemo(() => {
@@ -257,7 +316,10 @@ export default function DailyChallengeCalendarView({
       !searchTerm &&
       typeFilter === "all" &&
       statusFilter === "all" &&
-      dateRangeFilter === "all"
+      dateRangeFilter === "all" &&
+      countryFilter === "all" &&
+      ageFilter === "all" &&
+      genderFilter === "all"
     ) {
       return calendarDays;
     }
@@ -280,6 +342,10 @@ export default function DailyChallengeCalendarView({
     dateRangeFilter,
     customStartDate,
     customEndDate,
+    countryFilter,
+    ageFilter,
+    genderFilter,
+    challengeMatchesFilters,
   ]);
 
   const monthNames = [
@@ -855,21 +921,39 @@ export default function DailyChallengeCalendarView({
                 <option value="all">All Status</option>
                 <option value="Scheduled">Scheduled</option>
                 <option value="Live">Live</option>
-                <option value="Pending">Pending</option>
                 <option value="Expired">Expired</option>
               </select>
               <select
-                value={segmentFilter}
-                onChange={(e) => setSegmentFilter(e.target.value)}
+                value={countryFilter}
+                onChange={(e) => setCountryFilter(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="all">All Segments</option>
-                <option value="all users">All Users</option>
-                <option value="vip">VIP Users</option>
-                <option value="new users">New Users</option>
-                <option value="returning users">Returning Users</option>
-                <option value="high engagement">High Engagement</option>
-                <option value="low engagement">Low Engagement</option>
+                <option value="all">All Countries</option>
+                {filterOptions.countries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+              <select
+                value={ageFilter}
+                onChange={(e) => setAgeFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="all">All Ages</option>
+                {filterOptions.ageRanges.map(ageRange => (
+                  <option key={ageRange} value={ageRange}>{ageRange}</option>
+                ))}
+              </select>
+              <select
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="all">All Genders</option>
+                {filterOptions.genders.map(gender => (
+                  <option key={gender} value={gender}>
+                    {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -962,10 +1046,6 @@ export default function DailyChallengeCalendarView({
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>
                   <span className="text-gray-600">Live</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-yellow-100 border border-yellow-200 rounded"></div>
-                  <span className="text-gray-600">Pending</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
