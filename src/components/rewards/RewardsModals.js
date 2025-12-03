@@ -103,8 +103,8 @@ export function AddEditModal({
     if (activeTab === 'XP Tiers') {
       if (!formData.tierName) {
         errors.tierName = 'Tier name is required';
-      } else if (!/^[a-zA-Z\s]+$/.test(formData.tierName)) {
-        errors.tierName = 'Tier name must contain only letters and spaces';
+      } else if (!['Junior', 'Middle', 'Senior'].includes(formData.tierName)) {
+        errors.tierName = 'Please select a valid XP Tier';
       }
       
       if (!formData.xpMin || formData.xpMin < 0) {
@@ -222,13 +222,16 @@ export function AddEditModal({
                   <label className="block text-sm font-medium text-black mb-1">
                     XP Tier <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.tierName}
                     onChange={(e) => setFormData(prev => ({ ...prev, tierName: e.target.value }))}
-                    placeholder="e.g., Junior, Middle Level, Senior"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                  />
+                  >
+                    <option value="">Select XP Tier</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Middle">Middle</option>
+                    <option value="Senior">Senior</option>
+                  </select>
                   {formErrors.tierName && <p className="text-red-500 text-xs mt-1">{formErrors.tierName}</p>}
                 </div>
 
@@ -262,7 +265,7 @@ export function AddEditModal({
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-black mb-1">Badge/Icon</label>
                   <input
                     ref={fileInputRef}
@@ -274,7 +277,7 @@ export function AddEditModal({
                   {formData.badgeFile && (
                     <div className="text-xs text-green-600 mt-1">File selected: {formData.badgeFile.name}</div>
                   )}
-                </div>
+                </div> */}
 
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">Access Benefits</label>
@@ -305,13 +308,16 @@ export function AddEditModal({
               <>
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">XP Tier</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.tierName}
                     onChange={(e) => setFormData(prev => ({ ...prev, tierName: e.target.value }))}
-                    placeholder="Junior, Middle Level, Senior..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                  />
+                  >
+                    <option value="">Select XP Tier</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Middle">Middle</option>
+                    <option value="Senior">Senior</option>
+                  </select>
                 </div>
 
                 <div>
@@ -432,7 +438,7 @@ export function AddEditModal({
                   >
                     <option value="">Select Tier</option>
                     <option value="Junior">Junior</option>
-                    <option value="Middle Level">Middle Level</option>
+                    <option value="Middle">Middle</option>
                     <option value="Senior">Senior</option>
                   </select>
                 </div>
