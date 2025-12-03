@@ -634,7 +634,7 @@ export function AddEditModal({
                   >
                     <option value="Fixed">Fixed</option>
                     <option value="Stepwise">Stepwise</option>
-                    <option value="Gradual">Gradual</option>
+                    {/* <option value="Gradual">Gradual</option> */}
                   </select>
                 </div>
 
