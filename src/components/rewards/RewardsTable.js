@@ -115,7 +115,6 @@ export default function RewardsTable({
           <tr className="bg-[#ecf8f1]">
             <th className="text-left py-4 px-3 font-semibold text-[#333333] text-sm">XP Tier</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">XP Range</th>
-            <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Badge</th>
             <th className="text-left py-4 px-2 font-semibold text-[#333333] text-sm">Access Benefits</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Status</th>
             <th className="text-center py-4 px-2 font-semibold text-[#333333] text-sm">Actions</th>
@@ -175,9 +174,6 @@ export default function RewardsTable({
             </td>
             <td className="py-4 px-2 text-center">
               <span className="text-sm text-gray-700">{item.xpRange}</span>
-            </td>
-            <td className="py-4 px-2 text-center">
-              <span className="text-2xl">{item.badge}</span>
             </td>
             <td className="py-4 px-2">
               <span className="text-sm text-gray-700">{item.accessBenefits}</span>

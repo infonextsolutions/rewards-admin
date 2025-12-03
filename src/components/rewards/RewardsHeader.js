@@ -24,7 +24,7 @@ export default function RewardsHeader({
             Rewards Management
           </h1>
           <p className="[font-family:'DM_Sans-Medium',Helvetica] font-medium text-[#666666] text-[14.4px] tracking-[0] leading-[normal] mt-1">
-            Manage XP tiers, decay settings, conversions, and bonus logic
+            Manage XP tiers, decay settings, and daily rewards
           </p>
         </div>
 
@@ -78,16 +78,18 @@ export default function RewardsHeader({
             </svg>
             Export
           </button> */}
-          <button
-            onClick={onAdd}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors h-[42px] whitespace-nowrap"
-            title="Add new item"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add New
-          </button>
+          {onAdd && (
+            <button
+              onClick={onAdd}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors h-[42px] whitespace-nowrap"
+              title="Add new item"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add New
+            </button>
+          )}
         </div>
       </header>
 
