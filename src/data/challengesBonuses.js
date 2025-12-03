@@ -268,13 +268,35 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // Mock API functions
 export const challengesBonusesAPI = {
   // Challenge operations
-  async getCalendarChallenges(year, month) {
+  async getCalendarChallenges(year, month, filters = {}) {
     try {
+      const { ageFilter = "", country = "", gender = "" } = filters;
+      
+      // Convert age filter string to minAge/maxAge for backend
+      let minAge, maxAge;
+      if (ageFilter && ageFilter !== "all") {
+        if (ageFilter === "55+") {
+          minAge = 55;
+          // Don't set maxAge for 55+, backend will handle it
+        } else {
+          const [min, max] = ageFilter.split("-").map(Number);
+          minAge = min;
+          maxAge = max;
+        }
+      }
+
+      const params = {
+        year,
+        month,
+        ...(minAge !== undefined && { minAge }),
+        ...(maxAge !== undefined && { maxAge }),
+        ...(country && country !== "all" && { country }),
+        ...(gender && gender !== "all" && { gender: gender.toLowerCase() }),
+      };
+
       const response = await apiClient.get(
         "/admin/daily-challenges/challenges/calendar",
-        {
-          params: { year, month },
-        }
+        { params }
       );
 
       const calendarData = response.data.data.calendarData || {};
@@ -305,13 +327,38 @@ export const challengesBonusesAPI = {
 
   async getChallenges(params = {}) {
     try {
-      const { page = 1, limit = 10, type = "", status = "" } = params;
+      const { 
+        page = 1, 
+        limit = 10, 
+        type = "", 
+        status = "",
+        ageFilter = "",
+        country = "",
+        gender = ""
+      } = params;
+
+      // Convert age filter string to minAge/maxAge for backend
+      let minAge, maxAge;
+      if (ageFilter && ageFilter !== "all") {
+        if (ageFilter === "55+") {
+          minAge = 55;
+          // Don't set maxAge for 55+, backend will handle it
+        } else {
+          const [min, max] = ageFilter.split("-").map(Number);
+          minAge = min;
+          maxAge = max;
+        }
+      }
 
       const queryParams = {
         page,
         limit,
-        ...(type && { type }),
-        ...(status && { status }),
+        ...(type && { type: type.toLowerCase() }),
+        ...(status && { status: status.toLowerCase() }),
+        ...(minAge !== undefined && { minAge }),
+        ...(maxAge !== undefined && { maxAge }),
+        ...(country && country !== "all" && { country }),
+        ...(gender && gender !== "all" && { gender: gender.toLowerCase() }),
       };
 
       const response = await apiClient.get(

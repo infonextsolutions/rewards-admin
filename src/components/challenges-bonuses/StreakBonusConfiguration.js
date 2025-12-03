@@ -80,11 +80,16 @@ export default function StreakBonusConfiguration({
 
   const addReward = (day) => {
     setMilestones(prev => {
-      const updated = prev.map(m => 
-        m.day === day 
-          ? { ...m, rewards: [...m.rewards, { type: 'coins', value: 0 }] }
-          : m
-      );
+      const updated = prev.map(m => {
+        if (m.day === day) {
+          // Only allow adding if there are fewer than 2 rewards (max 2: coins and xp)
+          if (m.rewards.length < 2) {
+            return { ...m, rewards: [...m.rewards, { type: 'coins', value: 0 }] };
+          }
+          return m;
+        }
+        return m;
+      });
       setHasChanges(true);
       return updated;
     });
@@ -111,6 +116,10 @@ export default function StreakBonusConfiguration({
         if (!milestone.rewards || milestone.rewards.length === 0) {
           newErrors[`${milestone.day}_rewards`] = 'At least one reward is required';
         } else {
+          // Validate maximum 2 rewards per milestone
+          if (milestone.rewards.length > 2) {
+            newErrors[`${milestone.day}_rewards`] = 'Maximum 2 rewards allowed per milestone (Coins and XP)';
+          }
           milestone.rewards.forEach((reward, idx) => {
             if (reward.value === undefined || reward.value < 0) {
               newErrors[`${milestone.day}_reward_${idx}_value`] = 'Reward value must be at least 0';
@@ -238,7 +247,13 @@ export default function StreakBonusConfiguration({
                         <button
                           type="button"
                           onClick={() => addReward(milestone.day)}
-                          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                          disabled={milestone.rewards.length >= 2}
+                          className={`text-sm font-medium ${
+                            milestone.rewards.length >= 2
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-emerald-600 hover:text-emerald-700'
+                          }`}
+                          title={milestone.rewards.length >= 2 ? 'Maximum 2 rewards allowed (Coins and XP)' : 'Add Reward'}
                         >
                           + Add Reward
                         </button>
