@@ -9,11 +9,19 @@ import {
   MOCK_BONUS_LOGIC
 } from '../data/rewards';
 
-const API_BASE = 'https://rewardsapi.hireagent.co/api/admin/rewards';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://rewardsapi.hireagent.co/api';
 
 // Axios instance with default config
 const apiClient = axios.create({
-  baseURL: API_BASE,
+  baseURL: `${API_BASE}/admin/rewards`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Separate API client for Daily Rewards V2 (different base path)
+const dailyRewardsApiClient = axios.create({
+  baseURL: `${API_BASE}/admin`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -21,6 +29,16 @@ const apiClient = axios.create({
 
 // Add auth token to requests
 apiClient.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+dailyRewardsApiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) {
@@ -47,8 +65,8 @@ export const useRewards = () => {
         return xpDecaySettings;
       case "XP Conversion":
         return xpConversions;
-      case "Bonus Logic":
-        return bonusLogic;
+      case "Daily Rewards":
+        return []; // Daily Rewards uses a custom component, not a table
       default:
         return [];
     }
@@ -1073,6 +1091,45 @@ export const useRewards = () => {
     }
   };
 
+  // Daily Rewards V2 API functions
+  const fetchDailyRewards = async () => {
+    setLoading(true);
+    try {
+      const response = await dailyRewardsApiClient.get('/daily-rewards-v2/config');
+      const result = response.data;
+      if (result.success && result.data) {
+        setLoading(false);
+        return { success: true, data: result.data };
+      }
+      setLoading(false);
+      return { success: false, data: null };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const updateDailyRewards = async (data) => {
+    setLoading(true);
+    try {
+      const response = await dailyRewardsApiClient.post('/daily-rewards-v2/config', data);
+      const result = response.data;
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
   return {
     xpTiers,
     xpDecaySettings,
@@ -1114,5 +1171,7 @@ export const useRewards = () => {
     toggleXPDecayNotification,
     bulkUpdateXPDecayStatus,
     bulkDeleteXPDecay,
+    fetchDailyRewards,
+    updateDailyRewards,
   };
 };

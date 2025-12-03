@@ -13,6 +13,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { AddEditModal, DeleteConfirmModal } from '../../components/rewards/RewardsModals';
 import AdvancedFilter from '../../components/rewards/AdvancedFilter';
 import RewardsSummary from '../../components/rewards/RewardsSummary';
+import DailyRewards from '../../components/rewards/DailyRewards';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://rewardsapi.hireagent.co/api';
 
@@ -27,18 +28,10 @@ export default function RewardsPage() {
     xpTiers,
     xpDecaySettings,
     xpConversions,
-    bonusLogic,
     auditLogs,
     loading,
-    fetchBonusLogic,
-    fetchSingleBonusLogic,
-    updateBonusLogic,
-    deleteBonusLogic,
-    toggleBonusLogicStatus,
-    toggleBonusLogicActive,
-    bulkUpdateBonusLogicStatus,
-    bulkDeleteBonusLogic,
-    createBonusLogic,
+    fetchDailyRewards,
+    updateDailyRewards,
     fetchXPTiers,
     fetchSingleXPTier,
     createXPTier,
@@ -118,12 +111,6 @@ export default function RewardsPage() {
         }
       }
       
-      if (activeTab === 'Bonus Logic') {
-        if (advancedFilters.rewardType) {
-          const hasRewardType = item.rewardValue?.toLowerCase().includes(advancedFilters.rewardType.toLowerCase());
-          if (!hasRewardType) return false;
-        }
-      }
       
       return true;
     });
@@ -162,17 +149,9 @@ export default function RewardsPage() {
         }
       };
       loadXPDecay();
-    } else if (activeTab === 'Bonus Logic') {
-      const loadBonusLogic = async () => {
-        try {
-          // Fetch all bonus logic without filters to get both active and inactive
-          await fetchBonusLogic();
-        } catch (error) {
-          const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
-          toast.error(errorMessage);
-        }
-      };
-      loadBonusLogic();
+    } else if (activeTab === 'Daily Rewards') {
+      // Daily Rewards uses its own component and handles data fetching internally
+      // No need to fetch here
     }
   }, [activeTab]);
 
@@ -212,12 +191,6 @@ export default function RewardsPage() {
           toast.success(result.message || `${selectedItems.length} XP Decay Settings updated successfully!`);
           await fetchXPDecaySettings();
         }
-      } else if (activeTab === 'Bonus Logic') {
-        const result = await bulkUpdateBonusLogicStatus(selectedItems, status);
-        if (result.success) {
-          toast.success(result.message || `${selectedItems.length} Bonus Logic rules updated successfully!`);
-          await fetchBonusLogic();
-        }
       } else {
         await bulkUpdateStatus(activeTab, selectedItems, status);
         toast.success(`${selectedItems.length} items updated successfully!`);
@@ -252,12 +225,6 @@ export default function RewardsPage() {
           toast.success(result.message || `${selectedItems.length} XP Decay Settings deleted successfully!`);
           await fetchXPDecaySettings();
         }
-      } else if (activeTab === 'Bonus Logic') {
-        const result = await bulkDeleteBonusLogic(selectedItems);
-        if (result.success) {
-          toast.success(result.message || `${selectedItems.length} Bonus Logic rules deleted successfully!`);
-          await fetchBonusLogic();
-        }
       } else {
         toast.error('Bulk delete not supported for this tab');
       }
@@ -286,15 +253,6 @@ export default function RewardsPage() {
           if (result.success) {
             toast.success(result.message || 'XP Decay status updated successfully!');
             await fetchXPDecaySettings();
-          }
-        }
-      } else if (activeTab === 'Bonus Logic') {
-        const item = bonusLogic.find(i => i.id === itemId);
-        if (item) {
-          const result = await toggleBonusLogicStatus(itemId, !item.status);
-          if (result.success) {
-            toast.success(result.message || 'Bonus Logic status updated successfully!');
-            await fetchBonusLogic();
           }
         }
       } else {
@@ -364,20 +322,6 @@ export default function RewardsPage() {
         const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
         toast.error(errorMessage);
       }
-    } else if (activeTab === 'Bonus Logic') {
-      try {
-        // Fetch the full bonus logic data from API
-        const result = await fetchSingleBonusLogic(item.id);
-        if (result.success) {
-          setEditingItem(result.data);
-          setShowEditModal(true);
-        } else {
-          toast.error('Failed to load bonus logic details');
-        }
-      } catch (error) {
-        const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
-        toast.error(errorMessage);
-      }
     } else {
       setEditingItem(item);
       setShowEditModal(true);
@@ -391,39 +335,7 @@ export default function RewardsPage() {
 
   const handleSaveItem = async (itemData) => {
     try {
-      if (activeTab === 'Bonus Logic') {
-        // API Integration for Bonus Logic
-        const bonusData = {
-          bonusType: itemData.bonusType,
-          triggerCondition: itemData.triggerCondition,
-          rewardValue: itemData.rewardValue,
-          active: itemData.active
-        };
-
-        if (editingItem) {
-          // Update existing bonus logic
-          const result = await updateBonusLogic(editingItem.id, bonusData);
-          if (result.success) {
-            toast.success(result.message || 'Bonus logic updated successfully!');
-            setShowAddModal(false);
-            setShowEditModal(false);
-            setEditingItem(null);
-            // Refresh the bonus logic list
-            await fetchBonusLogic();
-          }
-        } else {
-          // Create new bonus logic
-          const result = await createBonusLogic(bonusData);
-          if (result.success) {
-            toast.success(result.message || 'Bonus logic created successfully!');
-            setShowAddModal(false);
-            setShowEditModal(false);
-            setEditingItem(null);
-            // Refresh the bonus logic list to show the new item
-            await fetchBonusLogic();
-          }
-        }
-      } else if (activeTab === 'XP Tiers') {
+      if (activeTab === 'XP Tiers') {
         // API Integration for XP Tiers
         if (editingItem) {
           // Update existing XP tier
@@ -506,16 +418,6 @@ export default function RewardsPage() {
           // Refresh XP Decay list
           await fetchXPDecaySettings();
         }
-      } else if (activeTab === 'Bonus Logic') {
-        // Use API to delete bonus logic
-        const result = await deleteBonusLogic(deletingItem.id);
-        if (result.success) {
-          toast.success(result.message || 'Bonus logic deleted successfully!');
-          setShowDeleteConfirm(false);
-          setDeletingItem(null);
-          // Refresh bonus logic list
-          await fetchBonusLogic();
-        }
       } else {
         await deleteItem(activeTab, deletingItem.id);
         toast.success('Item deleted successfully!');
@@ -546,7 +448,7 @@ export default function RewardsPage() {
         selectedFilters={selectedFilters}
         onFilterChange={handleFilterChange}
         onExport={handleExport}
-        onAdd={handleAdd}
+        onAdd={activeTab === 'Daily Rewards' ? undefined : handleAdd}
         onShowAuditLogs={() => setShowAuditLogs(true)}
         onShowAdvancedFilter={() => setShowAdvancedFilter(true)}
         selectedCount={selectedItems.length}
@@ -588,70 +490,70 @@ export default function RewardsPage() {
         </div>
       )}
 
-      {loading ? (
-        <LoadingSpinner message={`Loading ${activeTab}...`} />
-      ) : (
-        <RewardsTable
-          activeTab={activeTab}
-          data={paginatedData}
-          selectedItems={selectedItems}
-          onSelectItem={handleSelectItem}
-          onSelectAll={handleSelectAll}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onToggleStatus={handleToggleStatus}
-          onToggleNotification={async (itemId) => {
-            try {
-              const item = xpDecaySettings.find(i => i.id === itemId);
-              if (item) {
-                const result = await toggleXPDecayNotification(itemId, !item.notificationToggle);
-                if (result.success) {
-                  toast.success(result.message || 'Notification setting updated successfully!');
-                  await fetchXPDecaySettings();
-                }
-              }
-            } catch (error) {
-              const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
-              toast.error(errorMessage);
-            }
+      {activeTab === 'Daily Rewards' ? (
+        <DailyRewards
+          onSave={(data) => {
+            // Toast message is already shown in DailyRewards component
           }}
-          onToggleActive={async (itemId) => {
-            try {
-              const item = bonusLogic.find(i => i.id === itemId);
-              if (item) {
-                const result = await toggleBonusLogicActive(itemId, !item.active);
-                if (result.success) {
-                  toast.success(result.message || 'Active status updated successfully!');
-                  await fetchBonusLogic();
-                }
-              }
-            } catch (error) {
-              const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
-              toast.error(errorMessage);
-            }
+          onCancel={() => {
+            // Handle cancel if needed
           }}
         />
+      ) : (
+        <>
+          {loading ? (
+            <LoadingSpinner message={`Loading ${activeTab}...`} />
+          ) : (
+            <RewardsTable
+              activeTab={activeTab}
+              data={paginatedData}
+              selectedItems={selectedItems}
+              onSelectItem={handleSelectItem}
+              onSelectAll={handleSelectAll}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onToggleStatus={handleToggleStatus}
+              onToggleNotification={async (itemId) => {
+                try {
+                  const item = xpDecaySettings.find(i => i.id === itemId);
+                  if (item) {
+                    const result = await toggleXPDecayNotification(itemId, !item.notificationToggle);
+                    if (result.success) {
+                      toast.success(result.message || 'Notification setting updated successfully!');
+                      await fetchXPDecaySettings();
+                    }
+                  }
+                } catch (error) {
+                  const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+                  toast.error(errorMessage);
+                }
+              }}
+            />
+          )}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+          />
+        </>
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        onPageChange={handlePageChange}
-      />
-
-      {/* Add/Edit Modal */}
-      <AddEditModal
-        isOpen={showAddModal || showEditModal}
-        activeTab={activeTab}
-        editingItem={editingItem}
-        onClose={() => {
-          setShowAddModal(false);
-          setShowEditModal(false);
-          setEditingItem(null);
-        }}
-        onSave={handleSaveItem}
-      />
+      {/* Add/Edit Modal - Only show for non-Daily Rewards tabs */}
+      {activeTab !== 'Daily Rewards' && (
+        <AddEditModal
+          isOpen={showAddModal || showEditModal}
+          activeTab={activeTab}
+          editingItem={editingItem}
+          onClose={() => {
+            setShowAddModal(false);
+            setShowEditModal(false);
+            setEditingItem(null);
+          }}
+          onSave={handleSaveItem}
+        />
+      )}
 
       {/* Audit Logs Modal */}
       {showAuditLogs && (
