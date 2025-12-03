@@ -32,6 +32,8 @@ export function AddEditModal({
 }) {
   const [multipliers, setMultipliers] = useState([]);
   const [loadingMultipliers, setLoadingMultipliers] = useState(false);
+  const [xpTiers, setXpTiers] = useState([]);
+  const [loadingXpTiers, setLoadingXpTiers] = useState(false);
   const [formData, setFormData] = useState({
     // XP Tiers
     tierName: editingItem?.tierName || "",
@@ -98,6 +100,36 @@ export function AddEditModal({
     }
   }, [isOpen, activeTab]);
 
+  // Fetch XP tiers when modal opens for XP Decay Settings
+  // This fetches from the XP Tiers tab data to get xpMin and xpMax values
+  useEffect(() => {
+    if (isOpen && activeTab === "XP Decay Settings") {
+      const fetchXpTiers = async () => {
+        setLoadingXpTiers(true);
+        try {
+          const response = await apiClient.get("/admin/rewards/xp-tiers", {
+            params: { status: true },
+          });
+          const result = response.data;
+          if (result.success && result.data) {
+            setXpTiers(result.data);
+          } else {
+            setXpTiers([]);
+          }
+        } catch (error) {
+          console.error("Error fetching XP tiers:", error);
+          setXpTiers([]);
+        } finally {
+          setLoadingXpTiers(false);
+        }
+      };
+      fetchXpTiers();
+    } else if (!isOpen) {
+      // Reset XP tiers when modal closes
+      setXpTiers([]);
+    }
+  }, [isOpen, activeTab]);
+
   // Auto-populate Access Benefits when tier is selected or multipliers are loaded
   useEffect(() => {
     if (
@@ -130,6 +162,80 @@ export function AddEditModal({
       }
     }
   }, [formData.tierName, multipliers, activeTab]);
+
+  // Auto-populate XP Range when tier is selected in XP Decay Settings
+  // XP Range is derived from xpMin and xpMax values set in the XP Tiers tab
+  useEffect(() => {
+    if (activeTab === "XP Decay Settings") {
+      if (formData.tierName && xpTiers.length > 0) {
+        // Find the tier from XP Tiers tab data (uses 'tierName' field)
+        // Match by exact tierName or check if tierName contains/starts with the selected tier
+        const selectedTierLower = formData.tierName.toLowerCase();
+        const tier = xpTiers.find((t) => {
+          if (!t.tierName) return false;
+          const tierNameLower = t.tierName.toLowerCase();
+          return (
+            tierNameLower === selectedTierLower ||
+            tierNameLower.startsWith(selectedTierLower) ||
+            selectedTierLower.startsWith(tierNameLower.split(" ")[0]) // Match first word
+          );
+        });
+
+        if (tier) {
+          // Use existing xpRange if available, otherwise format from xpMin and xpMax
+          let newXpRange = "";
+          if (tier.xpRange) {
+            // Use the xpRange field if it exists (may already include "XP" suffix)
+            newXpRange = tier.xpRange.includes("XP")
+              ? tier.xpRange
+              : `${tier.xpRange} XP`;
+          } else if (tier.xpMin !== undefined && tier.xpMin !== null) {
+            // Format XP Range from xpMin and xpMax values
+            if (
+              tier.xpMax === null ||
+              tier.xpMax === undefined ||
+              tier.xpMax === Infinity
+            ) {
+              newXpRange = `${tier.xpMin}+ XP`;
+            } else {
+              newXpRange = `${tier.xpMin} - ${tier.xpMax} XP`;
+            }
+          }
+
+          if (newXpRange) {
+            // Only update if different to avoid unnecessary re-renders
+            setFormData((prev) => {
+              if (prev.xpRange !== newXpRange) {
+                return {
+                  ...prev,
+                  xpRange: newXpRange,
+                };
+              }
+              return prev;
+            });
+          } else {
+            // If no valid data found, clear XP range
+            setFormData((prev) => ({
+              ...prev,
+              xpRange: "",
+            }));
+          }
+        } else {
+          // If tier not found, clear XP range
+          setFormData((prev) => ({
+            ...prev,
+            xpRange: "",
+          }));
+        }
+      } else if (!formData.tierName) {
+        // Clear XP range when no tier is selected
+        setFormData((prev) => ({
+          ...prev,
+          xpRange: "",
+        }));
+      }
+    }
+  }, [formData.tierName, xpTiers, activeTab]);
 
   // Update form data when editingItem changes
   useEffect(() => {
@@ -521,15 +627,17 @@ export function AddEditModal({
                   <input
                     type="text"
                     value={formData.xpRange}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        xpRange: e.target.value,
-                      }))
+                    readOnly
+                    placeholder={
+                      loadingXpTiers
+                        ? "Loading..."
+                        : "Select a tier to auto-populate"
                     }
-                    placeholder="0 - 999 XP"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-black cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Auto-populated from selected XP Tier
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
