@@ -18,7 +18,7 @@ export default function AddEditChallengeModal({
   existingChallenges = [],
   loading = false,
 }) {
-  const { sdkProviders } = useMasterData();
+  const { sdkProviders, countries } = useMasterData();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -73,7 +73,7 @@ export default function AddEditChallengeModal({
               challenge.requirements?.timeLimit !== null
             ? String(challenge.requirements.timeLimit)
             : "",
-        countriesInput: (challenge.targetAudience?.countries || []).join(", "),
+        countriesInput: challenge.targetAudience?.countries?.[0] || "",
         ageMin:
           challenge.targetAudience?.ageRange?.min !== undefined
             ? String(challenge.targetAudience.ageRange.min)
@@ -224,11 +224,9 @@ export default function AddEditChallengeModal({
 
     if (!validateForm()) return;
 
-    const countries =
-      formData.countriesInput
-        .split(",")
-        .map((c) => c.trim().toUpperCase())
-        .filter((c) => c.length > 0) || [];
+    const countries = formData.countriesInput
+      ? [formData.countriesInput.trim().toUpperCase()]
+      : [];
 
     const ageMin =
       formData.ageMin !== "" && !Number.isNaN(Number(formData.ageMin))
@@ -489,18 +487,23 @@ export default function AddEditChallengeModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Countries (optional)
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.countriesInput}
                   onChange={(e) =>
                     setFormData({ ...formData, countriesInput: e.target.value })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="e.g., US, IN, UK"
-                />
+                >
+                  <option value="">Select a country (optional)</option>
+                  {countries.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
                 <p className="mt-1 text-xs text-gray-500">
-                  Comma-separated ISO country codes (e.g., US, IN, UK). Leave
-                  blank for all countries.
+                  Select a country to target specific users. Leave blank for all
+                  countries.
                 </p>
               </div>
             </div>
