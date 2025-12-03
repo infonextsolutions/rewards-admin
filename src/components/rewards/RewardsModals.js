@@ -49,6 +49,8 @@ export function AddEditModal({
     minimumXpLimit: editingItem?.minimumXpLimit || "",
     notificationToggle: editingItem?.notificationToggle ?? true,
     xpRange: editingItem?.xpRange || "",
+    xpDeductionAmount:
+      editingItem?.xpDeductionAmount || editingItem?.decayAmount || "",
     // XP Conversion
     tier: editingItem?.tierName || "",
     conversionRatio: editingItem?.conversionRatio || "",
@@ -255,6 +257,8 @@ export function AddEditModal({
         minimumXpLimit: editingItem?.minimumXpLimit || "",
         notificationToggle: editingItem?.notificationToggle ?? true,
         xpRange: editingItem?.xpRange || "",
+        xpDeductionAmount:
+          editingItem?.xpDeductionAmount || editingItem?.decayAmount || "",
         // XP Conversion
         tier: editingItem?.tierName || "",
         conversionRatio: editingItem?.conversionRatio || "",
@@ -282,6 +286,7 @@ export function AddEditModal({
         minimumXpLimit: "",
         notificationToggle: true,
         xpRange: "",
+        xpDeductionAmount: "",
         tier: "",
         conversionRatio: "",
         enabled: true,
@@ -327,6 +332,18 @@ export function AddEditModal({
 
       if (!formData.minimumXpLimit || formData.minimumXpLimit < 0) {
         errors.minimumXpLimit = "Min XP limit must be a positive number";
+      }
+
+      // Validate XP deduction amount for Fixed and Stepwise rule types
+      if (
+        (formData.decayRuleType === "Fixed" ||
+          formData.decayRuleType === "Stepwise") &&
+        (!formData.xpDeductionAmount || formData.xpDeductionAmount <= 0)
+      ) {
+        errors.xpDeductionAmount =
+          formData.decayRuleType === "Fixed"
+            ? "Fixed XP deduction amount is required"
+            : "XP deduction per step/day is required";
       }
     }
 
@@ -388,6 +405,7 @@ export function AddEditModal({
       minimumXpLimit: "",
       notificationToggle: true,
       xpRange: "",
+      xpDeductionAmount: "",
       tier: "",
       conversionRatio: "",
       enabled: true,
@@ -619,6 +637,46 @@ export function AddEditModal({
                     <option value="Gradual">Gradual</option>
                   </select>
                 </div>
+
+                {/* XP Deduction Amount - shown for Fixed and Stepwise */}
+                {(formData.decayRuleType === "Fixed" ||
+                  formData.decayRuleType === "Stepwise") && (
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-1">
+                      {formData.decayRuleType === "Fixed"
+                        ? "Fixed XP Deduction Amount"
+                        : "XP Deduction Per Step/Day"}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.xpDeductionAmount}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          xpDeductionAmount: parseInt(e.target.value) || "",
+                        }))
+                      }
+                      placeholder={
+                        formData.decayRuleType === "Fixed"
+                          ? "e.g., 50"
+                          : "e.g., 10 per day"
+                      }
+                      min="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    />
+                    {formErrors.xpDeductionAmount && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.xpDeductionAmount}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.decayRuleType === "Fixed"
+                        ? "Fixed amount to deduct once (e.g., 50 XP)"
+                        : "Amount to deduct per step/day (e.g., 10 XP per day)"}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">
