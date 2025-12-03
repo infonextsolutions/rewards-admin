@@ -14,6 +14,7 @@ import {
 const CHALLENGE_TYPES = ["Spin", "Game", "Survey"];
 const CLAIM_TYPES = ["Watch Ad", "Auto"];
 const STATUS_TYPES = ["Scheduled", "Live", "Expired"];
+const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55+"];
 
 // Keep status handling consistent with the List View:
 // - If a valid explicit status is set, respect it
@@ -70,11 +71,10 @@ export default function DailyChallengeCalendarView({
 
   const today = new Date();
 
-  // Get unique countries, age ranges, and genders from challenges for filter options
+  // Get unique countries and genders from challenges for filter options
   const filterOptions = useMemo(() => {
     const countries = new Set();
     const genders = new Set();
-    const ageRanges = new Set();
 
     challenges.forEach(challenge => {
       const audience = challenge.targetAudience || {};
@@ -88,19 +88,11 @@ export default function DailyChallengeCalendarView({
       if (Array.isArray(audience.gender) && audience.gender.length > 0) {
         audience.gender.forEach(g => genders.add(g));
       }
-      
-      // Collect age ranges as strings
-      if (audience.ageRange) {
-        const min = audience.ageRange.min || 13;
-        const max = audience.ageRange.max || 100;
-        ageRanges.add(`${min}-${max}`);
-      }
     });
 
     return {
       countries: Array.from(countries).sort(),
       genders: Array.from(genders).sort(),
-      ageRanges: Array.from(ageRanges).sort(),
     };
   }, [challenges]);
 
@@ -192,13 +184,24 @@ export default function DailyChallengeCalendarView({
       return countries.length > 0 && countries.includes(countryFilter);
     })();
     
-    // Age filter
+    // Age filter - match challenges that overlap with the selected age range
     const matchesAge = (() => {
       if (ageFilter === "all") return true;
       const audience = challenge.targetAudience || {};
-      const ageRange = audience.ageRange || { min: 13, max: 100 };
-      const [min, max] = ageFilter.split("-").map(Number);
-      return ageRange.min === min && ageRange.max === max;
+      const challengeAgeRange = audience.ageRange || { min: 13, max: 100 };
+      const challengeMin = challengeAgeRange.min || 13;
+      const challengeMax = challengeAgeRange.max || 100;
+      
+      // Parse the selected age range
+      if (ageFilter === "55+") {
+        // For 55+, match if challenge max is >= 55 or challenge has no max (defaults to 100)
+        return challengeMax >= 55 || !challengeAgeRange.max;
+      } else {
+        const [filterMin, filterMax] = ageFilter.split("-").map(Number);
+        // Check if ranges overlap: challenge range overlaps filter range if
+        // challengeMin <= filterMax AND challengeMax >= filterMin
+        return challengeMin <= filterMax && challengeMax >= filterMin;
+      }
     })();
     
     // Gender filter
@@ -939,7 +942,7 @@ export default function DailyChallengeCalendarView({
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="all">All Ages</option>
-                {filterOptions.ageRanges.map(ageRange => (
+                {AGE_RANGES.map(ageRange => (
                   <option key={ageRange} value={ageRange}>{ageRange}</option>
                 ))}
               </select>
