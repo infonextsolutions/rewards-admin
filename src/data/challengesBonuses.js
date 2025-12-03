@@ -473,6 +473,7 @@ export const challengesBonusesAPI = {
       return {
         id: apiData._id,
         title: apiData.title,
+        description: apiData.description || apiData.title || '',
         type: apiData.type
           ? apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1)
           : "Spin",
@@ -517,11 +518,8 @@ export const challengesBonusesAPI = {
       const apiPayload = {
         ...(challengeDate && { challengeDate: challengeDate }),
         ...(challengeData.title && { title: challengeData.title }),
-        ...(challengeData.description && {
-          description: challengeData.description,
-        }),
-        ...(challengeData.title &&
-          !challengeData.description && { description: challengeData.title }),
+        // Always include description - use provided value or fallback to title
+        description: challengeData.description || challengeData.title || '',
         ...(challengeData.type && { type: challengeData.type.toLowerCase() }),
         ...(challengeData.coinReward !== undefined && {
           coinReward: challengeData.coinReward,
@@ -568,6 +566,7 @@ export const challengesBonusesAPI = {
       return {
         id: apiData._id,
         title: apiData.title,
+        description: apiData.description || apiData.title || '',
         type: apiData.type
           ? apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1)
           : "Spin",

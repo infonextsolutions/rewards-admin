@@ -273,6 +273,7 @@ export default function AddEditChallengeModal({
 
     const challengeData = {
       title: formData.title.trim(),
+      // Always include description - use trimmed value if provided, otherwise fallback to title
       description: formData.description.trim() || formData.title.trim(),
       type: formData.type,
       date: formData.date,
