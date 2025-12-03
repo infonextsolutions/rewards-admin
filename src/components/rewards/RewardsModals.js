@@ -1,4 +1,27 @@
 import { useState, useRef, useEffect } from "react";
+import axios from "axios";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
+
+// Axios instance with default config
+const apiClient = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Add auth token to requests
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
 
 export function AddEditModal({
   isOpen,
@@ -7,6 +30,8 @@ export function AddEditModal({
   onClose,
   onSave,
 }) {
+  const [multipliers, setMultipliers] = useState([]);
+  const [loadingMultipliers, setLoadingMultipliers] = useState(false);
   const [formData, setFormData] = useState({
     // XP Tiers
     tierName: editingItem?.tierName || "",
@@ -37,6 +62,74 @@ export function AddEditModal({
 
   const [formErrors, setFormErrors] = useState({});
   const fileInputRef = useRef(null);
+
+  // Map tier name to API tier format
+  const mapTierToAPITier = (tierName) => {
+    const mapping = {
+      Junior: "JUNIOR",
+      Middle: "MID",
+      Senior: "SENIOR",
+    };
+    return mapping[tierName] || null;
+  };
+
+  // Fetch XP multipliers when modal opens
+  useEffect(() => {
+    if (isOpen && activeTab === "XP Tiers") {
+      const fetchMultipliers = async () => {
+        setLoadingMultipliers(true);
+        try {
+          const response = await apiClient.get(
+            "/admin/daily-challenges/xp-multipliers"
+          );
+          const multipliersArray = response.data.data || [];
+          setMultipliers(multipliersArray);
+        } catch (error) {
+          console.error("Error fetching multipliers:", error);
+          setMultipliers([]);
+        } finally {
+          setLoadingMultipliers(false);
+        }
+      };
+      fetchMultipliers();
+    } else if (!isOpen) {
+      // Reset multipliers when modal closes
+      setMultipliers([]);
+    }
+  }, [isOpen, activeTab]);
+
+  // Auto-populate Access Benefits when tier is selected or multipliers are loaded
+  useEffect(() => {
+    if (
+      activeTab === "XP Tiers" &&
+      formData.tierName &&
+      multipliers.length > 0
+    ) {
+      const apiTier = mapTierToAPITier(formData.tierName);
+      if (apiTier) {
+        const multiplier = multipliers.find((m) => m.tier === apiTier);
+        if (multiplier && multiplier.multiplier) {
+          const newAccessBenefits = `${multiplier.multiplier}x`;
+          // Only update if different to avoid unnecessary re-renders
+          setFormData((prev) => {
+            if (prev.accessBenefits !== newAccessBenefits) {
+              return {
+                ...prev,
+                accessBenefits: newAccessBenefits,
+              };
+            }
+            return prev;
+          });
+        } else {
+          // If multiplier not found, clear access benefits
+          setFormData((prev) => ({
+            ...prev,
+            accessBenefits: "",
+          }));
+        }
+      }
+    }
+  }, [formData.tierName, multipliers, activeTab]);
 
   // Update form data when editingItem changes
   useEffect(() => {
@@ -338,18 +431,20 @@ export function AddEditModal({
                   <label className="block text-sm font-medium text-black mb-1">
                     Access Benefits
                   </label>
-                  <textarea
+                  <input
+                    type="text"
                     value={formData.accessBenefits}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        accessBenefits: e.target.value,
-                      }))
+                    readOnly
+                    placeholder={
+                      loadingMultipliers
+                        ? "Loading..."
+                        : "Select a tier to auto-populate"
                     }
-                    placeholder="Describe the benefits for this tier..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-black cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Auto-populated from Daily Challenger Bonus → XP Multiplier
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
