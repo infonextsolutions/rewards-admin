@@ -149,7 +149,6 @@ export default function SyncedOffersView() {
           offer.coinReward || offer.userRewardCoins || offer.reward?.coins || 0,
         XP: offer.userRewardXP || offer.reward?.xp || 0,
         "Time (min)": offer.estimatedTime || offer.loi || 0,
-        Status: offer.status || "paused",
         "Age Range":
           offer.targetAudience?.age?.length > 0
             ? offer.targetAudience.age.join(", ")
@@ -210,7 +209,6 @@ export default function SyncedOffersView() {
   const statusOptions = [
     { value: "all", label: "All Status" },
     { value: "live", label: "Live" },
-    { value: "paused", label: "Paused" },
     { value: "expired", label: "Expired" },
   ];
 
@@ -236,8 +234,6 @@ export default function SyncedOffersView() {
   const stats = {
     total: allOffersBeforePagination.length,
     live: allOffersBeforePagination.filter((o) => o.status === "live").length,
-    paused: allOffersBeforePagination.filter((o) => o.status === "paused")
-      .length,
     totalReward: allOffersBeforePagination.reduce(
       (sum, o) => sum + (o.coinReward || 0),
       0
@@ -266,7 +262,7 @@ export default function SyncedOffersView() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-600">Total Synced</div>
           <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
@@ -274,12 +270,6 @@ export default function SyncedOffersView() {
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-600">Live</div>
           <div className="text-2xl font-bold text-green-600">{stats.live}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Paused</div>
-          <div className="text-2xl font-bold text-orange-600">
-            {stats.paused}
-          </div>
         </div>
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-600">Total Reward</div>
@@ -371,9 +361,6 @@ export default function SyncedOffersView() {
                       Time (min)
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Age Range
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -394,7 +381,7 @@ export default function SyncedOffersView() {
                   {syncedOffers.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="11"
+                        colSpan="10"
                         className="px-6 py-4 text-center text-gray-500"
                       >
                         {searchQuery
@@ -438,19 +425,6 @@ export default function SyncedOffersView() {
                           <div className="text-sm text-gray-900">
                             {offer.estimatedTime || offer.loi || 0} min
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              offer.status === "live"
-                                ? "bg-green-100 text-green-800"
-                                : offer.status === "paused"
-                                ? "bg-orange-100 text-orange-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {offer.status || "paused"}
-                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-xs text-gray-700">
