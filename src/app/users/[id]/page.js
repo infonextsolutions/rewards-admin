@@ -191,6 +191,7 @@ export default function UserDetail() {
             name: userData.name,
             userId: userData.id,
             tier: userData.tier,
+            xpTier: userData.xpTier,
             email: userData.email,
             status: userData.status,
             avatar: userData.avatar,

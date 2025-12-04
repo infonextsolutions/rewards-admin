@@ -25,6 +25,29 @@ export const BalanceTierSection = ({ user }) => {
     }
   };
 
+  // Map XP tier number to name
+  const getXPTierName = (xpTierNumber) => {
+    const XP_TIER_MAP = {
+      1: "Junior",
+      2: "Mid",
+      3: "Senior",
+    };
+    return XP_TIER_MAP[xpTierNumber] || "Junior";
+  };
+
+  // Get XP tier name
+  const xpTierName = getXPTierName(user?.xpTier || 1);
+
+  // Get subscription tier (from tier field or vip.level)
+  const subscriptionTier = user?.tier || user?.vip?.level || "Free";
+
+  // Format subscription tier (capitalize first letter)
+  const formattedSubscriptionTier =
+    subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1);
+
+  // Combine XP tier and subscription tier
+  const tierAndSubscriptionValue = `${xpTierName} & ${formattedSubscriptionTier}`;
+
   const redemptionDisplay =
     redemptionCount > 0
       ? `${redemptionCount} redemption${redemptionCount !== 1 ? "s" : ""}`
@@ -38,7 +61,7 @@ export const BalanceTierSection = ({ user }) => {
     },
     {
       label: "XP Tier & Subscription",
-      value: user?.tier || "Bronze",
+      value: tierAndSubscriptionValue,
       isBadge: true,
     },
     { label: "Redemption Count & Types", value: redemptionDisplay },
@@ -53,7 +76,7 @@ export const BalanceTierSection = ({ user }) => {
   const engagementData = [
     {
       label: "Total Games Downloaded",
-      value: user?.totalGamesDownloaded || "17 games",
+      value: user?.totalGamesDownloaded || "0 games",
     },
   ];
 
@@ -77,7 +100,7 @@ export const BalanceTierSection = ({ user }) => {
               return (
                 <div key={index} className="inline-flex  items-center gap-1.5 ">
                   <div className="relative [font-family:'DM_Sans',Helvetica]  text-black text-sm tracking-[0] leading-[normal]">
-                    {user?.tier || "Gold"}
+                    {item.value}
                   </div>
                 </div>
               );
