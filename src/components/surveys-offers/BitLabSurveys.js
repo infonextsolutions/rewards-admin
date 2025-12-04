@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Pagination from "../ui/Pagination";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import surveyAPIs from "../../data/surveys/surveyAPI";
 import toast from "react-hot-toast";
+import TargetAudienceModal from "./modals/TargetAudienceModal";
+import * as XLSX from "xlsx";
 
 export default function BitLabSurveys() {
   const [surveys, setSurveys] = useState([]);
@@ -28,6 +30,8 @@ export default function BitLabSurveys() {
 
   // Toggle states for surveys (sync/unsync operations)
   const [syncingSurveys, setSyncingSurveys] = useState(new Set());
+  const [showTargetAudienceModal, setShowTargetAudienceModal] = useState(false);
+  const [pendingSyncSurvey, setPendingSyncSurvey] = useState(null); // Store survey ID to sync
 
   // Fetch surveys
   const fetchSurveys = async (page = pagination.currentPage) => {
@@ -220,11 +224,11 @@ export default function BitLabSurveys() {
   // Toggle survey sync/unsync (sync if not synced, unsync if synced)
   const handleToggleSync = async (surveyId) => {
     const isCurrentlySynced = isConfigured(surveyId);
-    setSyncingSurveys((prev) => new Set(prev).add(surveyId));
 
     try {
       if (isCurrentlySynced) {
         // Unsync: Delete the configured survey
+        setSyncingSurveys((prev) => new Set(prev).add(surveyId));
         const dbId = getConfiguredSurveyId(surveyId);
         if (!dbId) {
           throw new Error("Survey ID not found in configured surveys");
@@ -234,23 +238,21 @@ export default function BitLabSurveys() {
           toast.success("Survey unsynced successfully");
           fetchConfiguredSurveys(); // Refresh configured surveys
         }
+        setSyncingSurveys((prev) => {
+          const next = new Set(prev);
+          next.delete(surveyId);
+          return next;
+        });
       } else {
-        // Sync: Add survey to database
-        const response = await surveyAPIs.syncSingleBitLabOffer(
-          surveyId,
-          "survey",
-          undefined,
-          countryFilter
-        );
-        if (response.success) {
-          toast.success("Survey synced successfully");
-          fetchConfiguredSurveys(); // Refresh configured surveys
-        }
+        // Show target audience modal before syncing
+        setPendingSyncSurvey(surveyId);
+        setShowTargetAudienceModal(true);
+        // Don't proceed with sync yet, wait for modal confirmation
+        // The syncing state will be managed in performSurveySync
       }
     } catch (error) {
       console.error("Error toggling survey sync:", error);
       toast.error(error.message || "Failed to sync/unsync survey");
-    } finally {
       setSyncingSurveys((prev) => {
         const next = new Set(prev);
         next.delete(surveyId);
@@ -258,6 +260,48 @@ export default function BitLabSurveys() {
       });
     }
   };
+
+  // Handle survey sync after modal confirmation
+  const performSurveySync = useCallback(
+    async (targetAudience) => {
+      if (!pendingSyncSurvey) return;
+
+      const surveyId = pendingSyncSurvey;
+      setSyncingSurveys((prev) => new Set(prev).add(surveyId));
+      try {
+        const response = await surveyAPIs.syncSingleBitLabOffer(
+          surveyId,
+          "survey",
+          undefined,
+          countryFilter,
+          targetAudience
+        );
+        if (response.success) {
+          toast.success("Survey synced successfully");
+          fetchConfiguredSurveys(); // Refresh configured surveys
+        }
+      } catch (error) {
+        console.error("Error syncing survey:", error);
+        toast.error(error.message || "Failed to sync survey");
+      } finally {
+        setSyncingSurveys((prev) => {
+          const next = new Set(prev);
+          next.delete(surveyId);
+          return next;
+        });
+        setPendingSyncSurvey(null);
+      }
+    },
+    [pendingSyncSurvey, countryFilter]
+  );
+
+  // Handle modal confirmation
+  const handleTargetAudienceConfirm = useCallback(
+    (targetAudience) => {
+      performSurveySync(targetAudience);
+    },
+    [performSurveySync]
+  );
 
   // Sort surveys based on dropdown filters (ascending/descending)
   const filteredSurveys = useMemo(() => {
@@ -298,6 +342,54 @@ export default function BitLabSurveys() {
     { value: "CA", label: "Canada" },
   ];
 
+  // Export surveys to Excel
+  const handleExportToExcel = () => {
+    if (filteredSurveys.length === 0) {
+      toast.error("No surveys to export");
+      return;
+    }
+
+    try {
+      const excelData = filteredSurveys.map((survey) => ({
+        "Survey ID": survey.id || "",
+        Title: survey.title || "",
+        Description: survey.description || "",
+        "CPI (USD)": survey.cpi > 0 ? survey.cpi.toFixed(2) : "0.00",
+        "Value (Points)": survey.value > 0 ? survey.value : "0",
+        "User Reward (Coins)":
+          survey.userRewardCoins || survey.reward?.coins || 0,
+        "User Reward (XP)": survey.userRewardXP || survey.reward?.xp || 0,
+        "Time (LOI - min)":
+          survey.loi > 0 ? survey.loi : survey.estimatedTime || 0,
+        Category: survey.category || "",
+        Country: survey.country || "",
+        Language: survey.language || "",
+        Rating: survey.rating || 0,
+        "Conversion Rate": survey.cr || 0,
+        Status: survey.isAvailable !== false ? "Available" : "Unavailable",
+        Synced: isConfigured(survey.id) ? "Yes" : "No",
+        "Sync Status": getConfiguredSurveyStatus(survey.id) || "Not Synced",
+        Provider: survey.provider || "bitlabs",
+      }));
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "BitLab Surveys");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `bitlab-surveys-${timestamp}.xlsx`;
+
+      // Write file and trigger download
+      XLSX.writeFile(wb, filename);
+      toast.success(`Exported ${filteredSurveys.length} surveys to Excel`);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Failed to export surveys to Excel");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -312,6 +404,13 @@ export default function BitLabSurveys() {
           <span className="text-sm text-gray-600">
             {configuredSurveys.length} surveys synced
           </span>
+          <button
+            onClick={handleExportToExcel}
+            disabled={loading || filteredSurveys.length === 0}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Export
+          </button>
         </div>
       </div>
 
@@ -624,6 +723,18 @@ export default function BitLabSurveys() {
           )}
         </>
       )}
+
+      {/* Target Audience Modal */}
+      <TargetAudienceModal
+        isOpen={showTargetAudienceModal}
+        onClose={() => {
+          setShowTargetAudienceModal(false);
+          setPendingSyncSurvey(null);
+        }}
+        onConfirm={handleTargetAudienceConfirm}
+        offerCount={1}
+        offerTitle="survey"
+      />
     </div>
   );
 }

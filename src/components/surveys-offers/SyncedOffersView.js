@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Pagination from "../ui/Pagination";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import surveyAPIs from "../../data/surveys/surveyAPI";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 
 export default function SyncedOffersView() {
   const [syncedOffers, setSyncedOffers] = useState([]);
@@ -19,6 +20,7 @@ export default function SyncedOffersView() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [response, setResponse] = useState(null);
 
   // Fetch all synced offers
   const fetchSyncedOffers = async (page = 1) => {
@@ -36,8 +38,34 @@ export default function SyncedOffersView() {
       console.log("Synced offers response:", response);
 
       if (response.success) {
+        // Store full response for statistics calculation
+        setResponse(response);
+
         let offers = response.data.configuredOffers || [];
         console.log("Total offers received:", offers.length);
+        console.log("Offers breakdown by type:", {
+          surveys: offers.filter((o) => o.offerType === "survey").length,
+          cashback: offers.filter((o) => o.offerType === "cashback").length,
+          shopping: offers.filter((o) => o.offerType === "shopping").length,
+          magic_receipt: offers.filter((o) => o.offerType === "magic_receipt")
+            .length,
+          other: offers.filter(
+            (o) =>
+              !["survey", "cashback", "shopping", "magic_receipt"].includes(
+                o.offerType
+              )
+          ).length,
+        });
+        console.log(
+          "Sample offers:",
+          offers.slice(0, 3).map((o) => ({
+            id: o.id,
+            externalId: o.externalId,
+            title: o.title,
+            offerType: o.offerType,
+            status: o.status,
+          }))
+        );
 
         // Apply search filter
         if (searchQuery.trim()) {
@@ -68,6 +96,8 @@ export default function SyncedOffersView() {
           totalPages: Math.ceil(offers.length / pagination.itemsPerPage),
           totalItems: offers.length,
         });
+      } else {
+        setResponse(null);
       }
     } catch (error) {
       console.error("Error fetching synced offers:", error);
@@ -102,6 +132,58 @@ export default function SyncedOffersView() {
     fetchSyncedOffers(newPage);
   };
 
+  // Export synced offers to Excel
+  const handleExportToExcel = () => {
+    if (syncedOffers.length === 0) {
+      toast.error("No offers to export");
+      return;
+    }
+
+    try {
+      const excelData = syncedOffers.map((offer) => ({
+        "Offer ID": offer.externalId || offer.id || "",
+        Title: offer.title || "Untitled Offer",
+        Description: offer.description || "",
+        Type: offer.offerType || "survey",
+        Coins:
+          offer.coinReward || offer.userRewardCoins || offer.reward?.coins || 0,
+        XP: offer.userRewardXP || offer.reward?.xp || 0,
+        "Time (min)": offer.estimatedTime || offer.loi || 0,
+        Status: offer.status || "paused",
+        "Age Range":
+          offer.targetAudience?.age?.length > 0
+            ? offer.targetAudience.age.join(", ")
+            : "All Ages",
+        Gender:
+          offer.targetAudience?.gender?.length > 0
+            ? offer.targetAudience.gender
+                .map((g) => g.charAt(0).toUpperCase() + g.slice(1))
+                .join(", ")
+            : "All",
+        "Synced Date": offer.createdAt
+          ? new Date(offer.createdAt).toLocaleDateString()
+          : "N/A",
+        Provider: offer.provider || "bitlabs",
+      }));
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Synced Offers");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `synced-offers-${timestamp}.xlsx`;
+
+      // Write file and trigger download
+      XLSX.writeFile(wb, filename);
+      toast.success(`Exported ${syncedOffers.length} synced offers to Excel`);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Failed to export offers to Excel");
+    }
+  };
+
   const handleDeleteOffer = async (offerId) => {
     if (!confirm("Are you sure you want to delete this synced offer?")) {
       return;
@@ -132,12 +214,34 @@ export default function SyncedOffersView() {
     { value: "expired", label: "Expired" },
   ];
 
-  // Calculate statistics
+  // Calculate statistics - use all offers before pagination
+  const allOffersBeforePagination = useMemo(() => {
+    if (!response?.data?.configuredOffers) return [];
+    let offers = response.data.configuredOffers || [];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      offers = offers.filter(
+        (offer) =>
+          offer.title?.toLowerCase().includes(query) ||
+          offer.description?.toLowerCase().includes(query) ||
+          offer.externalId?.toLowerCase().includes(query)
+      );
+    }
+
+    return offers;
+  }, [response?.data?.configuredOffers, searchQuery]);
+
   const stats = {
-    total: syncedOffers.length,
-    live: syncedOffers.filter((o) => o.status === "live").length,
-    paused: syncedOffers.filter((o) => o.status === "paused").length,
-    totalReward: syncedOffers.reduce((sum, o) => sum + (o.coinReward || 0), 0),
+    total: allOffersBeforePagination.length,
+    live: allOffersBeforePagination.filter((o) => o.status === "live").length,
+    paused: allOffersBeforePagination.filter((o) => o.status === "paused")
+      .length,
+    totalReward: allOffersBeforePagination.reduce(
+      (sum, o) => sum + (o.coinReward || 0),
+      0
+    ),
   };
 
   return (
@@ -152,6 +256,13 @@ export default function SyncedOffersView() {
             View and manage all offers synced to the database
           </p>
         </div>
+        <button
+          onClick={handleExportToExcel}
+          disabled={loading || syncedOffers.length === 0}
+          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Export
+        </button>
       </div>
 
       {/* Statistics */}
@@ -263,6 +374,12 @@ export default function SyncedOffersView() {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Age Range
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Gender
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Offer ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -277,7 +394,7 @@ export default function SyncedOffersView() {
                   {syncedOffers.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="9"
+                        colSpan="11"
                         className="px-6 py-4 text-center text-gray-500"
                       >
                         {searchQuery
@@ -305,7 +422,11 @@ export default function SyncedOffersView() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-emerald-600">
-                            {offer.coinReward || offer.userRewardCoins || offer.reward?.coins || 0} coins
+                            {offer.coinReward ||
+                              offer.userRewardCoins ||
+                              offer.reward?.coins ||
+                              0}{" "}
+                            coins
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -316,7 +437,7 @@ export default function SyncedOffersView() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {offer.estimatedTime || offer.loi || 0} min
-                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -330,6 +451,25 @@ export default function SyncedOffersView() {
                           >
                             {offer.status || "paused"}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs text-gray-700">
+                            {offer.targetAudience?.age?.length > 0
+                              ? offer.targetAudience.age.join(", ")
+                              : "All Ages"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs text-gray-700">
+                            {offer.targetAudience?.gender?.length > 0
+                              ? offer.targetAudience.gender
+                                  .map(
+                                    (g) =>
+                                      g.charAt(0).toUpperCase() + g.slice(1)
+                                  )
+                                  .join(", ")
+                              : "All"}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-xs text-gray-500 font-mono break-all max-w-xs">

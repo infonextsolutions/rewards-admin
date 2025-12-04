@@ -179,7 +179,7 @@ const surveyAPIs = {
 
   // Get BitLab non-game offers (Admin route)
   async getBitLabNonGameOffers({
-    type = "all",
+    type = "cashback",
     category = "all",
     page = 1,
     limit = 20,
@@ -187,11 +187,21 @@ const surveyAPIs = {
     country,
   } = {}) {
     try {
-      const requestParams = {
-        type,
-        devices,
-        country,
-      };
+      // Only include parameters that have values (not undefined/null)
+      const requestParams = {};
+
+      if (type) {
+        requestParams.type = type;
+      }
+
+      if (devices && devices.length > 0) {
+        requestParams.devices = devices;
+      }
+
+      if (country) {
+        requestParams.country = country;
+      }
+
       console.log("🟢 [ADMIN API CLIENT] Request parameters:", {
         url: "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
         params: requestParams,
@@ -228,6 +238,18 @@ const surveyAPIs = {
         status: error.response?.status,
         config: error.config,
       });
+
+      // Provide more helpful error messages
+      if (error.code === "ECONNREFUSED" || error.message === "Network Error") {
+        const errorMsg = {
+          success: false,
+          message:
+            "Backend server is not running. Please start the backend server on port 4001.",
+          error: "Connection refused. Make sure the backend server is running.",
+        };
+        throw errorMsg;
+      }
+
       throw error.response?.data || error;
     }
   },
@@ -250,6 +272,7 @@ const surveyAPIs = {
     autoActivate = true,
     devices = undefined,
     country = undefined,
+    targetAudience = undefined,
   } = {}) {
     try {
       console.log("API Call: syncBitLabOffers", {
@@ -258,6 +281,7 @@ const surveyAPIs = {
         autoActivate,
         devices,
         country,
+        targetAudience,
         url: "/admin/game-offers/non-game-offers/sync/bitlabs",
       });
       const response = await apiClient.post(
@@ -268,6 +292,7 @@ const surveyAPIs = {
           autoActivate,
           devices,
           country,
+          targetAudience,
         }
       );
       console.log("API Response: syncBitLabOffers", response.data);
@@ -308,9 +333,15 @@ const surveyAPIs = {
     offerId,
     offerType = "survey",
     devices = undefined,
-    country = undefined
+    country = undefined,
+    targetAudience = undefined
   ) {
     try {
+      // Prepare target audience data for single offer
+      const offersWithAudience = targetAudience
+        ? [{ offerId, targetAudience }]
+        : undefined;
+
       const response = await apiClient.post(
         "/admin/game-offers/non-game-offers/sync/bitlabs",
         {
@@ -319,6 +350,7 @@ const surveyAPIs = {
           autoActivate: true,
           devices: devices,
           country: country,
+          targetAudience: offersWithAudience,
         }
       );
       return response.data;
