@@ -598,8 +598,8 @@ export function AddEditModal({
             {activeTab === "XP Decay Settings" && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">
-                    XP Tier
+                <label className="block text-sm font-medium text-black mb-1">
+                    XP Tier <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.tierName}
@@ -811,7 +811,7 @@ export function AddEditModal({
                   </label>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="notifications"
@@ -830,7 +830,7 @@ export function AddEditModal({
                   >
                     Send Notification
                   </label>
-                </div>
+                </div> */}
               </>
             )}
 
