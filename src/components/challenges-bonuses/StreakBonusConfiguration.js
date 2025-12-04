@@ -41,6 +41,27 @@ export default function StreakBonusConfiguration({
       });
       setMilestones(sortedMilestones);
       setHasChanges(false);
+      
+      // Validate for duplicates on load
+      const loadErrors = {};
+      sortedMilestones.forEach(milestone => {
+        if (milestone.active && milestone.rewards && milestone.rewards.length > 1) {
+          const rewardTypes = milestone.rewards.map(r => r.type);
+          const uniqueTypes = new Set(rewardTypes);
+          if (rewardTypes.length !== uniqueTypes.size) {
+            loadErrors[`${milestone.day}_rewards`] = 'Each reward type can only be selected once per milestone';
+            milestone.rewards.forEach((reward, idx) => {
+              const typeCount = rewardTypes.filter(t => t === reward.type).length;
+              if (typeCount > 1) {
+                loadErrors[`${milestone.day}_reward_${idx}_type`] = 'This reward type is already selected';
+              }
+            });
+          }
+        }
+      });
+      if (Object.keys(loadErrors).length > 0) {
+        setErrors(loadErrors);
+      }
     }
   }, [config]);
 
@@ -67,6 +88,31 @@ export default function StreakBonusConfiguration({
     setMilestones(prev => {
       const updated = prev.map(m => {
         if (m.day === day) {
+          // If changing reward type, check for duplicates
+          if (field === 'type') {
+            const otherRewardTypes = m.rewards
+              .map((r, idx) => idx !== rewardIndex ? r.type : null)
+              .filter(type => type !== null);
+            
+            // Prevent selecting a type that's already selected in another reward
+            if (otherRewardTypes.includes(value)) {
+              // Set error for this specific reward type
+              setErrors(prevErrors => ({
+                ...prevErrors,
+                [`${day}_reward_${rewardIndex}_type`]: 'This reward type is already selected'
+              }));
+              return m; // Don't update if duplicate
+            }
+            
+            // Clear error if valid
+            setErrors(prevErrors => {
+              const newErrors = { ...prevErrors };
+              delete newErrors[`${day}_reward_${rewardIndex}_type`];
+              delete newErrors[`${day}_rewards`];
+              return newErrors;
+            });
+          }
+          
           const newRewards = [...m.rewards];
           newRewards[rewardIndex] = { ...newRewards[rewardIndex], [field]: value };
           return { ...m, rewards: newRewards };
@@ -84,7 +130,11 @@ export default function StreakBonusConfiguration({
         if (m.day === day) {
           // Only allow adding if there are fewer than 2 rewards (max 2: coins and xp)
           if (m.rewards.length < 2) {
-            return { ...m, rewards: [...m.rewards, { type: 'coins', value: 0 }] };
+            // Determine which reward type to use for the new reward
+            // If coins is already selected, use xp, otherwise use coins
+            const existingTypes = m.rewards.map(r => r.type);
+            const newType = existingTypes.includes('coins') ? 'xp' : 'coins';
+            return { ...m, rewards: [...m.rewards, { type: newType, value: 0 }] };
           }
           return m;
         }
@@ -120,6 +170,21 @@ export default function StreakBonusConfiguration({
           if (milestone.rewards.length > 2) {
             newErrors[`${milestone.day}_rewards`] = 'Maximum 2 rewards allowed per milestone (Coins and XP)';
           }
+          
+          // Validate no duplicate reward types within the same milestone
+          const rewardTypes = milestone.rewards.map(r => r.type);
+          const uniqueTypes = new Set(rewardTypes);
+          if (rewardTypes.length !== uniqueTypes.size) {
+            newErrors[`${milestone.day}_rewards`] = 'Each reward type can only be selected once per milestone';
+            // Also mark individual reward types that are duplicates
+            milestone.rewards.forEach((reward, idx) => {
+              const typeCount = rewardTypes.filter(t => t === reward.type).length;
+              if (typeCount > 1) {
+                newErrors[`${milestone.day}_reward_${idx}_type`] = 'This reward type is already selected';
+              }
+            });
+          }
+          
           milestone.rewards.forEach((reward, idx) => {
             if (reward.value === undefined || reward.value < 0) {
               newErrors[`${milestone.day}_reward_${idx}_value`] = 'Reward value must be at least 0';
@@ -175,6 +240,13 @@ export default function StreakBonusConfiguration({
   };
 
   const rewardTypes = ['coins', 'xp'];
+
+  // Helper function to get already selected reward types for a milestone (excluding current index)
+  const getSelectedRewardTypes = (milestone, currentIndex) => {
+    return milestone.rewards
+      .map((reward, idx) => idx !== currentIndex ? reward.type : null)
+      .filter(type => type !== null);
+  };
 
   return (
     <div className="space-y-6">
@@ -275,14 +347,31 @@ export default function StreakBonusConfiguration({
                                   onChange={(e) =>
                                     handleRewardChange(milestone.day, rewardIndex, 'type', e.target.value)
                                   }
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                                  className={`w-full px-3 py-2 text-sm border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                                    errors[`${milestone.day}_reward_${rewardIndex}_type`]
+                                      ? 'border-red-300'
+                                      : 'border-gray-300'
+                                  }`}
                                 >
-                                  {rewardTypes.map(type => (
-                                    <option key={type} value={type}>
-                                      {type === 'coins' ? 'Coins' : 'XP'}
-                                    </option>
-                                  ))}
+                                  {rewardTypes.map(type => {
+                                    const selectedTypes = getSelectedRewardTypes(milestone, rewardIndex);
+                                    const isDisabled = selectedTypes.includes(type);
+                                    return (
+                                      <option 
+                                        key={type} 
+                                        value={type}
+                                        disabled={isDisabled}
+                                      >
+                                        {type === 'coins' ? 'Coins' : 'XP'}
+                                      </option>
+                                    );
+                                  })}
                                 </select>
+                                {errors[`${milestone.day}_reward_${rewardIndex}_type`] && (
+                                  <p className="mt-1 text-xs text-red-600">
+                                    {errors[`${milestone.day}_reward_${rewardIndex}_type`]}
+                                  </p>
+                                )}
                               </div>
 
                               {/* Reward Value */}
