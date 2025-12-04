@@ -380,6 +380,7 @@ export const challengesBonusesAPI = {
       const transformedChallenges = challengesArray.map((apiData) => ({
         id: apiData._id,
         title: apiData.title,
+        description: apiData.description || "",
         type: apiData.type
           ? apiData.type.charAt(0).toUpperCase() + apiData.type.slice(1)
           : "Spin",

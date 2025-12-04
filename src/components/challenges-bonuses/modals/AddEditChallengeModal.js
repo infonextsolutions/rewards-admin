@@ -54,7 +54,9 @@ export default function AddEditChallengeModal({
       }
       setFormData({
         title: challenge.title || "",
-        description: challenge.description || challenge.title || "",
+        description: challenge.description !== undefined && challenge.description !== null 
+          ? challenge.description 
+          : challenge.title || "",
         type: challenge.type || "Spin",
         date: challengeDate,
         coinReward: challenge.coinReward?.toString() || "",
