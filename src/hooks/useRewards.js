@@ -699,6 +699,7 @@ export const useRewards = () => {
           inactivityDuration: item.inactivityDuration,
           inactivityDurationDays: item.inactivityDurationDays,
           minimumXpLimit: item.minimumXpLimit,
+          xpDeductionAmount: item.xpDeductionAmount,
           decayPercentage: item.decayPercentage,
           decayPercentageValue: item.decayPercentageValue,
           sendNotification: item.sendNotification,
@@ -742,6 +743,7 @@ export const useRewards = () => {
           inactivityDuration: result.data.inactivityDuration,
           inactivityDurationDays: result.data.inactivityDurationDays,
           minimumXpLimit: result.data.minimumXpLimit,
+          xpDeductionAmount: result.data.xpDeductionAmount,
           decayPercentage: result.data.decayPercentage,
           decayPercentageValue: result.data.decayPercentageValue,
           sendNotification: result.data.sendNotification,
@@ -777,7 +779,8 @@ export const useRewards = () => {
         inactivityDuration: formData.inactivityDuration,
         minimumXpLimit: formData.minimumXpLimit,
         status: formData.status,
-        notificationToggle: formData.notificationToggle
+        notificationToggle: formData.notificationToggle,
+        xpDeductionAmount: formData.xpDeductionAmount
       };
 
       const response = await apiClient.post('/xp-decay', data);
@@ -808,7 +811,8 @@ export const useRewards = () => {
         inactivityDuration: formData.inactivityDuration,
         minimumXpLimit: formData.minimumXpLimit,
         status: formData.status,
-        notificationToggle: formData.notificationToggle
+        notificationToggle: formData.notificationToggle,
+        xpDeductionAmount: formData.xpDeductionAmount
       };
 
       const response = await apiClient.put(`/xp-decay/${id}`, data);
