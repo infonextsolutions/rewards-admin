@@ -122,6 +122,7 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
     }
 
     setIsLoading(true);
+    setErrors({}); // Clear previous errors
 
     try {
       // Prepare data for submission matching backend structure
@@ -140,7 +141,54 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
       onClose();
     } catch (error) {
       console.error('Error saving user profile:', error);
-      setErrors({ submit: 'Failed to save changes. Please try again.' });
+      
+      // Parse error response to extract specific error messages
+      const newErrors = {};
+      let generalError = null;
+
+      // Check if error has a response with errors array (from backend validation)
+      if (error?.errors && Array.isArray(error.errors)) {
+        // Map backend field names to frontend field names
+        const fieldMapping = {
+          'gender': 'gender',
+          'email': 'email',
+          'firstName': 'firstName',
+          'lastName': 'lastName',
+          'mobile': 'phoneNumber',
+          'phone': 'phoneNumber',
+          'tier': 'currentTier',
+          'status': 'accountStatus',
+          'location': 'location'
+        };
+
+        error.errors.forEach((err) => {
+          const frontendField = fieldMapping[err.field] || err.field;
+          if (frontendField && frontendField !== 'submit') {
+            newErrors[frontendField] = err.message || `Invalid ${err.field}`;
+          } else {
+            // If field doesn't map to a form field, add to general error
+            generalError = generalError 
+              ? `${generalError}; ${err.message || `Invalid ${err.field}`}`
+              : (err.message || `Invalid ${err.field}`);
+          }
+        });
+      } else if (error?.message) {
+        // If there's a general error message
+        generalError = error.message;
+      } else {
+        // Fallback to generic error
+        generalError = 'Failed to save changes. Please try again.';
+      }
+
+      // Set errors - field-specific errors take precedence
+      if (Object.keys(newErrors).length > 0 || generalError) {
+        setErrors({
+          ...newErrors,
+          ...(generalError && { submit: generalError })
+        });
+      } else {
+        setErrors({ submit: 'Failed to save changes. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -279,13 +327,18 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white ${
+                  errors.gender ? 'border-red-300' : ''
+                }`}
               >
                 <option value="">Select gender</option>
                 {genderOptions.map(option => (
                   <option key={option} value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
                 ))}
               </select>
+              {errors.gender && (
+                <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
+              )}
             </div>
 
 
@@ -299,13 +352,18 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                 name="currentTier"
                 value={formData.currentTier}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white ${
+                  errors.currentTier ? 'border-red-300' : ''
+                }`}
               >
                 <option value="">Select tier</option>
                 {tierOptions.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
+              {errors.currentTier && (
+                <p className="mt-1 text-sm text-red-600">{errors.currentTier}</p>
+              )}
             </div>
 
             {/* Account Status */}
@@ -318,12 +376,17 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                 name="accountStatus"
                 value={formData.accountStatus}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white"
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black bg-white ${
+                  errors.accountStatus ? 'border-red-300' : ''
+                }`}
               >
                 {statusOptions.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
+              {errors.accountStatus && (
+                <p className="mt-1 text-sm text-red-600">{errors.accountStatus}</p>
+              )}
             </div>
           </div>
 
