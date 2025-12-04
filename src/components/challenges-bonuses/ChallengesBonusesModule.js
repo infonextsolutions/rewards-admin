@@ -280,7 +280,7 @@ export default function ChallengesBonusesModule() {
       </div>
 
       {/* Error Display */}
-      {error && (
+      {/* {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -304,7 +304,7 @@ export default function ChallengesBonusesModule() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Main Content */}
       <div className="min-h-[600px]">{getActiveViewComponent()}</div>

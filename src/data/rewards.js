@@ -148,7 +148,7 @@ export const REWARDS_TABS = [
   { name: "XP Tiers" },
   { name: "XP Decay Settings" },
   // { name: "XP Conversion" },
-  { name: "Bonus Logic" },
+  { name: "Daily Rewards" },
 ];
 
 export const REWARDS_FILTER_OPTIONS = {
@@ -215,21 +215,11 @@ export const REWARDS_FILTER_OPTIONS = {
       options: ["Channels", "Mobile App", "Web Portal", "Partner Stores", "VIP Support"],
     },
   ],
-  "Bonus Logic": [
+  "Daily Rewards": [
     {
-      id: "type",
-      label: "Bonus Type", 
-      options: ["Bonus Type", "All Types", "Login Streak", "Referral", "Daily Task", "Achievement", "Special Event"],
-    },
-    {
-      id: "rewardType",
-      label: "Reward Type",
-      options: ["Reward Type", "XP", "Coins", "Currency", "Mixed"],
-    },
-    {
-      id: "activeStatus",
-      label: "Active Status",
-      options: ["Active Status", "Active", "Inactive"],
+      id: "status",
+      label: "Status",
+      options: ["Status", "All Status", "Active", "Inactive"],
     },
   ],
 };
