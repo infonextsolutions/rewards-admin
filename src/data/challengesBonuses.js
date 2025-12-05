@@ -1149,11 +1149,15 @@ export const challengesBonusesAPI = {
   },
 
   async deleteBonusDay(id) {
-    await delay(400);
-    const index = mockBonusDays.findIndex((b) => b.id === id);
-    if (index === -1) throw new Error("Bonus day not found");
-    mockBonusDays.splice(index, 1);
-    return true;
+    try {
+      const response = await apiClient.delete(
+        `/admin/daily-challenges/bonus-days/${id}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Delete bonus day error:", error);
+      throw error.response?.data || error;
+    }
   },
 
   // 30-Day Streak Bonus Configuration operations
