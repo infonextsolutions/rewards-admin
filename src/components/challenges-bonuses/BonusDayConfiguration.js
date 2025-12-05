@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon, CalendarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import StreakBonusConfiguration from './StreakBonusConfiguration';
+import DeleteConfirmationModal from './modals/DeleteConfirmationModal';
 
 export default function BonusDayConfiguration({
   bonusDays = [],
@@ -29,6 +30,10 @@ export default function BonusDayConfiguration({
   const [bonusDayConfigEnabled, setBonusDayConfigEnabled] = useState(true);
   const [streakBonusConfigEnabled, setStreakBonusConfigEnabled] = useState(false);
   const [showStreakConfig, setShowStreakConfig] = useState(false);
+  
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingBonusDayId, setDeletingBonusDayId] = useState(null);
 
   const rewardTypes = ['Coins', 'XP'];
 
@@ -345,14 +350,29 @@ export default function BonusDayConfiguration({
     resetForm();
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this bonus day? This action cannot be undone.')) {
-      try {
-        await onDeleteBonusDay(id);
-      } catch (error) {
-        console.error('Error deleting bonus day:', error);
-      }
+  const handleDelete = (id) => {
+    setDeletingBonusDayId(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingBonusDayId) return;
+    
+    try {
+      await onDeleteBonusDay(deletingBonusDayId);
+      setShowDeleteModal(false);
+      setDeletingBonusDayId(null);
+      toast.success('Bonus day deleted successfully');
+    } catch (error) {
+      console.error('Error deleting bonus day:', error);
+      toast.error('Failed to delete bonus day. Please try again.');
+      // Don't close modal on error so user can retry
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingBonusDayId(null);
   };
 
   const getRewardIcon = (rewardType) => {
@@ -1045,6 +1065,18 @@ export default function BonusDayConfiguration({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Bonus Day"
+        message="Are you sure you want to delete this bonus day? This action cannot be undone."
+        confirmButtonText="OK"
+        cancelButtonText="Cancel"
+        loading={loading}
+      />
     </div>
   );
 }
