@@ -279,6 +279,9 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address <span className="text-red-500">*</span>
+                {(user?.isGoogleUser || user?.socialProvider === 'google') && (
+                  <span className="ml-2 text-xs text-gray-500 italic">(Cannot be changed for Google users)</span>
+                )}
               </label>
               <input
                 type="email"
@@ -287,8 +290,13 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="john.doe@example.com"
+                disabled={user?.isGoogleUser || user?.socialProvider === 'google'}
                 className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black ${
                   errors.email ? 'border-red-300' : ''
+                } ${
+                  (user?.isGoogleUser || user?.socialProvider === 'google') 
+                    ? 'bg-gray-100 cursor-not-allowed opacity-60' 
+                    : ''
                 }`}
               />
               {errors.email && (
