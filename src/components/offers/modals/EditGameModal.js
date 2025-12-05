@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useMasterData } from "../../../hooks/useMasterData";
 import { gamesAPI } from "../../../data/games";
+import apiClient from "../../../lib/apiClient";
+import toast from "react-hot-toast";
 
 // XP Tier mapping: Frontend strings to Backend numbers
 const XP_TIER_MAP = {
@@ -105,6 +107,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     xptrRules: "",
     rewardXP: 0,
     rewardCoins: 0,
+    rewardDollars: 0, // Dollar amount that converts to coins (50 coins = 1 dollar)
     taskCount: 0,
     activeVisible: true,
     fallbackGame: false,
@@ -113,6 +116,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     thumbnailHeight: 300,
     thumbnailAltText: "",
     xpTier: "",
+    xpTiers: [], // Multi-select XP tiers
+    baseXP: 0, // Base XP for task 1
+    xpMultiplier: 1.0, // Stepwise multiplier
     tier: "",
     uiSection: "",
     countries: [],
@@ -137,6 +143,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       marketingChannel: "",
       campaignName: "",
     },
+    thirdPartyGameData: null, // Store complete third-party API response
   });
 
   useEffect(() => {
@@ -149,6 +156,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         xptrRules: game.xptrRules || "",
         rewardXP: game.rewardXP || 0,
         rewardCoins: game.rewardCoins || 0,
+        rewardDollars: game.rewardCoins ? parseFloat((game.rewardCoins / 50).toFixed(2)) : 0, // Convert coins to dollars (50 coins = 1 dollar)
         taskCount: game.taskCount || 0,
         activeVisible:
           game.active !== undefined ? game.active : game.activeVisible ?? true,
@@ -158,6 +166,10 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         thumbnailHeight: game.thumbnailHeight || 300,
         thumbnailAltText: game.thumbnailAltText || "",
         xpTier: game.xpTier || "",
+        xpTiers: game.xpTiers || [],
+        baseXP: game.baseXP || game.xpRewardConfig?.baseXP || 0,
+        xpMultiplier:
+          game.xpMultiplier || game.xpRewardConfig?.multiplier || 1.0,
         tier: game.tier || "",
         uiSection: game.uiSection || "",
         countries: game.countries || [],
@@ -182,6 +194,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           marketingChannel: game.segments?.marketingChannel || "",
           campaignName: game.segments?.campaignName || "",
         },
+        thirdPartyGameData: game.thirdPartyGameData || game.besitosRawData || null,
       });
     } else {
       setFormData({
@@ -192,6 +205,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         xptrRules: "",
         rewardXP: 0,
         rewardCoins: 0,
+        rewardDollars: 0,
         taskCount: 0,
         activeVisible: true,
         fallbackGame: false,
@@ -200,6 +214,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         thumbnailHeight: 300,
         thumbnailAltText: "",
         xpTier: "",
+        xpTiers: [],
+        baseXP: 0,
+        xpMultiplier: 1.0,
         tier: "",
         uiSection: "",
         countries: [],
@@ -224,6 +241,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           marketingChannel: "",
           campaignName: "",
         },
+        thirdPartyGameData: null,
       });
     }
   }, [game, isOpen]);
@@ -275,21 +293,17 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
 
       setLoadingGames(true);
       try {
-        const token = localStorage.getItem("token");
         const sdkName = formData.sdk.toLowerCase();
-        const response = await fetch(
-          `https://rewardsapi.hireagent.co/api/admin/game-offers/games/by-sdk/${sdkName}?device_platform=${platform}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
+        const response = await apiClient.get(
+          `/admin/game-offers/games/by-sdk/${sdkName}?device_platform=${platform}`
         );
-        const result = await response.json();
 
-        if (result.success && result.data) {
-          setGamesList(result.data);
+        if (response.data.success && response.data.data) {
+          const games = Array.isArray(response.data.data) 
+            ? response.data.data 
+            : [response.data.data];
+          console.log('Fetched games:', games);
+          setGamesList(games);
         } else {
           setGamesList([]);
         }
@@ -346,6 +360,15 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     });
   };
 
+  const handleXpTierToggle = (tier) => {
+    setFormData((prev) => ({
+      ...prev,
+      xpTiers: prev.xpTiers.includes(tier)
+        ? prev.xpTiers.filter((t) => t !== tier)
+        : [...prev.xpTiers, tier],
+    }));
+  };
+
   const handleSegmentCountryChange = (country) => {
     handleInputChange("segments.country", country);
     // Reset city when country changes
@@ -360,20 +383,140 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   };
 
   const handleGameSelect = (gameId) => {
+    if (!gameId) {
+      // Reset form if no game selected
+      setFormData((prev) => ({
+        ...prev,
+        gameId: "",
+        title: "",
+        rewardDollars: 0,
+        rewardCoins: 0,
+        thirdPartyGameData: null,
+      }));
+      return;
+    }
+
     const selectedGame = gamesList.find((g) => g.id === gameId);
     if (selectedGame) {
+      // Extract dollar amount from API response (amount field)
+      // The amount field from API is in dollars (e.g., 700 = $700)
+      const dollarAmount = selectedGame.amount !== undefined && selectedGame.amount !== null
+        ? parseFloat(selectedGame.amount) 
+        : 0;
+      
+      // Convert dollars to coins (50 coins = 1 dollar)
+      // Example: $700 = 35,000 coins
+      const coins = Math.round(dollarAmount * 50);
+      
+      console.log('Selected game:', selectedGame);
+      console.log('Amount field from API:', selectedGame.amount);
+      console.log('Dollar amount:', dollarAmount);
+      console.log('Calculated coins:', coins);
+      
+      // Store the complete third-party API response with all original fields
+      // This preserves the exact structure and all key names as received from the API
+      const thirdPartyData = { ...selectedGame };
+      
       setFormData((prev) => ({
         ...prev,
         gameId: selectedGame.id,
         title: selectedGame.title,
         description: selectedGame.description || prev.description,
         thumbnailAltText: `${selectedGame.title} game thumbnail`,
+        rewardDollars: dollarAmount,
+        rewardCoins: coins,
+        thirdPartyGameData: thirdPartyData,
       }));
+    } else {
+      console.warn('Game not found in gamesList. gameId:', gameId, 'Available games:', gamesList);
     }
+  };
+
+  // Handle dollar input change and convert to coins
+  const handleDollarChange = (dollarValue) => {
+    const dollars = parseFloat(dollarValue) || 0;
+    const coins = Math.round(dollars * 50); // 50 coins = 1 dollar
+    
+    setFormData((prev) => ({
+      ...prev,
+      rewardDollars: dollars,
+      rewardCoins: coins,
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.gameId || !formData.gameId.trim()) {
+      toast.error("Game ID is required");
+      return;
+    }
+
+    if (!formData.title || !formData.title.trim()) {
+      toast.error("Game title is required");
+      return;
+    }
+
+    if (!formData.sdk) {
+      toast.error("SDK Provider is required");
+      return;
+    }
+
+    if (!formData.xptrRules || !formData.xptrRules.trim()) {
+      toast.error("XPTR Rules are required");
+      return;
+    }
+
+    // Validate dollar/reward amount when adding new game
+    if (!game && (!formData.rewardDollars || formData.rewardDollars <= 0)) {
+      toast.error("Please enter a valid reward amount in USD");
+      return;
+    }
+
+    // Only validate countries when editing (not when adding new game)
+    if (game && (!formData.countries || formData.countries.length === 0)) {
+      toast.error("Please select at least one country");
+      return;
+    }
+
+    // Validate XP Tiers (at least one must be selected)
+    if (!formData.xpTiers || formData.xpTiers.length === 0) {
+      toast.error(
+        "Please select at least one XP Tier (Junior, Mid, or Senior)"
+      );
+      return;
+    }
+
+    // Validate XP Tier values
+    const validTiers = ["Junior", "Mid", "Senior"];
+    const invalidTiers = formData.xpTiers.filter(
+      (t) => !validTiers.includes(t)
+    );
+    if (invalidTiers.length > 0) {
+      toast.error(
+        `Invalid XP tiers: ${invalidTiers.join(
+          ", "
+        )}. Must be one of: Junior, Mid, Senior`
+      );
+      return;
+    }
+
+    // Validate Base XP
+    const baseXP = parseFloat(formData.baseXP);
+    if (isNaN(baseXP) || baseXP <= 0) {
+      toast.error("Base XP must be a number greater than 0");
+      return;
+    }
+
+    // Validate Multiplier
+    const xpMultiplier = parseFloat(formData.xpMultiplier);
+    if (isNaN(xpMultiplier) || xpMultiplier < 0.1) {
+      toast.error(
+        "Stepwise Multiplier must be a number greater than or equal to 0.1"
+      );
+      return;
+    }
 
     // Map form data to API format
     const apiPayload = {
@@ -383,9 +526,12 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       sdkProvider: formData.sdk,
       xptrRules: formData.xptrRules,
       rewardXP: parseInt(formData.rewardXP) || 0,
-      rewardCoins: parseInt(formData.rewardCoins) || 0,
+      rewardCoins: parseInt(formData.rewardCoins) || 0, // Calculated from dollars (50 coins = 1 dollar)
       defaultTaskCount: parseInt(formData.taskCount) || 0,
-      xpTier: xpTierStringToNumber(formData.xpTier) || 1,
+      xpTier: xpTierStringToNumber(formData.xpTier) || 1, // Keep for backward compatibility
+      xpTiers: JSON.stringify(formData.xpTiers), // Multi-select XP tiers
+      baseXP: parseFloat(formData.baseXP) || 0,
+      xpMultiplier: parseFloat(formData.xpMultiplier) || 1.0,
       tier: formData.tier,
       uiSection: formData.uiSection,
       genre: formData.metadata.genre,
@@ -405,6 +551,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       thumbnailHeight: parseInt(formData.thumbnailHeight) || 300,
       thumbnailAltText:
         formData.thumbnailAltText || `${formData.title} game thumbnail`,
+      // Include complete third-party API response data
+      thirdPartyGameData: formData.thirdPartyGameData ? JSON.stringify(formData.thirdPartyGameData) : null,
     };
 
     onSave(apiPayload);
@@ -528,40 +676,52 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   />
                 </div>
 
+                {/* XP Reward - Hidden in edit modal */}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    XP Reward
+                    Reward Amount (USD) <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="number"
-                    value={formData.rewardXP}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "rewardXP",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                    placeholder="Enter XP reward"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.rewardDollars}
+                      onChange={(e) => handleDollarChange(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                      disabled={!formData.gameId}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Enter the dollar amount. Automatically converts to coins (50 coins = $1)
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Coin Reward
+                    Coin Reward{" "}
+                    <span className="text-xs text-gray-500">
+                      (Auto-calculated)
+                    </span>
                   </label>
                   <input
                     type="number"
-                    value={formData.rewardCoins}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "rewardCoins",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                    placeholder="Enter coin reward"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    value={formData.rewardCoins || 0}
+                    readOnly
+                    disabled
+                    placeholder="0"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.rewardDollars > 0 
+                      ? `${formData.rewardDollars} USD = ${formData.rewardCoins.toLocaleString()} coins (50 coins per dollar)`
+                      : "Coins are calculated from the dollar amount above"}
+                  </p>
                 </div>
 
                 <div>
@@ -582,24 +742,79 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   />
                 </div>
 
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    XP Tier Rules <span className="text-red-500">*</span>{" "}
+                    (Multi-select)
+                  </label>
+                  <div className="grid grid-cols-3 gap-3 border border-gray-200 rounded-md p-3">
+                    {["Junior", "Mid", "Senior"].map((tier) => (
+                      <label key={tier} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.xpTiers.includes(tier)}
+                          onChange={() => handleXpTierToggle(tier)}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          {tier}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Selected tiers decide which users can see/play the game and
+                    what restrictions apply.
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    XP Tier
+                    Base XP <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={formData.xpTier}
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.baseXP}
                     onChange={(e) =>
-                      handleInputChange("xpTier", e.target.value)
+                      handleInputChange(
+                        "baseXP",
+                        parseFloat(e.target.value) || 0
+                      )
                     }
+                    placeholder="e.g., 10"
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  >
-                    <option value="">Choose XP Tier...</option>
-                    {XP_TIERS.map((tier) => (
-                      <option key={tier} value={tier}>
-                        {tier}
-                      </option>
-                    ))}
-                  </select>
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Base XP reward for Task 1
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stepwise Multiplier <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={formData.xpMultiplier}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "xpMultiplier",
+                        parseFloat(e.target.value) || 1.0
+                      )
+                    }
+                    placeholder="e.g., 1.5"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Multiplier applied to each subsequent task (Task 2 = Task 1
+                    × Multiplier)
+                  </p>
                 </div>
 
                 <div>
@@ -702,31 +917,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 </div>
               </div>
 
-              {/* Target Countries */}
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Countries
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
-                  {countries.map((country) => (
-                    <label key={country.code} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.countries.includes(country.code)}
-                        onChange={() => handleCountryToggle(country.code)}
-                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                        disabled={masterDataLoading}
-                      />
-                      <span
-                        className="ml-2 text-sm text-gray-700"
-                        title={country.name}
-                      >
-                        {country.code}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              {/* Target Countries - Hidden in edit modal */}
 
               <div className="flex items-center mt-6">
                 <input
@@ -807,50 +998,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Country
-                  </label>
-                  <select
-                    value={formData.segments.country}
-                    onChange={(e) => handleSegmentCountryChange(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                    aria-label="Country"
-                    disabled={masterDataLoading}
-                  >
-                    <option value="">Select Country...</option>
-                    {countries.map((country) => (
-                      <option key={country.code} value={country.code}>
-                        {country.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Country field - Hidden in edit modal */}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <select
-                    value={formData.segments.city}
-                    onChange={(e) =>
-                      handleInputChange("segments.city", e.target.value)
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                    disabled={!formData.segments.country}
-                    aria-label="City"
-                  >
-                    <option value="">Select City...</option>
-                    {(formData.segments.country
-                      ? CITIES[formData.segments.country] || []
-                      : []
-                    ).map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* City field - Hidden in edit modal */}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -894,99 +1044,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
               </div>
             </div>
 
-            {/* Thumbnail */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-800 mb-4">
-                Game Thumbnail
-              </h4>
-              <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
-                {formData.thumbnail ? (
-                  <div className="flex flex-col items-center">
-                    <img
-                      src={URL.createObjectURL(formData.thumbnail)}
-                      alt="Thumbnail preview"
-                      className="h-24 w-24 object-cover rounded-md mb-2"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange("thumbnail", null)}
-                      className="text-red-600 text-sm hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <label className="block text-sm text-gray-600 cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                      Upload Game Thumbnail
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Recommended: 300x300px
-                    </p>
-                  </>
-                )}
-              </div>
-
-              {/* Thumbnail Metadata */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Thumbnail Width (px)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.thumbnailWidth}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "thumbnailWidth",
-                        parseInt(e.target.value) || 300
-                      )
-                    }
-                    placeholder="300"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Thumbnail Height (px)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.thumbnailHeight}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "thumbnailHeight",
-                        parseInt(e.target.value) || 300
-                      )
-                    }
-                    placeholder="300"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Alt Text
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.thumbnailAltText}
-                    onChange={(e) =>
-                      handleInputChange("thumbnailAltText", e.target.value)
-                    }
-                    placeholder="Game thumbnail description"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  />
-                </div>
-              </div>
-            </div>
+            {/* Thumbnail section - Hidden in edit modal */}
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">

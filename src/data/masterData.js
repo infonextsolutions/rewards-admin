@@ -1,29 +1,6 @@
 'use client';
 
-import axios from 'axios';
-
-const API_BASE = 'https://rewardsapi.hireagent.co';
-
-// Create axios instance with auth interceptor
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Add auth token to all requests
-apiClient.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+import apiClient from '../lib/apiClient';
 
 export const masterDataAPI = {
   /**
@@ -31,7 +8,7 @@ export const masterDataAPI = {
    */
   async getSdkProviders() {
     try {
-      const response = await apiClient.get('/api/admin/game-offers/master-data/sdk-providers');
+      const response = await apiClient.get('/admin/game-offers/master-data/sdk-providers');
       return response.data.data; // Returns array of {id, name}
     } catch (error) {
       console.error('Error fetching SDK providers:', error);
@@ -44,7 +21,7 @@ export const masterDataAPI = {
    */
   async getXptrValues() {
     try {
-      const response = await apiClient.get('/api/admin/game-offers/master-data/xptr-values');
+      const response = await apiClient.get('/admin/game-offers/master-data/xptr-values');
       return response.data.data; // Returns array of strings
     } catch (error) {
       console.error('Error fetching XPTR values:', error);
@@ -57,7 +34,7 @@ export const masterDataAPI = {
    */
   async getTierAccess() {
     try {
-      const response = await apiClient.get('/api/admin/game-offers/master-data/tier-access');
+      const response = await apiClient.get('/admin/game-offers/master-data/tier-access');
       return response.data.data; // Returns array of {id, name}
     } catch (error) {
       console.error('Error fetching tier access:', error);
@@ -70,7 +47,7 @@ export const masterDataAPI = {
    */
   async getCountries() {
     try {
-      const response = await apiClient.get('/api/admin/game-offers/master-data/countries');
+      const response = await apiClient.get('/admin/game-offers/master-data/countries');
       return response.data.data; // Returns array of {code, name}
     } catch (error) {
       console.error('Error fetching countries:', error);
@@ -83,7 +60,7 @@ export const masterDataAPI = {
    */
   async getCreativePlacements() {
     try {
-      const response = await apiClient.get('/api/admin/creatives/master/placements');
+      const response = await apiClient.get('/admin/creatives/master/placements');
       return response.data.data; // Returns array of strings
     } catch (error) {
       console.error('Error fetching creative placements:', error);

@@ -1,8 +1,6 @@
 "use client";
 
-import axios from "axios";
-
-const API_BASE = "https://rewardsapi.hireagent.co";
+import apiClient from "../lib/apiClient";
 
 // XP Tier mapping: Frontend strings to Backend numbers
 const XP_TIER_MAP = {
@@ -42,30 +40,6 @@ function xpTierNumberToString(xpTierNumber) {
   return XP_TIER_REVERSE_MAP[xpTierNumber] || "Junior";
 }
 
-// Create axios instance with auth interceptor
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Add auth token to all requests
-apiClient.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 export const gamesAPI = {
   /**
    * Create new game
@@ -98,7 +72,7 @@ export const gamesAPI = {
       });
 
       const response = await apiClient.post(
-        "/api/admin/game-offers/games",
+        "/admin/game-offers/games",
         formData,
         {
           headers: {
@@ -131,6 +105,10 @@ export const gamesAPI = {
         marketingChannel: "N/A",
         campaign: "N/A",
         xpTier: xpTierNumberToString(game.xpTier),
+        xpTiers: game.xpTiers || [],
+        baseXP: game.xpRewardConfig?.baseXP || 0,
+        xpMultiplier: game.xpRewardConfig?.multiplier || 1.0,
+        xpRewardConfig: game.xpRewardConfig || { baseXP: 0, multiplier: 1.0 },
         tier: game.tierRestrictions?.minTier
           ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
             game.tierRestrictions.minTier.slice(1)
@@ -182,7 +160,7 @@ export const gamesAPI = {
       });
 
       const response = await apiClient.put(
-        `/api/admin/game-offers/games/${gameId}`,
+        `/admin/game-offers/games/${gameId}`,
         formData,
         {
           headers: {
@@ -215,6 +193,10 @@ export const gamesAPI = {
         marketingChannel: "N/A",
         campaign: "N/A",
         xpTier: xpTierNumberToString(game.xpTier),
+        xpTiers: game.xpTiers || [],
+        baseXP: game.xpRewardConfig?.baseXP || 0,
+        xpMultiplier: game.xpRewardConfig?.multiplier || 1.0,
+        xpRewardConfig: game.xpRewardConfig || { baseXP: 0, multiplier: 1.0 },
         tier: game.tierRestrictions?.minTier
           ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
             game.tierRestrictions.minTier.slice(1)
@@ -242,7 +224,7 @@ export const gamesAPI = {
   async getGameById(gameId) {
     try {
       const response = await apiClient.get(
-        `/api/admin/game-offers/games/${gameId}`
+        `/admin/game-offers/games/${gameId}`
       );
 
       // Transform response to frontend format
@@ -269,6 +251,10 @@ export const gamesAPI = {
         marketingChannel: "N/A", // Not in API
         campaign: "N/A", // Not in API
         xpTier: xpTierNumberToString(game.xpTier),
+        xpTiers: game.xpTiers || [],
+        baseXP: game.xpRewardConfig?.baseXP || 0,
+        xpMultiplier: game.xpRewardConfig?.multiplier || 1.0,
+        xpRewardConfig: game.xpRewardConfig || { baseXP: 0, multiplier: 1.0 },
         tier: game.tierRestrictions?.minTier
           ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
             game.tierRestrictions.minTier.slice(1)
@@ -333,7 +319,15 @@ export const gamesAPI = {
         params.xpTier.trim() !== ""
       ) {
         // Convert XP Tier string to number for backend
-        const xpTierNum = xpTierStringToNumber(params.xpTier);
+        // Handle both string values (Junior, Mid, Senior) and numeric strings
+        let xpTierNum = null;
+        if (typeof params.xpTier === "string" && !isNaN(parseInt(params.xpTier))) {
+          // If it's already a number string, use it directly
+          xpTierNum = parseInt(params.xpTier);
+        } else {
+          // Convert string tier name to number
+          xpTierNum = xpTierStringToNumber(params.xpTier);
+        }
         if (xpTierNum !== null) {
           queryParams.append("xpTier", xpTierNum.toString());
         }
@@ -358,9 +352,16 @@ export const gamesAPI = {
       ) {
         queryParams.append("status", params.status);
       }
+      if (
+        params.gender &&
+        params.gender !== "all" &&
+        params.gender.trim() !== ""
+      ) {
+        queryParams.append("gender", params.gender);
+      }
 
       const response = await apiClient.get(
-        `/api/admin/game-offers/games?${queryParams.toString()}`
+        `/admin/game-offers/games?${queryParams.toString()}`
       );
 
       // Transform API response to frontend format
@@ -372,12 +373,14 @@ export const gamesAPI = {
           title: game.title || "Untitled Game",
           sdk: game.sdkProvider || "N/A",
           xptrRules: game.xptrRules || "No rules defined",
-          taskCount: game.taskCount || 0,
+          taskCount: game.defaultTaskCount !== undefined ? game.defaultTaskCount : (game.taskCount || 0),
+          defaultTasks: game.defaultTaskCount !== undefined ? game.defaultTaskCount : (game.taskCount || 0), // For display in table - prioritize defaultTaskCount from DB
           activeTasks: 0, // Not in API, placeholder
           countries: game.countries || [],
           status: game.isActive ? "Active" : "Inactive",
-          rewardXP: 0, // Not in API
-          rewardCoins: 0, // Not in API
+          rewardXP: game.rewards?.xp || 0,
+          rewardCoins: game.rewards?.coins || 0,
+          rewardAmount: game.rewards?.coins ? parseFloat((game.rewards.coins / 50).toFixed(2)) : 0, // Convert coins to dollars (50 coins = 1 dollar)
           adSupported: game.isAdSupported || false,
           engagementTime: game.metadata?.estimatedPlayTime
             ? `${game.metadata.estimatedPlayTime} min`
@@ -388,12 +391,20 @@ export const gamesAPI = {
           marketingChannel: "N/A", // Not in API
           campaign: "N/A", // Not in API
           xpTier: xpTierNumberToString(game.xpTier),
+          xpTiers: game.xpTiers || [],
+          baseXP: game.xpRewardConfig?.baseXP || 0,
+          xpMultiplier: game.xpRewardConfig?.multiplier || 1.0,
+          xpRewardConfig: game.xpRewardConfig || { baseXP: 0, multiplier: 1.0 },
           tier: game.tierRestrictions?.minTier
             ? game.tierRestrictions.minTier.charAt(0).toUpperCase() +
               game.tierRestrictions.minTier.slice(1)
             : "All",
           gameCategory: game.category || "N/A",
           uiSection: game.uiSection || "",
+          ageGroup: game.ageGroup || (game.ageGroups && game.ageGroups.length > 0 ? game.ageGroups[0] : "N/A"),
+          gender: game.gender ? game.gender.charAt(0).toUpperCase() + game.gender.slice(1) : "N/A",
+          difficulty: game.metadata?.difficulty ? game.metadata.difficulty.charAt(0).toUpperCase() + game.metadata.difficulty.slice(1) : "N/A",
+          rating: game.metadata?.rating || "N/A",
           // Additional fields for preview/edit
           description: game.description || "",
           tags: game.tags || [],
@@ -420,7 +431,7 @@ export const gamesAPI = {
   async deleteGame(gameId) {
     try {
       const response = await apiClient.delete(
-        `/api/admin/game-offers/games/${gameId}`
+        `/admin/game-offers/games/${gameId}`
       );
       return response.data;
     } catch (error) {
@@ -435,7 +446,7 @@ export const gamesAPI = {
   async getUISections() {
     try {
       const response = await apiClient.get(
-        "/api/admin/game-offers/ui-sections"
+        "/admin/game-offers/ui-sections"
       );
       return response.data.data || response.data;
     } catch (error) {
@@ -450,7 +461,7 @@ export const gamesAPI = {
   async updateGameUISection(gameId, uiSection) {
     try {
       const response = await apiClient.put(
-        `/api/admin/game-offers/games/${gameId}`,
+        `/admin/game-offers/games/${gameId}`,
         {
           uiSection: uiSection,
         }

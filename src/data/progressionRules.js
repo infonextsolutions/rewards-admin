@@ -1,78 +1,85 @@
 'use client';
 
-import axios from 'axios';
-
-const API_BASE = 'https://rewardsapi.hireagent.co';
-
-// Create axios instance with auth interceptor
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Add auth token to all requests
-apiClient.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+import apiClient from '../lib/apiClient';
 
 export const progressionRulesAPI = {
   /**
    * Get all progression rules
    */
-  async getProgressionRules() {
+  async getProgressionRules(params = {}) {
     try {
-      const response = await apiClient.get('/api/admin/game-offers/progression-rules');
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.append('page', params.page);
+      if (params.limit) queryParams.append('limit', params.limit);
+
+      const response = await apiClient.get(
+        `/admin/game-offers/progression-rules?${queryParams.toString()}`
+      );
 
       // Transform API response to frontend format
-      const transformedRules = response.data.data.map(rule => {
-        // Format lock type from API format (sequential) to display format (Sequential)
-        const formatLockType = (type) => {
-          if (!type) return 'Sequential';
-          return type.charAt(0).toUpperCase() + type.slice(1);
-        };
+      const transformedRules = (response.data.data || []).map(rule => {
+        // Format createdBy
+        let createdByDisplay = 'N/A';
+        if (rule.createdBy) {
+          if (typeof rule.createdBy === 'object') {
+            createdByDisplay = rule.createdBy.email || 
+              `${rule.createdBy.firstName || ''} ${rule.createdBy.lastName || ''}`.trim() || 
+              'N/A';
+          } else {
+            createdByDisplay = rule.createdBy;
+          }
+        }
+
+        // Get task count from postThresholdTasks
+        const taskCount = rule.postThresholdTasks?.length || 0;
 
         return {
           id: rule._id,
-          name: rule.metadata?.description || `Progression Rule for ${rule.taskId?.name || 'Task'}`,
-          description: rule.metadata?.notes || 'Task progression rule',
-          taskId: rule.taskId?._id || null,
-          taskName: rule.taskId?.name || 'N/A',
-          unlockCondition: rule.unlockCondition || 'N/A',
-          lockType: formatLockType(rule.lockType),
-          minimumEventToUnlock: `${rule.minimumEventsToUnlock || 0} events required`,
-          rewardTriggerRule: rule.rewardTriggerRule || 'N/A',
-          override: rule.gameOverride?.isEnabled || false,
-          overrideByGameId: rule.gameOverride?.gameId || null,
+          name: rule.gameTitle || `Progression Rule for ${rule.gameGameId || 'Game'}`,
+          description: `Threshold: ${rule.minimumEventThreshold} tasks, Post-threshold tasks: ${taskCount}`,
+          gameId: rule.gameId,
+          gameTitle: rule.gameTitle,
+          gameGameId: rule.gameGameId,
+          minimumEventThreshold: rule.minimumEventThreshold,
+          minimumEventToUnlock: `${rule.minimumEventThreshold || 0} tasks required`,
+          postThresholdTasks: rule.postThresholdTasks || [],
+          taskCount: taskCount,
           enabled: rule.isActive,
-          conditions: rule.conditions || {},
-          dependencies: rule.dependencies || [],
-          gameId: rule.gameOverride?.gameId || null,
-          gameName: rule.taskId?.name || 'N/A',
           affectedUsers: 0, // Not in API
           completionRate: 'N/A', // Not in API
           avgUnlockTime: 'N/A', // Not in API
-          lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],
-          createdBy: new Date(rule.createdAt).toISOString(),
-          // Additional fields for edit
-          minimumEventsToUnlock: rule.minimumEventsToUnlock,
-          metadata: rule.metadata || {},
+          lastModified: (() => {
+          try {
+            if (rule.updatedAt) {
+              const date = new Date(rule.updatedAt);
+              if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+              }
+            }
+          } catch (e) {
+            console.warn('Invalid date for updatedAt:', rule.updatedAt);
+          }
+          return new Date().toISOString().split('T')[0];
+        })(),
+          createdBy: createdByDisplay,
           createdAt: rule.createdAt,
           updatedAt: rule.updatedAt,
-          updatedBy: rule.updatedBy
+          // Additional fields for edit
+          isActive: rule.isActive,
+          createdByUser: rule.createdBy,
+          updatedByUser: rule.updatedBy
         };
       });
 
-      return transformedRules;
+      return {
+        rules: transformedRules,
+        pagination: response.data.pagination || {
+          page: 1,
+          limit: 20,
+          total: transformedRules.length,
+          pages: 1
+        }
+      };
     } catch (error) {
       console.error('Error fetching progression rules:', error);
       throw error;
@@ -80,68 +87,67 @@ export const progressionRulesAPI = {
   },
 
   /**
-   * Create new progression rule
+   * Create new progression rule for a game
    */
-  async createProgressionRule(ruleData) {
+  async createProgressionRule(gameId, ruleData) {
     try {
-      // Transform frontend data to API format
+      // Use ruleData directly - it should already be in the correct format
+      // Backend expects: minimumEventThreshold, postThresholdTasks, isActive
       const apiPayload = {
-        taskId: ruleData.taskId,
-        unlockCondition: ruleData.unlockCondition || '',
-        lockType: ruleData.lockType ? ruleData.lockType.toLowerCase() : 'sequential',
-        minimumEventsToUnlock: ruleData.minimumEventsToUnlock || 0,
-        rewardTriggerRule: ruleData.rewardTriggerRule || '',
-        gameOverride: ruleData.gameOverride || {
-          gameId: ruleData.gameId || null,
-          isEnabled: ruleData.override || false
-        },
-        conditions: ruleData.conditions || {},
-        dependencies: ruleData.dependencies || [],
-        isActive: ruleData.enabled !== undefined ? ruleData.enabled : true,
-        metadata: {
-          description: ruleData.name || ruleData.metadata?.description || '',
-          notes: ruleData.description || ruleData.metadata?.notes || '',
-          priority: ruleData.metadata?.priority || 1
-        }
+        minimumEventThreshold: ruleData.minimumEventThreshold || 5,
+        postThresholdTasks: ruleData.postThresholdTasks || [],
+        isActive: ruleData.isActive !== undefined ? ruleData.isActive : true
       };
 
-      const response = await apiClient.post('/api/admin/game-offers/progression-rules', apiPayload);
+      console.log('Creating progression rule - API call:', {
+        url: `/admin/game-offers/progression-rules/game/${gameId}`,
+        payload: apiPayload,
+        gameId
+      });
+
+      const response = await apiClient.post(
+        `/admin/game-offers/progression-rules/game/${gameId}`,
+        apiPayload
+      );
+
+      console.log('Progression rule created successfully:', response.data);
 
       // Transform response back to frontend format
       const rule = response.data.data;
-
-      // Format lock type from API format (sequential) to display format (Sequential)
-      const formatLockType = (type) => {
-        if (!type) return 'Sequential';
-        return type.charAt(0).toUpperCase() + type.slice(1);
-      };
+      const taskCount = rule.postThresholdTasks?.length || 0;
 
       return {
-        id: rule._id,
-        name: rule.metadata?.description || 'Progression Rule',
-        description: rule.metadata?.notes || '',
-        taskId: rule.taskId,
-        taskName: 'N/A',
-        unlockCondition: rule.unlockCondition || 'N/A',
-        lockType: formatLockType(rule.lockType),
-        minimumEventToUnlock: `${rule.minimumEventsToUnlock || 0} events required`,
-        rewardTriggerRule: rule.rewardTriggerRule || 'N/A',
-        override: rule.gameOverride?.isEnabled || false,
-        overrideByGameId: rule.gameOverride?.gameId || null,
+        id: rule._id || rule.gameId,
+        name: rule.gameTitle || `Progression Rule for ${rule.gameGameId || 'Game'}`,
+        description: `Threshold: ${rule.minimumEventThreshold} tasks, Post-threshold tasks: ${taskCount}`,
+        gameId: rule.gameId,
+        gameTitle: rule.gameTitle,
+        gameGameId: rule.gameGameId,
+        minimumEventThreshold: rule.minimumEventThreshold,
+        minimumEventToUnlock: `${rule.minimumEventThreshold || 0} tasks required`,
+        postThresholdTasks: rule.postThresholdTasks || [],
+        taskCount: taskCount,
         enabled: rule.isActive,
-        conditions: rule.conditions || {},
-        dependencies: rule.dependencies || [],
-        gameId: rule.gameOverride?.gameId || null,
-        gameName: 'N/A',
         affectedUsers: 0,
         completionRate: 'N/A',
         avgUnlockTime: 'N/A',
-        lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],
-        createdBy: new Date(rule.createdAt).toISOString(),
-        minimumEventsToUnlock: rule.minimumEventsToUnlock,
-        metadata: rule.metadata || {},
+        lastModified: (() => {
+          try {
+            if (rule.updatedAt) {
+              const date = new Date(rule.updatedAt);
+              if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+              }
+            }
+          } catch (e) {
+            console.warn('Invalid date for updatedAt:', rule.updatedAt);
+          }
+          return new Date().toISOString().split('T')[0];
+        })(),
+        createdBy: 'N/A',
         createdAt: rule.createdAt,
-        updatedAt: rule.updatedAt
+        updatedAt: rule.updatedAt,
+        isActive: rule.isActive
       };
     } catch (error) {
       console.error('Error creating progression rule:', error);
@@ -150,69 +156,78 @@ export const progressionRulesAPI = {
   },
 
   /**
-   * Update existing progression rule
+   * Update existing progression rule for a game
    */
-  async updateProgressionRule(ruleId, ruleData) {
+  async updateProgressionRule(gameId, ruleData) {
     try {
-      // Transform frontend data to API format
+      // Use ruleData directly - it should already be in the correct format
+      // Backend expects: minimumEventThreshold, postThresholdTasks, isActive
       const apiPayload = {
-        unlockCondition: ruleData.unlockCondition || '',
-        lockType: ruleData.lockType ? ruleData.lockType.toLowerCase() : 'sequential',
-        minimumEventsToUnlock: ruleData.minimumEventsToUnlock || ruleData.minimumEventToUnlock || 0,
-        rewardTriggerRule: ruleData.rewardTriggerRule || '',
-        conditions: ruleData.conditions || {},
-        isActive: ruleData.enabled !== undefined ? ruleData.enabled : true,
-        metadata: {
-          description: ruleData.name || ruleData.metadata?.description || '',
-          notes: ruleData.description || ruleData.metadata?.notes || '',
-          priority: ruleData.metadata?.priority || 1
-        }
+        minimumEventThreshold: ruleData.minimumEventThreshold || 5,
+        postThresholdTasks: ruleData.postThresholdTasks || [],
+        isActive: ruleData.isActive !== undefined ? ruleData.isActive : true
       };
 
-      const response = await apiClient.put(
-        `/api/admin/game-offers/progression-rules/${ruleId}`,
+      const response = await apiClient.post(
+        `/admin/game-offers/progression-rules/game/${gameId}`,
         apiPayload
       );
 
       // Transform response back to frontend format
       const rule = response.data.data;
-
-      // Format lock type from API format (sequential) to display format (Sequential)
-      const formatLockType = (type) => {
-        if (!type) return 'Sequential';
-        return type.charAt(0).toUpperCase() + type.slice(1);
-      };
+      const taskCount = rule.postThresholdTasks?.length || 0;
 
       return {
-        id: rule._id,
-        name: rule.metadata?.description || 'Progression Rule',
-        description: rule.metadata?.notes || '',
-        taskId: rule.taskId,
-        taskName: 'N/A',
-        unlockCondition: rule.unlockCondition || 'N/A',
-        lockType: formatLockType(rule.lockType),
-        minimumEventToUnlock: `${rule.minimumEventsToUnlock || 0} events required`,
-        rewardTriggerRule: rule.rewardTriggerRule || 'N/A',
-        override: rule.gameOverride?.isEnabled || false,
-        overrideByGameId: rule.gameOverride?.gameId || null,
+        id: rule._id || rule.gameId,
+        name: rule.gameTitle || `Progression Rule for ${rule.gameGameId || 'Game'}`,
+        description: `Threshold: ${rule.minimumEventThreshold} tasks, Post-threshold tasks: ${taskCount}`,
+        gameId: rule.gameId,
+        gameTitle: rule.gameTitle,
+        gameGameId: rule.gameGameId,
+        minimumEventThreshold: rule.minimumEventThreshold,
+        minimumEventToUnlock: `${rule.minimumEventThreshold || 0} tasks required`,
+        postThresholdTasks: rule.postThresholdTasks || [],
+        taskCount: taskCount,
         enabled: rule.isActive,
-        conditions: rule.conditions || {},
-        dependencies: rule.dependencies || [],
-        gameId: rule.gameOverride?.gameId || null,
-        gameName: 'N/A',
         affectedUsers: 0,
         completionRate: 'N/A',
         avgUnlockTime: 'N/A',
-        lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],
-        createdBy: new Date(rule.createdAt).toISOString(),
-        minimumEventsToUnlock: rule.minimumEventsToUnlock,
-        metadata: rule.metadata || {},
+        lastModified: (() => {
+          try {
+            if (rule.updatedAt) {
+              const date = new Date(rule.updatedAt);
+              if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+              }
+            }
+          } catch (e) {
+            console.warn('Invalid date for updatedAt:', rule.updatedAt);
+          }
+          return new Date().toISOString().split('T')[0];
+        })(),
+        createdBy: 'N/A',
         createdAt: rule.createdAt,
         updatedAt: rule.updatedAt,
-        updatedBy: rule.updatedBy
+        isActive: rule.isActive
       };
     } catch (error) {
       console.error('Error updating progression rule:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete progression rule for a game
+   */
+  async deleteProgressionRule(gameId) {
+    try {
+      const response = await apiClient.delete(
+        `/admin/game-offers/progression-rules/game/${gameId}?confirm=true`
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting progression rule:', error);
       throw error;
     }
   }

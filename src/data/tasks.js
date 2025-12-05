@@ -1,29 +1,6 @@
 'use client';
 
-import axios from 'axios';
-
-const API_BASE = 'https://rewardsapi.hireagent.co';
-
-// Create axios instance with auth interceptor
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Add auth token to all requests
-apiClient.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+import apiClient from '../lib/apiClient';
 
 export const tasksAPI = {
   /**
@@ -43,7 +20,7 @@ export const tasksAPI = {
       }
 
       const response = await apiClient.get(
-        `/api/admin/game-offers/tasks?${queryParams.toString()}`
+        `/admin/game-offers/tasks?${queryParams.toString()}`
       );
 
       // Transform API response to frontend format
@@ -98,7 +75,7 @@ export const tasksAPI = {
       }
 
       const response = await apiClient.get(
-        `/api/admin/game-offers/games/${gameId}/tasks?${queryParams.toString()}`
+        `/admin/game-offers/games/${gameId}/tasks?${queryParams.toString()}`
       );
 
       // Transform API response to frontend format
@@ -192,7 +169,7 @@ export const tasksAPI = {
       };
 
       const response = await apiClient.post(
-        `/api/admin/game-offers/games/${gameId}/tasks`,
+        `/admin/game-offers/games/${gameId}/tasks`,
         apiPayload
       );
 
@@ -279,7 +256,7 @@ export const tasksAPI = {
       };
 
       const response = await apiClient.put(
-        `/api/admin/game-offers/tasks/${taskId}`,
+        `/admin/game-offers/tasks/${taskId}`,
         apiPayload
       );
 
@@ -319,7 +296,7 @@ export const tasksAPI = {
   async deleteTask(taskId) {
     try {
       const response = await apiClient.delete(
-        `/api/admin/game-offers/tasks/${taskId}`
+        `/admin/game-offers/tasks/${taskId}`
       );
 
       return response.data;

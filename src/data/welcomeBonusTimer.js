@@ -1,29 +1,6 @@
 'use client';
 
-import axios from 'axios';
-
-const API_BASE = 'https://rewardsapi.hireagent.co';
-
-// Create axios instance with auth interceptor
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Add auth token to all requests
-apiClient.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+import apiClient from '../lib/apiClient';
 
 export const welcomeBonusTimerAPI = {
   /**
@@ -31,7 +8,7 @@ export const welcomeBonusTimerAPI = {
    */
   async getWelcomeBonusTimerRules() {
     try {
-      const response = await apiClient.get('/api/admin/game-offers/welcome-bonus-timer');
+      const response = await apiClient.get('/admin/game-offers/welcome-bonus-timer');
 
       // Check if response is array or single object
       const data = Array.isArray(response.data.data) ? response.data.data[0] : response.data.data;
@@ -80,7 +57,7 @@ export const welcomeBonusTimerAPI = {
       };
 
       const response = await apiClient.put(
-        '/api/admin/game-offers/welcome-bonus-timer',
+        '/admin/game-offers/welcome-bonus-timer',
         apiPayload
       );
 
@@ -102,6 +79,52 @@ export const welcomeBonusTimerAPI = {
       };
     } catch (error) {
       console.error('Error updating welcome bonus timer rules:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Save or update game bonus tasks configuration
+   */
+  async saveGameBonusTasks(gameId, configData) {
+    try {
+      const apiPayload = {
+        minimumEventThreshold: configData.minimumEventThreshold,
+        bonusTasks: configData.bonusTasks.map(bt => ({
+          taskId: bt.taskId,
+          order: bt.order,
+          unlockCondition: bt.unlockCondition || "Unlock this Bonus Task after Minimum Event Threshold is met."
+        }))
+      };
+
+      const response = await apiClient.post(
+        `/admin/game-offers/welcome-bonus-timer/game/${gameId}/bonus-tasks`,
+        apiPayload
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error('Error saving game bonus tasks:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get game bonus tasks configuration
+   */
+  async getGameBonusTasks(gameId) {
+    try {
+      const response = await apiClient.get(
+        `/admin/game-offers/welcome-bonus-timer/game/${gameId}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      // If 404 or no data, return null (no configuration exists)
+      if (error.response?.status === 404 || !error.response?.data?.data) {
+        return null;
+      }
+      console.error('Error fetching game bonus tasks:', error);
       throw error;
     }
   }

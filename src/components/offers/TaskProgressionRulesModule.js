@@ -1,265 +1,330 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, ArrowLeftIcon, LinkIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, ArrowLeftIcon, EyeIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import EditProgressionRuleModal from './modals/EditProgressionRuleModal';
 import ConfirmationModal from './modals/ConfirmationModal';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { useProgressionRules } from '@/hooks/useProgressionRules';
-
-const mockProgressionRules = [
-  {
-    id: 'PROG001',
-    name: 'Survey to Download Flow',
-    description: 'Unlock download tasks after completing 2 surveys',
-    unlockCondition: 'Complete 2 surveys in sequence',
-    dependencies: [
-      { fromTask: 'Complete Survey A', toTask: 'Download App X' },
-      { fromTask: 'Complete Survey B', toTask: 'Download App Y' }
-    ],
-    lockType: 'Sequential',
-    minimumEventToUnlock: '2 Survey Completions in 24 hours',
-    eventThreshold: {
-      type: 'Survey Completions',
-      count: 2,
-      timeWindow: '24 hours'
-    },
-    rewardTriggerRule: 'Complete download within 10 minutes',
-    rewardTrigger: {
-      condition: 'Complete download within 10 minutes',
-      reward: '250 Coins + 500 XP'
-    },
-    enabled: true,
-    override: false,
-    overrideByGameId: null,
-    gameId: 'GAME001',
-    gameName: 'Survey Master Pro',
-    affectedUsers: 8500,
-    completionRate: '68.2%',
-    avgUnlockTime: '45 minutes',
-    lastModified: '2024-03-15',
-    createdBy: '2024-03-10 14:30:00'
-  },
-  {
-    id: 'PROG002',
-    name: 'Trial Signup Progression',
-    description: 'Sequential unlock: Social Follow → Trial Signup → Premium Upgrade',
-    unlockCondition: 'Follow 3 social accounts then signup for trial',
-    dependencies: [
-      { fromTask: 'Follow Social Media', toTask: 'Sign up for Trial' },
-      { fromTask: 'Sign up for Trial', toTask: 'Upgrade to Premium' }
-    ],
-    lockType: 'Timed',
-    minimumEventToUnlock: '3 Social Follows in 12 hours',
-    eventThreshold: {
-      type: 'Social Follows',
-      count: 3,
-      timeWindow: '12 hours'
-    },
-    rewardTriggerRule: 'Complete full sequence within 3 days',
-    rewardTrigger: {
-      condition: 'Complete full sequence within 3 days',
-      reward: '1000 Coins + 2x XP Boost'
-    },
-    enabled: true,
-    override: false,
-    overrideByGameId: null,
-    gameId: 'GAME003',
-    gameName: 'Premium Trial Signup',
-    affectedUsers: 3200,
-    completionRate: '34.5%',
-    avgUnlockTime: '2.5 hours',
-    lastModified: '2024-03-12',
-    createdBy: '2024-03-08 09:15:00'
-  },
-  {
-    id: 'PROG003',
-    name: 'Install and Engage Chain',
-    description: 'Manual unlock sequence for high-value app installs',
-    unlockCondition: 'Manual admin approval required',
-    dependencies: [
-      { fromTask: 'Download Gaming App', toTask: 'Play for 30 minutes' },
-      { fromTask: 'Play for 30 minutes', toTask: 'Make In-App Purchase' }
-    ],
-    lockType: 'Manual',
-    minimumEventToUnlock: '1 App Install in 1 hour',
-    eventThreshold: {
-      type: 'App Installs',
-      count: 1,
-      timeWindow: '1 hour'
-    },
-    rewardTriggerRule: 'Admin approval + Purchase completion',
-    rewardTrigger: {
-      condition: 'Admin approval + Purchase completion',
-      reward: '500 Coins per milestone'
-    },
-    enabled: false,
-    override: true,
-    overrideByGameId: 'GAME002',
-    gameId: 'GAME002',
-    gameName: 'Download & Play Challenge',
-    affectedUsers: 0,
-    completionRate: '0%',
-    avgUnlockTime: 'Manual',
-    lastModified: '2024-03-08',
-    createdBy: '2024-03-05 16:45:00'
-  },
-  {
-    id: 'PROG004',
-    name: 'Social Engagement Ladder',
-    description: 'Progressive social media engagement tasks',
-    unlockCondition: 'Complete social interactions in sequence',
-    dependencies: [
-      { fromTask: 'Follow 1 Account', toTask: 'Follow 5 Accounts' },
-      { fromTask: 'Follow 5 Accounts', toTask: 'Share Content' },
-      { fromTask: 'Share Content', toTask: 'Invite Friends' }
-    ],
-    lockType: 'Sequential',
-    minimumEventToUnlock: '5 Social Interactions in 6 hours',
-    eventThreshold: {
-      type: 'Social Interactions',
-      count: 5,
-      timeWindow: '6 hours'
-    },
-    rewardTriggerRule: 'Each milestone unlocks next + bonus',
-    rewardTrigger: {
-      condition: 'Each milestone unlocks next + bonus',
-      reward: '100 Coins per unlock + 50 XP'
-    },
-    enabled: true,
-    override: false,
-    overrideByGameId: null,
-    gameId: 'GAME004',
-    gameName: 'Social Media Follow',
-    affectedUsers: 12750,
-    completionRate: '76.8%',
-    avgUnlockTime: '3.2 hours',
-    lastModified: '2024-03-14',
-    createdBy: '2024-03-12 11:20:00'
-  }
-];
-
-const lockTypes = ['Sequential', 'Timed', 'Manual'];
-const eventTypes = ['Survey Completions', 'App Installs', 'Social Interactions', 'Purchase Events', 'Time Spent'];
+import { useProgressionRules } from '../../hooks/useProgressionRules';
+import { gamesAPI } from '../../data/games';
+import apiClient from '../../lib/apiClient';
+import toast from 'react-hot-toast';
 
 export default function TaskProgressionRulesModule() {
-  const { rules, loading, error, fetchProgressionRules, createProgressionRule, updateProgressionRule } = useProgressionRules();
+  const { rules: progressionRules, loading: loadingRules, error: rulesError, pagination: rulesPagination, fetchProgressionRules, deleteProgressionRule } = useProgressionRules();
+  const [games, setGames] = useState([]);
+  const [loadingGames, setLoadingGames] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEnabled, setFilterEnabled] = useState('all');
-  const [filterLockType, setFilterLockType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('configured');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState(null);
-
-  // Fetch progression rules on component mount
-  useEffect(() => {
-    fetchProgressionRules();
-  }, [fetchProgressionRules]);
-
-  // Filter rules
-  const filteredRules = rules.filter(rule => {
-    const matchesSearch =
-      rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rule.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rule.gameName.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesEnabled = filterEnabled === 'all' ||
-      (filterEnabled === 'enabled' && rule.enabled) ||
-      (filterEnabled === 'disabled' && !rule.enabled);
-
-    const matchesLockType = filterLockType === 'all' || rule.lockType === filterLockType;
-
-    return matchesSearch && matchesEnabled && matchesLockType;
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [selectedProgressionRule, setSelectedProgressionRule] = useState(null);
+  
+  // Pagination state for games
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0
   });
 
-  const handleToggleRule = (ruleId) => {
-    // TODO: Implement toggle API when available
-    console.log('Toggle API not yet implemented for rule:', ruleId);
+  // Pagination state for progression rules
+  const [rulesCurrentPage, setRulesCurrentPage] = useState(1);
+
+  // Fetch games and progression rules on component mount
+  useEffect(() => {
+    fetchGames(currentPage);
+    // Fetch all progression rules initially for matching with games
+    // Use a large limit to get all rules, but still support pagination if needed
+    fetchProgressionRules({ page: 1, limit: 1000 });
+  }, [currentPage]);
+
+  // Fetch progression rules when pagination changes (if user navigates rules pages)
+  useEffect(() => {
+    if (rulesCurrentPage > 1) {
+      fetchProgressionRules({ page: rulesCurrentPage, limit: 100 });
+    }
+  }, [rulesCurrentPage]);
+
+  // Refetch when search changes (reset to page 1)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1);
+      fetchGames(1);
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Refetch when filter status changes (reset to page 1)
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchGames(1);
+  }, [filterStatus]);
+
+  const fetchGames = async (page = 1) => {
+    setLoadingGames(true);
+    try {
+      const response = await gamesAPI.getGames({ 
+        page, 
+        limit: 10,
+        search: searchTerm || undefined
+      });
+      
+      const gamesList = response.games || [];
+      const paginationData = response.pagination || {
+        page: 1,
+        limit: 10,
+        total: gamesList.length,
+        pages: 1
+      };
+      
+      setPagination(paginationData);
+      
+      // Fetch full game data with besitosRawData only for current page games
+      const gamesWithData = await Promise.all(
+        gamesList.map(async (game) => {
+          try {
+            const fullGameResponse = await apiClient.get(`/admin/game-offers/games/${game.id}`);
+            return {
+              ...game,
+              besitosRawData: fullGameResponse.data.data.besitosRawData || null
+            };
+          } catch (error) {
+            console.error(`Error fetching full data for game ${game.id}:`, error);
+            return {
+              ...game,
+              besitosRawData: null
+            };
+          }
+        })
+      );
+      
+      setGames(gamesWithData);
+    } catch (error) {
+      console.error('Error fetching games:', error);
+      toast.error('Failed to load games');
+    } finally {
+      setLoadingGames(false);
+    }
   };
 
-  const handleEditRule = (rule) => {
-    setSelectedRule(rule);
-    setShowEditModal(true);
+  // Get progression rule for a game
+  const getProgressionRuleForGame = (game) => {
+    if (!game) return null;
+    return progressionRules.find(rule => {
+      // Match by MongoDB _id (game.id matches rule.gameId)
+      if (game.id && rule.gameId) {
+        if (game.id.toString() === rule.gameId.toString()) {
+          return true;
+        }
+      }
+      // Match by external game ID (game.gameId matches rule.gameGameId)
+      if (game.gameId && rule.gameGameId) {
+        if (game.gameId === rule.gameGameId) {
+          return true;
+        }
+      }
+      return false;
+    });
+  };
+
+  // Calculate visible tasks for a user profile
+  const calculateVisibleTasks = (game, progressionRule, userProfile = null) => {
+    if (!progressionRule || !game.besitosRawData?.goals) {
+      return {
+        totalTasks: game.besitosRawData?.goals?.length || 0,
+        visibleTasks: game.besitosRawData?.goals?.length || 0,
+        thresholdTasks: 0,
+        postThresholdTasks: 0,
+        lockedTasks: 0
+      };
+    }
+
+    const allGoals = game.besitosRawData.goals || [];
+    const threshold = progressionRule.minimumEventThreshold || 5;
+    const postThresholdTasks = progressionRule.postThresholdTasks || [];
+
+    // If no user profile, show all tasks
+    if (!userProfile) {
+      return {
+        totalTasks: allGoals.length,
+        visibleTasks: allGoals.length,
+        thresholdTasks: threshold,
+        postThresholdTasks: postThresholdTasks.length,
+        lockedTasks: 0
+      };
+    }
+
+    // Calculate based on user profile
+    const completedTasks = userProfile.completedTasks || 0;
+    const rewardTransferred = userProfile.rewardTransferred || false;
+    const userXpTier = userProfile.xpTier || 'junior';
+    const userMembershipTier = userProfile.membershipTier || 'bronze';
+
+    let visibleCount = 0;
+    let lockedCount = 0;
+
+    // Tasks before threshold are always visible if not completed
+    allGoals.forEach((goal, index) => {
+      if (index < threshold) {
+        visibleCount++;
+      } else {
+        // Post-threshold tasks
+        const postThresholdTask = postThresholdTasks.find(pt => 
+          pt.taskId === goal.goal_id || pt.name === goal.text
+        );
+
+        if (postThresholdTask) {
+          // Check if user meets requirements
+          const meetsThreshold = completedTasks >= threshold;
+          const meetsTransfer = rewardTransferred;
+          const meetsXpTier = !postThresholdTask.requiredXpTier || 
+            postThresholdTask.requiredXpTier.toLowerCase() === userXpTier.toLowerCase();
+          const meetsMembershipTier = !postThresholdTask.requiredMembershipTier || 
+            postThresholdTask.requiredMembershipTier.toLowerCase() === userMembershipTier.toLowerCase();
+
+          if (meetsThreshold && meetsTransfer && meetsXpTier && meetsMembershipTier) {
+            visibleCount++;
+          } else {
+            lockedCount++;
+          }
+        } else {
+          // Regular post-threshold task (no special requirements)
+          if (completedTasks >= threshold && rewardTransferred) {
+            visibleCount++;
+          } else {
+            lockedCount++;
+          }
+        }
+      }
+    });
+
+    return {
+      totalTasks: allGoals.length,
+      visibleTasks: visibleCount,
+      thresholdTasks: threshold,
+      postThresholdTasks: postThresholdTasks.length,
+      lockedTasks: lockedCount
+    };
+  };
+
+  // Filter games (client-side filtering for status only, search is done server-side)
+  const filteredGames = games.filter(game => {
+    const progressionRule = getProgressionRuleForGame(game);
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'configured' && progressionRule) ||
+      (filterStatus === 'not-configured' && !progressionRule);
+
+    return matchesStatus;
+  });
+
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.pages && !loadingGames) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleEditRule = async (game) => {
+    try {
+      const progressionRule = getProgressionRuleForGame(game);
+      
+      // Always fetch fresh game data to ensure we have besitosRawData
+      try {
+        const fullGameResponse = await apiClient.get(`/admin/game-offers/games/${game.id}`);
+        const gameWithData = {
+          ...game,
+          besitosRawData: fullGameResponse.data.data.besitosRawData || null
+        };
+        
+        setSelectedGame(gameWithData);
+        setSelectedProgressionRule(progressionRule);
+        setShowEditModal(true);
+      } catch (error) {
+        console.error('Error fetching full game data:', error);
+        // Still open modal even if fetch fails
+        setSelectedGame(game);
+        setSelectedProgressionRule(progressionRule);
+        setShowEditModal(true);
+        toast.warning('Could not load full game data. Some features may be limited.');
+      }
+    } catch (error) {
+      console.error('Error in handleEditRule:', error);
+      toast.error('Failed to open edit modal');
+    }
   };
 
   const handleCreateRule = () => {
-    setSelectedRule(null);
+    setSelectedGame(null);
+    setSelectedProgressionRule(null);
     setShowEditModal(true);
   };
 
-  const handleDeleteRule = (rule) => {
-    setSelectedRule(rule);
+  const handleDeleteRule = (game) => {
+    const progressionRule = getProgressionRuleForGame(game.id);
+    setSelectedGame(game);
+    setSelectedProgressionRule(progressionRule);
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteRule = () => {
-    // TODO: Implement delete API when available
-    if (selectedRule) {
-      console.log('Delete API not yet implemented for rule:', selectedRule.id);
-      setShowDeleteModal(false);
-      setSelectedRule(null);
-    }
-  };
+  const confirmDeleteRule = async () => {
+    if (!selectedGame || !selectedProgressionRule) return;
 
-  const handleSaveRule = async (ruleData) => {
     try {
-      if (selectedRule) {
-        // Update existing rule
-        await updateProgressionRule(selectedRule.id, ruleData);
-      } else {
-        // Create new rule
-        await createProgressionRule(ruleData);
-      }
-      setShowEditModal(false);
-      setSelectedRule(null);
+      await deleteProgressionRule(selectedGame.id);
+      toast.success('Progression rule deleted successfully');
+      setShowDeleteModal(false);
+      setSelectedGame(null);
+      setSelectedProgressionRule(null);
+      // Refetch with same limit as initial load
+      await fetchProgressionRules({ page: 1, limit: 1000 });
+      // Refetch current page of games to update the status
+      await fetchGames(currentPage);
     } catch (error) {
-      console.error('Failed to save rule:', error);
+      console.error('Failed to delete progression rule:', error);
+      toast.error('Failed to delete progression rule');
     }
   };
 
+  const handleSaveRule = async () => {
+    try {
+      // Refetch progression rules with the same limit as initial load to get all rules
+      await fetchProgressionRules({ page: 1, limit: 1000 });
+      // Refetch current page of games to update the status
+      await fetchGames(currentPage);
+      // Close modal
+      setShowEditModal(false);
+      setSelectedGame(null);
+      setSelectedProgressionRule(null);
+    } catch (error) {
+      console.error('Failed to refresh after saving rule:', error);
+      toast.error('Rule saved but failed to refresh the list');
+    }
+  };
 
-  const getStatusBadge = (enabled) => {
+  const getStatusBadge = (hasRule) => {
     return (
-      <span className={`inline-flex items-center justify-center min-w-[70px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+      <span className={`inline-flex items-center justify-center min-w-[100px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
+        hasRule ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
       }`}>
-        {enabled ? 'Enabled' : 'Disabled'}
+        {hasRule ? 'Configured' : 'Not Configured'}
       </span>
     );
   };
 
-  const getLockTypeBadge = (lockType) => {
-    const lockTypeColors = {
-      'Sequential': 'bg-blue-100 text-blue-800',
-      'Timed': 'bg-orange-100 text-orange-800',
-      'Manual': 'bg-purple-100 text-purple-800'
-    };
-
+  if (loadingGames || loadingRules) {
     return (
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${lockTypeColors[lockType]}`}>
-        {lockType}
-      </span>
-    );
-  };
-
-  const renderDependencyChain = (dependencies) => {
-    return (
-      <div className="space-y-2">
-        {dependencies.map((dep, index) => (
-          <div key={index} className="flex items-center space-x-2 text-xs">
-            <span className="bg-gray-100 px-2 py-1 rounded text-gray-700 max-w-[120px] truncate">
-              {dep.fromTask}
-            </span>
-            <LinkIcon className="h-3 w-3 text-gray-400" />
-            <span className="bg-green-100 px-2 py-1 rounded text-green-700 max-w-[120px] truncate">
-              {dep.toTask}
-            </span>
-          </div>
-        ))}
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" className="text-purple-600" />
+        <p className="ml-3 text-sm text-gray-500">Loading games and progression rules...</p>
       </div>
     );
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -280,10 +345,53 @@ export default function TaskProgressionRulesModule() {
                 </h2>
               </div>
               <p className="mt-1 text-sm text-gray-600">
-                Allows admin to control how in-game tasks are locked, unlocked, and how rewards are released based on completion dependencies or event thresholds
+                Configure sequential task unlocking with threshold requirements and tier-based access. Tasks unlock after completing threshold and transferring rewards from My Coin Box.
               </p>
+              {rulesPagination.total > 0 && (
+                <div className="mt-2 text-xs text-gray-500">
+                  Total Progression Rules: <span className="font-semibold text-gray-700">{rulesPagination.total}</span>
+                  {rulesPagination.pages > 1 && (
+                    <span className="ml-2">
+                      (Page {rulesCurrentPage} of {rulesPagination.pages})
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-3">
+              {rulesPagination.pages > 1 && (
+                <div className="flex items-center space-x-2 border border-gray-300 rounded-md px-3 py-2 bg-white">
+                  <button
+                    onClick={() => {
+                      const newPage = rulesCurrentPage - 1;
+                      if (newPage >= 1) {
+                        setRulesCurrentPage(newPage);
+                      }
+                    }}
+                    disabled={rulesCurrentPage === 1 || loadingRules}
+                    className="p-1 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Previous page"
+                  >
+                    <ChevronLeftIcon className="h-5 w-5" />
+                  </button>
+                  <span className="text-sm text-gray-700 px-2">
+                    {rulesCurrentPage} / {rulesPagination.pages}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const newPage = rulesCurrentPage + 1;
+                      if (newPage <= rulesPagination.pages) {
+                        setRulesCurrentPage(newPage);
+                      }
+                    }}
+                    disabled={rulesCurrentPage >= rulesPagination.pages || loadingRules}
+                    className="p-1 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Next page"
+                  >
+                    <ChevronRightIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
               <button
                 onClick={handleCreateRule}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
@@ -303,10 +411,22 @@ export default function TaskProgressionRulesModule() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search rules by name, description, or game..."
+                  placeholder="Search games by title or game ID..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    // Reset to page 1 when search changes
+                    if (currentPage !== 1) {
+                      setCurrentPage(1);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      fetchGames(1);
+                    }
+                  }}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,147 +439,195 @@ export default function TaskProgressionRulesModule() {
             {/* Filters */}
             <div className="flex items-center space-x-4">
               <select
-                value={filterEnabled}
-                onChange={(e) => setFilterEnabled(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-purple-500 focus:border-purple-500"
               >
-                <option value="all">All Status</option>
-                <option value="enabled">Enabled</option>
-                <option value="disabled">Disabled</option>
-              </select>
-
-              <select
-                value={filterLockType}
-                onChange={(e) => setFilterLockType(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
-              >
-                <option value="all">All Lock Types</option>
-                {lockTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
+                <option value="all">All Games</option>
+                <option value="configured">With Rules</option>
+                <option value="not-configured">Without Rules</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Rules Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Task ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Unlock Condition
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lock Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Minimum Event to Unlock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reward Trigger Rule
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Override
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Override by Game ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created By
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
+        {/* Games Table */}
+        {rulesError ? (
+          <div className="px-6 py-8 text-center text-red-600">
+            {rulesError}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <LoadingSpinner size="lg" className="text-indigo-600" />
-                      <p className="mt-3 text-sm text-gray-500">Loading progression rules...</p>
-                    </div>
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Game
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Tasks
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Threshold
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Visible Tasks (Example User)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-red-600">
-                    {error}
-                  </td>
-                </tr>
-              ) : filteredRules.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm || filterEnabled !== 'all' || filterLockType !== 'all'
-                      ? 'No progression rules match your current filters.'
-                      : 'No progression rules configured yet. Add your first rule to get started.'}
-                  </td>
-                </tr>
-              ) : (
-                filteredRules.map((rule) => (
-                  <React.Fragment key={rule.id}>
-                    <tr className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{rule.id}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs">{rule.unlockCondition}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getLockTypeBadge(rule.lockType)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{rule.minimumEventToUnlock}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs">{rule.rewardTriggerRule}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center justify-center min-w-[50px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            rule.override ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {rule.override ? 'Yes' : 'No'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{rule.overrideByGameId || '-'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{rule.createdBy}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleEditRule(rule)}
-                            className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50"
-                            title="Edit rule"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRule(rule)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
-                            title="Delete rule"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredGames.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                      {searchTerm || filterStatus !== 'all'
+                        ? 'No games match your current filters.'
+                        : 'No games found.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredGames.map((game) => {
+                    const progressionRule = getProgressionRuleForGame(game);
+                    const taskInfo = calculateVisibleTasks(game, progressionRule);
+                    
+                    return (
+                      <tr key={game.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{game.title}</div>
+                            <div className="text-xs text-gray-500">{game.gameId}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {taskInfo.totalTasks} tasks
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {progressionRule ? `${progressionRule.minimumEventThreshold} tasks` : 'Not set'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">
+                            {progressionRule ? (
+                              <div className="space-y-1">
+                                <div>Visible: {taskInfo.visibleTasks}/{taskInfo.totalTasks}</div>
+                                <div className="text-xs text-gray-500">
+                                  Locked: {taskInfo.lockedTasks}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">All tasks visible</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getStatusBadge(!!progressionRule)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEditRule(game)}
+                              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                              title={progressionRule ? "Edit progression rule" : "Create progression rule"}
+                            >
+                              {progressionRule ? (
+                                <PencilIcon className="h-4 w-4" />
+                              ) : (
+                                <PlusIcon className="h-4 w-4" />
+                              )}
+                            </button>
+                            {progressionRule && (
+                              <button
+                                onClick={() => handleDeleteRule(game)}
+                                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                title="Delete progression rule"
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                  </React.Fragment>
-                ))
+        {/* Pagination Controls - Bottom */}
+        {!loadingGames && pagination.total > 0 && (
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="text-sm text-gray-700">
+                Showing <span className="font-medium">{((currentPage - 1) * pagination.limit) + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(currentPage * pagination.limit, pagination.total)}</span> of{' '}
+                <span className="font-medium">{pagination.total}</span> games
+                {filteredGames.length < games.length && (
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({filteredGames.length} shown after filter)
+                  </span>
+                )}
+              </div>
+              {pagination.pages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || loadingGames}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                  >
+                    <ChevronLeftIcon className="h-5 w-5 mr-1" />
+                    Previous
+                  </button>
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(pagination.pages, 5) }, (_, i) => {
+                      let pageNum;
+                      if (pagination.pages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= pagination.pages - 2) {
+                        pageNum = pagination.pages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          disabled={loadingGames}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= pagination.pages || loadingGames}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                  >
+                    Next
+                    <ChevronRightIcon className="h-5 w-5 ml-1" />
+                  </button>
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Edit Progression Rule Modal */}
@@ -467,9 +635,11 @@ export default function TaskProgressionRulesModule() {
         isOpen={showEditModal}
         onClose={() => {
           setShowEditModal(false);
-          setSelectedRule(null);
+          setSelectedGame(null);
+          setSelectedProgressionRule(null);
         }}
-        rule={selectedRule}
+        game={selectedGame}
+        progressionRule={selectedProgressionRule}
         onSave={handleSaveRule}
       />
 
@@ -478,12 +648,14 @@ export default function TaskProgressionRulesModule() {
         isOpen={showDeleteModal}
         onClose={() => {
           setShowDeleteModal(false);
-          setSelectedRule(null);
+          setSelectedGame(null);
+          setSelectedProgressionRule(null);
         }}
         onConfirm={confirmDeleteRule}
         title="Delete Progression Rule"
-        message={`Are you sure you want to delete the rule "${selectedRule?.name}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete the progression rule for "${selectedGame?.title}"? This action cannot be undone.`}
         confirmText="Delete Rule"
+        cancelText="Cancel"
         type="warning"
       />
     </div>

@@ -60,12 +60,30 @@ export function useDisplayRules() {
     }
   }, []);
 
+  // Delete display rule
+  const deleteDisplayRule = useCallback(async (ruleId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await displayRulesAPI.deleteDisplayRule(ruleId);
+      setRules(prev => prev.filter(rule => rule.id !== ruleId));
+    } catch (err) {
+      setError('Failed to delete display rule. Please try again.');
+      console.error('Error deleting display rule:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     rules,
     loading,
     error,
     fetchDisplayRules,
     createDisplayRule,
-    updateDisplayRule
+    updateDisplayRule,
+    deleteDisplayRule
   };
 }

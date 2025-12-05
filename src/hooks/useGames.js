@@ -24,8 +24,7 @@ export function useGames() {
         page,
         limit,
         search: filters.search || "",
-        country:
-          filters.country && filters.country !== "all" ? filters.country : "",
+        // country: filters.country && filters.country !== "all" ? filters.country : "", // Commented out
         sdkProvider: filters.sdk && filters.sdk !== "all" ? filters.sdk : "",
         xpTier:
           filters.xpTier && filters.xpTier !== "all" ? filters.xpTier : "",
@@ -35,6 +34,7 @@ export function useGames() {
           filters.status && filters.status !== "all"
             ? filters.status.toLowerCase()
             : "all",
+        gender: filters.gender && filters.gender !== "all" ? filters.gender : "",
       };
 
       const response = await gamesAPI.getGames(params);

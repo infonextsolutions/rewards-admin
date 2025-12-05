@@ -199,23 +199,29 @@ export default function UsersPage() {
       }
     } catch (error) {
       console.error("Error saving user:", error);
-      
+
       // Parse error response to show specific error messages
       let errorMessage = "Failed to update user profile";
-      
-      if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+
+      if (
+        error?.errors &&
+        Array.isArray(error.errors) &&
+        error.errors.length > 0
+      ) {
         // Extract specific error messages from the errors array
-        const errorMessages = error.errors.map(err => {
-          const fieldName = err.field ? err.field.charAt(0).toUpperCase() + err.field.slice(1) : '';
+        const errorMessages = error.errors.map((err) => {
+          const fieldName = err.field
+            ? err.field.charAt(0).toUpperCase() + err.field.slice(1)
+            : "";
           return err.message || `Invalid ${err.field}`;
         });
-        
+
         // Join multiple errors with semicolons
-        errorMessage = errorMessages.join('; ');
+        errorMessage = errorMessages.join("; ");
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage);
       throw error;
     }

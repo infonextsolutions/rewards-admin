@@ -138,7 +138,7 @@ const milestoneOptions = [
 ];
 
 export default function GameDisplayRulesModule() {
-  const { rules, loading, error, fetchDisplayRules, createDisplayRule, updateDisplayRule } = useDisplayRules();
+  const { rules, loading, error, fetchDisplayRules, createDisplayRule, updateDisplayRule, deleteDisplayRule } = useDisplayRules();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEnabled, setFilterEnabled] = useState('all');
   const [filterMilestone, setFilterMilestone] = useState('all');
@@ -193,12 +193,17 @@ export default function GameDisplayRulesModule() {
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteRule = () => {
-    // TODO: Implement delete API when available
+  const confirmDeleteRule = async () => {
     if (selectedRule) {
-      console.log('Delete API not yet implemented for rule:', selectedRule.id);
-      setShowDeleteModal(false);
-      setSelectedRule(null);
+      try {
+        await deleteDisplayRule(selectedRule.id);
+        setShowDeleteModal(false);
+        setSelectedRule(null);
+      } catch (error) {
+        console.error('Failed to delete rule:', error);
+        // Error is already handled by the hook
+        // Keep modal open on error so user can see the error message
+      }
     }
   };
 
@@ -236,9 +241,34 @@ export default function GameDisplayRulesModule() {
   };
 
   const formatCreatedBy = (createdBy, createdAt) => {
-    const userName = createdBy.split('@')[0].replace('.', ' ').split(' ').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
+    let userName = 'Unknown User';
+    let email = 'N/A';
+
+    // Handle populated user object (from backend)
+    if (createdBy && typeof createdBy === 'object') {
+      if (createdBy.firstName || createdBy.lastName) {
+        userName = `${createdBy.firstName || ''} ${createdBy.lastName || ''}`.trim() || 'Unknown User';
+      } else if (createdBy.email) {
+        email = createdBy.email;
+        userName = createdBy.email.split('@')[0].replace(/\./g, ' ').split(' ').map(word =>
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+      } else if (createdBy._id) {
+        // Just an ObjectId, no user data
+        userName = 'Unknown User';
+      }
+    } 
+    // Handle string (email) - backward compatibility
+    else if (typeof createdBy === 'string' && createdBy.includes('@')) {
+      email = createdBy;
+      userName = createdBy.split('@')[0].replace(/\./g, ' ').split(' ').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    }
+    // Handle other cases
+    else if (createdBy) {
+      userName = String(createdBy);
+    }
 
     const date = new Date(createdAt);
     const formattedDate = date.toLocaleDateString('en-US', {
@@ -247,7 +277,11 @@ export default function GameDisplayRulesModule() {
       year: 'numeric'
     });
 
-    return { userName, formattedDate, email: createdBy };
+    return { 
+      userName, 
+      formattedDate, 
+      email: email || (typeof createdBy === 'object' ? createdBy.email : createdBy) || 'N/A' 
+    };
   };
 
   return (
@@ -352,6 +386,9 @@ export default function GameDisplayRulesModule() {
                   Max Games
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Game Count Limits
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created By
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -365,7 +402,7 @@ export default function GameDisplayRulesModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center">
+                  <td colSpan="9" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <LoadingSpinner size="lg" className="text-indigo-600" />
                       <p className="mt-3 text-sm text-gray-500">Loading display rules...</p>
@@ -374,13 +411,13 @@ export default function GameDisplayRulesModule() {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-red-600">
+                  <td colSpan="9" className="px-6 py-8 text-center text-red-600">
                     {error}
                   </td>
                 </tr>
               ) : filteredRules.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
                     {searchTerm || filterEnabled !== 'all' || filterMilestone !== 'all'
                       ? 'No display rules match your current filters.'
                       : 'No display rules configured yet. Add your first rule to get started.'}
@@ -396,34 +433,83 @@ export default function GameDisplayRulesModule() {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{rule.name}</div>
-                        <div className="text-xs text-gray-700">{rule.id}</div>
-                        <div className="text-xs text-gray-600 mt-1 max-w-xs">{rule.description}</div>
+                        <div className="text-sm font-medium text-gray-900">{rule.name || rule.ruleName}</div>
+                        <div className="text-xs text-gray-500">ID: {rule.id}</div>
+                        <div className="text-xs text-gray-600 mt-1 max-w-xs">{rule.description || rule.metadata?.notes || 'No description'}</div>
+                        {rule.metadata?.description && rule.metadata.description !== (rule.name || rule.ruleName) && (
+                          <div className="text-xs text-gray-500 mt-1 italic">{rule.metadata.description}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <MilestoneBadge milestone={rule.milestone} />
+                        {rule.userMilestones && rule.userMilestones.length > 0 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {rule.userMilestones.map(m => m.replace(/_/g, ' ')).join(', ')}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <MilestoneBadge milestone={rule.milestone} />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-xs text-gray-600">{rule.targetSegment}</div>
+                      <div className="text-xs text-gray-600">{rule.targetSegment || rule.metadata?.targetSegment || 'All Users'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {formatMaxGames(rule.maxGames)}
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      {rule.gameCountLimits ? (
+                        <div className="text-xs space-y-1">
+                          {rule.gameCountLimits.newUsersLimit && (
+                            <div className="text-gray-700">
+                              <span className="font-medium">New Users:</span> {rule.gameCountLimits.newUsersLimit}
+                            </div>
+                          )}
+                          {rule.gameCountLimits.xpTierLimits && (
+                            <div className="text-gray-700">
+                              <span className="font-medium">XP:</span> {[
+                                rule.gameCountLimits.xpTierLimits.junior && `Jr:${rule.gameCountLimits.xpTierLimits.junior}`,
+                                rule.gameCountLimits.xpTierLimits.mid && `Mid:${rule.gameCountLimits.xpTierLimits.mid}`,
+                                rule.gameCountLimits.xpTierLimits.senior && `Sr:${rule.gameCountLimits.xpTierLimits.senior}`
+                              ].filter(Boolean).join(', ') || 'None'}
+                            </div>
+                          )}
+                          {rule.gameCountLimits.membershipTierLimits && (
+                            <div className="text-gray-700">
+                              <span className="font-medium">VIP:</span> {[
+                                rule.gameCountLimits.membershipTierLimits.bronze && `Bronze:${rule.gameCountLimits.membershipTierLimits.bronze}`,
+                                rule.gameCountLimits.membershipTierLimits.gold && `Gold:${rule.gameCountLimits.membershipTierLimits.gold}`,
+                                rule.gameCountLimits.membershipTierLimits.platinum && `Platinum:${rule.gameCountLimits.membershipTierLimits.platinum}`,
+                                rule.gameCountLimits.membershipTierLimits.free && `Free:${rule.gameCountLimits.membershipTierLimits.free}`
+                              ].filter(Boolean).join(', ') || 'None'}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">No tier limits</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCreatedBy(rule.createdBy, rule.createdAt).userName}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {formatCreatedBy(rule.createdBy, rule.createdAt).formattedDate}
-                        </div>
-                        <div className="text-xs text-gray-400" title={rule.createdBy}>
-                          {formatCreatedBy(rule.createdBy, rule.createdAt).email}
-                        </div>
-                      </div>
+                      {(() => {
+                        // Use populated user object if available, otherwise use createdBy string
+                        const createdByData = rule.createdByUser || rule.createdBy;
+                        const creatorInfo = formatCreatedBy(createdByData, rule.createdAt);
+                        return (
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {creatorInfo.userName}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {creatorInfo.formattedDate}
+                            </div>
+                            <div className="text-xs text-gray-400" title={creatorInfo.email}>
+                              {creatorInfo.email}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
