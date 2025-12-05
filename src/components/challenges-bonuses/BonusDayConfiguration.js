@@ -31,7 +31,7 @@ export default function BonusDayConfiguration({
   const [streakBonusConfigEnabled, setStreakBonusConfigEnabled] = useState(false);
   const [showStreakConfig, setShowStreakConfig] = useState(false);
 
-  const rewardTypes = ['Coins', 'Giftcard', 'XP'];
+  const rewardTypes = ['Coins', 'XP'];
 
   const resetForm = () => {
     setFormData({
@@ -130,8 +130,6 @@ export default function BonusDayConfiguration({
     switch (rewardType) {
       case 'Coins':
         return '🪙';
-      case 'Giftcard':
-        return '🎁';
       case 'XP':
         return '⭐';
       default:
