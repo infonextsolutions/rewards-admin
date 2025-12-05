@@ -155,8 +155,8 @@ export default function UsersPage() {
         backendData.lastName = updatedUserData.lastName;
       }
 
-      // Map email
-      if (updatedUserData.email) {
+      // Map email (skip for Google users - email cannot be changed)
+      if (updatedUserData.email && !editingUser?.isGoogleUser && editingUser?.socialProvider !== 'google') {
         backendData.email = updatedUserData.email;
       }
 

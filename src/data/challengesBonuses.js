@@ -741,18 +741,67 @@ export const challengesBonusesAPI = {
       const bonusDaysArray = response.data.data || [];
 
       // Transform API response to frontend format
-      return bonusDaysArray.map((apiData) => ({
-        id: apiData._id,
-        bonusDay: apiData.dayNumber,
-        rewardType:
-          apiData.primaryReward.type.charAt(0).toUpperCase() +
-          apiData.primaryReward.type.slice(1),
-        rewardValue: apiData.primaryReward.value,
-        alternateReward: apiData.alternateReward?.value || null,
-        resetRule: apiData.resetRule.onMiss,
-        createdAt: apiData.createdAt,
-        updatedAt: apiData.updatedAt,
-      }));
+      return bonusDaysArray.map((apiData) => {
+        // Extract coin and XP rewards
+        const primaryType = apiData.primaryReward?.type?.toLowerCase() || '';
+        const alternateType = apiData.alternateReward?.type?.toLowerCase() || '';
+        
+        let coinRewardType = null;
+        let coinRewardValue = null;
+        let xpRewardType = null;
+        let xpRewardValue = null;
+        
+        // Map primary reward
+        if (primaryType === 'coins') {
+          coinRewardType = 'Coins';
+          coinRewardValue = apiData.primaryReward.value;
+        } else if (primaryType === 'xp') {
+          xpRewardType = 'XP';
+          xpRewardValue = apiData.primaryReward.value;
+        }
+        
+        // Map alternate reward
+        if (alternateType === 'coins') {
+          coinRewardType = 'Coins';
+          coinRewardValue = apiData.alternateReward.value;
+        } else if (alternateType === 'xp') {
+          xpRewardType = 'XP';
+          xpRewardValue = apiData.alternateReward.value;
+        }
+        
+        // Build rewards array
+        const rewards = [];
+        if (coinRewardValue) {
+          rewards.push({ type: 'Coins', value: coinRewardValue });
+        }
+        if (xpRewardValue) {
+          rewards.push({ type: 'XP', value: xpRewardValue });
+        }
+        
+        // Legacy format support
+        const rewardType = primaryType ? primaryType.charAt(0).toUpperCase() + primaryType.slice(1) : null;
+        const rewardValue = apiData.primaryReward?.value || null;
+        const alternateReward = apiData.alternateReward?.value || null;
+        
+        return {
+          id: apiData._id,
+          bonusDay: apiData.dayNumber,
+          // Rewards array (new format)
+          rewards: rewards.length > 0 ? rewards : null,
+          // Individual rewards (for backward compatibility)
+          coinRewardType,
+          coinRewardValue,
+          xpRewardType,
+          xpRewardValue,
+          // Legacy format (for backward compatibility)
+          rewardType,
+          rewardValue,
+          alternateReward,
+          resetRule: apiData.resetRule.onMiss,
+          createdAt: apiData.createdAt,
+          updatedAt: apiData.updatedAt,
+        };
+      });
     } catch (error) {
       console.error("Get bonus days error:", error);
       throw error.response?.data || error;
@@ -761,22 +810,80 @@ export const challengesBonusesAPI = {
 
   async createBonusDay(bonusDayData) {
     try {
+      // Determine primary and alternate rewards
+      let primaryReward = null;
+      let alternateReward = null;
+      
+      // Use rewards array format if available (new format)
+      if (bonusDayData.rewards && Array.isArray(bonusDayData.rewards) && bonusDayData.rewards.length > 0) {
+        const validRewards = bonusDayData.rewards.filter(r => r.value && r.value > 0);
+        if (validRewards.length > 0) {
+          primaryReward = {
+            type: validRewards[0].type.toLowerCase(),
+            value: validRewards[0].value,
+            metadata: {},
+          };
+          if (validRewards.length > 1) {
+            alternateReward = {
+              type: validRewards[1].type.toLowerCase(),
+              value: validRewards[1].value,
+              metadata: {},
+            };
+          }
+        }
+      }
+      
+      // Fallback to individual reward format
+      if (!primaryReward && bonusDayData.coinRewardValue && bonusDayData.coinRewardValue > 0) {
+        primaryReward = {
+          type: bonusDayData.coinRewardType?.toLowerCase() || 'coins',
+          value: bonusDayData.coinRewardValue,
+          metadata: {},
+        };
+      }
+      
+      if (!alternateReward && bonusDayData.xpRewardValue && bonusDayData.xpRewardValue > 0) {
+        if (primaryReward) {
+          alternateReward = {
+            type: bonusDayData.xpRewardType?.toLowerCase() || 'xp',
+            value: bonusDayData.xpRewardValue,
+            metadata: {},
+          };
+        } else {
+          primaryReward = {
+            type: bonusDayData.xpRewardType?.toLowerCase() || 'xp',
+            value: bonusDayData.xpRewardValue,
+            metadata: {},
+          };
+        }
+      }
+      
+      // Fallback to legacy format
+      if (!primaryReward && bonusDayData.rewardType && bonusDayData.rewardValue) {
+        primaryReward = {
+          type: bonusDayData.rewardType.toLowerCase(),
+          value: bonusDayData.rewardValue,
+          metadata: {},
+        };
+        if (bonusDayData.alternateReward) {
+          alternateReward = {
+            type: bonusDayData.rewardType.toLowerCase() === 'coins' ? 'xp' : 'coins',
+            value: bonusDayData.alternateReward,
+            metadata: {},
+          };
+        }
+      }
+      
       // Map frontend fields to API structure
       const apiPayload = {
         title: `Day ${bonusDayData.bonusDay} Bonus Reward`,
         description: `Special bonus for ${bonusDayData.bonusDay}-day streak`,
-        primaryReward: {
-          type: bonusDayData.rewardType.toLowerCase(),
-          value: bonusDayData.rewardValue,
+        primaryReward: primaryReward || {
+          type: 'coins',
+          value: 0,
           metadata: {},
         },
-        alternateReward: {
-          type: "xp",
-          value:
-            bonusDayData.alternateReward ||
-            Math.floor(bonusDayData.rewardValue / 2),
-          metadata: {},
-        },
+        alternateReward: alternateReward || null,
         resetRule: {
           onMiss: bonusDayData.resetRule,
           gracePeriod: 1,
@@ -812,14 +919,54 @@ export const challengesBonusesAPI = {
 
       const apiData = response.data.data;
 
+      // Transform response back to frontend format
+      const primaryType = apiData.primaryReward?.type?.toLowerCase() || '';
+      const alternateType = apiData.alternateReward?.type?.toLowerCase() || '';
+      
+      let coinRewardType = null;
+      let coinRewardValue = null;
+      let xpRewardType = null;
+      let xpRewardValue = null;
+      
+      if (primaryType === 'coins') {
+        coinRewardType = 'Coins';
+        coinRewardValue = apiData.primaryReward.value;
+      } else if (primaryType === 'xp') {
+        xpRewardType = 'XP';
+        xpRewardValue = apiData.primaryReward.value;
+      }
+      
+      if (alternateType === 'coins') {
+        coinRewardType = 'Coins';
+        coinRewardValue = apiData.alternateReward.value;
+      } else if (alternateType === 'xp') {
+        xpRewardType = 'XP';
+        xpRewardValue = apiData.alternateReward.value;
+      }
+
+      // Build rewards array
+      const rewards = [];
+      if (coinRewardValue) {
+        rewards.push({ type: 'Coins', value: coinRewardValue });
+      }
+      if (xpRewardValue) {
+        rewards.push({ type: 'XP', value: xpRewardValue });
+      }
+
       // Return in frontend format
       return {
         id: apiData._id,
         bonusDay: apiData.dayNumber,
-        rewardType:
-          apiData.primaryReward.type.charAt(0).toUpperCase() +
-          apiData.primaryReward.type.slice(1),
-        rewardValue: apiData.primaryReward.value,
+        // Rewards array (new format)
+        rewards: rewards.length > 0 ? rewards : null,
+        // Individual rewards (for backward compatibility)
+        coinRewardType,
+        coinRewardValue,
+        xpRewardType,
+        xpRewardValue,
+        // Legacy format
+        rewardType: primaryType ? primaryType.charAt(0).toUpperCase() + primaryType.slice(1) : null,
+        rewardValue: apiData.primaryReward?.value || null,
         alternateReward: apiData.alternateReward?.value || null,
         resetRule: apiData.resetRule.onMiss,
         createdAt: apiData.createdAt,
@@ -833,22 +980,80 @@ export const challengesBonusesAPI = {
 
   async updateBonusDay(id, bonusDayData) {
     try {
+      // Determine primary and alternate rewards
+      let primaryReward = null;
+      let alternateReward = null;
+      
+      // Use rewards array format if available (new format)
+      if (bonusDayData.rewards && Array.isArray(bonusDayData.rewards) && bonusDayData.rewards.length > 0) {
+        const validRewards = bonusDayData.rewards.filter(r => r.value && r.value > 0);
+        if (validRewards.length > 0) {
+          primaryReward = {
+            type: validRewards[0].type.toLowerCase(),
+            value: validRewards[0].value,
+            metadata: {},
+          };
+          if (validRewards.length > 1) {
+            alternateReward = {
+              type: validRewards[1].type.toLowerCase(),
+              value: validRewards[1].value,
+              metadata: {},
+            };
+          }
+        }
+      }
+      
+      // Fallback to individual reward format
+      if (!primaryReward && bonusDayData.coinRewardValue && bonusDayData.coinRewardValue > 0) {
+        primaryReward = {
+          type: bonusDayData.coinRewardType?.toLowerCase() || 'coins',
+          value: bonusDayData.coinRewardValue,
+          metadata: {},
+        };
+      }
+      
+      if (!alternateReward && bonusDayData.xpRewardValue && bonusDayData.xpRewardValue > 0) {
+        if (primaryReward) {
+          alternateReward = {
+            type: bonusDayData.xpRewardType?.toLowerCase() || 'xp',
+            value: bonusDayData.xpRewardValue,
+            metadata: {},
+          };
+        } else {
+          primaryReward = {
+            type: bonusDayData.xpRewardType?.toLowerCase() || 'xp',
+            value: bonusDayData.xpRewardValue,
+            metadata: {},
+          };
+        }
+      }
+      
+      // Fallback to legacy format
+      if (!primaryReward && bonusDayData.rewardType && bonusDayData.rewardValue) {
+        primaryReward = {
+          type: bonusDayData.rewardType.toLowerCase(),
+          value: bonusDayData.rewardValue,
+          metadata: {},
+        };
+        if (bonusDayData.alternateReward) {
+          alternateReward = {
+            type: bonusDayData.rewardType.toLowerCase() === 'coins' ? 'xp' : 'coins',
+            value: bonusDayData.alternateReward,
+            metadata: {},
+          };
+        }
+      }
+      
       // Map frontend fields to API structure
       const apiPayload = {
         title: `Day ${bonusDayData.bonusDay} Bonus Reward`,
         description: `Special bonus for ${bonusDayData.bonusDay}-day streak`,
-        primaryReward: {
-          type: bonusDayData.rewardType.toLowerCase(),
-          value: bonusDayData.rewardValue,
+        primaryReward: primaryReward || {
+          type: 'coins',
+          value: 0,
           metadata: {},
         },
-        alternateReward: {
-          type: "xp",
-          value:
-            bonusDayData.alternateReward ||
-            Math.floor(bonusDayData.rewardValue / 2),
-          metadata: {},
-        },
+        alternateReward: alternateReward || null,
         resetRule: {
           onMiss: bonusDayData.resetRule,
           gracePeriod: 1,
@@ -884,14 +1089,54 @@ export const challengesBonusesAPI = {
 
       const apiData = response.data.data;
 
+      // Transform response back to frontend format
+      const primaryType = apiData.primaryReward?.type?.toLowerCase() || '';
+      const alternateType = apiData.alternateReward?.type?.toLowerCase() || '';
+      
+      let coinRewardType = null;
+      let coinRewardValue = null;
+      let xpRewardType = null;
+      let xpRewardValue = null;
+      
+      if (primaryType === 'coins') {
+        coinRewardType = 'Coins';
+        coinRewardValue = apiData.primaryReward.value;
+      } else if (primaryType === 'xp') {
+        xpRewardType = 'XP';
+        xpRewardValue = apiData.primaryReward.value;
+      }
+      
+      if (alternateType === 'coins') {
+        coinRewardType = 'Coins';
+        coinRewardValue = apiData.alternateReward.value;
+      } else if (alternateType === 'xp') {
+        xpRewardType = 'XP';
+        xpRewardValue = apiData.alternateReward.value;
+      }
+
+      // Build rewards array
+      const rewards = [];
+      if (coinRewardValue) {
+        rewards.push({ type: 'Coins', value: coinRewardValue });
+      }
+      if (xpRewardValue) {
+        rewards.push({ type: 'XP', value: xpRewardValue });
+      }
+
       // Return in frontend format
       return {
         id: apiData._id,
         bonusDay: apiData.dayNumber,
-        rewardType:
-          apiData.primaryReward.type.charAt(0).toUpperCase() +
-          apiData.primaryReward.type.slice(1),
-        rewardValue: apiData.primaryReward.value,
+        // Rewards array (new format)
+        rewards: rewards.length > 0 ? rewards : null,
+        // Individual rewards (for backward compatibility)
+        coinRewardType,
+        coinRewardValue,
+        xpRewardType,
+        xpRewardValue,
+        // Legacy format
+        rewardType: primaryType ? primaryType.charAt(0).toUpperCase() + primaryType.slice(1) : null,
+        rewardValue: apiData.primaryReward?.value || null,
         alternateReward: apiData.alternateReward?.value || null,
         resetRule: apiData.resetRule.onMiss,
         createdAt: apiData.createdAt,
