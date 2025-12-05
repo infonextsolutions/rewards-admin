@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon, CalendarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-hot-toast';
 import StreakBonusConfiguration from './StreakBonusConfiguration';
 
 export default function BonusDayConfiguration({
@@ -18,9 +19,7 @@ export default function BonusDayConfiguration({
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     bonusDay: '',
-    rewardType: 'Coins',
-    rewardValue: '',
-    alternateReward: '',
+    rewards: [{ type: 'Coins', value: '' }],
     resetRule: true
   });
   const [showAddForm, setShowAddForm] = useState(false);
@@ -36,12 +35,78 @@ export default function BonusDayConfiguration({
   const resetForm = () => {
     setFormData({
       bonusDay: '',
-      rewardType: 'Coins',
-      rewardValue: '',
-      alternateReward: '',
+      rewards: [{ type: 'Coins', value: '' }],
       resetRule: true
     });
     setErrors({});
+  };
+
+  const addReward = () => {
+    setFormData(prev => {
+      // Maximum 2 rewards (Coins and XP)
+      if (prev.rewards.length >= 2) return prev;
+      
+      // Determine which reward type to use for the new reward
+      const existingTypes = prev.rewards.map(r => r.type);
+      const newType = existingTypes.includes('Coins') ? 'XP' : 'Coins';
+      
+      return {
+        ...prev,
+        rewards: [...prev.rewards, { type: newType, value: '' }]
+      };
+    });
+  };
+
+  const removeReward = (rewardIndex) => {
+    setFormData(prev => {
+      // At least one reward must remain
+      if (prev.rewards.length <= 1) return prev;
+      
+      return {
+        ...prev,
+        rewards: prev.rewards.filter((_, idx) => idx !== rewardIndex)
+      };
+    });
+    
+    // Clear errors for removed reward
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[`reward_${rewardIndex}_type`];
+      delete newErrors[`reward_${rewardIndex}_value`];
+      return newErrors;
+    });
+  };
+
+  const handleRewardChange = (rewardIndex, field, value) => {
+    setFormData(prev => {
+      const newRewards = [...prev.rewards];
+      
+      // If changing reward type, check for duplicates
+      if (field === 'type') {
+        const otherRewardTypes = prev.rewards
+          .map((r, idx) => idx !== rewardIndex ? r.type : null)
+          .filter(type => type !== null);
+        
+        // Prevent selecting a type that's already selected in another reward
+        if (otherRewardTypes.includes(value)) {
+          setErrors(prevErrors => ({
+            ...prevErrors,
+            [`reward_${rewardIndex}_type`]: 'This reward type is already selected'
+          }));
+          return prev; // Don't update if duplicate
+        }
+        
+        // Clear error if valid
+        setErrors(prevErrors => {
+          const newErrors = { ...prevErrors };
+          delete newErrors[`reward_${rewardIndex}_type`];
+          return newErrors;
+        });
+      }
+      
+      newRewards[rewardIndex] = { ...newRewards[rewardIndex], [field]: value };
+      return { ...prev, rewards: newRewards };
+    });
   };
 
   const validateForm = () => {
@@ -51,22 +116,58 @@ export default function BonusDayConfiguration({
       newErrors.bonusDay = 'Bonus day must be at least 1';
     }
 
-    if (!formData.rewardValue || formData.rewardValue < 1) {
-      newErrors.rewardValue = 'Reward value must be at least 1';
+    // Validate rewards
+    if (!formData.rewards || formData.rewards.length === 0) {
+      newErrors.rewards = 'At least one reward is required';
+    } else {
+      // Validate maximum 2 rewards
+      if (formData.rewards.length > 2) {
+        newErrors.rewards = 'Maximum 2 rewards allowed (Coins and XP)';
+      }
+      
+      // Validate no duplicate reward types
+      const rewardTypes = formData.rewards.map(r => r.type);
+      const uniqueTypes = new Set(rewardTypes);
+      if (rewardTypes.length !== uniqueTypes.size) {
+        newErrors.rewards = 'Each reward type can only be selected once';
+        formData.rewards.forEach((reward, idx) => {
+          const typeCount = rewardTypes.filter(t => t === reward.type).length;
+          if (typeCount > 1) {
+            newErrors[`reward_${idx}_type`] = 'This reward type is already selected';
+          }
+        });
+      }
+      
+      // Validate reward values
+      let hasAtLeastOneValue = false;
+      formData.rewards.forEach((reward, idx) => {
+        if (reward.value && reward.value.toString().trim() !== '') {
+          const value = parseInt(reward.value);
+          if (isNaN(value) || value < 1) {
+            newErrors[`reward_${idx}_value`] = 'Reward value must be at least 1';
+          } else {
+            hasAtLeastOneValue = true;
+          }
+        }
+      });
+      
+      if (!hasAtLeastOneValue) {
+        newErrors.rewards = 'At least one reward value must be provided';
+      }
     }
 
-    // Alternate reward validation hidden
-    // if (formData.alternateReward && (isNaN(formData.alternateReward) || formData.alternateReward < 0)) {
-    //   newErrors.alternateReward = 'Alternate reward must be a valid number >= 0';
-    // }
-
     // Check for duplicate bonus days (excluding currently editing item)
-    const existingBonus = bonusDays.find(b =>
-      b.bonusDay === parseInt(formData.bonusDay) &&
-      b.id !== editingId
-    );
-    if (existingBonus) {
-      newErrors.bonusDay = 'A bonus day for this day already exists';
+    if (formData.bonusDay) {
+      const dayNumber = parseInt(formData.bonusDay);
+      if (!isNaN(dayNumber)) {
+        const existingBonus = bonusDays.find(b =>
+          b.bonusDay === dayNumber &&
+          b.id !== editingId
+        );
+        if (existingBonus) {
+          newErrors.bonusDay = `A bonus day for Day ${dayNumber} already exists`;
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -74,13 +175,99 @@ export default function BonusDayConfiguration({
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    // Validate and get errors
+    const newErrors = {};
+    
+    if (!formData.bonusDay || formData.bonusDay < 1) {
+      newErrors.bonusDay = 'Bonus day must be at least 1';
+    }
+
+    // Validate rewards
+    if (!formData.rewards || formData.rewards.length === 0) {
+      newErrors.rewards = 'At least one reward is required';
+    } else {
+      // Validate maximum 2 rewards
+      if (formData.rewards.length > 2) {
+        newErrors.rewards = 'Maximum 2 rewards allowed (Coins and XP)';
+      }
+      
+      // Validate no duplicate reward types
+      const rewardTypes = formData.rewards.map(r => r.type);
+      const uniqueTypes = new Set(rewardTypes);
+      if (rewardTypes.length !== uniqueTypes.size) {
+        newErrors.rewards = 'Each reward type can only be selected once';
+      }
+      
+      // Validate reward values
+      let hasAtLeastOneValue = false;
+      formData.rewards.forEach((reward, idx) => {
+        if (reward.value && reward.value.toString().trim() !== '') {
+          const value = parseInt(reward.value);
+          if (isNaN(value) || value < 1) {
+            newErrors[`reward_${idx}_value`] = 'Reward value must be at least 1';
+          } else {
+            hasAtLeastOneValue = true;
+          }
+        }
+      });
+      
+      if (!hasAtLeastOneValue) {
+        newErrors.rewards = 'At least one reward value must be provided';
+      }
+    }
+
+    // Check for duplicate bonus days (excluding currently editing item)
+    if (formData.bonusDay) {
+      const dayNumber = parseInt(formData.bonusDay);
+      if (!isNaN(dayNumber)) {
+        const existingBonus = bonusDays.find(b =>
+          b.bonusDay === dayNumber &&
+          b.id !== editingId
+        );
+        if (existingBonus) {
+          newErrors.bonusDay = `A bonus day for Day ${dayNumber} already exists`;
+        }
+      }
+    }
+
+    // Set errors and show toast if validation fails
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      // Show toast for the most important error
+      if (newErrors.bonusDay) {
+        toast.error(newErrors.bonusDay);
+      } else if (newErrors.rewards) {
+        toast.error(newErrors.rewards);
+      } else {
+        // Show first error found
+        const firstError = Object.values(newErrors)[0];
+        if (firstError) {
+          toast.error(firstError);
+        }
+      }
+      return;
+    }
+
+    // Convert rewards array to the format expected by the API
+    const rewards = formData.rewards
+      .filter(r => r.value && r.value.toString().trim() !== '' && parseInt(r.value) > 0)
+      .map(r => ({
+        type: r.type,
+        value: parseInt(r.value)
+      }));
+
+    // Extract coin and XP rewards for backward compatibility
+    const coinReward = rewards.find(r => r.type === 'Coins');
+    const xpReward = rewards.find(r => r.type === 'XP');
 
     const bonusDayData = {
       bonusDay: parseInt(formData.bonusDay),
-      rewardType: formData.rewardType,
-      rewardValue: parseInt(formData.rewardValue),
-      alternateReward: formData.alternateReward ? parseInt(formData.alternateReward) : null,
+      rewards: rewards,
+      coinRewardType: coinReward ? 'Coins' : null,
+      coinRewardValue: coinReward ? coinReward.value : null,
+      xpRewardType: xpReward ? 'XP' : null,
+      xpRewardValue: xpReward ? xpReward.value : null,
       resetRule: formData.resetRule
     };
 
@@ -99,11 +286,53 @@ export default function BonusDayConfiguration({
   };
 
   const handleEdit = (bonusDay) => {
+    // Convert bonusDay data to rewards array format
+    let rewards = [];
+    
+    // Check if bonusDay has rewards array (new format)
+    if (bonusDay.rewards && Array.isArray(bonusDay.rewards) && bonusDay.rewards.length > 0) {
+      rewards = bonusDay.rewards.map(r => ({
+        type: r.type.charAt(0).toUpperCase() + r.type.slice(1), // Capitalize first letter
+        value: r.value.toString()
+      }));
+    } else {
+      // Convert from coinReward/xpReward format
+      if (bonusDay.coinRewardValue) {
+        rewards.push({
+          type: bonusDay.coinRewardType || 'Coins',
+          value: bonusDay.coinRewardValue.toString()
+        });
+      }
+      if (bonusDay.xpRewardValue) {
+        rewards.push({
+          type: bonusDay.xpRewardType || 'XP',
+          value: bonusDay.xpRewardValue.toString()
+        });
+      }
+      
+      // Fallback to legacy format
+      if (rewards.length === 0 && bonusDay.rewardType && bonusDay.rewardValue) {
+        rewards.push({
+          type: bonusDay.rewardType,
+          value: bonusDay.rewardValue.toString()
+        });
+        if (bonusDay.alternateReward) {
+          rewards.push({
+            type: bonusDay.rewardType === 'Coins' ? 'XP' : 'Coins',
+            value: bonusDay.alternateReward.toString()
+          });
+        }
+      }
+    }
+    
+    // Ensure at least one reward exists
+    if (rewards.length === 0) {
+      rewards = [{ type: 'Coins', value: '' }];
+    }
+
     setFormData({
       bonusDay: bonusDay.bonusDay.toString(),
-      rewardType: bonusDay.rewardType,
-      rewardValue: bonusDay.rewardValue.toString(),
-      alternateReward: bonusDay.alternateReward ? bonusDay.alternateReward.toString() : '',
+      rewards: rewards,
       resetRule: bonusDay.resetRule
     });
     setEditingId(bonusDay.id);
@@ -272,98 +501,187 @@ export default function BonusDayConfiguration({
             <div className="space-y-4">
               <h3 className="text-md font-medium text-blue-900">Add New Bonus Day</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Bonus Day *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.bonusDay}
-                      onChange={(e) => setFormData({...formData, bonusDay: e.target.value})}
-                      className={`w-full px-3 py-2 pl-10 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.bonusDay ? 'border-red-300' : 'border-gray-300'}`}
-                      placeholder="7"
-                    />
-                    <CalendarIcon className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bonus Day *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.bonusDay}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData({...formData, bonusDay: value});
+                          // Clear error when user starts typing
+                          if (errors.bonusDay) {
+                            setErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.bonusDay;
+                              return newErrors;
+                            });
+                          }
+                          // Real-time validation for duplicate days
+                          if (value) {
+                            const dayNumber = parseInt(value);
+                            if (!isNaN(dayNumber)) {
+                              const existingBonus = bonusDays.find(b =>
+                                b.bonusDay === dayNumber &&
+                                b.id !== editingId
+                              );
+                              if (existingBonus) {
+                                setErrors(prev => ({
+                                  ...prev,
+                                  bonusDay: `A bonus day for Day ${dayNumber} already exists`
+                                }));
+                                toast.error(`Day ${dayNumber} already exists`);
+                              }
+                            }
+                          }
+                        }}
+                        className={`w-full px-3 py-2 pl-10 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.bonusDay ? 'border-red-300' : 'border-gray-300'}`}
+                        placeholder="7"
+                      />
+                      <CalendarIcon className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
+                    </div>
+                    {errors.bonusDay && (
+                      <p className="mt-1 text-sm text-red-600">{errors.bonusDay}</p>
+                    )}
                   </div>
-                  {errors.bonusDay && (
-                    <p className="mt-1 text-sm text-red-600">{errors.bonusDay}</p>
-                  )}
+
+                  <div className="flex flex-col justify-end">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={formData.resetRule}
+                        onChange={(e) => setFormData({...formData, resetRule: e.target.checked})}
+                        className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Reset streak on miss</span>
+                    </label>
+                  </div>
                 </div>
 
+                {/* Rewards Section */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Reward Type *
-                  </label>
-                  <select
-                    value={formData.rewardType}
-                    onChange={(e) => setFormData({...formData, rewardType: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    {rewardTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Reward Value *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.rewardValue}
-                      onChange={(e) => setFormData({...formData, rewardValue: e.target.value})}
-                      className={`w-full px-3 py-2 pr-12 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.rewardValue ? 'border-red-300' : 'border-gray-300'}`}
-                      placeholder="100"
-                    />
-                    <span className="absolute right-3 top-2.5 text-xs text-gray-500">
-                      {formData.rewardType.toLowerCase()}
-                    </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Rewards *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addReward}
+                      disabled={formData.rewards.length >= 2}
+                      className={`text-sm font-medium ${
+                        formData.rewards.length >= 2
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-emerald-600 hover:text-emerald-700'
+                      }`}
+                      title={formData.rewards.length >= 2 ? 'Maximum 2 rewards allowed (Coins and XP)' : 'Add Reward'}
+                    >
+                      + Add Reward
+                    </button>
                   </div>
-                  {errors.rewardValue && (
-                    <p className="mt-1 text-sm text-red-600">{errors.rewardValue}</p>
-                  )}
-                </div>
+                  <div className="space-y-3">
+                    {formData.rewards.map((reward, rewardIndex) => {
+                      const selectedTypes = formData.rewards
+                        .map((r, idx) => idx !== rewardIndex ? r.type : null)
+                        .filter(type => type !== null);
+                      
+                      return (
+                        <div
+                          key={rewardIndex}
+                          className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-md"
+                        >
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* Reward Type */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Reward Type
+                              </label>
+                              <select
+                                value={reward.type}
+                                onChange={(e) =>
+                                  handleRewardChange(rewardIndex, 'type', e.target.value)
+                                }
+                                className={`w-full px-3 py-2 text-sm border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                                  errors[`reward_${rewardIndex}_type`]
+                                    ? 'border-red-300'
+                                    : 'border-gray-300'
+                                }`}
+                              >
+                                {rewardTypes.map(type => {
+                                  const isDisabled = selectedTypes.includes(type);
+                                  return (
+                                    <option 
+                                      key={type} 
+                                      value={type}
+                                      disabled={isDisabled}
+                                    >
+                                      {type}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                              {errors[`reward_${rewardIndex}_type`] && (
+                                <p className="mt-1 text-xs text-red-600">
+                                  {errors[`reward_${rewardIndex}_type`]}
+                                </p>
+                              )}
+                            </div>
 
-                {/* Alternate Reward field hidden */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Alternate Reward
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.alternateReward}
-                      onChange={(e) => setFormData({...formData, alternateReward: e.target.value})}
-                      className={`w-full px-3 py-2 pr-12 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${errors.alternateReward ? 'border-red-300' : 'border-gray-300'}`}
-                      placeholder="Enter Value"
-                    />
-                    <span className="absolute right-3 top-2.5 text-xs text-gray-500">
-                      {formData.rewardType.toLowerCase()}
-                    </span>
+                            {/* Reward Value */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Reward Value
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={reward.value}
+                                  onChange={(e) =>
+                                    handleRewardChange(rewardIndex, 'value', e.target.value)
+                                  }
+                                  className={`w-full px-3 py-2 pr-10 text-sm border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                                    errors[`reward_${rewardIndex}_value`]
+                                      ? 'border-red-300'
+                                      : 'border-gray-300'
+                                  }`}
+                                  placeholder="Enter value"
+                                />
+                                <span className="absolute right-3 top-2.5 text-xs text-gray-500">
+                                  {getRewardIcon(reward.type)}
+                                </span>
+                              </div>
+                              {errors[`reward_${rewardIndex}_value`] && (
+                                <p className="mt-1 text-xs text-red-600">
+                                  {errors[`reward_${rewardIndex}_value`]}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {formData.rewards.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeReward(rewardIndex)}
+                              className="mt-6 text-red-600 hover:text-red-700"
+                              title="Remove reward"
+                            >
+                              <XMarkIcon className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">Optional — backup reward if primary missed</p>
-                  {errors.alternateReward && (
-                    <p className="mt-1 text-sm text-red-600">{errors.alternateReward}</p>
+                  {errors.rewards && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.rewards}
+                    </p>
                   )}
-                </div> */}
-
-                <div className="flex flex-col justify-end">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.resetRule}
-                      onChange={(e) => setFormData({...formData, resetRule: e.target.checked})}
-                      className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Reset streak on miss</span>
-                  </label>
                 </div>
               </div>
 
@@ -398,10 +716,7 @@ export default function BonusDayConfiguration({
                   Bonus Day
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reward Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reward Value
+                  Rewards
                 </th>
                 {/* Alternate Reward column hidden */}
                 {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -418,7 +733,7 @@ export default function BonusDayConfiguration({
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedBonusDays.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                     No bonus days configured yet. Add your first bonus day to get started.
                   </td>
                 </tr>
@@ -434,31 +749,126 @@ export default function BonusDayConfiguration({
                               type="number"
                               min="1"
                               value={formData.bonusDay}
-                              onChange={(e) => setFormData({...formData, bonusDay: e.target.value})}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setFormData({...formData, bonusDay: value});
+                                // Clear error when user starts typing
+                                if (errors.bonusDay) {
+                                  setErrors(prev => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors.bonusDay;
+                                    return newErrors;
+                                  });
+                                }
+                                // Real-time validation for duplicate days
+                                if (value) {
+                                  const dayNumber = parseInt(value);
+                                  if (!isNaN(dayNumber)) {
+                                    const existingBonus = bonusDays.find(b =>
+                                      b.bonusDay === dayNumber &&
+                                      b.id !== editingId
+                                    );
+                                    if (existingBonus) {
+                                      setErrors(prev => ({
+                                        ...prev,
+                                        bonusDay: `A bonus day for Day ${dayNumber} already exists`
+                                      }));
+                                      toast.error(`Day ${dayNumber} already exists`);
+                                    }
+                                  }
+                                }
+                              }}
                               className={`w-20 px-2 py-1 pl-8 border rounded text-sm ${errors.bonusDay ? 'border-red-300' : 'border-gray-300'}`}
                             />
+                            {errors.bonusDay && (
+                              <p className="mt-1 text-xs text-red-600">{errors.bonusDay}</p>
+                            )}
                             <CalendarIcon className="h-4 w-4 text-gray-400 absolute left-2 top-1.5" />
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={formData.rewardType}
-                            onChange={(e) => setFormData({...formData, rewardType: e.target.value})}
-                            className="w-28 px-2 py-1 border border-gray-300 rounded text-sm"
-                          >
-                            {rewardTypes.map(type => (
-                              <option key={type} value={type}>{type}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="number"
-                            min="1"
-                            value={formData.rewardValue}
-                            onChange={(e) => setFormData({...formData, rewardValue: e.target.value})}
-                            className={`w-20 px-2 py-1 border rounded text-sm ${errors.rewardValue ? 'border-red-300' : 'border-gray-300'}`}
-                          />
+                        <td className="px-6 py-4">
+                          <div className="space-y-2 min-w-[300px]">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-gray-600">Rewards</span>
+                              <button
+                                type="button"
+                                onClick={addReward}
+                                disabled={formData.rewards.length >= 2}
+                                className={`text-xs font-medium ${
+                                  formData.rewards.length >= 2
+                                    ? 'text-gray-400 cursor-not-allowed'
+                                    : 'text-emerald-600 hover:text-emerald-700'
+                                }`}
+                                title={formData.rewards.length >= 2 ? 'Maximum 2 rewards allowed' : 'Add Reward'}
+                              >
+                                + Add
+                              </button>
+                            </div>
+                            {formData.rewards.map((reward, rewardIndex) => {
+                              const selectedTypes = formData.rewards
+                                .map((r, idx) => idx !== rewardIndex ? r.type : null)
+                                .filter(type => type !== null);
+                              
+                              return (
+                                <div
+                                  key={rewardIndex}
+                                  className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded"
+                                >
+                                  <select
+                                    value={reward.type}
+                                    onChange={(e) =>
+                                      handleRewardChange(rewardIndex, 'type', e.target.value)
+                                    }
+                                    className={`w-20 px-2 py-1 text-xs border rounded ${
+                                      errors[`reward_${rewardIndex}_type`]
+                                        ? 'border-red-300'
+                                        : 'border-gray-300'
+                                    }`}
+                                  >
+                                    {rewardTypes.map(type => {
+                                      const isDisabled = selectedTypes.includes(type);
+                                      return (
+                                        <option 
+                                          key={type} 
+                                          value={type}
+                                          disabled={isDisabled}
+                                        >
+                                          {type}
+                                        </option>
+                                      );
+                                    })}
+                                  </select>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={reward.value}
+                                    onChange={(e) =>
+                                      handleRewardChange(rewardIndex, 'value', e.target.value)
+                                    }
+                                    className={`flex-1 px-2 py-1 text-xs border rounded ${
+                                      errors[`reward_${rewardIndex}_value`]
+                                        ? 'border-red-300'
+                                        : 'border-gray-300'
+                                    }`}
+                                    placeholder="Value"
+                                  />
+                                  {formData.rewards.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeReward(rewardIndex)}
+                                      className="text-red-600 hover:text-red-700"
+                                      title="Remove reward"
+                                    >
+                                      <XMarkIcon className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {errors.rewards && (
+                              <p className="text-xs text-red-600">{errors.rewards}</p>
+                            )}
+                          </div>
                         </td>
                         {/* Alternate Reward input hidden */}
                         {/* <td className="px-6 py-4 whitespace-nowrap">
@@ -512,19 +922,54 @@ export default function BonusDayConfiguration({
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div className="flex items-center">
-                            <span className="mr-2">{getRewardIcon(bonusDay.rewardType)}</span>
-                            <span className="font-medium">{bonusDay.rewardType}</span>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <div className="space-y-1">
+                            {/* Display rewards from array (new format) */}
+                            {bonusDay.rewards && Array.isArray(bonusDay.rewards) && bonusDay.rewards.length > 0 ? (
+                              bonusDay.rewards.map((reward, idx) => (
+                                <div key={idx} className="flex items-center">
+                                  <span className="mr-2">{getRewardIcon(reward.type)}</span>
+                                  <span className="font-medium mr-2">{reward.type}:</span>
+                                  <span className="font-medium text-emerald-600">
+                                    {reward.value.toLocaleString()}
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <>
+                                {/* Display Coin Reward */}
+                                {bonusDay.coinRewardValue && (
+                                  <div className="flex items-center">
+                                    <span className="mr-2">{getRewardIcon(bonusDay.coinRewardType || 'Coins')}</span>
+                                    <span className="font-medium mr-2">{bonusDay.coinRewardType || 'Coins'}:</span>
+                                    <span className="font-medium text-emerald-600">
+                                      {bonusDay.coinRewardValue.toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Display XP Reward */}
+                                {bonusDay.xpRewardValue && (
+                                  <div className="flex items-center">
+                                    <span className="mr-2">{getRewardIcon(bonusDay.xpRewardType || 'XP')}</span>
+                                    <span className="font-medium mr-2">{bonusDay.xpRewardType || 'XP'}:</span>
+                                    <span className="font-medium text-emerald-600">
+                                      {bonusDay.xpRewardValue.toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Fallback for legacy data */}
+                                {!bonusDay.coinRewardValue && !bonusDay.xpRewardValue && bonusDay.rewardType && bonusDay.rewardValue && (
+                                  <div className="flex items-center">
+                                    <span className="mr-2">{getRewardIcon(bonusDay.rewardType)}</span>
+                                    <span className="font-medium mr-2">{bonusDay.rewardType}:</span>
+                                    <span className="font-medium text-emerald-600">
+                                      {bonusDay.rewardValue.toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span
-                            className="font-medium text-emerald-600"
-                            title={`${bonusDay.rewardValue} ${bonusDay.rewardType.toLowerCase()}`}
-                          >
-                            {bonusDay.rewardValue.toLocaleString()}
-                          </span>
                         </td>
                         {/* Alternate Reward data column hidden */}
                         {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
