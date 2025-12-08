@@ -15,8 +15,6 @@ import AdvancedFilter from '../../components/rewards/AdvancedFilter';
 import RewardsSummary from '../../components/rewards/RewardsSummary';
 import DailyRewards from '../../components/rewards/DailyRewards';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://rewardsapi.hireagent.co/api';
-
 export default function RewardsPage() {
   const {
     getDataByTab,

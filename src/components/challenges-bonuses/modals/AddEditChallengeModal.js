@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { XMarkIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { useMasterData } from "../../../hooks/useMasterData";
 import { gamesAPI } from "../../../data/games";
+import apiClient from "../../../lib/apiClient";
 
 // Only allow creation of supported challenge types
 const CHALLENGE_TYPES = ["Spin", "Game", "Survey"];
@@ -124,21 +125,11 @@ export default function AddEditChallengeModal({
       ) {
         setLoadingGames(true);
         try {
-          const token = localStorage.getItem("token");
           const sdkName = formData.sdkProvider.toLowerCase();
-          const response = await fetch(
-            `${
-              process.env.NEXT_PUBLIC_API_BASE ||
-              "https://rewardsapi.hireagent.co/api"
-            }/admin/game-offers/games/by-sdk/${sdkName}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
+          const response = await apiClient.get(
+            `/admin/game-offers/games/by-sdk/${sdkName}`
           );
-          const result = await response.json();
+          const result = response.data;
 
           if (result.success && result.data) {
             setGamesList(

@@ -2,27 +2,7 @@
 
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
-
-const apiClient = axios.create({
-  baseURL: `${API_BASE}/admin`,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-apiClient.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
+import apiClient from "../../lib/apiClient";
 
 export default function DailyRewards({ onSave, onCancel }) {
   const [loading, setLoading] = useState(false);
@@ -89,7 +69,7 @@ export default function DailyRewards({ onSave, onCancel }) {
   const fetchConfiguration = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get("/daily-rewards-v2/config");
+      const response = await apiClient.get("/admin/daily-rewards-v2/config");
       if (response.data.success && response.data.data) {
         const data = response.data.data;
         // Transform API response to match component state
@@ -354,7 +334,7 @@ export default function DailyRewards({ onSave, onCancel }) {
       };
 
       const response = await apiClient.post(
-        "/daily-rewards-v2/config",
+        "/admin/daily-rewards-v2/config",
         apiPayload
       );
       if (response.data.success) {

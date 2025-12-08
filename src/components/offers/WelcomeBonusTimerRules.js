@@ -24,6 +24,8 @@ const initialWelcomeBonusSettings = {
   overrideByXP: false,
   xpThreshold: 200,
   enableRule: true,
+  maxGamesWithBonusTasks: 3,
+  maxBonusTasksPerGame: 3,
 };
 
 const initialGameplaySettings = {
@@ -259,6 +261,8 @@ export default function WelcomeBonusTimerRules() {
             ? config.xpTierOverrides[0].minXp
             : 200,
         enableRule: config.isActive,
+        maxGamesWithBonusTasks: config.maxGamesWithBonusTasks || 3,
+        maxBonusTasksPerGame: config.maxBonusTasksPerGame || 3,
       });
       setLastSaved(config.updatedAt);
     }
@@ -372,6 +376,8 @@ export default function WelcomeBonusTimerRules() {
       const configData = {
         unlockTimeHours: welcomeBonusSettings.unlockWindow.value,
         completionDeadlineDays: welcomeBonusSettings.completionDeadline.value,
+        maxGamesWithBonusTasks: welcomeBonusSettings.maxGamesWithBonusTasks || 3,
+        maxBonusTasksPerGame: welcomeBonusSettings.maxBonusTasksPerGame || 3,
         gameOverrides:
           welcomeBonusSettings.overrideByGameId &&
           welcomeBonusSettings.selectedGames.length > 0
@@ -443,6 +449,13 @@ export default function WelcomeBonusTimerRules() {
   };
 
   const handleTaskSelect = (taskId, order) => {
+    // Check maxBonusTasksPerGame limit
+    const maxTasks = welcomeBonusSettings.maxBonusTasksPerGame || 3;
+    if (order > maxTasks) {
+      alert(`Maximum ${maxTasks} bonus tasks allowed per game`);
+      return;
+    }
+    
     setBonusTasksConfig((prev) => {
       const existingIndex = prev.bonusTasks.findIndex(
         (bt) => bt.order === order
@@ -517,8 +530,10 @@ export default function WelcomeBonusTimerRules() {
       return;
     }
 
-    if (bonusTasksConfig.bonusTasks.length > 3) {
-      alert("Maximum 3 bonus tasks allowed");
+    // Get maxBonusTasksPerGame from welcome bonus settings
+    const maxTasks = welcomeBonusSettings.maxBonusTasksPerGame || 3;
+    if (bonusTasksConfig.bonusTasks.length > maxTasks) {
+      alert(`Maximum ${maxTasks} bonus tasks allowed per game`);
       return;
     }
 
@@ -1032,6 +1047,54 @@ export default function WelcomeBonusTimerRules() {
                   </div> */}
                 </div>
 
+                {/* Bonus Tasks Configuration */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max Games with Bonus Tasks
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Number of games (per user) that should have bonus tasks (based on download order)
+                    </p>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={welcomeBonusSettings.maxGamesWithBonusTasks || 3}
+                      onChange={(e) =>
+                        handleWelcomeBonusChange(
+                          "maxGamesWithBonusTasks",
+                          parseInt(e.target.value) || 3
+                        )
+                      }
+                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      disabled={!welcomeBonusSettings.enableRule}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max Bonus Tasks Per Game
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Maximum number of bonus tasks that can be configured per game
+                    </p>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={welcomeBonusSettings.maxBonusTasksPerGame || 3}
+                      onChange={(e) =>
+                        handleWelcomeBonusChange(
+                          "maxBonusTasksPerGame",
+                          parseInt(e.target.value) || 3
+                        )
+                      }
+                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      disabled={!welcomeBonusSettings.enableRule}
+                    />
+                  </div>
+                </div>
+
                 {/* PHASE 2: Override Settings temporarily hidden */}
                 {/* <div className="space-y-6">
                   <h4 className="text-sm font-medium text-gray-900">Override Settings</h4>
@@ -1231,36 +1294,22 @@ export default function WelcomeBonusTimerRules() {
                               available.
                             </span>
                           </div>
-                          {bonusTasksConfig.bonusTasks.some(
-                            (bt) => bt.order === 2
-                          ) && (
-                            <div className="flex items-start">
-                              <span className="font-semibold mr-2">
-                                Bonus Task 2:
-                              </span>
-                              <span>
-                                Unlocks only after Bonus Task 1 is completed AND
-                                event threshold (
-                                {bonusTasksConfig.minimumEventThreshold} events)
-                                is met.
-                              </span>
-                            </div>
-                          )}
-                          {bonusTasksConfig.bonusTasks.some(
-                            (bt) => bt.order === 3
-                          ) && (
-                            <div className="flex items-start">
-                              <span className="font-semibold mr-2">
-                                Bonus Task 3:
-                              </span>
-                              <span>
-                                Unlocks only after Bonus Task 2 is completed AND
-                                event threshold (
-                                {bonusTasksConfig.minimumEventThreshold} events)
-                                is met.
-                              </span>
-                            </div>
-                          )}
+                          {bonusTasksConfig.bonusTasks
+                            .filter((bt) => bt.order > 1)
+                            .sort((a, b) => a.order - b.order)
+                            .map((bt) => (
+                              <div key={bt.order} className="flex items-start">
+                                <span className="font-semibold mr-2">
+                                  Bonus Task {bt.order}:
+                                </span>
+                                <span>
+                                  Unlocks only after Bonus Task {bt.order - 1} is completed AND
+                                  event threshold (
+                                  {bonusTasksConfig.minimumEventThreshold} events)
+                                  is met.
+                                </span>
+                              </div>
+                            ))}
                           <div className="mt-3 pt-2 border-t border-green-300">
                             <p className="font-semibold">⏱️ Fixed Timer:</p>
                             <p className="mt-1">
@@ -1350,7 +1399,7 @@ export default function WelcomeBonusTimerRules() {
                                         disabled={
                                           !isSelected &&
                                           bonusTasksConfig.bonusTasks.length >=
-                                            3
+                                            (welcomeBonusSettings.maxBonusTasksPerGame || 3)
                                         }
                                         className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
                                       />
@@ -1569,7 +1618,7 @@ export default function WelcomeBonusTimerRules() {
                   <div>
                     <span className="text-gray-600">Bonus Tasks:</span>
                     <span className="ml-2 font-medium text-gray-900">
-                      {bonusTasksConfig.bonusTasks.length} of 3 selected
+                      {bonusTasksConfig.bonusTasks.length} of {welcomeBonusSettings.maxBonusTasksPerGame || 3} selected
                     </span>
                   </div>
                 </div>

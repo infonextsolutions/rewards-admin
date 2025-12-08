@@ -91,7 +91,7 @@ export const gamesAPI = {
         xptrRules: game.xptrRules || "No rules defined",
         taskCount: 0,
         activeTasks: 0,
-        countries: game.countries || [],
+        // Countries field removed from Game model
         status: game.isActive ? "Active" : "Inactive",
         rewardXP: 0,
         rewardCoins: 0,
@@ -179,7 +179,7 @@ export const gamesAPI = {
         xptrRules: game.xptrRules || "No rules defined",
         taskCount: game.taskCount || 0,
         activeTasks: 0,
-        countries: game.countries || [],
+        // Countries field removed from Game model
         status: game.isActive ? "Active" : "Inactive",
         rewardXP: 0,
         rewardCoins: 0,
@@ -237,7 +237,7 @@ export const gamesAPI = {
         xptrRules: game.xptrRules || "No rules defined",
         taskCount: game.taskCount || 0,
         activeTasks: 0, // Not in API, placeholder
-        countries: game.countries || [],
+        // Countries field removed from Game model
         status: game.isActive ? "Active" : "Inactive",
         rewardXP: 0, // Not in API
         rewardCoins: 0, // Not in API
@@ -376,7 +376,7 @@ export const gamesAPI = {
           taskCount: game.defaultTaskCount !== undefined ? game.defaultTaskCount : (game.taskCount || 0),
           defaultTasks: game.defaultTaskCount !== undefined ? game.defaultTaskCount : (game.taskCount || 0), // For display in table - prioritize defaultTaskCount from DB
           activeTasks: 0, // Not in API, placeholder
-          countries: game.countries || [],
+          // Countries field removed from Game model
           status: game.isActive ? "Active" : "Inactive",
           rewardXP: game.rewards?.xp || 0,
           rewardCoins: game.rewards?.coins || 0,

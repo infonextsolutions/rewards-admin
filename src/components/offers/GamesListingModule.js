@@ -430,7 +430,8 @@ export default function GamesListingModule() {
           </div>
         );
       case "countries":
-        return getCountryFlags(game.countries);
+        // Countries field removed from Game model
+        return <span className="text-sm text-gray-400">N/A</span>;
       case "defaultTasks":
         return (
           <div>
@@ -830,7 +831,6 @@ export default function GamesListingModule() {
                         className={`px-6 py-4 align-top ${
                           col.key === "xptrRules" ||
                           col.key === "xpTier" ||
-                          col.key === "countries" ||
                           col.key === "uiSection"
                             ? ""
                             : "whitespace-nowrap"

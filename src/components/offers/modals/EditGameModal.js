@@ -121,7 +121,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     xpMultiplier: 1.0, // Stepwise multiplier
     tier: "",
     uiSection: "",
-    countries: [],
+    // Countries field removed from Game model
     tags: [],
     metadata: {
       genre: "puzzle",
@@ -172,7 +172,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           game.xpMultiplier || game.xpRewardConfig?.multiplier || 1.0,
         tier: game.tier || "",
         uiSection: game.uiSection || "",
-        countries: game.countries || [],
+        // Countries field removed from Game model
         tags: game.tags || [],
         metadata: {
           genre: game.metadata?.genre || "puzzle",
@@ -219,7 +219,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         xpMultiplier: 1.0,
         tier: "",
         uiSection: "",
-        countries: [],
+        // Countries field removed from Game model
         tags: [],
         metadata: {
           genre: "puzzle",
@@ -333,14 +333,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     }
   };
 
-  const handleCountryToggle = (country) => {
-    setFormData((prev) => ({
-      ...prev,
-      countries: prev.countries.includes(country)
-        ? prev.countries.filter((c) => c !== country)
-        : [...prev.countries, country],
-    }));
-  };
+  // handleCountryToggle removed - countries field removed from Game model
 
   const handleMultiSelectChange = (field, value) => {
     const [section, subField] = field.split(".");
@@ -474,11 +467,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       return;
     }
 
-    // Only validate countries when editing (not when adding new game)
-    if (game && (!formData.countries || formData.countries.length === 0)) {
-      toast.error("Please select at least one country");
-      return;
-    }
+    // Countries validation removed - countries field removed from Game model
 
     // Validate XP Tiers (at least one must be selected)
     if (!formData.xpTiers || formData.xpTiers.length === 0) {
@@ -538,7 +527,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       difficulty: formData.metadata.difficulty,
       rating: parseFloat(formData.metadata.rating) || 3,
       estimatedPlayTime: parseInt(formData.metadata.estimatedPlayTime) || 15,
-      countries: formData.countries,
+      // Countries field removed from Game model
       ageGroups: formData.segments.ageGroups,
       gender: formData.segments.gender || "all",
       marketingChannel: formData.segments.marketingChannel,

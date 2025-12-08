@@ -46,7 +46,7 @@ export const displayRulesAPI = {
           conditions: conditions,
           enabled: rule.isEnabled,
           priority: rule.metadata?.priority || rule.order || 1,
-          targetSegment: rule.metadata?.targetSegment || (rule.segmentOverrides?.length > 0
+          targetSegment: rule.targetSegment || rule.metadata?.targetSegment || (rule.segmentOverrides?.length > 0
             ? `${rule.segmentOverrides.length} segment override(s)`
             : 'All Users'),
           appliedCount: 0, // Not in API
@@ -106,17 +106,32 @@ export const displayRulesAPI = {
         maxGamesToShow: ruleData.maxGames || ruleData.maxGamesToShow || 5,
         segmentOverrides: ruleData.segmentOverrides || [],
         isEnabled: ruleData.enabled !== undefined ? ruleData.enabled : true,
-        order: ruleData.order || ruleData.priority || 1,
+        order: ruleData.order || ruleData.priority || ruleData.metadata?.priority || 1,
         xpTier: ruleData.xpTier || null,
         membershipTier: ruleData.membershipTier || null,
-        // Include gameCountLimits if provided
-        gameCountLimits: ruleData.gameCountLimits || null,
+        // Send targetSegment as top-level field
+        targetSegment: ruleData.targetSegment || ruleData.metadata?.targetSegment || null,
+        // Include gameCountLimits if provided (send even if all values are null)
+        gameCountLimits: ruleData.gameCountLimits || {
+          xpTierLimits: {
+            junior: null,
+            mid: null,
+            senior: null
+          },
+          membershipTierLimits: {
+            bronze: null,
+            gold: null,
+            platinum: null,
+            free: null
+          },
+          newUsersLimit: null
+        },
         metadata: {
           description: ruleData.name || ruleData.metadata?.description || '',
           notes: ruleData.description || ruleData.metadata?.notes || '',
-          priority: ruleData.priority || ruleData.metadata?.priority || 1,
-          // Store targetSegment in metadata for reference
-          targetSegment: ruleData.targetSegment || null
+          priority: ruleData.priority || ruleData.metadata?.priority || ruleData.order || 1,
+          // Also store targetSegment in metadata for backward compatibility
+          targetSegment: ruleData.targetSegment || ruleData.metadata?.targetSegment || null
         }
       };
 
@@ -157,9 +172,9 @@ export const displayRulesAPI = {
         conditions: conditions,
         enabled: rule.isEnabled,
         priority: rule.metadata?.priority || rule.order || 1,
-        targetSegment: rule.segmentOverrides?.length > 0
-          ? `${rule.segmentOverrides.length} segment override(s)`
-          : 'All Users',
+        targetSegment: rule.targetSegment || rule.metadata?.targetSegment || (rule.segmentOverrides?.length > 0
+            ? `${rule.segmentOverrides.length} segment override(s)`
+            : 'All Users'),
         appliedCount: 0,
         conversionRate: 'N/A',
         lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],
@@ -194,8 +209,12 @@ export const displayRulesAPI = {
       if (ruleData.enabled !== undefined) apiPayload.isEnabled = ruleData.enabled;
       if (ruleData.xpTier !== undefined) apiPayload.xpTier = ruleData.xpTier;
       if (ruleData.membershipTier !== undefined) apiPayload.membershipTier = ruleData.membershipTier;
-      // Include gameCountLimits if provided
-      if (ruleData.gameCountLimits !== undefined) apiPayload.gameCountLimits = ruleData.gameCountLimits;
+      // Update targetSegment as top-level field
+      if (ruleData.targetSegment !== undefined) apiPayload.targetSegment = ruleData.targetSegment;
+      // Include gameCountLimits if provided (always send it, even if all values are null)
+      if (ruleData.gameCountLimits !== undefined) {
+        apiPayload.gameCountLimits = ruleData.gameCountLimits;
+      }
       
       // Handle userMilestones update
       if (ruleData.userMilestones !== undefined) {
@@ -204,12 +223,21 @@ export const displayRulesAPI = {
         apiPayload.userMilestones = [ruleData.userMilestone];
       }
 
+      // Update order/priority if provided
+      if (ruleData.order !== undefined) apiPayload.order = ruleData.order;
+      if (ruleData.priority !== undefined) {
+        apiPayload.order = ruleData.priority;
+      }
+
       // Update metadata if provided
       if (ruleData.name || ruleData.description || ruleData.priority !== undefined || ruleData.targetSegment !== undefined) {
         apiPayload.metadata = {};
         if (ruleData.name) apiPayload.metadata.description = ruleData.name;
         if (ruleData.description) apiPayload.metadata.notes = ruleData.description;
-        if (ruleData.priority !== undefined) apiPayload.metadata.priority = ruleData.priority;
+        if (ruleData.priority !== undefined) {
+          apiPayload.metadata.priority = ruleData.priority;
+          apiPayload.order = ruleData.priority; // Also update order
+        }
         if (ruleData.targetSegment !== undefined) apiPayload.metadata.targetSegment = ruleData.targetSegment;
       }
 
@@ -250,9 +278,9 @@ export const displayRulesAPI = {
         conditions: conditions,
         enabled: rule.isEnabled,
         priority: rule.metadata?.priority || rule.order || 1,
-        targetSegment: rule.metadata?.targetSegment || (rule.segmentOverrides?.length > 0
-          ? `${rule.segmentOverrides.length} segment override(s)`
-          : 'All Users'),
+        targetSegment: rule.targetSegment || rule.metadata?.targetSegment || (rule.segmentOverrides?.length > 0
+            ? `${rule.segmentOverrides.length} segment override(s)`
+            : 'All Users'),
         appliedCount: 0,
         conversionRate: 'N/A',
         lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],

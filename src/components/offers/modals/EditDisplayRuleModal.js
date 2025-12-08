@@ -1,144 +1,128 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import { gamesAPI } from '../../../data/games';
+import { useState, useEffect } from "react";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 const targetSegmentOptions = [
-  'New Users',
-  'Engaged Users',
-  'Bronze Tier',
-  'Platinum Tier',
-  'Gold Tier',
-  'All Users',
-  'Premium Users'
+  "New Users",
+  "Engaged Users",
+  "Bronze Tier",
+  "Platinum Tier",
+  "Gold Tier",
+  "All Users",
 ];
 
-export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) {
+export default function EditDisplayRuleModal({
+  isOpen,
+  onClose,
+  rule,
+  onSave,
+}) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     maxGames: 2,
     enabled: true,
-    targetSegment: 'New Users',
+    targetSegment: "New Users",
     gameCountLimits: {
       xpTierLimits: {
         junior: null,
         mid: null,
-        senior: null
+        senior: null,
       },
       membershipTierLimits: {
         bronze: null,
         gold: null,
         platinum: null,
-        free: null
+        free: null,
       },
-      newUsersLimit: null
-    }
+      newUsersLimit: null,
+    },
   });
-
-  // Fetch games using the same API as game listing
-  const [availableGames, setAvailableGames] = useState([]);
-  const [loadingGames, setLoadingGames] = useState(false);
-
-  useEffect(() => {
-    const fetchGames = async () => {
-      setLoadingGames(true);
-      try {
-        const response = await gamesAPI.getGames({
-          page: 1,
-          limit: 1000,
-          status: 'all'
-        });
-        setAvailableGames(response.games || []);
-      } catch (error) {
-        console.error('Error fetching games:', error);
-        setAvailableGames([]);
-      } finally {
-        setLoadingGames(false);
-      }
-    };
-    fetchGames();
-  }, []);
 
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (rule) {
       setFormData({
-        name: rule.name || '',
-        description: rule.description || '',
-        maxGames: rule.maxGames === 999 ? 999 : (typeof rule.maxGames === 'string' && rule.maxGames.startsWith('+') ? parseInt(rule.maxGames.substring(1)) : rule.maxGames) || 2,
+        name: rule.name || "",
+        description: rule.description || "",
+        maxGames:
+          rule.maxGames === 999
+            ? 999
+            : (typeof rule.maxGames === "string" &&
+              rule.maxGames.startsWith("+")
+                ? parseInt(rule.maxGames.substring(1))
+                : rule.maxGames) || 2,
         enabled: rule.enabled !== undefined ? rule.enabled : true,
-        targetSegment: rule.targetSegment || 'New Users',
+        targetSegment: rule.targetSegment || "New Users",
         gameCountLimits: rule.gameCountLimits || {
           xpTierLimits: {
             junior: null,
             mid: null,
-            senior: null
+            senior: null,
           },
           membershipTierLimits: {
             bronze: null,
             gold: null,
             platinum: null,
-            free: null
+            free: null,
           },
-          newUsersLimit: null
-        }
+          newUsersLimit: null,
+        },
       });
     } else {
       // Reset form for new rule
       setFormData({
-        name: '',
-        description: '',
+        name: "",
+        description: "",
         maxGames: 2,
         enabled: true,
-        targetSegment: 'New Users',
+        targetSegment: "New Users",
         gameCountLimits: {
           xpTierLimits: {
             junior: null,
             mid: null,
-            senior: null
+            senior: null,
           },
           membershipTierLimits: {
             bronze: null,
             gold: null,
             platinum: null,
-            free: null
+            free: null,
           },
-          newUsersLimit: null
-        }
+          newUsersLimit: null,
+        },
       });
     }
     setErrors({});
   }, [rule, isOpen]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: "",
       }));
     }
   };
-
 
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Rule name is required';
+      newErrors.name = "Rule name is required";
     }
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = "Description is required";
     }
     if (formData.maxGames < 1) {
-      newErrors.maxGames = 'Max games must be at least 1';
+      newErrors.maxGames = "Max games must be at least 1";
     }
 
     setErrors(newErrors);
@@ -152,8 +136,8 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
         id: rule?.id || `RULE${Date.now()}`,
         ...formData,
         appliedCount: rule?.appliedCount || 0,
-        conversionRate: rule?.conversionRate || '0%',
-        lastModified: new Date().toISOString().split('T')[0]
+        conversionRate: rule?.conversionRate || "0%",
+        lastModified: new Date().toISOString().split("T")[0],
       });
       onClose();
     }
@@ -164,13 +148,16 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose}></div>
+        <div
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={onClose}
+        ></div>
 
         <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full z-50">
           <div className="bg-white px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900">
-                {rule ? 'Edit Display Rule' : 'Create New Display Rule'}
+                {rule ? "Edit Display Rule" : "Create New Display Rule"}
               </h3>
               <button
                 onClick={onClose}
@@ -184,7 +171,9 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Basic Information */}
             <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-4">Basic Information</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-4">
+                Basic Information
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -193,13 +182,17 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
                     className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                      errors.name ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-indigo-500'
+                      errors.name
+                        ? "border-red-300 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-indigo-500"
                     }`}
                     placeholder="Enter rule name"
                   />
-                  {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                  )}
                 </div>
 
                 <div>
@@ -208,11 +201,15 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                   </label>
                   <select
                     value={formData.targetSegment}
-                    onChange={(e) => handleInputChange('targetSegment', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("targetSegment", e.target.value)
+                    }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   >
-                    {targetSegmentOptions.map(segment => (
-                      <option key={segment} value={segment}>{segment}</option>
+                    {targetSegmentOptions.map((segment) => (
+                      <option key={segment} value={segment}>
+                        {segment}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -226,19 +223,29 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 rows={3}
                 className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  errors.description ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-indigo-500'
+                  errors.description
+                    ? "border-red-300 focus:ring-red-500"
+                    : "border-gray-300 focus:ring-indigo-500"
                 }`}
                 placeholder="Describe what this rule does and when it applies"
               />
-              {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
+              {errors.description && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.description}
+                </p>
+              )}
             </div>
 
             {/* Max Games Configuration */}
             <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-4">Game Visibility Configuration</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-4">
+                Game Visibility Configuration
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -250,15 +257,28 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                       min="1"
                       max="999"
                       value={formData.maxGames}
-                      onChange={(e) => handleInputChange('maxGames', parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "maxGames",
+                          parseInt(e.target.value) || 1
+                        )
+                      }
                       className={`flex-1 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                        errors.maxGames ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-indigo-500'
+                        errors.maxGames
+                          ? "border-red-300 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-indigo-500"
                       }`}
                     />
                   </div>
-                  {errors.maxGames && <p className="mt-1 text-xs text-red-600">{errors.maxGames}</p>}
+                  {errors.maxGames && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.maxGames}
+                    </p>
+                  )}
                   <p className="mt-1 text-xs text-gray-500">
-                    {formData.maxGames === 999 ? 'Unlimited games for this user segment' : `Default: Show maximum ${formData.maxGames} games (used if tier-specific limits not set)`}
+                    {formData.maxGames === 999
+                      ? "Unlimited games for this user segment"
+                      : `Default: Show maximum ${formData.maxGames} games (used if tier-specific limits not set)`}
                   </p>
                 </div>
 
@@ -267,10 +287,15 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                     type="checkbox"
                     id="enabled"
                     checked={formData.enabled}
-                    onChange={(e) => handleInputChange('enabled', e.target.checked)}
+                    onChange={(e) =>
+                      handleInputChange("enabled", e.target.checked)
+                    }
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="enabled" className="ml-2 text-sm text-gray-700">
+                  <label
+                    htmlFor="enabled"
+                    className="ml-2 text-sm text-gray-700"
+                  >
                     Enable this rule immediately
                   </label>
                 </div>
@@ -278,9 +303,12 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
 
               {/* Game Count Limits by Tier */}
               <div className="border-t border-gray-200 pt-6">
-                <h5 className="text-sm font-semibold text-gray-900 mb-4">Game Count Limits by Tier (Optional)</h5>
+                <h5 className="text-sm font-semibold text-gray-900 mb-4">
+                  Game Count Limits by Tier (Optional)
+                </h5>
                 <p className="text-xs text-gray-500 mb-4">
-                  Set specific game count limits for different tiers. Leave empty to use default value above.
+                  Set specific game count limits for different tiers. Leave
+                  empty to use default value above.
                 </p>
 
                 {/* New Users Limit */}
@@ -292,15 +320,16 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                     type="number"
                     min="1"
                     max="50"
-                    value={formData.gameCountLimits.newUsersLimit || ''}
+                    value={formData.gameCountLimits.newUsersLimit || ""}
                     onChange={(e) => {
-                      const value = e.target.value === '' ? null : parseInt(e.target.value);
-                      setFormData(prev => ({
+                      const value =
+                        e.target.value === "" ? null : parseInt(e.target.value);
+                      setFormData((prev) => ({
                         ...prev,
                         gameCountLimits: {
                           ...prev.gameCountLimits,
-                          newUsersLimit: value
-                        }
+                          newUsersLimit: value,
+                        },
                       }));
                     }}
                     placeholder="Use default"
@@ -317,7 +346,7 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                     XP Tier Limits
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {['junior', 'mid', 'senior'].map((tier) => (
+                    {["junior", "mid", "senior"].map((tier) => (
                       <div key={tier}>
                         <label className="block text-xs font-medium text-gray-600 mb-1 capitalize">
                           {tier} Tier
@@ -326,18 +355,23 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                           type="number"
                           min="1"
                           max="50"
-                          value={formData.gameCountLimits.xpTierLimits[tier] || ''}
+                          value={
+                            formData.gameCountLimits.xpTierLimits[tier] || ""
+                          }
                           onChange={(e) => {
-                            const value = e.target.value === '' ? null : parseInt(e.target.value);
-                            setFormData(prev => ({
+                            const value =
+                              e.target.value === ""
+                                ? null
+                                : parseInt(e.target.value);
+                            setFormData((prev) => ({
                               ...prev,
                               gameCountLimits: {
                                 ...prev.gameCountLimits,
                                 xpTierLimits: {
                                   ...prev.gameCountLimits.xpTierLimits,
-                                  [tier]: value
-                                }
-                              }
+                                  [tier]: value,
+                                },
+                              },
                             }));
                           }}
                           placeholder="Use default"
@@ -354,27 +388,36 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                     Membership/VIP Tier Limits
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {['bronze', 'gold', 'platinum', 'free'].map((tier) => (
+                    {["bronze", "gold", "platinum", "free"].map((tier) => (
                       <div key={tier}>
                         <label className="block text-xs font-medium text-gray-600 mb-1 capitalize">
-                          {tier === 'free' ? 'Free' : tier.charAt(0).toUpperCase() + tier.slice(1)}
+                          {tier === "free"
+                            ? "Free"
+                            : tier.charAt(0).toUpperCase() + tier.slice(1)}
                         </label>
                         <input
                           type="number"
                           min="1"
                           max="50"
-                          value={formData.gameCountLimits.membershipTierLimits[tier] || ''}
+                          value={
+                            formData.gameCountLimits.membershipTierLimits[
+                              tier
+                            ] || ""
+                          }
                           onChange={(e) => {
-                            const value = e.target.value === '' ? null : parseInt(e.target.value);
-                            setFormData(prev => ({
+                            const value =
+                              e.target.value === ""
+                                ? null
+                                : parseInt(e.target.value);
+                            setFormData((prev) => ({
                               ...prev,
                               gameCountLimits: {
                                 ...prev.gameCountLimits,
                                 membershipTierLimits: {
                                   ...prev.gameCountLimits.membershipTierLimits,
-                                  [tier]: value
-                                }
-                              }
+                                  [tier]: value,
+                                },
+                              },
                             }));
                           }}
                           placeholder="Use default"
@@ -389,58 +432,99 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
 
             {/* Preview */}
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <h4 className="text-sm font-semibold text-gray-800 mb-3">Rule Preview</h4>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                Rule Preview
+              </h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Rule:</span>
-                  <span className="text-gray-900 font-medium">{formData.name || 'Untitled Rule'}</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.name || "Untitled Rule"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Target Segment:</span>
-                  <span className="text-gray-900">{formData.targetSegment || 'New Users'}</span>
+                  <span className="text-gray-900">
+                    {formData.targetSegment || "New Users"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Default Max Games:</span>
                   <span className="text-gray-900">
-                    {formData.maxGames === 999 ? 'Unlimited' : `${formData.maxGames} games`}
+                    {formData.maxGames === 999
+                      ? "Unlimited"
+                      : `${formData.maxGames} games`}
                   </span>
                 </div>
-                
+
                 {/* Show tier-specific limits if set */}
-                {(formData.gameCountLimits.newUsersLimit || 
-                  Object.values(formData.gameCountLimits.xpTierLimits).some(v => v !== null) ||
-                  Object.values(formData.gameCountLimits.membershipTierLimits).some(v => v !== null)) && (
+                {(formData.gameCountLimits.newUsersLimit ||
+                  Object.values(formData.gameCountLimits.xpTierLimits).some(
+                    (v) => v !== null
+                  ) ||
+                  Object.values(
+                    formData.gameCountLimits.membershipTierLimits
+                  ).some((v) => v !== null)) && (
                   <div className="mt-3 pt-3 border-t border-gray-300">
-                    <p className="text-xs font-semibold text-gray-700 mb-2">Tier-Specific Limits:</p>
+                    <p className="text-xs font-semibold text-gray-700 mb-2">
+                      Tier-Specific Limits:
+                    </p>
                     {formData.gameCountLimits.newUsersLimit && (
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-600">New Users:</span>
-                        <span className="text-gray-900 font-medium">{formData.gameCountLimits.newUsersLimit} games</span>
+                        <span className="text-gray-900 font-medium">
+                          {formData.gameCountLimits.newUsersLimit} games
+                        </span>
                       </div>
                     )}
-                    {Object.entries(formData.gameCountLimits.xpTierLimits).map(([tier, limit]) => 
-                      limit !== null && (
-                        <div key={tier} className="flex justify-between text-xs">
-                          <span className="text-gray-600 capitalize">{tier} Tier:</span>
-                          <span className="text-gray-900 font-medium">{limit} games</span>
-                        </div>
-                      )
+                    {Object.entries(formData.gameCountLimits.xpTierLimits).map(
+                      ([tier, limit]) =>
+                        limit !== null && (
+                          <div
+                            key={tier}
+                            className="flex justify-between text-xs"
+                          >
+                            <span className="text-gray-600 capitalize">
+                              {tier} Tier:
+                            </span>
+                            <span className="text-gray-900 font-medium">
+                              {limit} games
+                            </span>
+                          </div>
+                        )
                     )}
-                    {Object.entries(formData.gameCountLimits.membershipTierLimits).map(([tier, limit]) => 
-                      limit !== null && (
-                        <div key={tier} className="flex justify-between text-xs">
-                          <span className="text-gray-600 capitalize">{tier === 'free' ? 'Free' : tier.charAt(0).toUpperCase() + tier.slice(1)}:</span>
-                          <span className="text-gray-900 font-medium">{limit} games</span>
-                        </div>
-                      )
+                    {Object.entries(
+                      formData.gameCountLimits.membershipTierLimits
+                    ).map(
+                      ([tier, limit]) =>
+                        limit !== null && (
+                          <div
+                            key={tier}
+                            className="flex justify-between text-xs"
+                          >
+                            <span className="text-gray-600 capitalize">
+                              {tier === "free"
+                                ? "Free"
+                                : tier.charAt(0).toUpperCase() + tier.slice(1)}
+                              :
+                            </span>
+                            <span className="text-gray-900 font-medium">
+                              {limit} games
+                            </span>
+                          </div>
+                        )
                     )}
                   </div>
                 )}
-                
+
                 <div className="flex justify-between mt-2">
                   <span className="text-gray-600">Status:</span>
-                  <span className={`font-medium ${formData.enabled ? 'text-green-600' : 'text-red-600'}`}>
-                    {formData.enabled ? 'Enabled' : 'Disabled'}
+                  <span
+                    className={`font-medium ${
+                      formData.enabled ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {formData.enabled ? "Enabled" : "Disabled"}
                   </span>
                 </div>
               </div>
@@ -459,7 +543,7 @@ export default function EditDisplayRuleModal({ isOpen, onClose, rule, onSave }) 
                 type="submit"
                 className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               >
-                {rule ? 'Update Rule' : 'Create Rule'}
+                {rule ? "Update Rule" : "Create Rule"}
               </button>
             </div>
           </form>

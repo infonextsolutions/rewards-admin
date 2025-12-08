@@ -106,21 +106,7 @@ export default function GamePreviewModal({ isOpen, onClose, game }) {
                 </div>
               </div>
 
-              {game.countries && game.countries.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Target Countries</h4>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex flex-wrap gap-2">
-                      {game.countries.map(country => (
-                        <div key={country} className="flex items-center space-x-1 bg-white px-2 py-1 rounded-md">
-                          <span>{getCountryFlag(country)}</span>
-                          <span className="text-sm font-medium">{country}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Countries field removed from Game model */}
             </div>
 
             {/* Right Column */}
