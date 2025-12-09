@@ -232,6 +232,7 @@ export const gamesAPI = {
 
       return {
         id: game._id,
+        gameId: game.gameId,
         title: game.title || "Untitled Game",
         sdk: game.sdkProvider || "N/A",
         xptrRules: game.xptrRules || "No rules defined",
@@ -239,8 +240,8 @@ export const gamesAPI = {
         activeTasks: 0, // Not in API, placeholder
         // Countries field removed from Game model
         status: game.isActive ? "Active" : "Inactive",
-        rewardXP: 0, // Not in API
-        rewardCoins: 0, // Not in API
+        rewardXP: game.rewards?.xp || 0,
+        rewardCoins: game.rewards?.coins || 0,
         adSupported: game.isAdSupported || false,
         engagementTime: game.metadata?.estimatedPlayTime
           ? `${game.metadata.estimatedPlayTime} min`
@@ -248,8 +249,8 @@ export const gamesAPI = {
         retentionRate: game.analytics?.retentionRate || 0,
         clickRate: 0, // Not in API
         installRate: 0, // Not in API
-        marketingChannel: "N/A", // Not in API
-        campaign: "N/A", // Not in API
+        marketingChannel: game.marketingChannel || "",
+        campaign: game.campaignName || "",
         xpTier: xpTierNumberToString(game.xpTier),
         xpTiers: game.xpTiers || [],
         baseXP: game.xpRewardConfig?.baseXP || 0,
@@ -268,9 +269,31 @@ export const gamesAPI = {
         tierRestrictions: game.tierRestrictions || {},
         displayRules: game.displayRules || {},
         analytics: game.analytics || {},
+        // Segments data for targeting
+        segments: {
+          ageGroups: game.ageGroups || [],
+          gender: game.gender || "",
+          country: game.country || "",
+          city: game.city || "",
+          marketingChannel: game.marketingChannel || "",
+          campaignName: game.campaignName || "",
+        },
+        // Legacy fields for backward compatibility
+        ageGroups: game.ageGroups || [],
+        gender: game.gender || "",
+        country: game.country || "",
+        city: game.city || "",
+        campaignName: game.campaignName || "",
+        activeVisible: game.isActive !== undefined ? game.isActive : true,
+        fallbackGame: game.isDefaultFallback || false,
+        thumbnail: game.gameThumbnail || null,
+        thumbnailWidth: game.thumbnailWidth || 300,
+        thumbnailHeight: game.thumbnailHeight || 300,
+        thumbnailAltText: game.thumbnailAltText || "",
         createdAt: game.createdAt,
         updatedAt: game.updatedAt,
         createdBy: game.createdBy,
+        thirdPartyGameData: game.thirdPartyGameData || game.besitosRawData || null,
       };
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -388,8 +411,8 @@ export const gamesAPI = {
           retentionRate: game.analytics?.retentionRate || 0,
           clickRate: 0, // Not in API
           installRate: 0, // Not in API
-          marketingChannel: "N/A", // Not in API
-          campaign: "N/A", // Not in API
+          marketingChannel: game.marketingChannel || "",
+          campaign: game.campaignName || "",
           xpTier: xpTierNumberToString(game.xpTier),
           xpTiers: game.xpTiers || [],
           baseXP: game.xpRewardConfig?.baseXP || 0,
@@ -412,6 +435,15 @@ export const gamesAPI = {
           tierRestrictions: game.tierRestrictions || {},
           displayRules: game.displayRules || {},
           analytics: game.analytics || {},
+          // Segments data for targeting
+          segments: {
+            ageGroups: game.ageGroups || [],
+            gender: game.gender || "",
+            country: game.country || "",
+            city: game.city || "",
+            marketingChannel: game.marketingChannel || "",
+            campaignName: game.campaignName || "",
+          },
         };
       });
 

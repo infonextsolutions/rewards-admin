@@ -166,7 +166,21 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         thumbnailHeight: game.thumbnailHeight || 300,
         thumbnailAltText: game.thumbnailAltText || "",
         xpTier: game.xpTier || "",
-        xpTiers: game.xpTiers || [],
+        xpTiers: (() => {
+          // Handle xpTiers - could be array, JSON string, or undefined
+          if (Array.isArray(game.xpTiers)) {
+            return game.xpTiers;
+          }
+          if (typeof game.xpTiers === 'string') {
+            try {
+              const parsed = JSON.parse(game.xpTiers);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          }
+          return [];
+        })(),
         baseXP: game.baseXP || game.xpRewardConfig?.baseXP || 0,
         xpMultiplier:
           game.xpMultiplier || game.xpRewardConfig?.multiplier || 1.0,
@@ -187,12 +201,13 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           isFeatured: game.displayRules?.isFeatured || false,
         },
         segments: {
-          ageGroups: game.segments?.ageGroups || [],
-          gender: game.segments?.gender || "",
-          country: game.segments?.country || "",
-          city: game.segments?.city || "",
-          marketingChannel: game.segments?.marketingChannel || "",
-          campaignName: game.segments?.campaignName || "",
+          // Support both segments object and top-level fields for backward compatibility
+          ageGroups: game.segments?.ageGroups || game.ageGroups || [],
+          gender: game.segments?.gender || game.gender || "",
+          country: game.segments?.country || game.country || "",
+          city: game.segments?.city || game.city || "",
+          marketingChannel: game.segments?.marketingChannel || game.marketingChannel || "",
+          campaignName: game.segments?.campaignName || game.campaignName || "",
         },
         thirdPartyGameData: game.thirdPartyGameData || game.besitosRawData || null,
       });
@@ -680,14 +695,14 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                       min="0"
                       step="0.01"
                       value={formData.rewardDollars}
-                      onChange={(e) => handleDollarChange(e.target.value)}
+                      readOnly
                       placeholder="0.00"
-                      className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                      className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed"
                       disabled={!formData.gameId}
                     />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    Enter the dollar amount. Automatically converts to coins (50 coins = $1)
+                    Reward amount is received from the API and cannot be edited
                   </p>
                 </div>
 
@@ -713,7 +728,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   </p>
                 </div>
 
-                <div>
+                {/* Default Task Count - Hidden: Field not used anywhere per dev confirmation */}
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Default Task Count
                   </label>
@@ -729,7 +745,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     placeholder="Enter task count"
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
                   />
-                </div>
+                </div> */}
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -847,7 +863,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   </select>
                 </div>
 
-                <div>
+                {/* Game Genre - Hidden: Fields do not populate correct values and do not map to any logic in app */}
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Game Genre
                   </label>
@@ -864,9 +881,10 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
-                <div>
+                {/* Difficulty - Hidden: Fields do not populate correct values and do not map to any logic in app */}
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Difficulty
                   </label>
@@ -884,9 +902,10 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
-                <div>
+                {/* Rating - Hidden: Fields do not populate correct values and do not map to any logic in app */}
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Rating (1-5)
                   </label>
@@ -903,7 +922,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
                   />
-                </div>
+                </div> */}
               </div>
 
               {/* Target Countries - Hidden in edit modal */}

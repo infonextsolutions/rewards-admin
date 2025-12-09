@@ -11,7 +11,7 @@ const menuItems = [
     id: 'offers',
     label: 'Game & Offer Management',
     icon: '/Offers.png',
-    href: '/offers',
+    href: '/offers/games',
     subItems: [
       // { id: 'offers-listing', label: 'Offers Listing', href: '/offers' },
       { id: 'games-listing', label: 'Games Listing', href: '/offers/games' },
