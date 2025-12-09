@@ -148,6 +148,19 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
 
   useEffect(() => {
     if (game) {
+      // Debug: Log game data to help troubleshoot
+      console.log("Loading game data for edit:", {
+        gameId: game.gameId || game.id,
+        ageGroups: game.ageGroups,
+        segmentsAgeGroups: game.segments?.ageGroups,
+        gender: game.gender,
+        segmentsGender: game.segments?.gender,
+        marketingChannel: game.marketingChannel,
+        segmentsMarketingChannel: game.segments?.marketingChannel,
+        campaignName: game.campaignName,
+        segmentsCampaignName: game.segments?.campaignName,
+      });
+
       setFormData({
         gameId: game.gameId || game.id || "",
         title: game.title || "",
@@ -156,7 +169,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         xptrRules: game.xptrRules || "",
         rewardXP: game.rewardXP || 0,
         rewardCoins: game.rewardCoins || 0,
-        rewardDollars: game.rewardCoins ? parseFloat((game.rewardCoins / 50).toFixed(2)) : 0, // Convert coins to dollars (50 coins = 1 dollar)
+        rewardDollars: game.rewardCoins
+          ? parseFloat((game.rewardCoins / 50).toFixed(2))
+          : 0, // Convert coins to dollars (50 coins = 1 dollar)
         taskCount: game.taskCount || 0,
         activeVisible:
           game.active !== undefined ? game.active : game.activeVisible ?? true,
@@ -171,7 +186,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           if (Array.isArray(game.xpTiers)) {
             return game.xpTiers;
           }
-          if (typeof game.xpTiers === 'string') {
+          if (typeof game.xpTiers === "string") {
             try {
               const parsed = JSON.parse(game.xpTiers);
               return Array.isArray(parsed) ? parsed : [];
@@ -202,14 +217,50 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         },
         segments: {
           // Support both segments object and top-level fields for backward compatibility
-          ageGroups: game.segments?.ageGroups || game.ageGroups || [],
-          gender: game.segments?.gender || game.gender || "",
+          // Handle ageGroups - could be array, JSON string, or undefined
+          ageGroups: (() => {
+            const ageGroups = game.segments?.ageGroups || game.ageGroups;
+            if (Array.isArray(ageGroups)) {
+              return ageGroups;
+            }
+            if (typeof ageGroups === "string") {
+              try {
+                const parsed = JSON.parse(ageGroups);
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                // If it's a single string value, wrap it in an array
+                return ageGroups.trim() ? [ageGroups] : [];
+              }
+            }
+            return [];
+          })(),
+          // Handle gender - normalize to match dropdown options (Male, Female, Other, Any)
+          gender: (() => {
+            const gender = game.segments?.gender || game.gender || "";
+            if (!gender) return "";
+            const genderLower = gender.toLowerCase();
+            // Map common variations to dropdown values
+            if (genderLower === "male" || genderLower === "m") return "Male";
+            if (genderLower === "female" || genderLower === "f")
+              return "Female";
+            if (genderLower === "other") return "Other";
+            if (genderLower === "all" || genderLower === "any") return "Any";
+            // If it's already in the correct format, return as-is
+            if (["Male", "Female", "Other", "Any"].includes(gender))
+              return gender;
+            // Default: capitalize first letter
+            return (
+              gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()
+            );
+          })(),
           country: game.segments?.country || game.country || "",
           city: game.segments?.city || game.city || "",
-          marketingChannel: game.segments?.marketingChannel || game.marketingChannel || "",
+          marketingChannel:
+            game.segments?.marketingChannel || game.marketingChannel || "",
           campaignName: game.segments?.campaignName || game.campaignName || "",
         },
-        thirdPartyGameData: game.thirdPartyGameData || game.besitosRawData || null,
+        thirdPartyGameData:
+          game.thirdPartyGameData || game.besitosRawData || null,
       });
     } else {
       setFormData({
@@ -314,10 +365,10 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         );
 
         if (response.data.success && response.data.data) {
-          const games = Array.isArray(response.data.data) 
-            ? response.data.data 
+          const games = Array.isArray(response.data.data)
+            ? response.data.data
             : [response.data.data];
-          console.log('Fetched games:', games);
+          console.log("Fetched games:", games);
           setGamesList(games);
         } else {
           setGamesList([]);
@@ -408,23 +459,24 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     if (selectedGame) {
       // Extract dollar amount from API response (amount field)
       // The amount field from API is in dollars (e.g., 700 = $700)
-      const dollarAmount = selectedGame.amount !== undefined && selectedGame.amount !== null
-        ? parseFloat(selectedGame.amount) 
-        : 0;
-      
+      const dollarAmount =
+        selectedGame.amount !== undefined && selectedGame.amount !== null
+          ? parseFloat(selectedGame.amount)
+          : 0;
+
       // Convert dollars to coins (50 coins = 1 dollar)
       // Example: $700 = 35,000 coins
       const coins = Math.round(dollarAmount * 50);
-      
-      console.log('Selected game:', selectedGame);
-      console.log('Amount field from API:', selectedGame.amount);
-      console.log('Dollar amount:', dollarAmount);
-      console.log('Calculated coins:', coins);
-      
+
+      console.log("Selected game:", selectedGame);
+      console.log("Amount field from API:", selectedGame.amount);
+      console.log("Dollar amount:", dollarAmount);
+      console.log("Calculated coins:", coins);
+
       // Store the complete third-party API response with all original fields
       // This preserves the exact structure and all key names as received from the API
       const thirdPartyData = { ...selectedGame };
-      
+
       setFormData((prev) => ({
         ...prev,
         gameId: selectedGame.id,
@@ -436,7 +488,12 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         thirdPartyGameData: thirdPartyData,
       }));
     } else {
-      console.warn('Game not found in gamesList. gameId:', gameId, 'Available games:', gamesList);
+      console.warn(
+        "Game not found in gamesList. gameId:",
+        gameId,
+        "Available games:",
+        gamesList
+      );
     }
   };
 
@@ -444,7 +501,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const handleDollarChange = (dollarValue) => {
     const dollars = parseFloat(dollarValue) || 0;
     const coins = Math.round(dollars * 50); // 50 coins = 1 dollar
-    
+
     setFormData((prev) => ({
       ...prev,
       rewardDollars: dollars,
@@ -471,10 +528,11 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       return;
     }
 
-    if (!formData.xptrRules || !formData.xptrRules.trim()) {
-      toast.error("XPTR Rules are required");
-      return;
-    }
+    // XPTR Rules validation removed - field not used anywhere in app logic
+    // if (!formData.xptrRules || !formData.xptrRules.trim()) {
+    //   toast.error("XPTR Rules are required");
+    //   return;
+    // }
 
     // Validate dollar/reward amount when adding new game
     if (!game && (!formData.rewardDollars || formData.rewardDollars <= 0)) {
@@ -528,7 +586,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       title: formData.title,
       description: formData.description,
       sdkProvider: formData.sdk,
-      xptrRules: formData.xptrRules,
+      // xptrRules: formData.xptrRules, // Commented out - field not used anywhere in app logic
+      xptrRules: "", // Set to empty string for backward compatibility
       rewardXP: parseInt(formData.rewardXP) || 0,
       rewardCoins: parseInt(formData.rewardCoins) || 0, // Calculated from dollars (50 coins = 1 dollar)
       defaultTaskCount: parseInt(formData.taskCount) || 0,
@@ -556,7 +615,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       thumbnailAltText:
         formData.thumbnailAltText || `${formData.title} game thumbnail`,
       // Include complete third-party API response data
-      thirdPartyGameData: formData.thirdPartyGameData ? JSON.stringify(formData.thirdPartyGameData) : null,
+      thirdPartyGameData: formData.thirdPartyGameData
+        ? JSON.stringify(formData.thirdPartyGameData)
+        : null,
     };
 
     onSave(apiPayload);
@@ -664,7 +725,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   </select>
                 </div>
 
-                <div className="md:col-span-2">
+                {/* XPTR Rules - Hidden: Field not used anywhere in app logic */}
+                {/* <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     XPTR Rules *
                   </label>
@@ -678,7 +740,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
                     required
                   />
-                </div>
+                </div> */}
 
                 {/* XP Reward - Hidden in edit modal */}
 
@@ -722,8 +784,10 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    {formData.rewardDollars > 0 
-                      ? `${formData.rewardDollars} USD = ${formData.rewardCoins.toLocaleString()} coins (50 coins per dollar)`
+                    {formData.rewardDollars > 0
+                      ? `${
+                          formData.rewardDollars
+                        } USD = ${formData.rewardCoins.toLocaleString()} coins (50 coins per dollar)`
                       : "Coins are calculated from the dollar amount above"}
                   </p>
                 </div>
