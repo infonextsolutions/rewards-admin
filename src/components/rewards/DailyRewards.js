@@ -79,7 +79,15 @@ export default function DailyRewards({ onSave, onCancel }) {
           days: data.days || config.days,
           bigReward: data.bigReward || config.bigReward,
           fallbackReward: data.fallbackReward || config.fallbackReward,
-          weeklyMultiplier: data.weeklyMultiplier || config.weeklyMultiplier,
+          weeklyMultiplier: {
+            enabled: data.weeklyMultiplier?.enabled || false,
+            week2: data.weeklyMultiplier?.week2 || 1.0,
+            week3: data.weeklyMultiplier?.week3 || null,
+            week4: data.weeklyMultiplier?.week4 || null,
+            additionalWeeks: data.weeklyMultiplier?.additionalWeeks || [],
+            roundingRule:
+              data.weeklyMultiplier?.roundingRule || "Round Nearest",
+          },
         });
         // Set last updated timestamp
         if (data.updatedAt) {
@@ -127,7 +135,9 @@ export default function DailyRewards({ onSave, onCancel }) {
       const currentMaxWeek =
         prev.weeklyMultiplier.additionalWeeks.length > 0
           ? Math.max(
-              ...prev.weeklyMultiplier.additionalWeeks.map((w) => w.weekNumber)
+              ...prev.weeklyMultiplier.additionalWeeks.map(
+                (w) => parseInt(w.weekNumber) || w.weekNumber
+              )
             )
           : 4;
       return {
@@ -136,7 +146,7 @@ export default function DailyRewards({ onSave, onCancel }) {
           ...prev.weeklyMultiplier,
           additionalWeeks: [
             ...prev.weeklyMultiplier.additionalWeeks,
-            { weekNumber: currentMaxWeek + 1, multiplier: 1.0 },
+            { weekNumber: parseInt(currentMaxWeek + 1), multiplier: 1.0 },
           ],
         },
       };
@@ -323,12 +333,17 @@ export default function DailyRewards({ onSave, onCancel }) {
             config.weeklyMultiplier.enabled && config.weeklyMultiplier.week4
               ? parseFloat(config.weeklyMultiplier.week4)
               : undefined,
-          additionalWeeks: config.weeklyMultiplier.enabled
-            ? config.weeklyMultiplier.additionalWeeks.map((w) => ({
-                weekNumber: w.weekNumber,
-                multiplier: parseFloat(w.multiplier) || 1.0,
-              }))
-            : [],
+          additionalWeeks:
+            config.weeklyMultiplier.enabled &&
+            config.weeklyMultiplier.additionalWeeks &&
+            Array.isArray(config.weeklyMultiplier.additionalWeeks)
+              ? config.weeklyMultiplier.additionalWeeks
+                  .filter((w) => w && w.weekNumber && w.multiplier) // Filter out invalid entries
+                  .map((w) => ({
+                    weekNumber: parseInt(w.weekNumber) || w.weekNumber,
+                    multiplier: parseFloat(w.multiplier) || 1.0,
+                  }))
+              : [],
           roundingRule: config.weeklyMultiplier.roundingRule,
         },
       };
@@ -457,7 +472,9 @@ export default function DailyRewards({ onSave, onCancel }) {
             Daily Reward Configuration (Day 1-6)
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-          Set rewards for each day of the 7-day cycle. Day 7 supports Big Reward. Rewards unlock every 24 hours and can be claimed once the user logs in. Weekly multipliers apply after Day 7.
+            Set rewards for each day of the 7-day cycle. Day 7 supports Big
+            Reward. Rewards unlock every 24 hours and can be claimed once the
+            user logs in. Weekly multipliers apply after Day 7.
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -820,7 +837,27 @@ export default function DailyRewards({ onSave, onCancel }) {
                         <div key={index} className="flex items-center gap-2">
                           <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Week {item.weekNumber} Multiplier
+                              Week Number
+                            </label>
+                            <input
+                              type="number"
+                              value={item.weekNumber}
+                              onChange={(e) =>
+                                updateAdditionalMultiplier(
+                                  index,
+                                  "weekNumber",
+                                  parseInt(e.target.value) || 5
+                                )
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
+                              min="5"
+                              step="1"
+                              placeholder="5"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Multiplier
                             </label>
                             <input
                               type="number"
