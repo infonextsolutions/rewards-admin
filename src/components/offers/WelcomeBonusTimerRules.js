@@ -77,11 +77,16 @@ export default function WelcomeBonusTimerRules() {
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [bonusTasksConfig, setBonusTasksConfig] = useState({
     minimumEventThreshold: 3,
+    completionDeadlineHours: 24,
     bonusTasks: [], // Array of { taskId, order, unlockCondition }
   });
   const [loadingGameConfig, setLoadingGameConfig] = useState(false);
   // Store full task data including besitos info for mapping
   const [taskDataMap, setTaskDataMap] = useState(new Map());
+
+  // State for saved configurations list
+  const [savedConfigurations, setSavedConfigurations] = useState([]);
+  const [loadingConfigurations, setLoadingConfigurations] = useState(false);
 
   // Fetch welcome bonus timer rules on component mount
   useEffect(() => {
@@ -104,6 +109,26 @@ export default function WelcomeBonusTimerRules() {
     };
     fetchGames();
   }, []);
+
+  // Fetch all saved configurations
+  const fetchSavedConfigurations = async () => {
+    setLoadingConfigurations(true);
+    try {
+      const response = await welcomeBonusTimerAPI.getAllGameBonusTasks();
+      setSavedConfigurations(response.configurations || []);
+    } catch (error) {
+      console.error("Error fetching saved configurations:", error);
+    } finally {
+      setLoadingConfigurations(false);
+    }
+  };
+
+  // Fetch configurations when gameplay-logic tab is active
+  useEffect(() => {
+    if (activeTab === "gameplay-logic") {
+      fetchSavedConfigurations();
+    }
+  }, [activeTab]);
 
   // Fetch tasks when game is selected
   useEffect(() => {
@@ -129,16 +154,21 @@ export default function WelcomeBonusTimerRules() {
         // Fetch full game data to get besitosRawData
         let besitosTasks = [];
         try {
-          const gameResponse = await apiClient.get(`/admin/game-offers/games/${selectedGameId}`);
+          const gameResponse = await apiClient.get(
+            `/admin/game-offers/games/${selectedGameId}`
+          );
           const gameData = gameResponse.data.data;
-          if (gameData.besitosRawData?.goals && Array.isArray(gameData.besitosRawData.goals)) {
+          if (
+            gameData.besitosRawData?.goals &&
+            Array.isArray(gameData.besitosRawData.goals)
+          ) {
             // Transform besitos goals to task format
             besitosTasks = gameData.besitosRawData.goals.map((goal, index) => ({
               id: goal.goal_id || `besitos_${index}`,
               name: goal.text || `Task ${index + 1}`,
-              description: goal.description || goal.text || '',
+              description: goal.description || goal.text || "",
               order: goal.order || index + 1,
-              source: 'besitos'
+              source: "besitos",
             }));
           }
         } catch (error) {
@@ -148,31 +178,31 @@ export default function WelcomeBonusTimerRules() {
         // Combine tasks from both sources, prioritizing API tasks
         const combinedTasks = [...apiTasks];
         const newTaskDataMap = new Map();
-        
+
         // Store API tasks in map
-        apiTasks.forEach(task => {
+        apiTasks.forEach((task) => {
           newTaskDataMap.set(task.id, {
             ...task,
-            source: 'api',
-            isMongoId: true // API tasks already have MongoDB IDs
+            source: "api",
+            isMongoId: true, // API tasks already have MongoDB IDs
           });
         });
-        
+
         // Add besitos tasks that aren't already in API tasks
-        besitosTasks.forEach(besitosTask => {
-          const exists = combinedTasks.some(task => 
-            task.id === besitosTask.id || 
-            task.name === besitosTask.name
+        besitosTasks.forEach((besitosTask) => {
+          const exists = combinedTasks.some(
+            (task) =>
+              task.id === besitosTask.id || task.name === besitosTask.name
           );
           if (!exists) {
             combinedTasks.push(besitosTask);
             // Store besitos task info for later mapping
             newTaskDataMap.set(besitosTask.id, {
               ...besitosTask,
-              source: 'besitos',
+              source: "besitos",
               isMongoId: false,
               goalId: besitosTask.id,
-              goalText: besitosTask.name
+              goalText: besitosTask.name,
             });
           }
         });
@@ -201,7 +231,11 @@ export default function WelcomeBonusTimerRules() {
   useEffect(() => {
     const fetchGameConfig = async () => {
       if (!selectedGameId) {
-        setBonusTasksConfig({ minimumEventThreshold: 3, bonusTasks: [] });
+        setBonusTasksConfig({
+          minimumEventThreshold: 3,
+          completionDeadlineHours: 24,
+          bonusTasks: [],
+        });
         return;
       }
 
@@ -213,6 +247,7 @@ export default function WelcomeBonusTimerRules() {
         if (config) {
           setBonusTasksConfig({
             minimumEventThreshold: config.minimumEventThreshold || 3,
+            completionDeadlineHours: config.completionDeadlineHours || 24,
             bonusTasks: config.bonusTasks.map((bt) => ({
               taskId: bt.taskId,
               order: bt.order,
@@ -226,11 +261,19 @@ export default function WelcomeBonusTimerRules() {
             })),
           });
         } else {
-          setBonusTasksConfig({ minimumEventThreshold: 3, bonusTasks: [] });
+          setBonusTasksConfig({
+            minimumEventThreshold: 3,
+            completionDeadlineHours: 24,
+            bonusTasks: [],
+          });
         }
       } catch (error) {
         console.error("Error fetching game bonus tasks config:", error);
-        setBonusTasksConfig({ minimumEventThreshold: 3, bonusTasks: [] });
+        setBonusTasksConfig({
+          minimumEventThreshold: 3,
+          completionDeadlineHours: 24,
+          bonusTasks: [],
+        });
       } finally {
         setLoadingGameConfig(false);
       }
@@ -376,7 +419,8 @@ export default function WelcomeBonusTimerRules() {
       const configData = {
         unlockTimeHours: welcomeBonusSettings.unlockWindow.value,
         completionDeadlineDays: welcomeBonusSettings.completionDeadline.value,
-        maxGamesWithBonusTasks: welcomeBonusSettings.maxGamesWithBonusTasks || 3,
+        maxGamesWithBonusTasks:
+          welcomeBonusSettings.maxGamesWithBonusTasks || 3,
         maxBonusTasksPerGame: welcomeBonusSettings.maxBonusTasksPerGame || 3,
         gameOverrides:
           welcomeBonusSettings.overrideByGameId &&
@@ -455,7 +499,16 @@ export default function WelcomeBonusTimerRules() {
       alert(`Maximum ${maxTasks} bonus tasks allowed per game`);
       return;
     }
-    
+
+    // Check if we're already at max tasks
+    if (
+      bonusTasksConfig.bonusTasks.length >= maxTasks &&
+      !bonusTasksConfig.bonusTasks.some((bt) => bt.taskId === taskId)
+    ) {
+      alert(`Maximum ${maxTasks} bonus tasks allowed per game`);
+      return;
+    }
+
     setBonusTasksConfig((prev) => {
       const existingIndex = prev.bonusTasks.findIndex(
         (bt) => bt.order === order
@@ -543,140 +596,124 @@ export default function WelcomeBonusTimerRules() {
       const mappedBonusTasks = await Promise.all(
         bonusTasksConfig.bonusTasks.map(async (bt) => {
           const taskData = taskDataMap.get(bt.taskId);
-          
+
           // If task already has MongoDB ID, use it
-          if (taskData?.isMongoId || (bt.taskId && /^[0-9a-fA-F]{24}$/.test(bt.taskId))) {
+          if (
+            taskData?.isMongoId ||
+            (bt.taskId && /^[0-9a-fA-F]{24}$/.test(bt.taskId))
+          ) {
             return {
               taskId: bt.taskId,
               order: bt.order,
-              unlockCondition: bt.unlockCondition
+              unlockCondition: bt.unlockCondition,
             };
           }
-          
+
           // If task is from besitos, find or create GameTask
-          if (taskData?.source === 'besitos') {
+          if (taskData?.source === "besitos") {
             try {
               // Try to find existing GameTask by name/description/order
-              const findTaskResponse = await apiClient.get(
-                `/admin/game-offers/tasks?gameId=${selectedGameId}&search=${encodeURIComponent(taskData.name || '')}`
+              let existingTasks = [];
+              try {
+                const findTaskResponse = await apiClient.get(
+                  `/admin/game-offers/games/${selectedGameId}/tasks?search=${encodeURIComponent(
+                    taskData.name || ""
+                  )}`
+                );
+                existingTasks = findTaskResponse.data.data?.tasks || [];
+              } catch (searchError) {
+                // If search fails (404 or other), continue to create task
+                console.warn(
+                  "Task search failed, will create new task:",
+                  searchError.message
+                );
+              }
+
+              let matchingTask = existingTasks.find(
+                (t) =>
+                  t.name === taskData.name ||
+                  t.description === taskData.description ||
+                  t.order === taskData.order
               );
-              
-              const existingTasks = findTaskResponse.data.data?.tasks || [];
-              let matchingTask = existingTasks.find(t => 
-                t.name === taskData.name || 
-                t.description === taskData.description ||
-                t.order === taskData.order
-              );
-              
+
               if (matchingTask) {
                 return {
                   taskId: matchingTask.id || matchingTask._id,
                   order: bt.order,
-                  unlockCondition: bt.unlockCondition
+                  unlockCondition: bt.unlockCondition,
                 };
               }
-              
+
               // If no matching task found, create one from besitos goal
               const createTaskResponse = await apiClient.post(
-                `/admin/game-offers/tasks`,
+                `/admin/game-offers/games/${selectedGameId}/tasks`,
                 {
-                  gameId: selectedGameId,
                   name: taskData.name || `Task ${bt.order}`,
-                  description: taskData.description || taskData.name || '',
+                  description: taskData.description || taskData.name || "",
                   order: taskData.order || bt.order,
-                  completionRule: 'manual',
-                  rewardType: 'coins',
+                  completionRule: "manual",
+                  rewardType: "coins",
                   rewardValue: 0,
-                  isActive: true
+                  isActive: true,
                 }
               );
-              
+
               const newTask = createTaskResponse.data.data;
               return {
                 taskId: newTask._id || newTask.id,
                 order: bt.order,
-                unlockCondition: bt.unlockCondition
+                unlockCondition: bt.unlockCondition,
               };
             } catch (error) {
-              console.error('Error finding/creating task for besitos goal:', error);
-              throw new Error(`Failed to create task for "${taskData.name}". Please ensure tasks are created first.`);
+              console.error(
+                "Error finding/creating task for besitos goal:",
+                error
+              );
+              throw new Error(
+                `Failed to create task for "${taskData.name}". Please ensure tasks are created first.`
+              );
             }
           }
-          
+
           // Fallback: return as-is (will fail validation if not valid MongoDB ID)
           return {
             taskId: bt.taskId,
             order: bt.order,
-            unlockCondition: bt.unlockCondition
+            unlockCondition: bt.unlockCondition,
           };
         })
       );
 
-      await welcomeBonusTimerAPI.saveGameBonusTasks(
-        selectedGameId,
-        {
-          ...bonusTasksConfig,
-          bonusTasks: mappedBonusTasks
-        }
-      );
+      await welcomeBonusTimerAPI.saveGameBonusTasks(selectedGameId, {
+        ...bonusTasksConfig,
+        bonusTasks: mappedBonusTasks,
+      });
       setIsModified(false);
       setLastSaved(new Date().toISOString());
-      alert("Game bonus tasks saved successfully!");
-      
-      // Refresh tasks to get updated IDs
-      const fetchTasks = async () => {
-        setLoadingTasks(true);
-        try {
-          const tasksResponse = await tasksAPI.getTasksForGame(selectedGameId, { limit: 100 });
-          const gameResponse = await apiClient.get(`/admin/game-offers/games/${selectedGameId}`);
-          const gameData = gameResponse.data.data;
-          
-          let besitosTasks = [];
-          if (gameData.besitosRawData?.goals) {
-            besitosTasks = gameData.besitosRawData.goals.map((goal, index) => ({
-              id: goal.goal_id || `besitos_${index}`,
-              name: goal.text || `Task ${index + 1}`,
-              description: goal.description || goal.text || '',
-              order: goal.order || index + 1,
-              source: 'besitos'
-            }));
-          }
-          
-          const combinedTasks = [...(tasksResponse.tasks || [])];
-          const newTaskDataMap = new Map();
-          
-          (tasksResponse.tasks || []).forEach(task => {
-            newTaskDataMap.set(task.id, { ...task, source: 'api', isMongoId: true });
-          });
-          
-          besitosTasks.forEach(besitosTask => {
-            const exists = combinedTasks.some(t => t.id === besitosTask.id || t.name === besitosTask.name);
-            if (!exists) {
-              combinedTasks.push(besitosTask);
-              newTaskDataMap.set(besitosTask.id, {
-                ...besitosTask,
-                source: 'besitos',
-                isMongoId: false,
-                goalId: besitosTask.id,
-                goalText: besitosTask.name
-              });
-            }
-          });
-          
-          combinedTasks.sort((a, b) => (a.order || 0) - (b.order || 0));
-          setGameTasks(combinedTasks);
-          setTaskDataMap(newTaskDataMap);
-        } catch (error) {
-          console.error('Error refreshing tasks:', error);
-        } finally {
-          setLoadingTasks(false);
-        }
-      };
-      fetchTasks();
+
+      // Refresh saved configurations list
+      await fetchSavedConfigurations();
+
+      // Show success message
+      alert(
+        "Game bonus tasks saved successfully! You can now add tasks for other games."
+      );
+
+      // Reset form to allow adding tasks for another game
+      const savedGameId = selectedGameId; // Store before reset
+      setSelectedGameId("");
+      setBonusTasksConfig({
+        minimumEventThreshold: 3,
+        completionDeadlineHours: 24,
+        bonusTasks: [],
+      });
+      setGameTasks([]);
+      setTaskDataMap(new Map());
     } catch (error) {
       console.error("Failed to save game bonus tasks:", error);
       alert(
-        error.response?.data?.message || error.message ||
+        error.response?.data?.message ||
+          error.message ||
           "Failed to save game bonus tasks. Please try again."
       );
     } finally {
@@ -826,7 +863,7 @@ export default function WelcomeBonusTimerRules() {
               </div>
 
               {!loading && !error && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
                   {/* Base Configuration */}
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
@@ -851,8 +888,8 @@ export default function WelcomeBonusTimerRules() {
                     </div>
                   </div>
 
-                  {/* Game Overrides */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  {/* Game Overrides - commented out */}
+                  {/* <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                       <Cog6ToothIcon className="h-4 w-4 mr-2 text-indigo-600" />
                       Game Overrides
@@ -889,10 +926,10 @@ export default function WelcomeBonusTimerRules() {
                         No game overrides configured
                       </p>
                     )}
-                  </div>
+                  </div> */}
 
-                  {/* XP Tier Overrides */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  {/* XP Tier Overrides - commented out */}
+                  {/* <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                       <UserGroupIcon className="h-4 w-4 mr-2 text-indigo-600" />
                       XP Tier Overrides
@@ -923,7 +960,7 @@ export default function WelcomeBonusTimerRules() {
                         No XP tier overrides configured
                       </p>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>
@@ -1049,7 +1086,8 @@ export default function WelcomeBonusTimerRules() {
 
                 {/* Bonus Tasks Configuration */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
+                  {/* Max Games with Bonus Tasks - commented out */}
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Max Games with Bonus Tasks
                     </label>
@@ -1070,13 +1108,14 @@ export default function WelcomeBonusTimerRules() {
                       className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       disabled={!welcomeBonusSettings.enableRule}
                     />
-                  </div>
+                  </div> */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Max Bonus Tasks Per Game
                     </label>
                     <p className="text-xs text-gray-500 mb-2">
-                      Maximum number of bonus tasks that can be configured per game
+                      Maximum number of bonus tasks that can be configured per
+                      game
                     </p>
                     <input
                       type="number"
@@ -1197,12 +1236,155 @@ export default function WelcomeBonusTimerRules() {
 
           {activeTab === "gameplay-logic" && (
             <div className="space-y-8">
-              {/* Game Selection */}
+              {/* Saved Configurations Table */}
               <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <PlayIcon className="h-5 w-5 text-indigo-600 mr-2" />
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Saved Bonus Task Configurations
+                    </h3>
+                  </div>
+                  {/* <button
+                    onClick={() => {
+                      setSelectedGameId("");
+                      setBonusTasksConfig({ 
+                        minimumEventThreshold: 3, 
+                        completionDeadlineHours: 24,
+                        bonusTasks: [] 
+                      });
+                      setIsModified(false);
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    + Add New Game Configuration
+                  </button> */}
+                </div>
+
+                {loadingConfigurations ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Loading configurations...
+                    </p>
+                  </div>
+                ) : savedConfigurations.length > 0 ? (
+                  <div className="mb-8 overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Game
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Event Threshold
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Bonus Tasks
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {savedConfigurations.map((config) => (
+                          <tr key={config.gameId} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">
+                                {config.gameTitle ||
+                                  config.gameGameId ||
+                                  config.gameId}
+                              </div>
+                              {config.gameGameId && (
+                                <div className="text-xs text-gray-500">
+                                  {config.gameGameId}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">
+                                {config.minimumEventThreshold} events
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">
+                                {config.bonusTasks?.length || 0} task(s)
+                              </div>
+                              {config.bonusTasks &&
+                                config.bonusTasks.length > 0 && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {config.bonusTasks
+                                      .sort((a, b) => a.order - b.order)
+                                      .map((bt, idx) => (
+                                        <span key={bt.taskId}>
+                                          {idx > 0 && ", "}
+                                          Task {bt.order}:{" "}
+                                          {bt.name || "Unknown"}
+                                        </span>
+                                      ))}
+                                  </div>
+                                )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  config.isEnabled
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {config.isEnabled ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button
+                                onClick={() => {
+                                  handleGameSelect(config.gameId);
+                                  // Scroll to configuration section
+                                  setTimeout(() => {
+                                    const element = document.getElementById(
+                                      "game-config-section"
+                                    );
+                                    if (element) {
+                                      element.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start",
+                                      });
+                                    }
+                                  }, 100);
+                                }}
+                                className="text-indigo-600 hover:text-indigo-900 mr-4"
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-500">
+                      No bonus task configurations saved yet. Click "Add New
+                      Game Configuration" to create one.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Game Selection and Configuration */}
+              <div id="game-config-section">
                 <div className="flex items-center mb-4">
                   <PlayIcon className="h-5 w-5 text-indigo-600 mr-2" />
                   <h3 className="text-lg font-medium text-gray-900">
-                    Welcome Bonus Tasks Configuration
+                    {selectedGameId
+                      ? "Edit Game Configuration"
+                      : "Add New Game Configuration"}
                   </h3>
                 </div>
                 <div className="mb-6">
@@ -1256,6 +1438,41 @@ export default function WelcomeBonusTimerRules() {
                       </p>
                     </div>
 
+                    {/* Completion Deadline Hours */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Completion Deadline Hours
+                      </label>
+                      <div className="relative max-w-xs">
+                        <input
+                          type="number"
+                          min="1"
+                          max="168"
+                          value={bonusTasksConfig.completionDeadlineHours}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 24;
+                            setBonusTasksConfig((prev) => ({
+                              ...prev,
+                              completionDeadlineHours: value,
+                            }));
+                            setIsModified(true);
+                          }}
+                          disabled={loadingGameConfig}
+                          className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-20 disabled:bg-gray-100"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">
+                            hours
+                          </span>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        All bonus tasks for this game must be completed within
+                        this time from when Task 1 unlocks (shared deadline for
+                        all tasks)
+                      </p>
+                    </div>
+
                     {/* Task Logic - Always Sequential (Read-only) */}
                     <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1303,10 +1520,10 @@ export default function WelcomeBonusTimerRules() {
                                   Bonus Task {bt.order}:
                                 </span>
                                 <span>
-                                  Unlocks only after Bonus Task {bt.order - 1} is completed AND
-                                  event threshold (
-                                  {bonusTasksConfig.minimumEventThreshold} events)
-                                  is met.
+                                  Unlocks only after Bonus Task {bt.order - 1}{" "}
+                                  is completed AND event threshold (
+                                  {bonusTasksConfig.minimumEventThreshold}{" "}
+                                  events) is met.
                                 </span>
                               </div>
                             ))}
@@ -1333,18 +1550,23 @@ export default function WelcomeBonusTimerRules() {
                     ) : gameTasks.length === 0 ? (
                       <div className="p-4 bg-yellow-50 rounded-lg">
                         <p className="text-sm text-yellow-800">
-                          No tasks available for this game. Tasks will be fetched from:
+                          No tasks available for this game. Tasks will be
+                          fetched from:
                           <br />• Game API tasks
                           <br />• Game's besitosRawData goals
                           <br />
-                          <br />If no tasks appear, the game may not have tasks configured yet.
+                          <br />
+                          If no tasks appear, the game may not have tasks
+                          configured yet.
                         </p>
                       </div>
                     ) : (
                       <>
                         <div className="mb-6">
                           <label className="block text-sm font-medium text-gray-700 mb-3">
-                            Select Bonus Tasks (Up to 3 tasks)
+                            Select Bonus Tasks (Up to{" "}
+                            {welcomeBonusSettings.maxBonusTasksPerGame || 3}{" "}
+                            tasks)
                           </label>
                           <div className="space-y-3 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4">
                             {gameTasks.map((task) => {
@@ -1375,21 +1597,24 @@ export default function WelcomeBonusTimerRules() {
                                               bonusTasksConfig.bonusTasks.map(
                                                 (bt) => bt.order
                                               );
+                                            const maxTasks =
+                                              welcomeBonusSettings.maxBonusTasksPerGame ||
+                                              3;
                                             let nextOrder = 1;
                                             while (
                                               usedOrders.includes(nextOrder) &&
-                                              nextOrder <= 3
+                                              nextOrder <= maxTasks
                                             ) {
                                               nextOrder++;
                                             }
-                                            if (nextOrder <= 3) {
+                                            if (nextOrder <= maxTasks) {
                                               handleTaskSelect(
                                                 task.id,
                                                 nextOrder
                                               );
                                             } else {
                                               alert(
-                                                "Maximum 3 bonus tasks allowed"
+                                                `Maximum ${maxTasks} bonus tasks allowed`
                                               );
                                             }
                                           } else {
@@ -1399,7 +1624,8 @@ export default function WelcomeBonusTimerRules() {
                                         disabled={
                                           !isSelected &&
                                           bonusTasksConfig.bonusTasks.length >=
-                                            (welcomeBonusSettings.maxBonusTasksPerGame || 3)
+                                            (welcomeBonusSettings.maxBonusTasksPerGame ||
+                                              3)
                                         }
                                         className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded disabled:opacity-50"
                                       />
@@ -1618,7 +1844,8 @@ export default function WelcomeBonusTimerRules() {
                   <div>
                     <span className="text-gray-600">Bonus Tasks:</span>
                     <span className="ml-2 font-medium text-gray-900">
-                      {bonusTasksConfig.bonusTasks.length} of {welcomeBonusSettings.maxBonusTasksPerGame || 3} selected
+                      {bonusTasksConfig.bonusTasks.length} of{" "}
+                      {welcomeBonusSettings.maxBonusTasksPerGame || 3} selected
                     </span>
                   </div>
                 </div>

@@ -133,5 +133,21 @@ export const welcomeBonusTimerAPI = {
       console.error('Error fetching game bonus tasks:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get all game bonus tasks configurations
+   */
+  async getAllGameBonusTasks() {
+    try {
+      const response = await apiClient.get(
+        `/admin/game-offers/welcome-bonus-timer/game-bonus-tasks`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching all game bonus tasks:', error);
+      throw error;
+    }
   }
 };

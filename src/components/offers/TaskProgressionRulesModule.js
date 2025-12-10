@@ -321,9 +321,10 @@ export default function TaskProgressionRulesModule() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Batch Sizes
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {/* Max Batches column - commented out */}
+                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Max Batches
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
@@ -336,7 +337,7 @@ export default function TaskProgressionRulesModule() {
                 {filteredRules.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="8"
+                      colSpan="7"
                       className="px-6 py-8 text-center text-gray-500"
                     >
                       {searchTerm || filterStatus !== "all"
@@ -374,11 +375,12 @@ export default function TaskProgressionRulesModule() {
                             {rule.nextBatchSize}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        {/* Max Batches column data - commented out */}
+                        {/* <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {rule.maxBatches || "Unlimited"}
                           </div>
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(rule.isActive)}
                         </td>

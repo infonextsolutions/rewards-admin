@@ -370,7 +370,8 @@ export default function EditProgressionRuleModal({
                     </p>
                   </div>
 
-                  <div>
+                  {/* Max Batches field - commented out */}
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Max Batches (Optional)
                     </label>
@@ -399,7 +400,7 @@ export default function EditProgressionRuleModal({
                     <p className="mt-1 text-xs text-gray-500">
                       Maximum number of batches (leave empty for unlimited)
                     </p>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="mt-4 p-3 bg-white rounded border border-blue-300">

@@ -6,10 +6,6 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 const targetSegmentOptions = [
   "New Users",
   "Engaged Users",
-  "Bronze Tier",
-  "Platinum Tier",
-  "Gold Tier",
-  "All Users",
 ];
 
 export default function EditDisplayRuleModal({
@@ -37,6 +33,7 @@ export default function EditDisplayRuleModal({
         free: null,
       },
       newUsersLimit: null,
+      engagedUsersLimit: null,
     },
   });
 
@@ -69,6 +66,7 @@ export default function EditDisplayRuleModal({
             free: null,
           },
           newUsersLimit: null,
+          engagedUsersLimit: null,
         },
       });
     } else {
@@ -92,6 +90,7 @@ export default function EditDisplayRuleModal({
             free: null,
           },
           newUsersLimit: null,
+          engagedUsersLimit: null,
         },
       });
     }
@@ -311,7 +310,8 @@ export default function EditDisplayRuleModal({
                   empty to use default value above.
                 </p>
 
-                {/* New Users Limit */}
+                {/* New Users Limit - Only show when "New Users" is selected */}
+                {formData.targetSegment === "New Users" && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     New Users Limit
@@ -339,6 +339,38 @@ export default function EditDisplayRuleModal({
                     Number of games to show for new users (first-time app open)
                   </p>
                 </div>
+                )}
+
+                {/* Engaged Users Limit - Only show when "Engaged Users" is selected */}
+                {formData.targetSegment === "Engaged Users" && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Engaged Users Limit
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={formData.gameCountLimits.engagedUsersLimit || ""}
+                      onChange={(e) => {
+                        const value =
+                          e.target.value === "" ? null : parseInt(e.target.value);
+                        setFormData((prev) => ({
+                          ...prev,
+                          gameCountLimits: {
+                            ...prev.gameCountLimits,
+                            engagedUsersLimit: value,
+                          },
+                        }));
+                      }}
+                      placeholder="Use default"
+                      className="w-full max-w-xs border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Number of games to show for engaged users (returning users)
+                    </p>
+                  </div>
+                )}
 
                 {/* XP Tier Limits */}
                 <div className="mb-6">
@@ -459,6 +491,7 @@ export default function EditDisplayRuleModal({
 
                 {/* Show tier-specific limits if set */}
                 {(formData.gameCountLimits.newUsersLimit ||
+                  formData.gameCountLimits.engagedUsersLimit ||
                   Object.values(formData.gameCountLimits.xpTierLimits).some(
                     (v) => v !== null
                   ) ||
@@ -474,6 +507,14 @@ export default function EditDisplayRuleModal({
                         <span className="text-gray-600">New Users:</span>
                         <span className="text-gray-900 font-medium">
                           {formData.gameCountLimits.newUsersLimit} games
+                        </span>
+                      </div>
+                    )}
+                    {formData.gameCountLimits.engagedUsersLimit && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Engaged Users:</span>
+                        <span className="text-gray-900 font-medium">
+                          {formData.gameCountLimits.engagedUsersLimit} games
                         </span>
                       </div>
                     )}
