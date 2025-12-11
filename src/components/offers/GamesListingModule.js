@@ -56,7 +56,7 @@ export default function GamesListingModule() {
     { key: "amount", label: "Amount ($)" },
     { key: "xpRewardConfig", label: "XP Reward Config" },
     { key: "coins", label: "Coins" },
-    { key: "defaultTasks", label: "Default Tasks" },
+    // { key: "defaultTasks", label: "Default Tasks" }, // Commented out - hidden
     // { key: "retentionRate", label: "Retention Rate" }, // Commented out - hidden
     { key: "clickRate", label: "Click Rate" },
     { key: "installRate", label: "Install Rate" },
@@ -462,15 +462,15 @@ export default function GamesListingModule() {
         );
       case "countries":
         return getCountryFlags(game.countries);
-      case "defaultTasks":
-        return (
-          <div>
-            <div className="text-sm font-medium text-gray-900">
-              {game.activeTasks}/{game.taskCount}
-            </div>
-            <div className="text-xs text-gray-700">Active/Total</div>
-          </div>
-        );
+      // case "defaultTasks": // Commented out - hidden
+      //   return (
+      //     <div>
+      //       <div className="text-sm font-medium text-gray-900">
+      //         {game.activeTasks}/{game.taskCount}
+      //       </div>
+      //       <div className="text-xs text-gray-700">Active/Total</div>
+      //     </div>
+      //   );
       case "engagementTime":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-50 text-green-800 text-sm">
