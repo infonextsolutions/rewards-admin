@@ -27,7 +27,7 @@ export function useGames() {
         // country: filters.country && filters.country !== "all" ? filters.country : "", // Commented out
         sdkProvider: filters.sdk && filters.sdk !== "all" ? filters.sdk : "",
         xpTier:
-          filters.xpTier && filters.xpTier !== "all" ? filters.xpTier : "",
+          filters.xpTier && filters.xpTier !== "all" && filters.xpTier !== "All" ? filters.xpTier : "",
         adGame:
           filters.adGame && filters.adGame !== "all" ? filters.adGame : "",
         status:

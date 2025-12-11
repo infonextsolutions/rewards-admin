@@ -919,11 +919,27 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     disabled={loadingUISections}
                   >
                     <option value="">Choose UI Section...</option>
-                    {uiSections.map((section) => (
-                      <option key={section} value={section}>
-                        {section}
-                      </option>
-                    ))}
+                    {(() => {
+                      // Filter out hidden UI sections: Banner, Carousel, Discover, Featured, Game, Games, Home, Wallet
+                      const hiddenSections = [
+                        "Banner",
+                        "Carousel",
+                        "Discover",
+                        "Featured",
+                        "Game",
+                        "Games",
+                        "Home",
+                        "Wallet",
+                      ];
+                      const filteredUISections = uiSections.filter(
+                        (section) => !hiddenSections.includes(section)
+                      );
+                      return filteredUISections.map((section) => (
+                        <option key={section} value={section}>
+                          {section}
+                        </option>
+                      ));
+                    })()}
                   </select>
                 </div>
 
@@ -1005,7 +1021,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 </span>
               </div>
 
-              <div className="flex items-center mt-4">
+              {/* Default Fallback Game checkbox - commented out */}
+              {/* <div className="flex items-center mt-4">
                 <input
                   type="checkbox"
                   checked={formData.fallbackGame}
@@ -1017,7 +1034,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 <span className="ml-2 text-sm text-gray-700">
                   Default Fallback Game
                 </span>
-              </div>
+              </div> */}
             </div>
 
             {/* SECTION 2: Targeting & Segmentation */}

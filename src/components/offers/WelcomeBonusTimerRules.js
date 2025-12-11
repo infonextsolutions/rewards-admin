@@ -282,9 +282,9 @@ export default function WelcomeBonusTimerRules() {
     fetchGameConfig();
   }, [selectedGameId]);
 
-  // Update local state when config is loaded from API
+  // Update local state when config is loaded from API (only when not loading)
   useEffect(() => {
-    if (config) {
+    if (config && !loading) {
       // Convert API format to component format
       setWelcomeBonusSettings({
         unlockWindow: { value: config.unlockTimeHours, unit: "hours" },
@@ -309,7 +309,7 @@ export default function WelcomeBonusTimerRules() {
       });
       setLastSaved(config.updatedAt);
     }
-  }, [config]);
+  }, [config, loading]);
 
   const handleWelcomeBonusChange = (key, value) => {
     setWelcomeBonusSettings((prev) => ({
@@ -864,8 +864,8 @@ export default function WelcomeBonusTimerRules() {
 
               {!loading && !error && (
                 <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-                  {/* Base Configuration */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  {/* Base Configuration - commented out */}
+                  {/* <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                       <ClockIcon className="h-4 w-4 mr-2 text-indigo-600" />
                       Base Configuration
@@ -886,7 +886,7 @@ export default function WelcomeBonusTimerRules() {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Game Overrides - commented out */}
                   {/* <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -968,93 +968,107 @@ export default function WelcomeBonusTimerRules() {
 
           {activeTab === "welcome-bonus" && (
             <div className="space-y-8">
-              {/* Welcome Bonus Config Section */}
-              <div>
-                <div className="flex items-center mb-6">
-                  <GiftIcon className="h-5 w-5 text-indigo-600 mr-2" />
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Welcome Bonus Configuration
-                  </h3>
+              {/* Show loading state instead of default data */}
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                  <p className="mt-4 text-sm text-gray-500">
+                    Loading welcome bonus configuration...
+                  </p>
                 </div>
-
-                {/* Enable Rule Toggle */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">
-                        Enable Welcome Bonus Timer Rules
-                      </h4>
-                      <p className="text-sm text-gray-500">
-                        Activate timer-based welcome bonus unlock and completion
-                        logic
-                      </p>
-                    </div>
-                    <button
-                      onClick={() =>
-                        handleWelcomeBonusChange(
-                          "enableRule",
-                          !welcomeBonusSettings.enableRule
-                        )
-                      }
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                        welcomeBonusSettings.enableRule
-                          ? "bg-indigo-600"
-                          : "bg-gray-200"
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          welcomeBonusSettings.enableRule
-                            ? "translate-x-5"
-                            : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Timing Configuration */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              ) : (
+                <>
+                  {/* Welcome Bonus Config Section */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Welcome Bonus Unlock Window
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        min="1"
-                        value={welcomeBonusSettings.unlockWindow.value}
-                        onChange={(e) =>
-                          handleWelcomeBonusTimerChange(
-                            "value",
-                            parseInt(e.target.value) || 1
-                          )
-                        }
-                        className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        disabled={!welcomeBonusSettings.enableRule}
-                      />
-                      <select
-                        value={welcomeBonusSettings.unlockWindow.unit}
-                        onChange={(e) =>
-                          handleWelcomeBonusTimerChange("unit", e.target.value)
-                        }
-                        className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        disabled={!welcomeBonusSettings.enableRule}
-                      >
-                        {timeUnits.map((unit) => (
-                          <option key={unit} value={unit}>
-                            {unit}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="flex items-center mb-6">
+                      <GiftIcon className="h-5 w-5 text-indigo-600 mr-2" />
+                      <h3 className="text-lg font-medium text-gray-900">
+                        Welcome Bonus Configuration
+                      </h3>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Time window after first game download for bonus to appear
-                    </p>
-                  </div>
 
-                  {/* PHASE 2: Completion Deadline temporarily hidden */}
-                  {/* <div>
+                    {/* Enable Rule Toggle */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">
+                            Enable Welcome Bonus Timer Rules
+                          </h4>
+                          <p className="text-sm text-gray-500">
+                            Activate timer-based welcome bonus unlock and
+                            completion logic
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            handleWelcomeBonusChange(
+                              "enableRule",
+                              !welcomeBonusSettings.enableRule
+                            )
+                          }
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                            welcomeBonusSettings.enableRule
+                              ? "bg-indigo-600"
+                              : "bg-gray-200"
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              welcomeBonusSettings.enableRule
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Timing Configuration */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Welcome Bonus Unlock Window
+                        </label>
+                        <div className="flex space-x-2">
+                          <input
+                            type="number"
+                            min="1"
+                            value={welcomeBonusSettings.unlockWindow.value}
+                            onChange={(e) =>
+                              handleWelcomeBonusTimerChange(
+                                "value",
+                                parseInt(e.target.value) || 1
+                              )
+                            }
+                            className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            disabled={!welcomeBonusSettings.enableRule}
+                          />
+                          <select
+                            value={welcomeBonusSettings.unlockWindow.unit}
+                            onChange={(e) =>
+                              handleWelcomeBonusTimerChange(
+                                "unit",
+                                e.target.value
+                              )
+                            }
+                            className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            disabled={!welcomeBonusSettings.enableRule}
+                          >
+                            {timeUnits.map((unit) => (
+                              <option key={unit} value={unit}>
+                                {unit}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Time window after first game download for bonus to
+                          appear
+                        </p>
+                      </div>
+
+                      {/* PHASE 2: Completion Deadline temporarily hidden */}
+                      {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Bonus Completion Deadline
                     </label>
@@ -1082,12 +1096,12 @@ export default function WelcomeBonusTimerRules() {
                       Maximum time allowed to complete bonus tasks after unlock
                     </p>
                   </div> */}
-                </div>
+                    </div>
 
-                {/* Bonus Tasks Configuration */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {/* Max Games with Bonus Tasks - commented out */}
-                  {/* <div>
+                    {/* Bonus Tasks Configuration */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      {/* Max Games with Bonus Tasks - commented out */}
+                      {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Max Games with Bonus Tasks
                     </label>
@@ -1109,33 +1123,33 @@ export default function WelcomeBonusTimerRules() {
                       disabled={!welcomeBonusSettings.enableRule}
                     />
                   </div> */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Max Bonus Tasks Per Game
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Maximum number of bonus tasks that can be configured per
-                      game
-                    </p>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={welcomeBonusSettings.maxBonusTasksPerGame || 3}
-                      onChange={(e) =>
-                        handleWelcomeBonusChange(
-                          "maxBonusTasksPerGame",
-                          parseInt(e.target.value) || 3
-                        )
-                      }
-                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      disabled={!welcomeBonusSettings.enableRule}
-                    />
-                  </div>
-                </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Max Bonus Tasks Per Game
+                        </label>
+                        <p className="text-xs text-gray-500 mb-2">
+                          Maximum number of bonus tasks that can be configured
+                          per game
+                        </p>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={welcomeBonusSettings.maxBonusTasksPerGame || 3}
+                          onChange={(e) =>
+                            handleWelcomeBonusChange(
+                              "maxBonusTasksPerGame",
+                              parseInt(e.target.value) || 3
+                            )
+                          }
+                          className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          disabled={!welcomeBonusSettings.enableRule}
+                        />
+                      </div>
+                    </div>
 
-                {/* PHASE 2: Override Settings temporarily hidden */}
-                {/* <div className="space-y-6">
+                    {/* PHASE 2: Override Settings temporarily hidden */}
+                    {/* <div className="space-y-6">
                   <h4 className="text-sm font-medium text-gray-900">Override Settings</h4>
 
                   <div>
@@ -1209,28 +1223,30 @@ export default function WelcomeBonusTimerRules() {
                   </div>
                 </div> */}
 
-                {/* Validation Rules Display */}
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-900 mb-2">
-                    Validation Rules
-                  </h4>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li>
-                      • Completion deadline must be greater than or equal to
-                      unlock window
-                    </li>
-                    <li>
-                      • Unlock window minimum: 1 hour, maximum: 168 hours (7
-                      days)
-                    </li>
-                    <li>
-                      • Completion deadline minimum: 1 hour, maximum: 720 hours
-                      (30 days)
-                    </li>
-                    <li>• XP threshold must be a positive number</li>
-                  </ul>
-                </div>
-              </div>
+                    {/* Validation Rules Display */}
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">
+                        Validation Rules
+                      </h4>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        <li>
+                          • Completion deadline must be greater than or equal to
+                          unlock window
+                        </li>
+                        <li>
+                          • Unlock window minimum: 1 hour, maximum: 168 hours (7
+                          days)
+                        </li>
+                        <li>
+                          • Completion deadline minimum: 1 hour, maximum: 720
+                          hours (30 days)
+                        </li>
+                        <li>• XP threshold must be a positive number</li>
+                      </ul>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1795,13 +1811,14 @@ export default function WelcomeBonusTimerRules() {
                   {welcomeBonusSettings.unlockWindow.unit}
                 </span>
               </div>
-              <div>
+              {/* Completion Deadline - commented out */}
+              {/* <div>
                 <span className="text-gray-600">Completion Deadline:</span>
                 <span className="ml-2 font-medium text-gray-900">
                   {welcomeBonusSettings.completionDeadline.value}{" "}
                   {welcomeBonusSettings.completionDeadline.unit}
                 </span>
-              </div>
+              </div> */}
               <div>
                 <span className="text-gray-600">Overrides:</span>
                 <span className="ml-2 font-medium text-gray-900">

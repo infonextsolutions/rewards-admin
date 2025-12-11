@@ -22,8 +22,8 @@ import { gamesAPI } from "../../data/games";
 import { useMasterData } from "../../hooks/useMasterData";
 import toast from "react-hot-toast";
 
-const STATUS_TYPES = ["Active", "Inactive", "Testing", "Paused"];
-const XP_TIERS = ["Junior", "Mid", "Senior", "All"];
+const STATUS_TYPES = ["Active", "Inactive"]; // "Testing", "Paused" - commented out
+const XP_TIERS = ["Junior", "Mid", "Senior"]; // "All" removed - handled by "All XP Tiers" option
 
 export default function GamesListingModule() {
   const {
@@ -48,7 +48,7 @@ export default function GamesListingModule() {
   const columns = [
     { key: "title", label: "Game Title" },
     { key: "sdk", label: "SDK Game" },
-    { key: "gameCategory", label: "Game Category" },
+    // { key: "gameCategory", label: "Game Category" }, // Commented out - hidden
     { key: "uiSection", label: "UI Section" },
     { key: "ageGroup", label: "Age Group" },
     { key: "gender", label: "Gender" },
@@ -57,7 +57,7 @@ export default function GamesListingModule() {
     { key: "xpRewardConfig", label: "XP Reward Config" },
     { key: "coins", label: "Coins" },
     { key: "defaultTasks", label: "Default Tasks" },
-    { key: "retentionRate", label: "Retention Rate" },
+    // { key: "retentionRate", label: "Retention Rate" }, // Commented out - hidden
     { key: "clickRate", label: "Click Rate" },
     { key: "installRate", label: "Install Rate" },
     { key: "marketingChannel", label: "Marketing Channel" },
@@ -132,7 +132,7 @@ export default function GamesListingModule() {
       status: filters.status,
       country: filters.country,
       sdk: filters.sdk,
-      xpTier: filters.xpTier,
+      // Don't send xpTier to API - we filter client-side based on xpTiers array
       adGame: filters.adGame,
     };
     fetchGames(currentPage, apiFilters, itemsPerPage);
@@ -142,9 +142,10 @@ export default function GamesListingModule() {
     filters.status,
     filters.country,
     filters.sdk,
-    filters.xpTier,
     filters.adGame,
     itemsPerPage,
+    // Note: filters.xpTier is intentionally excluded from API call but
+    // client-side filtering in filteredGames useMemo will handle it
   ]);
 
   // Use API data directly - server-side filtering and pagination
@@ -152,18 +153,43 @@ export default function GamesListingModule() {
   const totalPages = apiPagination.totalPages;
   const paginatedGames = games;
 
-  // Client-side filtering for tier (not in API)
+  // Client-side filtering for XP Tier and tier (not fully supported in API)
   const filteredGames = useMemo(() => {
-    if (filters.tier === "all") {
-      return paginatedGames;
+    let filtered = paginatedGames;
+
+    // Filter by XP Tier (check xpTiers array)
+    if (
+      filters.xpTier &&
+      filters.xpTier !== "all" &&
+      filters.xpTier !== "All"
+    ) {
+      const selectedTier = filters.xpTier.trim();
+      filtered = filtered.filter((game) => {
+        const gameXPTiers = game.xpTiers || [];
+        // Check if the game's xpTiers array includes the selected tier
+        // Handle both array format and ensure case-insensitive comparison
+        const hasTier = gameXPTiers.some((tier) => {
+          if (!tier) return false;
+          return (
+            tier.toString().trim().toLowerCase() === selectedTier.toLowerCase()
+          );
+        });
+        return hasTier;
+      });
     }
-    return paginatedGames.filter((game) => {
-      const gameTier = game.tier || "";
-      const filterTier = filters.tier || "";
-      // Case-insensitive comparison
-      return gameTier.toLowerCase() === filterTier.toLowerCase();
-    });
-  }, [paginatedGames, filters.tier]);
+
+    // Filter by tier (membership tier)
+    if (filters.tier && filters.tier !== "all" && filters.tier !== "All") {
+      filtered = filtered.filter((game) => {
+        const gameTier = game.tier || "";
+        const filterTier = filters.tier || "";
+        // Case-insensitive comparison
+        return gameTier.toLowerCase() === filterTier.toLowerCase();
+      });
+    }
+
+    return filtered;
+  }, [paginatedGames, filters.xpTier, filters.tier]);
 
   const getStatusBadge = (status) => {
     const style =
@@ -342,13 +368,27 @@ export default function GamesListingModule() {
         );
       case "sdk":
         return <div className="text-sm text-gray-900">{game.sdk}</div>;
-      case "gameCategory":
-        return (
-          <div className="text-sm text-gray-900">
-            {game.gameCategory || "N/A"}
-          </div>
-        );
+      // case "gameCategory": // Commented out - hidden
+      //   return (
+      //     <div className="text-sm text-gray-900">
+      //       {game.gameCategory || "N/A"}
+      //     </div>
+      //   );
       case "uiSection":
+        // Filter out hidden UI sections: Banner, Carousel, Discover, Featured, Game, Games, Home, Wallet
+        const hiddenSections = [
+          "Banner",
+          "Carousel",
+          "Discover",
+          "Featured",
+          "Game",
+          "Games",
+          "Home",
+          "Wallet",
+        ];
+        const filteredUISections = uiSections.filter(
+          (section) => !hiddenSections.includes(section)
+        );
         return (
           <select
             value={game.uiSection || ""}
@@ -357,7 +397,7 @@ export default function GamesListingModule() {
             className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-900 focus:ring-green-500 focus:border-green-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">Select Section</option>
-            {uiSections.map((section) => (
+            {filteredUISections.map((section) => (
               <option key={section} value={section}>
                 {section}
               </option>
@@ -367,23 +407,21 @@ export default function GamesListingModule() {
       case "ageGroup":
         return (
           <div className="text-sm text-gray-900">
-            {game.ageGroup || 
-             (game.ageGroups && game.ageGroups.length > 0 
-               ? game.ageGroups[0] 
-               : "N/A")}
+            {game.ageGroup ||
+              (game.ageGroups && game.ageGroups.length > 0
+                ? game.ageGroups[0]
+                : "N/A")}
           </div>
         );
       case "gender":
         return (
-          <div className="text-sm text-gray-900">
-            {game.gender || "N/A"}
-          </div>
+          <div className="text-sm text-gray-900">{game.gender || "N/A"}</div>
         );
       case "cpi":
         return (
           <div className="text-sm text-gray-900">
-            {game.besitosRawData?.cpi 
-              ? `$${game.besitosRawData.cpi.toFixed(2)}` 
+            {game.besitosRawData?.cpi
+              ? `$${game.besitosRawData.cpi.toFixed(2)}`
               : "N/A"}
           </div>
         );
@@ -410,9 +448,7 @@ export default function GamesListingModule() {
       case "coins":
         return (
           <div className="text-sm text-gray-900">
-            {game.rewards?.coins 
-              ? game.rewards.coins.toLocaleString() 
-              : "N/A"}
+            {game.rewards?.coins ? game.rewards.coins.toLocaleString() : "N/A"}
           </div>
         );
       case "xptrRules":
@@ -441,12 +477,12 @@ export default function GamesListingModule() {
             {game.engagementTime}
           </span>
         );
-      case "retentionRate":
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-50 text-green-800 text-sm">
-            {game.retentionRate}%
-          </span>
-        );
+      // case "retentionRate": // Commented out - hidden
+      //   return (
+      //     <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-50 text-green-800 text-sm">
+      //       {game.retentionRate}%
+      //     </span>
+      //   );
       case "clickRate":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-800 text-sm">
@@ -465,7 +501,37 @@ export default function GamesListingModule() {
       case "campaign":
         return <div className="text-sm text-gray-900">{game.campaign}</div>;
       case "xpTier":
-        return <XPTierBadge xpTier={game.xpTier} />;
+        // Display XP tiers based on the xpTiers array from the API response
+        // If xpTiers array exists and has values, use it; otherwise show all three
+        let tiersToDisplay = [];
+
+        if (
+          game.xpTiers &&
+          Array.isArray(game.xpTiers) &&
+          game.xpTiers.length > 0
+        ) {
+          // Use the xpTiers array from the response
+          tiersToDisplay = game.xpTiers;
+        } else {
+          // Fallback: if no xpTiers array, show all three tiers
+          tiersToDisplay = ["Junior", "Mid", "Senior"];
+        }
+
+        // Sort tiers to always show in order: Junior, Mid, Senior
+        const tierOrder = { Junior: 1, Mid: 2, Senior: 3 };
+        tiersToDisplay.sort((a, b) => {
+          const orderA = tierOrder[a] || 999;
+          const orderB = tierOrder[b] || 999;
+          return orderA - orderB;
+        });
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tiersToDisplay.map((tier) => (
+              <XPTierBadge key={tier} xpTier={tier} />
+            ))}
+          </div>
+        );
       case "tier":
         return <TierBadge tier={game.tier} />;
       case "status":
@@ -473,14 +539,14 @@ export default function GamesListingModule() {
       case "actions":
         return (
           <div className="flex items-center justify-center space-x-2">
-            {/* View button */}
-            <button
+            {/* View button - commented out */}
+            {/* <button
               onClick={() => handleViewGame(game)}
               className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
               title="View game details"
             >
               <EyeIcon className="h-4 w-4" />
-            </button>
+            </button> */}
 
             {/* Edit button */}
             <button
@@ -584,7 +650,8 @@ export default function GamesListingModule() {
                 <span className="text-sm text-gray-700">Filters:</span>
               </div>
 
-              <select
+              {/* Country filter - hidden */}
+              {/* <select
                 value={filters.country}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, country: e.target.value }))
@@ -598,7 +665,7 @@ export default function GamesListingModule() {
                     {c.code} - {c.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
               <select
                 value={filters.sdk}
@@ -616,7 +683,8 @@ export default function GamesListingModule() {
                 ))}
               </select>
 
-              <select
+              {/* Ad Games filter - hidden */}
+              {/* <select
                 value={filters.adGame}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, adGame: e.target.value }))
@@ -626,7 +694,7 @@ export default function GamesListingModule() {
                 <option value="all">Ad Games</option>
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
-              </select>
+              </select> */}
 
               <select
                 value={filters.status}
@@ -672,7 +740,6 @@ export default function GamesListingModule() {
                     {tier.name}
                   </option>
                 ))}
-                <option value="All">All</option>
               </select>
             </div>
           </div>
@@ -694,20 +761,22 @@ export default function GamesListingModule() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedGames.length === 0 ? (
+              {filteredGames.length === 0 ? (
                 <tr>
                   <td
                     colSpan={columns.length}
                     className="px-6 py-8 text-center text-gray-500"
                   >
                     {searchTerm ||
-                    Object.values(filters).some((f) => f !== "all")
+                    Object.values(filters).some(
+                      (f) => f !== "all" && f !== "All"
+                    )
                       ? "No games match your filters."
                       : "No games configured yet."}
                   </td>
                 </tr>
               ) : (
-                paginatedGames.map((game) => (
+                filteredGames.map((game) => (
                   <tr key={game.id} className="hover:bg-gray-50">
                     {columns.map((col) => (
                       <td

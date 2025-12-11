@@ -339,6 +339,7 @@ export const gamesAPI = {
       if (
         params.xpTier &&
         params.xpTier !== "all" &&
+        params.xpTier !== "All" &&
         params.xpTier.trim() !== ""
       ) {
         // Convert XP Tier string to number for backend

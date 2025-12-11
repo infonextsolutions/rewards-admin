@@ -6,6 +6,7 @@ const XPTierBadge = ({ xpTier, className = '' }) => {
   const getXPTierStyle = (tier) => {
     switch (tier) {
       case 'Junior': return 'bg-green-100 text-green-800';
+      case 'Mid':
       case 'Middle Level': return 'bg-blue-100 text-blue-800';
       case 'Senior': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -15,6 +16,7 @@ const XPTierBadge = ({ xpTier, className = '' }) => {
   const getXPTierIcon = (tier) => {
     switch (tier) {
       case 'Junior': return '🌱';
+      case 'Mid':
       case 'Middle Level': return '⚡';
       case 'Senior': return '🏆';
       default: return '📊';
