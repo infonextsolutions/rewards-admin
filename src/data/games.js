@@ -444,6 +444,12 @@ export const gamesAPI = {
             marketingChannel: game.marketingChannel || "",
             campaignName: game.campaignName || "",
           },
+          // Include raw data for CPI, amount, and other besitos data
+          besitosRawData: game.besitosRawData || null,
+          // Include rewards data
+          rewards: game.rewards || { xp: 0, coins: 0 },
+          // Include ageGroups array for ageGroup display
+          ageGroups: game.ageGroups || [],
         };
       });
 

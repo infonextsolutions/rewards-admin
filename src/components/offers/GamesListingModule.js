@@ -50,15 +50,18 @@ export default function GamesListingModule() {
     { key: "sdk", label: "SDK Game" },
     { key: "gameCategory", label: "Game Category" },
     { key: "uiSection", label: "UI Section" },
-    { key: "xptrRules", label: "XPTR Rules" },
+    { key: "ageGroup", label: "Age Group" },
+    { key: "gender", label: "Gender" },
+    { key: "cpi", label: "CPI" },
+    { key: "amount", label: "Amount ($)" },
+    { key: "xpRewardConfig", label: "XP Reward Config" },
+    { key: "coins", label: "Coins" },
     { key: "defaultTasks", label: "Default Tasks" },
-    { key: "engagementTime", label: "Engagement Time" },
     { key: "retentionRate", label: "Retention Rate" },
     { key: "clickRate", label: "Click Rate" },
     { key: "installRate", label: "Install Rate" },
     { key: "marketingChannel", label: "Marketing Channel" },
     { key: "campaign", label: "Campaign" },
-    { key: "countries", label: "Countries" },
     { key: "xpTier", label: "XP Tier" },
     { key: "tier", label: "Tier" },
     { key: "status", label: "Status" },
@@ -361,6 +364,57 @@ export default function GamesListingModule() {
             ))}
           </select>
         );
+      case "ageGroup":
+        return (
+          <div className="text-sm text-gray-900">
+            {game.ageGroup || 
+             (game.ageGroups && game.ageGroups.length > 0 
+               ? game.ageGroups[0] 
+               : "N/A")}
+          </div>
+        );
+      case "gender":
+        return (
+          <div className="text-sm text-gray-900">
+            {game.gender || "N/A"}
+          </div>
+        );
+      case "cpi":
+        return (
+          <div className="text-sm text-gray-900">
+            {game.besitosRawData?.cpi 
+              ? `$${game.besitosRawData.cpi.toFixed(2)}` 
+              : "N/A"}
+          </div>
+        );
+      case "amount":
+        const amount = game.besitosRawData?.amount;
+        const currency = game.besitosRawData?.amount_currency || "$";
+        return (
+          <div className="text-sm text-gray-900">
+            {amount !== undefined && amount !== null
+              ? `${currency}${amount.toFixed(2)}`
+              : "N/A"}
+          </div>
+        );
+      case "xpRewardConfig":
+        const baseXP = game.xpRewardConfig?.baseXP;
+        const multiplier = game.xpRewardConfig?.multiplier;
+        return (
+          <div className="text-sm text-gray-900">
+            {baseXP !== undefined && multiplier !== undefined
+              ? `Base: ${baseXP}, Mult: ${multiplier.toFixed(2)}x`
+              : "N/A"}
+          </div>
+        );
+      case "coins":
+        return (
+          <div className="text-sm text-gray-900">
+            {game.rewards?.coins 
+              ? game.rewards.coins.toLocaleString() 
+              : "N/A"}
+          </div>
+        );
       case "xptrRules":
         return (
           <div
@@ -659,10 +713,9 @@ export default function GamesListingModule() {
                       <td
                         key={col.key}
                         className={`px-6 py-4 align-top ${
-                          col.key === "xptrRules" ||
                           col.key === "xpTier" ||
-                          col.key === "countries" ||
-                          col.key === "uiSection"
+                          col.key === "uiSection" ||
+                          col.key === "xpRewardConfig"
                             ? ""
                             : "whitespace-nowrap"
                         }`}
