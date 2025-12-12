@@ -7,7 +7,7 @@ import { gamesAPI } from "../../../data/games";
 import apiClient from "../../../lib/apiClient";
 
 // Only allow creation of supported challenge types
-const CHALLENGE_TYPES = ["Spin", "Game", "Survey"];
+const CHALLENGE_TYPES = ["Spin", "Game"];
 const CLAIM_TYPES = ["Watch Ad", "Auto"];
 
 export default function AddEditChallengeModal({
@@ -53,12 +53,17 @@ export default function AddEditChallengeModal({
       if (challengeDate && challengeDate.includes("T")) {
         challengeDate = new Date(challengeDate).toISOString().split("T")[0];
       }
+      // Convert Survey type to Spin if it exists (Survey is no longer supported)
+      const challengeType =
+        challenge.type === "Survey" ? "Spin" : challenge.type || "Spin";
+
       setFormData({
         title: challenge.title || "",
-        description: challenge.description !== undefined && challenge.description !== null 
-          ? challenge.description 
-          : challenge.title || "",
-        type: challenge.type || "Spin",
+        description:
+          challenge.description !== undefined && challenge.description !== null
+            ? challenge.description
+            : challenge.title || "",
+        type: challengeType,
         date: challengeDate,
         coinReward: challenge.coinReward?.toString() || "",
         xpReward: challenge.xpReward?.toString() || "",
