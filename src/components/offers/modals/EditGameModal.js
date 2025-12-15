@@ -550,6 +550,17 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       return;
     }
 
+    // Validate Age Groups (required for all games)
+    if (
+      !formData.segments.ageGroups ||
+      formData.segments.ageGroups.length === 0
+    ) {
+      toast.error(
+        "Age Range is required. Please select at least one age group."
+      );
+      return;
+    }
+
     // Validate XP Tier values
     const validTiers = ["Junior", "Mid", "Senior"];
     const invalidTiers = formData.xpTiers.filter(
@@ -1045,7 +1056,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Age Group
+                    Age Group <span className="text-red-500">*</span>
                   </label>
                   <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
                     {AGE_GROUPS.map((age) => (

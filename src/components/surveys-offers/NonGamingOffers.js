@@ -892,7 +892,7 @@ export default function NonGamingOffers() {
   };
 
   const typeOptions = [
-    { value: "all", label: "All Offers" },
+    // { value: "all", label: "All Offers" },
     { value: "cashback", label: "Cashback" },
     { value: "magic-receipts", label: "Magic Receipts" },
     { value: "shopping", label: "Shopping" },

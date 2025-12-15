@@ -1,37 +1,83 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, FunnelIcon } from '@heroicons/react/24/outline';
-import FilterDropdown from '../ui/FilterDropdown';
-import Pagination from '../ui/Pagination';
-import EditOfferModal from './modals/EditOfferModal';
-import ConfirmationModal from './modals/ConfirmationModal';
-import ManageSegmentsModal from './modals/ManageSegmentsModal';
-import OfferPreviewModal from '../surveys-offers/modals/OfferPreviewModal';
-import TierBadge from '../ui/TierBadge';
-import XPTierBadge from '../ui/XPTierBadge';
-import { useOffers } from '../../hooks/useOffers';
+import { useState, useMemo, useEffect } from "react";
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  EyeIcon,
+  FunnelIcon,
+} from "@heroicons/react/24/outline";
+import FilterDropdown from "../ui/FilterDropdown";
+import Pagination from "../ui/Pagination";
+import EditOfferModal from "./modals/EditOfferModal";
+import ConfirmationModal from "./modals/ConfirmationModal";
+import ManageSegmentsModal from "./modals/ManageSegmentsModal";
+import OfferPreviewModal from "../surveys-offers/modals/OfferPreviewModal";
+import TierBadge from "../ui/TierBadge";
+import XPTierBadge from "../ui/XPTierBadge";
+import { useOffers } from "../../hooks/useOffers";
 
-const STATUS_TYPES = ['Active', 'Inactive'];
-const MARKETING_CHANNELS = ['Facebook', 'TikTok', 'Google', 'Instagram', 'Twitter'];
-const COUNTRIES = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE', 'BR', 'IN', 'JP', 'KR', 'MX'];
-const SDK_PROVIDERS = ['BitLabs', 'AdGem', 'OfferWalls', 'AdScend', 'RewardMob', 'MoneyWalls', 'Internal'];
-const XP_TIER_TYPES = ['Junior', 'Mid', 'Senior', 'All'];
-const AD_OFFER_TYPES = ['Ad-Based', 'Non-Ad', 'Hybrid'];
+const STATUS_TYPES = ["Active", "Inactive"];
+const MARKETING_CHANNELS = [
+  "Facebook",
+  "TikTok",
+  "Google",
+  "Instagram",
+  "Twitter",
+];
+const COUNTRIES = [
+  "US",
+  "CA",
+  "UK",
+  "AU",
+  "DE",
+  "FR",
+  "ES",
+  "IT",
+  "NL",
+  "SE",
+  "BR",
+  "IN",
+  "JP",
+  "KR",
+  "MX",
+];
+const SDK_PROVIDERS = [
+  "BitLabs",
+  "AdGem",
+  "OfferWalls",
+  "AdScend",
+  "RewardMob",
+  "MoneyWalls",
+  "Internal",
+];
+const XP_TIER_TYPES = ["Junior", "Mid", "Senior", "All"];
+const AD_OFFER_TYPES = ["Ad-Based", "Non-Ad", "Hybrid"];
 
 export default function OffersListingModule() {
-  const { offers: apiOffers, pagination: apiPagination, loading, error, fetchOffers, createOffer, updateOffer, deleteOffer, getOfferById } = useOffers();
+  const {
+    offers: apiOffers,
+    pagination: apiPagination,
+    loading,
+    error,
+    fetchOffers,
+    createOffer,
+    updateOffer,
+    deleteOffer,
+    getOfferById,
+  } = useOffers();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
-    status: 'all',
-    channel: 'all',
-    country: 'all',
-    sdkProvider: 'all',
-    xpTier: 'all',
-    adOffer: 'all'
+    status: "all",
+    channel: "all",
+    country: "all",
+    sdkProvider: "all",
+    xpTier: "all",
+    adOffer: "all",
   });
-  const [activeTab, setActiveTab] = useState('offer');
+  const [activeTab, setActiveTab] = useState("offer");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -48,10 +94,20 @@ export default function OffersListingModule() {
       country: filters.country,
       sdkProvider: filters.sdkProvider,
       xpTier: filters.xpTier,
-      adOffer: filters.adOffer
+      adOffer: filters.adOffer,
     };
     fetchOffers(currentPage, apiFilters, itemsPerPage);
-  }, [currentPage, searchTerm, filters.status, filters.country, filters.sdkProvider, filters.xpTier, filters.adOffer, itemsPerPage, fetchOffers]);
+  }, [
+    currentPage,
+    searchTerm,
+    filters.status,
+    filters.country,
+    filters.sdkProvider,
+    filters.xpTier,
+    filters.adOffer,
+    itemsPerPage,
+    fetchOffers,
+  ]);
 
   // Use API data directly - server-side filtering and pagination
   const offers = apiOffers;
@@ -60,34 +116,44 @@ export default function OffersListingModule() {
 
   // Client-side filtering for marketing channel (not in API)
   const filteredOffers = useMemo(() => {
-    if (filters.channel === 'all') {
+    if (filters.channel === "all") {
       return paginatedOffers;
     }
-    return paginatedOffers.filter(offer =>
-      offer.marketingChannel === filters.channel
+    return paginatedOffers.filter(
+      (offer) => offer.marketingChannel === filters.channel
     );
   }, [paginatedOffers, filters.channel]);
 
   // Get metric chip styling based on value
   const getMetricChipStyle = (value, type) => {
-    const numValue = parseFloat(value.replace('%', ''));
+    const numValue = parseFloat(value.replace("%", ""));
 
-    if (type === 'retention') {
-      return numValue >= 80 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
-    } else if (type === 'click') {
-      return numValue >= 15 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
-    } else if (type === 'install') {
-      return numValue >= 8 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
-    } else if (type === 'roas') {
-      return numValue >= 200 ? 'bg-[#E6F9EC] text-[#0F8A3B]' : 'bg-[#FFF7E6] text-[#B66A00]';
+    if (type === "retention") {
+      return numValue >= 80
+        ? "bg-[#E6F9EC] text-[#0F8A3B]"
+        : "bg-[#FFF7E6] text-[#B66A00]";
+    } else if (type === "click") {
+      return numValue >= 15
+        ? "bg-[#E6F9EC] text-[#0F8A3B]"
+        : "bg-[#FFF7E6] text-[#B66A00]";
+    } else if (type === "install") {
+      return numValue >= 8
+        ? "bg-[#E6F9EC] text-[#0F8A3B]"
+        : "bg-[#FFF7E6] text-[#B66A00]";
+    } else if (type === "roas") {
+      return numValue >= 200
+        ? "bg-[#E6F9EC] text-[#0F8A3B]"
+        : "bg-[#FFF7E6] text-[#B66A00]";
     }
-    return 'bg-[#FFF7E6] text-[#B66A00]';
+    return "bg-[#FFF7E6] text-[#B66A00]";
   };
 
   const getMetricChip = (value, type) => {
     const chipStyle = getMetricChipStyle(value, type);
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${chipStyle}`}>
+      <span
+        className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${chipStyle}`}
+      >
         {value}
       </span>
     );
@@ -95,12 +161,14 @@ export default function OffersListingModule() {
 
   const getStatusBadge = (status) => {
     const statusStyles = {
-      'Active': 'bg-[#E9F7EF] text-[#0F8A3B]',
-      'Inactive': 'bg-gray-100 text-gray-800'
+      Active: "bg-[#E9F7EF] text-[#0F8A3B]",
+      Inactive: "bg-gray-100 text-gray-800",
     };
 
     return (
-      <span className={`inline-flex items-center justify-center min-w-[70px] px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status]}`}>
+      <span
+        className={`inline-flex items-center justify-center min-w-[70px] px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status]}`}
+      >
         {status}
       </span>
     );
@@ -111,7 +179,7 @@ export default function OffersListingModule() {
 
     return (
       <div className="flex flex-wrap gap-1">
-        {tiers.map(tier => (
+        {tiers.map((tier) => (
           <TierBadge key={tier} tier={tier} />
         ))}
       </div>
@@ -123,13 +191,20 @@ export default function OffersListingModule() {
 
     return (
       <div className="flex flex-wrap gap-1">
-        {countries.slice(0, 3).map(country => (
-          <span key={country} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md" title={country}>
+        {countries.slice(0, 3).map((country) => (
+          <span
+            key={country}
+            className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-md"
+            title={country}
+          >
             {country}
           </span>
         ))}
         {countries.length > 3 && (
-          <span className="text-xs text-gray-500" title={`+${countries.length - 3} more countries`}>
+          <span
+            className="text-xs text-gray-500"
+            title={`+${countries.length - 3} more countries`}
+          >
             +{countries.length - 3}
           </span>
         )}
@@ -138,7 +213,7 @@ export default function OffersListingModule() {
   };
 
   const formatExpiryDate = (dateString) => {
-    if (!dateString) return 'No expiry';
+    if (!dateString) return "No expiry";
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = date.getTime() - now.getTime();
@@ -147,7 +222,9 @@ export default function OffersListingModule() {
     if (diffDays < 0) {
       return <span className="text-red-600 font-medium">Expired</span>;
     } else if (diffDays <= 7) {
-      return <span className="text-orange-600 font-medium">{diffDays}d left</span>;
+      return (
+        <span className="text-orange-600 font-medium">{diffDays}d left</span>
+      );
     } else {
       return <span className="text-gray-900">{date.toLocaleDateString()}</span>;
     }
@@ -175,7 +252,7 @@ export default function OffersListingModule() {
       setSelectedOffer(freshOfferData);
       setShowPreviewModal(true);
     } catch (error) {
-      console.error('Error fetching offer details:', error);
+      console.error("Error fetching offer details:", error);
       // Fallback to using existing data if API call fails
       setSelectedOffer(offer);
       setShowPreviewModal(true);
@@ -183,7 +260,7 @@ export default function OffersListingModule() {
   };
 
   const handleSaveSegments = (segmentData) => {
-    console.log('Applying segment changes:', segmentData);
+    console.log("Applying segment changes:", segmentData);
     // TODO: Implement API call to save segment changes
     // For now, just close the modal
     setShowSegmentsModal(false);
@@ -209,11 +286,11 @@ export default function OffersListingModule() {
           country: filters.country,
           sdkProvider: filters.sdkProvider,
           xpTier: filters.xpTier,
-          adOffer: filters.adOffer
+          adOffer: filters.adOffer,
         };
         fetchOffers(currentPage, apiFilters, itemsPerPage);
       } catch (error) {
-        console.error('Error deleting offer:', error);
+        console.error("Error deleting offer:", error);
       }
     }
   };
@@ -236,11 +313,11 @@ export default function OffersListingModule() {
         country: filters.country,
         sdkProvider: filters.sdkProvider,
         xpTier: filters.xpTier,
-        adOffer: filters.adOffer
+        adOffer: filters.adOffer,
       };
       fetchOffers(currentPage, apiFilters, itemsPerPage);
     } catch (error) {
-      console.error('Error saving offer:', error);
+      console.error("Error saving offer:", error);
     }
   };
 
@@ -255,7 +332,8 @@ export default function OffersListingModule() {
                 Offers Listing
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Manage all currently available offers with SDK mapping, tier logic, expiry, and country visibility
+                Manage all currently available offers with SDK mapping, tier
+                logic, expiry, and country visibility
               </p>
             </div>
             <div className="flex items-center space-x-3">
@@ -285,8 +363,18 @@ export default function OffersListingModule() {
                   aria-label="Search offers"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
               </div>
@@ -301,73 +389,100 @@ export default function OffersListingModule() {
 
               <select
                 value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, status: e.target.value }))
+                }
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
                 aria-label="Filter by status"
               >
                 <option value="all">All Status</option>
-                {STATUS_TYPES.map(status => (
-                  <option key={status} value={status}>{status}</option>
+                {STATUS_TYPES.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
                 ))}
               </select>
 
               <select
                 value={filters.country}
-                onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, country: e.target.value }))
+                }
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
                 aria-label="Filter by country"
               >
                 <option value="all">All Countries</option>
-                {COUNTRIES.map(country => (
-                  <option key={country} value={country}>{country}</option>
+                {COUNTRIES.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
                 ))}
               </select>
 
               <select
                 value={filters.sdkProvider}
-                onChange={(e) => setFilters(prev => ({ ...prev, sdkProvider: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    sdkProvider: e.target.value,
+                  }))
+                }
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
                 aria-label="Filter by SDK provider"
               >
                 <option value="all">All SDKs</option>
-                {SDK_PROVIDERS.map(sdk => (
-                  <option key={sdk} value={sdk}>{sdk}</option>
+                {SDK_PROVIDERS.map((sdk) => (
+                  <option key={sdk} value={sdk}>
+                    {sdk}
+                  </option>
                 ))}
               </select>
 
               <select
                 value={filters.xpTier}
-                onChange={(e) => setFilters(prev => ({ ...prev, xpTier: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, xpTier: e.target.value }))
+                }
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
                 aria-label="Filter by XP Tier"
               >
                 <option value="all">All XP Tiers</option>
-                {XP_TIER_TYPES.map(xpTier => (
-                  <option key={xpTier} value={xpTier}>{xpTier}</option>
+                {XP_TIER_TYPES.map((xpTier) => (
+                  <option key={xpTier} value={xpTier}>
+                    {xpTier}
+                  </option>
                 ))}
               </select>
 
               <select
                 value={filters.adOffer}
-                onChange={(e) => setFilters(prev => ({ ...prev, adOffer: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, adOffer: e.target.value }))
+                }
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
                 aria-label="Filter by ad offer type"
               >
                 <option value="all">All Ad Types</option>
-                {AD_OFFER_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {AD_OFFER_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
 
               <select
                 value={filters.channel}
-                onChange={(e) => setFilters(prev => ({ ...prev, channel: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, channel: e.target.value }))
+                }
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
                 aria-label="Filter by channel"
               >
                 <option value="all">All Channels</option>
-                {MARKETING_CHANNELS.map(channel => (
-                  <option key={channel} value={channel}>{channel}</option>
+                {MARKETING_CHANNELS.map((channel) => (
+                  <option key={channel} value={channel}>
+                    {channel}
+                  </option>
                 ))}
               </select>
             </div>
@@ -438,62 +553,86 @@ export default function OffersListingModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedOffers.length === 0 ? (
                 <tr>
-                  <td colSpan="18" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm || Object.values(filters).some(f => f !== 'all')
-                      ? 'No offers match your current filters.'
-                      : 'No offers configured yet. Add your first offer to get started.'}
+                  <td
+                    colSpan="18"
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    {searchTerm ||
+                    Object.values(filters).some((f) => f !== "all")
+                      ? "No offers match your current filters."
+                      : "No offers configured yet. Add your first offer to get started."}
                   </td>
                 </tr>
               ) : (
                 paginatedOffers.map((offer) => (
                   <tr key={offer.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{offer.offerName}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {offer.offerName}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{offer.sdkOffer}</div>
+                      <div className="text-sm text-gray-900">
+                        {offer.sdkOffer}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{offer.rewardType}</div>
+                      <div className="text-sm text-gray-900">
+                        {offer.rewardType}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{offer.rewardValue}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {offer.rewardValue}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getMetricChip(offer.retentionRate, 'retention')}
+                      {getMetricChip(offer.retentionRate, "retention")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getMetricChip(offer.clickRate, 'click')}
+                      {getMetricChip(offer.clickRate, "click")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getMetricChip(offer.installRate, 'install')}
+                      {getMetricChip(offer.installRate, "install")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getMetricChip(offer.roas, 'roas')}
+                      {getMetricChip(offer.roas, "roas")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{offer.sdkProvider}</div>
+                      <div className="text-sm text-gray-900">
+                        {offer.sdkProvider}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <XPTierBadge xpTier={offer.xpTier} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        offer.adOffer === 'Ad-Based' ? 'bg-orange-100 text-orange-800' :
-                        offer.adOffer === 'Non-Ad' ? 'bg-green-100 text-green-800' :
-                        'bg-purple-100 text-purple-800'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          offer.adOffer === "Ad-Based"
+                            ? "bg-orange-100 text-orange-800"
+                            : offer.adOffer === "Non-Ad"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-purple-100 text-purple-800"
+                        }`}
+                      >
                         {offer.adOffer}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{offer.marketingChannel}</div>
+                      <div className="text-sm text-gray-900">
+                        {offer.marketingChannel}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{offer.campaign}</div>
+                      <div className="text-sm text-gray-900">
+                        {offer.campaign}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">{formatExpiryDate(offer.expiryDate)}</div>
+                      <div className="text-sm">
+                        {formatExpiryDate(offer.expiryDate)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getCountryFlags(offer.countries)}
@@ -541,7 +680,12 @@ export default function OffersListingModule() {
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, apiPagination.totalOffers)} of {apiPagination.totalOffers} offers
+                Showing {(currentPage - 1) * itemsPerPage + 1}-
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  apiPagination.totalOffers
+                )}{" "}
+                of {apiPagination.totalOffers} offers
               </div>
               <Pagination
                 currentPage={currentPage}
@@ -552,7 +696,6 @@ export default function OffersListingModule() {
           </div>
         )}
       </div>
-
 
       {/* Edit Offer Modal */}
       <EditOfferModal

@@ -1,45 +1,22 @@
-'use client';
+"use client";
 
-import axios from 'axios';
-
-const API_BASE = 'https://rewardsapi.hireagent.co';
-
-// Create axios instance with auth interceptor
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Add auth token to all requests
-apiClient.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+import apiClient from "../lib/apiClient";
 
 // Helper function to format milestone string (first_time_user -> First Time User)
 const formatMilestone = (milestone) => {
-  if (!milestone || typeof milestone !== 'string') return '';
+  if (!milestone || typeof milestone !== "string") return "";
   return milestone
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 // Helper function to format milestones array
 const formatMilestones = (milestones) => {
   if (!milestones || !Array.isArray(milestones) || milestones.length === 0) {
-    return 'All Users';
+    return "All Users";
   }
-  return milestones.map(formatMilestone).join(', ');
+  return milestones.map(formatMilestone).join(", ");
 };
 
 export const displayRulesAPI = {
@@ -48,10 +25,10 @@ export const displayRulesAPI = {
    */
   async getDisplayRules() {
     try {
-      const response = await apiClient.get('/api/admin/game-offers/display-rules');
+      const response = await apiClient.get("/admin/game-offers/display-rules");
 
       // Transform API response to frontend format
-      const transformedRules = response.data.data.map(rule => {
+      const transformedRules = response.data.data.map((rule) => {
         // Handle userMilestones as array (API returns plural)
         let userMilestones = [];
         if (rule.userMilestones && Array.isArray(rule.userMilestones)) {
@@ -59,33 +36,47 @@ export const displayRulesAPI = {
         } else if (rule.userMilestone) {
           userMilestones = [rule.userMilestone];
         }
-        
+
         // Format milestones for display
         const formattedMilestones = formatMilestones(userMilestones);
-        const firstMilestone = userMilestones.length > 0 ? formatMilestone(userMilestones[0]) : 'All Users';
+        const firstMilestone =
+          userMilestones.length > 0
+            ? formatMilestone(userMilestones[0])
+            : "All Users";
 
         // Use targetSegment from API if available, otherwise generate from milestones
-        const targetSegment = rule.targetSegment || formattedMilestones || 'All Users';
+        const targetSegment =
+          rule.targetSegment || formattedMilestones || "All Users";
 
         return {
           id: rule._id,
-          name: rule.metadata?.description || rule.ruleName || `${firstMilestone} Rule`,
+          name:
+            rule.metadata?.description ||
+            rule.ruleName ||
+            `${firstMilestone} Rule`,
           milestone: formattedMilestones,
-          description: rule.metadata?.notes || `Display rule for ${formattedMilestones.toLowerCase()} users`,
+          description:
+            rule.metadata?.notes ||
+            `Display rule for ${formattedMilestones.toLowerCase()} users`,
           maxGames: rule.maxGamesToShow,
           conditions: [
-            ...(userMilestones.length > 0 ? [`User milestones: ${formattedMilestones}`] : []),
-            ...(rule.segmentOverrides?.map(override =>
-              `${override.type.charAt(0).toUpperCase() + override.type.slice(1)}: ${override.value} → ${override.maxGamesToShow} games`
-            ) || [])
+            ...(userMilestones.length > 0
+              ? [`User milestones: ${formattedMilestones}`]
+              : []),
+            ...(rule.segmentOverrides?.map(
+              (override) =>
+                `${
+                  override.type.charAt(0).toUpperCase() + override.type.slice(1)
+                }: ${override.value} → ${override.maxGamesToShow} games`
+            ) || []),
           ],
           enabled: rule.isEnabled,
           priority: rule.metadata?.priority || rule.order || 1,
           targetSegment: targetSegment,
           appliedCount: 0, // Not in API
-          conversionRate: 'N/A', // Not in API
-          lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],
-          createdBy: rule.createdBy || 'N/A',
+          conversionRate: "N/A", // Not in API
+          lastModified: new Date(rule.updatedAt).toISOString().split("T")[0],
+          createdBy: rule.createdBy || "N/A",
           createdAt: rule.createdAt,
           // Additional fields for edit
           userMilestones: userMilestones,
@@ -95,13 +86,13 @@ export const displayRulesAPI = {
           order: rule.order,
           xpTier: rule.xpTier || null,
           membershipTier: rule.membershipTier || null,
-          gameCountLimits: rule.gameCountLimits || null
+          gameCountLimits: rule.gameCountLimits || null,
         };
       });
 
       return transformedRules;
     } catch (error) {
-      console.error('Error fetching display rules:', error);
+      console.error("Error fetching display rules:", error);
       throw error;
     }
   },
@@ -119,7 +110,7 @@ export const displayRulesAPI = {
       }
       if (!userMilestones || userMilestones.length === 0) {
         // Default to first_time_user if nothing provided
-        userMilestones = ['first_time_user'];
+        userMilestones = ["first_time_user"];
       }
 
       const apiPayload = {
@@ -133,39 +124,52 @@ export const displayRulesAPI = {
         membershipTier: ruleData.membershipTier || null,
         gameCountLimits: ruleData.gameCountLimits || null,
         metadata: {
-          description: ruleData.name || ruleData.metadata?.description || '',
-          notes: ruleData.description || ruleData.metadata?.notes || '',
-          priority: ruleData.priority || ruleData.metadata?.priority || 1
-        }
+          description: ruleData.name || ruleData.metadata?.description || "",
+          notes: ruleData.description || ruleData.metadata?.notes || "",
+          priority: ruleData.priority || ruleData.metadata?.priority || 1,
+        },
       };
 
-      const response = await apiClient.post('/api/admin/game-offers/display-rules', apiPayload);
+      const response = await apiClient.post(
+        "/admin/game-offers/display-rules",
+        apiPayload
+      );
 
       // Transform response back to frontend format
       const rule = response.data.data;
-      const userMilestonesArray = rule.userMilestones || (rule.userMilestone ? [rule.userMilestone] : []);
+      const userMilestonesArray =
+        rule.userMilestones || (rule.userMilestone ? [rule.userMilestone] : []);
       const formattedMilestones = formatMilestones(userMilestonesArray);
-      const targetSegment = rule.targetSegment || formattedMilestones || 'All Users';
+      const targetSegment =
+        rule.targetSegment || formattedMilestones || "All Users";
 
       return {
         id: rule._id,
-        name: rule.metadata?.description || rule.ruleName || `${formattedMilestones} Rule`,
+        name:
+          rule.metadata?.description ||
+          rule.ruleName ||
+          `${formattedMilestones} Rule`,
         milestone: formattedMilestones,
-        description: rule.metadata?.notes || '',
+        description: rule.metadata?.notes || "",
         maxGames: rule.maxGamesToShow,
         conditions: [
-          ...(userMilestonesArray.length > 0 ? [`User milestones: ${formattedMilestones}`] : []),
-          ...(rule.segmentOverrides?.map(override =>
-            `${override.type.charAt(0).toUpperCase() + override.type.slice(1)}: ${override.value} → ${override.maxGamesToShow} games`
-          ) || [])
+          ...(userMilestonesArray.length > 0
+            ? [`User milestones: ${formattedMilestones}`]
+            : []),
+          ...(rule.segmentOverrides?.map(
+            (override) =>
+              `${
+                override.type.charAt(0).toUpperCase() + override.type.slice(1)
+              }: ${override.value} → ${override.maxGamesToShow} games`
+          ) || []),
         ],
         enabled: rule.isEnabled,
         priority: rule.metadata?.priority || rule.order || 1,
         targetSegment: targetSegment,
         appliedCount: 0,
-        conversionRate: 'N/A',
-        lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],
-        createdBy: rule.createdBy || 'N/A',
+        conversionRate: "N/A",
+        lastModified: new Date(rule.updatedAt).toISOString().split("T")[0],
+        createdBy: rule.createdBy || "N/A",
         createdAt: rule.createdAt,
         userMilestones: userMilestonesArray,
         userMilestone: userMilestonesArray[0] || null, // Keep for backward compatibility
@@ -174,10 +178,10 @@ export const displayRulesAPI = {
         order: rule.order,
         xpTier: rule.xpTier || null,
         membershipTier: rule.membershipTier || null,
-        gameCountLimits: rule.gameCountLimits || null
+        gameCountLimits: rule.gameCountLimits || null,
       };
     } catch (error) {
-      console.error('Error creating display rule:', error);
+      console.error("Error creating display rule:", error);
       throw error;
     }
   },
@@ -190,10 +194,13 @@ export const displayRulesAPI = {
       // Transform frontend data to API format (only include updatable fields)
       const apiPayload = {};
 
-      if (ruleData.maxGames !== undefined) apiPayload.maxGamesToShow = ruleData.maxGames;
-      if (ruleData.segmentOverrides !== undefined) apiPayload.segmentOverrides = ruleData.segmentOverrides;
-      if (ruleData.enabled !== undefined) apiPayload.isEnabled = ruleData.enabled;
-      
+      if (ruleData.maxGames !== undefined)
+        apiPayload.maxGamesToShow = ruleData.maxGames;
+      if (ruleData.segmentOverrides !== undefined)
+        apiPayload.segmentOverrides = ruleData.segmentOverrides;
+      if (ruleData.enabled !== undefined)
+        apiPayload.isEnabled = ruleData.enabled;
+
       // Handle userMilestones update
       if (ruleData.userMilestones !== undefined) {
         apiPayload.userMilestones = ruleData.userMilestones;
@@ -201,48 +208,70 @@ export const displayRulesAPI = {
         // Backward compatibility: convert single milestone to array
         apiPayload.userMilestones = [ruleData.userMilestone];
       }
-      
+
       if (ruleData.xpTier !== undefined) apiPayload.xpTier = ruleData.xpTier;
-      if (ruleData.membershipTier !== undefined) apiPayload.membershipTier = ruleData.membershipTier;
-      if (ruleData.gameCountLimits !== undefined) apiPayload.gameCountLimits = ruleData.gameCountLimits;
+      if (ruleData.membershipTier !== undefined)
+        apiPayload.membershipTier = ruleData.membershipTier;
+      if (ruleData.gameCountLimits !== undefined)
+        apiPayload.gameCountLimits = ruleData.gameCountLimits;
       if (ruleData.order !== undefined) apiPayload.order = ruleData.order;
-      if (ruleData.ruleName !== undefined) apiPayload.ruleName = ruleData.ruleName;
+      if (ruleData.ruleName !== undefined)
+        apiPayload.ruleName = ruleData.ruleName;
 
       // Update metadata if provided
-      if (ruleData.name || ruleData.description || ruleData.priority !== undefined) {
+      if (
+        ruleData.name ||
+        ruleData.description ||
+        ruleData.priority !== undefined
+      ) {
         apiPayload.metadata = {};
         if (ruleData.name) apiPayload.metadata.description = ruleData.name;
-        if (ruleData.description) apiPayload.metadata.notes = ruleData.description;
-        if (ruleData.priority !== undefined) apiPayload.metadata.priority = ruleData.priority;
+        if (ruleData.description)
+          apiPayload.metadata.notes = ruleData.description;
+        if (ruleData.priority !== undefined)
+          apiPayload.metadata.priority = ruleData.priority;
       }
 
-      const response = await apiClient.put(`/api/admin/game-offers/display-rules/${ruleId}`, apiPayload);
+      const response = await apiClient.put(
+        `/admin/game-offers/display-rules/${ruleId}`,
+        apiPayload
+      );
 
       // Transform response back to frontend format
       const rule = response.data.data;
-      const userMilestonesArray = rule.userMilestones || (rule.userMilestone ? [rule.userMilestone] : []);
+      const userMilestonesArray =
+        rule.userMilestones || (rule.userMilestone ? [rule.userMilestone] : []);
       const formattedMilestones = formatMilestones(userMilestonesArray);
-      const targetSegment = rule.targetSegment || formattedMilestones || 'All Users';
+      const targetSegment =
+        rule.targetSegment || formattedMilestones || "All Users";
 
       return {
         id: rule._id,
-        name: rule.metadata?.description || rule.ruleName || `${formattedMilestones} Rule`,
+        name:
+          rule.metadata?.description ||
+          rule.ruleName ||
+          `${formattedMilestones} Rule`,
         milestone: formattedMilestones,
-        description: rule.metadata?.notes || '',
+        description: rule.metadata?.notes || "",
         maxGames: rule.maxGamesToShow,
         conditions: [
-          ...(userMilestonesArray.length > 0 ? [`User milestones: ${formattedMilestones}`] : []),
-          ...(rule.segmentOverrides?.map(override =>
-            `${override.type.charAt(0).toUpperCase() + override.type.slice(1)}: ${override.value} → ${override.maxGamesToShow} games`
-          ) || [])
+          ...(userMilestonesArray.length > 0
+            ? [`User milestones: ${formattedMilestones}`]
+            : []),
+          ...(rule.segmentOverrides?.map(
+            (override) =>
+              `${
+                override.type.charAt(0).toUpperCase() + override.type.slice(1)
+              }: ${override.value} → ${override.maxGamesToShow} games`
+          ) || []),
         ],
         enabled: rule.isEnabled,
         priority: rule.metadata?.priority || rule.order || 1,
         targetSegment: targetSegment,
         appliedCount: 0,
-        conversionRate: 'N/A',
-        lastModified: new Date(rule.updatedAt).toISOString().split('T')[0],
-        createdBy: rule.createdBy || 'N/A',
+        conversionRate: "N/A",
+        lastModified: new Date(rule.updatedAt).toISOString().split("T")[0],
+        createdBy: rule.createdBy || "N/A",
         createdAt: rule.createdAt,
         userMilestones: userMilestonesArray,
         userMilestone: userMilestonesArray[0] || null, // Keep for backward compatibility
@@ -251,11 +280,26 @@ export const displayRulesAPI = {
         order: rule.order,
         xpTier: rule.xpTier || null,
         membershipTier: rule.membershipTier || null,
-        gameCountLimits: rule.gameCountLimits || null
+        gameCountLimits: rule.gameCountLimits || null,
       };
     } catch (error) {
-      console.error('Error updating display rule:', error);
+      console.error("Error updating display rule:", error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * Delete display rule
+   */
+  async deleteDisplayRule(ruleId) {
+    try {
+      const response = await apiClient.delete(
+        `/admin/game-offers/display-rules/${ruleId}?confirm=true`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting display rule:", error);
+      throw error;
+    }
+  },
 };

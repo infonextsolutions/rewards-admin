@@ -1,7 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import apiClient from "../../lib/apiClient";
 
 export const BalanceTierSection = ({ user }) => {
+  const [xpTierName, setXpTierName] = useState("Junior");
+  const [loadingTier, setLoadingTier] = useState(true);
+
   // Format redemption data from API
   const redemptionCount =
     user?.redemptionBreakdown?.count || user?.redemptionsMade || 0;
@@ -25,18 +29,107 @@ export const BalanceTierSection = ({ user }) => {
     }
   };
 
-  // Map XP tier number to name
-  const getXPTierName = (xpTierNumber) => {
-    const XP_TIER_MAP = {
-      1: "Junior",
-      2: "Mid",
-      3: "Senior",
-    };
-    return XP_TIER_MAP[xpTierNumber] || "Junior";
-  };
+  // Calculate XP tier name based on user XP and admin config
+  useEffect(() => {
+    const calculateXPTier = async () => {
+      try {
+        setLoadingTier(true);
+        // Get user's XP value (extract number from string like "2850 XP" or use direct number)
+        let userXP = 0;
+        if (user?.xp !== undefined && typeof user.xp === "number") {
+          userXP = user.xp;
+        } else if (user?.currentXP) {
+          // Extract number from "2850 XP" format or use as number
+          if (typeof user.currentXP === "number") {
+            userXP = user.currentXP;
+          } else {
+            const xpMatch = String(user.currentXP).match(/(\d+)/);
+            userXP = xpMatch ? parseInt(xpMatch[1]) : 0;
+          }
+        } else if (user?.xpTier !== undefined) {
+          // If we only have tier number, we can't calculate from XP, so use fallback
+          userXP = 0;
+        }
 
-  // Get XP tier name
-  const xpTierName = getXPTierName(user?.xpTier || 1);
+        // Fetch XP tiers from admin config
+        const response = await apiClient.get("/admin/rewards/xp-tiers", {
+          params: { status: true },
+        });
+
+        if (response.data?.success && response.data?.data) {
+          const tiers = response.data.data;
+
+          // Sort tiers by xpMin descending to check highest tiers first (Senior -> Middle -> Junior)
+          const sortedTiers = [...tiers].sort(
+            (a, b) => (b.xpMin || 0) - (a.xpMin || 0)
+          );
+
+          // Find the tier that matches user's XP
+          let matchedTier = null;
+
+          // Check from highest tier to lowest
+          for (const tier of sortedTiers) {
+            const xpMin = tier.xpMin || 0;
+            const xpMax = tier.xpMax;
+
+            // If user's XP meets the minimum requirement for this tier
+            if (userXP >= xpMin) {
+              // If xpMax is null/undefined, it means unlimited (Senior tier with no upper limit)
+              if (xpMax === null || xpMax === undefined) {
+                matchedTier = tier;
+                break; // User qualifies for this tier (unlimited upper bound)
+              }
+              // If userXP is within the tier's range (xpMin <= userXP <= xpMax)
+              else if (userXP <= xpMax) {
+                matchedTier = tier;
+                break; // User qualifies for this tier
+              }
+              // If userXP > xpMax but >= xpMin, user has exceeded this tier
+              // They should be in the highest tier they've reached
+              // Since we're checking from highest to lowest, if we reach here,
+              // it means userXP exceeds this tier's max, so assign to highest tier
+              else {
+                // User exceeds this tier's max, but they've reached at least this tier
+                // Assign to the highest tier (first in sorted array)
+                matchedTier = sortedTiers[0];
+                break;
+              }
+            }
+          }
+
+          // If no tier matched (userXP is below all tier mins), assign to lowest tier
+          if (!matchedTier) {
+            matchedTier = sortedTiers[sortedTiers.length - 1] || sortedTiers[0];
+          }
+
+          setXpTierName(matchedTier?.tierName || "Junior");
+        } else {
+          // Fallback to old logic if API fails
+          const XP_TIER_MAP = {
+            1: "Junior",
+            2: "Mid",
+            3: "Senior",
+          };
+          setXpTierName(XP_TIER_MAP[user?.xpTier || 1] || "Junior");
+        }
+      } catch (error) {
+        console.error("Error fetching XP tiers:", error);
+        // Fallback to old logic on error
+        const XP_TIER_MAP = {
+          1: "Junior",
+          2: "Mid",
+          3: "Senior",
+        };
+        setXpTierName(XP_TIER_MAP[user?.xpTier || 1] || "Junior");
+      } finally {
+        setLoadingTier(false);
+      }
+    };
+
+    if (user) {
+      calculateXPTier();
+    }
+  }, [user]);
 
   // Get subscription tier (from tier field or vip.level)
   const subscriptionTier = user?.tier || user?.vip?.level || "Free";

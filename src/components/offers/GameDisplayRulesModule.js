@@ -215,6 +215,8 @@ export default function GameDisplayRulesModule() {
         await deleteDisplayRule(selectedRule.id);
         setShowDeleteModal(false);
         setSelectedRule(null);
+        // Refresh the list to ensure UI is updated
+        await fetchDisplayRules();
       } catch (error) {
         console.error("Failed to delete rule:", error);
         // Error is already handled by the hook

@@ -9,6 +9,7 @@ export default function DailyRewards({ onSave, onCancel }) {
   const [saving, setSaving] = useState(false);
   const [showMultiplierModal, setShowMultiplierModal] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [duplicateWeekErrors, setDuplicateWeekErrors] = useState({});
 
   // Main configuration state - matching API V2 structure
   const [config, setConfig] = useState({
@@ -140,13 +141,25 @@ export default function DailyRewards({ onSave, onCancel }) {
               )
             )
           : 4;
+      const newWeekNumber = parseInt(currentMaxWeek + 1);
+      
+      // Check if the new week number conflicts with fixed weeks
+      if (
+        (newWeekNumber === 2 && prev.weeklyMultiplier.week2) ||
+        (newWeekNumber === 3 && prev.weeklyMultiplier.week3) ||
+        (newWeekNumber === 4 && prev.weeklyMultiplier.week4)
+      ) {
+        toast.error("Duplicate week not allowed");
+        return prev;
+      }
+      
       return {
         ...prev,
         weeklyMultiplier: {
           ...prev.weeklyMultiplier,
           additionalWeeks: [
             ...prev.weeklyMultiplier.additionalWeeks,
-            { weekNumber: parseInt(currentMaxWeek + 1), multiplier: 1.0 },
+            { weekNumber: newWeekNumber, multiplier: 1.0 },
           ],
         },
       };
@@ -163,18 +176,83 @@ export default function DailyRewards({ onSave, onCancel }) {
         ),
       },
     }));
+    // Clear error for removed item
+    setDuplicateWeekErrors((prevErrors) => {
+      const newErrors = { ...prevErrors };
+      delete newErrors[index];
+      // Reindex errors for items after the removed one
+      const reindexedErrors = {};
+      Object.keys(newErrors).forEach((key) => {
+        const keyNum = parseInt(key);
+        if (keyNum > index) {
+          reindexedErrors[keyNum - 1] = newErrors[key];
+        } else if (keyNum < index) {
+          reindexedErrors[key] = newErrors[key];
+        }
+      });
+      return reindexedErrors;
+    });
   };
 
   const updateAdditionalMultiplier = (index, field, value) => {
-    setConfig((prev) => ({
-      ...prev,
-      weeklyMultiplier: {
-        ...prev.weeklyMultiplier,
-        additionalWeeks: prev.weeklyMultiplier.additionalWeeks.map((item, i) =>
-          i === index ? { ...item, [field]: value } : item
-        ),
-      },
-    }));
+    setConfig((prev) => {
+      const updatedWeeks = prev.weeklyMultiplier.additionalWeeks.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      );
+      
+      // Check for duplicate week numbers if updating weekNumber field
+      if (field === "weekNumber") {
+        const newWeekNumber = parseInt(value) || value;
+        let errorMessage = "";
+        
+        // Check for conflicts with fixed week multipliers (week2, week3, week4)
+        if (newWeekNumber === 2 && prev.weeklyMultiplier.week2) {
+          errorMessage = "Duplicate week not allowed";
+          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
+          toast.error("Duplicate week not allowed");
+          return prev;
+        }
+        if (newWeekNumber === 3 && prev.weeklyMultiplier.week3) {
+          errorMessage = "Duplicate week not allowed";
+          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
+          toast.error("Duplicate week not allowed");
+          return prev;
+        }
+        if (newWeekNumber === 4 && prev.weeklyMultiplier.week4) {
+          errorMessage = "Duplicate week not allowed";
+          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
+          toast.error("Duplicate week not allowed");
+          return prev;
+        }
+        
+        // Check for duplicates within additionalWeeks
+        const duplicateExists = updatedWeeks.some(
+          (item, i) => i !== index && (parseInt(item.weekNumber) || item.weekNumber) === newWeekNumber
+        );
+        
+        if (duplicateExists) {
+          errorMessage = "Duplicate week not allowed";
+          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
+          toast.error("Duplicate week not allowed");
+          return prev; // Don't update if duplicate
+        }
+        
+        // Clear error if no duplicate
+        setDuplicateWeekErrors((prevErrors) => {
+          const newErrors = { ...prevErrors };
+          delete newErrors[index];
+          return newErrors;
+        });
+      }
+      
+      return {
+        ...prev,
+        weeklyMultiplier: {
+          ...prev.weeklyMultiplier,
+          additionalWeeks: updatedWeeks,
+        },
+      };
+    });
   };
 
   const validateConfiguration = () => {
@@ -261,6 +339,30 @@ export default function DailyRewards({ onSave, onCancel }) {
       ) {
         errors.push("Week 4 Multiplier must be >= 1.0");
       }
+      // Check for duplicate week numbers in additionalWeeks and conflicts with fixed weeks
+      const weekNumbers = config.weeklyMultiplier.additionalWeeks.map((item) =>
+        parseInt(item.weekNumber) || item.weekNumber
+      );
+      
+      // Check for conflicts with fixed week multipliers
+      if (weekNumbers.includes(2) && config.weeklyMultiplier.week2) {
+        errors.push("Duplicate week not allowed");
+      }
+      if (weekNumbers.includes(3) && config.weeklyMultiplier.week3) {
+        errors.push("Duplicate week not allowed");
+      }
+      if (weekNumbers.includes(4) && config.weeklyMultiplier.week4) {
+        errors.push("Duplicate week not allowed");
+      }
+      
+      // Check for duplicates within additionalWeeks
+      const duplicateWeeks = weekNumbers.filter(
+        (week, index) => weekNumbers.indexOf(week) !== index
+      );
+      if (duplicateWeeks.length > 0) {
+        errors.push("Duplicate week not allowed");
+      }
+
       config.weeklyMultiplier.additionalWeeks.forEach((item) => {
         if (item.multiplier && parseFloat(item.multiplier) < 1.0) {
           errors.push(`Week ${item.weekNumber} Multiplier must be >= 1.0`);
@@ -849,11 +951,20 @@ export default function DailyRewards({ onSave, onCancel }) {
                                   parseInt(e.target.value) || 5
                                 )
                               }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
+                              className={`w-full px-3 py-2 border rounded-lg text-sm mb-2 ${
+                                duplicateWeekErrors[index]
+                                  ? "border-red-500 bg-red-50"
+                                  : "border-gray-300"
+                              }`}
                               min="5"
                               step="1"
                               placeholder="5"
                             />
+                            {duplicateWeekErrors[index] && (
+                              <p className="text-red-600 text-xs mt-1 font-medium">
+                                {duplicateWeekErrors[index]}
+                              </p>
+                            )}
                           </div>
                           <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
