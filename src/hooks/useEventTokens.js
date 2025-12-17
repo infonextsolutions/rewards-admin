@@ -139,6 +139,48 @@ export function useEventTokens() {
     }
   }, []);
 
+  // Update event token
+  const updateEventToken = useCallback(async (id, eventData) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await eventTokensAPI.updateEventToken(id, eventData);
+      if (response.success) {
+        toast.success(response.message || 'Event token updated successfully');
+        return response.data;
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Failed to update event token';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Delete event token
+  const deleteEventToken = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await eventTokensAPI.deleteEventToken(id);
+      if (response.success) {
+        toast.success(response.message || 'Event token deleted successfully');
+        return true;
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Failed to delete event token';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Change page without fetching (uses already-fetched data)
   const setPage = useCallback((page) => {
     const limit = pagination.itemsPerPage;
@@ -168,6 +210,8 @@ export function useEventTokens() {
     fetchS2SEvents,
     fetchCategories,
     createEventToken,
+    updateEventToken,
+    deleteEventToken,
     bulkImportEventTokens,
     setPage,
   };

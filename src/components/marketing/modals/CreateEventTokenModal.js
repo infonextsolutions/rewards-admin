@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-export default function CreateEventTokenModal({ isOpen, onClose, onSave, categories }) {
+export default function CreateEventTokenModal({ isOpen, onClose, onSave, categories, editData = null }) {
   const [formData, setFormData] = useState({
     token: '',
     name: '',
@@ -18,19 +18,32 @@ export default function CreateEventTokenModal({ isOpen, onClose, onSave, categor
 
   useEffect(() => {
     if (isOpen) {
-      // Reset form when modal opens
-      setFormData({
-        token: '',
-        name: '',
-        unique: false,
-        category: '',
-        isS2S: false,
-        description: '',
-        metadata: {},
-      });
+      if (editData) {
+        // Populate form with edit data
+        setFormData({
+          token: editData.token || '',
+          name: editData.name || '',
+          unique: editData.unique || false,
+          category: editData.category || '',
+          isS2S: editData.isS2S || false,
+          description: editData.description || '',
+          metadata: editData.metadata || {},
+        });
+      } else {
+        // Reset form when modal opens for create
+        setFormData({
+          token: '',
+          name: '',
+          unique: false,
+          category: '',
+          isS2S: false,
+          description: '',
+          metadata: {},
+        });
+      }
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, editData]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -86,7 +99,9 @@ export default function CreateEventTokenModal({ isOpen, onClose, onSave, categor
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Create Event Token</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {editData ? 'Edit Event Token' : 'Create Event Token'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -107,11 +122,15 @@ export default function CreateEventTokenModal({ isOpen, onClose, onSave, categor
               type="text"
               value={formData.token}
               onChange={(e) => handleInputChange('token', e.target.value)}
+              disabled={!!editData}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] ${
                 errors.token ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${editData ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               placeholder="Enter event token"
             />
+            {editData && (
+              <p className="mt-1 text-xs text-gray-500">Token cannot be changed</p>
+            )}
             {errors.token && (
               <p className="mt-1 text-sm text-red-600">{errors.token}</p>
             )}
@@ -208,7 +227,9 @@ export default function CreateEventTokenModal({ isOpen, onClose, onSave, categor
               disabled={isSubmitting}
               className="px-4 py-2 text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Creating...' : 'Create Event Token'}
+              {isSubmitting 
+                ? (editData ? 'Updating...' : 'Creating...') 
+                : (editData ? 'Update Event Token' : 'Create Event Token')}
             </button>
           </div>
         </form>

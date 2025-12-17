@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { PlusIcon, FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, FunnelIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Pagination from '../ui/Pagination';
 import CreateEventTokenModal from './modals/CreateEventTokenModal';
 import BulkImportModal from './modals/BulkImportModal';
+import EventTokenAnalytics from './EventTokenAnalytics';
 import { useEventTokens } from '../../hooks/useEventTokens';
 import toast from 'react-hot-toast';
 
@@ -18,6 +19,8 @@ export default function EventTokenManagement() {
     fetchEventTokens,
     fetchCategories,
     createEventToken,
+    updateEventToken,
+    deleteEventToken,
     bulkImportEventTokens,
     setPage,
   } = useEventTokens();
@@ -33,6 +36,9 @@ export default function EventTokenManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [activeTab, setActiveTab] = useState('tokens'); // 'tokens' or 'analytics'
 
   // Fetch categories on mount
   useEffect(() => {
@@ -70,6 +76,47 @@ export default function EventTokenManagement() {
       if (filters.isActive !== '') apiFilters.isActive = filters.isActive === 'true';
       if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
       await fetchEventTokens(currentPage, apiFilters, itemsPerPage);
+      setShowCreateModal(false);
+    } catch (error) {
+      // Error is handled in the hook
+    }
+  };
+
+  const handleEditEventToken = (event) => {
+    setEditData(event);
+    setShowCreateModal(true);
+  };
+
+  const handleUpdateEventToken = async (eventData) => {
+    try {
+      await updateEventToken(editData._id || editData.id, eventData);
+      // Refresh the list
+      const apiFilters = {};
+      if (filters.category) apiFilters.category = filters.category;
+      if (filters.isS2S !== '') apiFilters.isS2S = filters.isS2S === 'true';
+      if (filters.isActive !== '') apiFilters.isActive = filters.isActive === 'true';
+      if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
+      await fetchEventTokens(currentPage, apiFilters, itemsPerPage);
+      setShowCreateModal(false);
+      setEditData(null);
+    } catch (error) {
+      // Error is handled in the hook
+    }
+  };
+
+  const handleDeleteEventToken = async () => {
+    if (!deleteConfirm) return;
+    
+    try {
+      await deleteEventToken(deleteConfirm._id || deleteConfirm.id);
+      // Refresh the list
+      const apiFilters = {};
+      if (filters.category) apiFilters.category = filters.category;
+      if (filters.isS2S !== '') apiFilters.isS2S = filters.isS2S === 'true';
+      if (filters.isActive !== '') apiFilters.isActive = filters.isActive === 'true';
+      if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
+      await fetchEventTokens(currentPage, apiFilters, itemsPerPage);
+      setDeleteConfirm(null);
     } catch (error) {
       // Error is handled in the hook
     }
@@ -120,22 +167,56 @@ export default function EventTokenManagement() {
             Manage Adjust event tokens for marketing attribution
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowBulkImportModal(true)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389]"
-          >
-            Bulk Import
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389] flex items-center gap-2"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Create Event Token
-          </button>
-        </div>
+        {activeTab === 'tokens' && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowBulkImportModal(true)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389]"
+            >
+              Bulk Import
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389] flex items-center gap-2"
+            >
+              <PlusIcon className="w-5 h-5" />
+              Create Event Token
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('tokens')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'tokens'
+                ? 'border-[#00a389] text-[#00a389]'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Tokens
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'analytics'
+                ? 'border-[#00a389] text-[#00a389]'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Analytics
+          </button>
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'analytics' ? (
+        <EventTokenAnalytics />
+      ) : (
+        <>
 
       {/* Filters Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -299,6 +380,9 @@ export default function EventTokenManagement() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Description
                     </th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -355,6 +439,24 @@ export default function EventTokenManagement() {
                           {event.description || 'N/A'}
                         </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEditEventToken(event)}
+                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                            title="Edit event token"
+                          >
+                            <PencilIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(event)}
+                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                            title="Delete event token"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -379,9 +481,13 @@ export default function EventTokenManagement() {
       {/* Modals */}
       <CreateEventTokenModal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSave={handleCreateEventToken}
+        onClose={() => {
+          setShowCreateModal(false);
+          setEditData(null);
+        }}
+        onSave={editData ? handleUpdateEventToken : handleCreateEventToken}
         categories={categories}
+        editData={editData}
       />
 
       <BulkImportModal
@@ -389,6 +495,37 @@ export default function EventTokenManagement() {
         onClose={() => setShowBulkImportModal(false)}
         onSave={handleBulkImport}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Event Token</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to delete the event token <strong>{deleteConfirm.name}</strong> ({deleteConfirm.token})? 
+                This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteEventToken}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+        </>
+      )}
     </div>
   );
 }

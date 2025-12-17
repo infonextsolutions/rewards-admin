@@ -125,5 +125,69 @@ export const eventTokensAPI = {
       throw error;
     }
   },
+
+  /**
+   * Update an event token
+   * @param {string} id - Event token ID
+   * @param {Object} eventData - Updated event token data
+   */
+  async updateEventToken(id, eventData) {
+    try {
+      const response = await apiClient.put(`/admin/adjust-events/${id}`, eventData);
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message || "Event token updated successfully",
+      };
+    } catch (error) {
+      console.error("Error updating event token:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete an event token
+   * @param {string} id - Event token ID
+   */
+  async deleteEventToken(id) {
+    try {
+      const response = await apiClient.delete(`/admin/adjust-events/${id}`);
+      return {
+        success: true,
+        message: response.data.message || "Event token deleted successfully",
+      };
+    } catch (error) {
+      console.error("Error deleting event token:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get analytics for an event token
+   * @param {string} token - Event token
+   * @param {Object} params - Analytics parameters
+   * @param {string} params.startDate - Start date (YYYY-MM-DD)
+   * @param {string} params.endDate - End date (YYYY-MM-DD)
+   * @param {string} params.type - Analytics type: 'complete', 'events', 'installs', 'revenue', 'devices'
+   */
+  async getTokenAnalytics(token, params = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.type) queryParams.append("type", params.type);
+
+      const response = await apiClient.get(
+        `/admin/adjust-events/${token}/analytics?${queryParams.toString()}`
+      );
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error) {
+      console.error("Error fetching token analytics:", error);
+      throw error;
+    }
+  },
 };
 
