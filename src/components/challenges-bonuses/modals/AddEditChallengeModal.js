@@ -213,6 +213,98 @@ export default function AddEditChallengeModal({
       newErrors.date = "Cannot create challenges for past dates";
     }
 
+    // Validate segment conflict: check if a challenge with the same segment already exists for the selected date
+    if (!challenge && formData.date && existingChallenges && existingChallenges.length > 0) {
+      // Get the target audience for the new challenge
+      const countries = formData.countriesInput
+        ? [formData.countriesInput.trim().toUpperCase()]
+        : [];
+      const ageMin =
+        formData.ageMin !== "" && !Number.isNaN(Number(formData.ageMin))
+          ? Number(formData.ageMin)
+          : undefined;
+      const ageMax =
+        formData.ageMax !== "" && !Number.isNaN(Number(formData.ageMax))
+          ? Number(formData.ageMax)
+          : undefined;
+      const genders =
+        formData.genders && formData.genders.length > 0
+          ? formData.genders.map((g) => {
+              const lower = String(g).toLowerCase();
+              if (lower === "male") return "male";
+              if (lower === "female") return "female";
+              if (lower === "other") return "other";
+              return null;
+            }).filter(g => g !== null)
+          : [];
+
+      // Check for conflicts with existing challenges on the same date
+      const conflictingChallenge = existingChallenges.find((existing) => {
+        // Convert dates to YYYY-MM-DD format for comparison
+        let existingDate = existing.date || existing.challengeDate || "";
+        if (existingDate && existingDate.includes("T")) {
+          existingDate = new Date(existingDate).toISOString().split("T")[0];
+        }
+
+        if (existingDate !== formData.date) {
+          return false; // Different dates, no conflict
+        }
+
+        // Same date - check if segments match
+        const existingAudience = existing.targetAudience || {};
+        const existingCountries = existingAudience.countries || [];
+        const existingAgeRange = existingAudience.ageRange || {};
+        const existingGenders = existingAudience.gender || [];
+
+        // Check if country segment matches
+        const countriesMatch = 
+          (countries.length === 0 && existingCountries.length === 0) ||
+          (countries.length > 0 && existingCountries.length > 0 && 
+           countries[0] === existingCountries[0]);
+
+        // Check if age range segment matches
+        const ageMin1 = ageMin !== undefined ? ageMin : null;
+        const ageMax1 = ageMax !== undefined ? ageMax : null;
+        const ageMin2 = existingAgeRange.min !== undefined ? existingAgeRange.min : null;
+        const ageMax2 = existingAgeRange.max !== undefined ? existingAgeRange.max : null;
+        
+        const ageRangeMatches =
+          (ageMin1 === null && ageMax1 === null && ageMin2 === null && ageMax2 === null) ||
+          (ageMin1 === ageMin2 && ageMax1 === ageMax2);
+
+        // Check if gender segment matches
+        const gendersMatch =
+          (genders.length === 0 && existingGenders.length === 0) ||
+          (genders.length > 0 && existingGenders.length > 0 &&
+           genders.length === existingGenders.length &&
+           genders.every((g) => existingGenders.includes(g)));
+
+        // Return true if any segment dimension matches (same segment)
+        return countriesMatch || ageRangeMatches || gendersMatch;
+      });
+
+      if (conflictingChallenge) {
+        const segmentDesc = [];
+        if (formData.countriesInput) {
+          segmentDesc.push(`country: ${formData.countriesInput}`);
+        }
+        if (formData.ageMin || formData.ageMax) {
+          const minAge = formData.ageMin || "any";
+          const maxAge = formData.ageMax || "any";
+          segmentDesc.push(`age: ${minAge}-${maxAge}`);
+        }
+        if (formData.genders.length > 0) {
+          segmentDesc.push(`gender: ${formData.genders.join(", ")}`);
+        }
+
+        const segmentText = segmentDesc.length > 0
+          ? ` (${segmentDesc.join(", ")})`
+          : " (same segment)";
+
+        newErrors.date = `A challenge with the same segment${segmentText} already exists on this date. Please adjust the target audience or select a different date.`;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

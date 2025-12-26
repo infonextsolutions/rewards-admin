@@ -265,11 +265,44 @@ export default function GamesListingModule() {
       fetchGames(currentPage, apiFilters, itemsPerPage);
     } catch (error) {
       console.error("Error saving game:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to save game. Please try again.";
-      toast.error(errorMessage);
+      const resp = error.response;
+      const serverMessage = resp?.data?.message;
+      const duplicateId = resp?.data?.duplicateId;
+      const isDuplicate = error.isDuplicateVariant || resp?.status === 409 || !!duplicateId;
+
+      if (isDuplicate) {
+        const friendly = serverMessage || "A game with the same segment already exists.";
+        if (duplicateId) {
+          try {
+            // Fetch the existing variant and open it in the edit modal for clarity
+            const existing = await getGameById(duplicateId);
+            setSelectedGame(existing);
+            setShowEditModal(true);
+            toast((t) => (
+              <div className="flex items-center gap-2">
+                <div>{friendly}</div>
+                <button
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    setShowEditModal(true);
+                  }}
+                  className="ml-2 underline text-sm"
+                >
+                  Open
+                </button>
+              </div>
+            ));
+          } catch (fetchErr) {
+            console.error("Error fetching duplicate game:", fetchErr);
+            toast.error(friendly);
+          }
+        } else {
+          toast.error(friendly);
+        }
+      } else {
+        const errorMessage = serverMessage || error.message || "Failed to save game. Please try again.";
+        toast.error(errorMessage);
+      }
     }
   };
 

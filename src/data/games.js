@@ -46,6 +46,32 @@ export const gamesAPI = {
    */
   async createGame(gameData) {
     try {
+      // Pre-check if a game variant with same gameId + segment already exists
+      try {
+        const checkPayload = {
+          gameId: gameData.gameId,
+          gender: (gameData.gender || "all").toString().toLowerCase().trim(),
+          uiSection: gameData.uiSection || "",
+          ageGroup: gameData.ageGroup || "",
+        };
+
+        const checkRes = await apiClient.post(
+          "/admin/game-offers/games/check-variant",
+          checkPayload
+        );
+        if (checkRes.data && checkRes.data.exists) {
+          const err = new Error(
+            "A game variant with the same Game ID and segment already exists."
+          );
+          err.isDuplicateVariant = true;
+          throw err;
+        }
+      } catch (err) {
+        if (err.isDuplicateVariant) throw err;
+        // If check failed due to network/internal error, log and continue to attempt create
+        console.warn("Variant check failed, continuing to create:", err.message);
+      }
+
       // Create FormData for file upload
       const formData = new FormData();
 
