@@ -148,6 +148,11 @@ export default function GamesListingModule() {
     // client-side filtering in filteredGames useMemo will handle it
   ]);
 
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   // Use API data directly - server-side filtering and pagination
   const games = apiGames;
   const totalPages = apiPagination.totalPages;
@@ -268,10 +273,12 @@ export default function GamesListingModule() {
       const resp = error.response;
       const serverMessage = resp?.data?.message;
       const duplicateId = resp?.data?.duplicateId;
-      const isDuplicate = error.isDuplicateVariant || resp?.status === 409 || !!duplicateId;
+      const isDuplicate =
+        error.isDuplicateVariant || resp?.status === 409 || !!duplicateId;
 
       if (isDuplicate) {
-        const friendly = serverMessage || "A game with the same segment already exists.";
+        const friendly =
+          serverMessage || "A game with the same segment already exists.";
         if (duplicateId) {
           try {
             // Fetch the existing variant and open it in the edit modal for clarity
@@ -300,7 +307,10 @@ export default function GamesListingModule() {
           toast.error(friendly);
         }
       } else {
-        const errorMessage = serverMessage || error.message || "Failed to save game. Please try again.";
+        const errorMessage =
+          serverMessage ||
+          error.message ||
+          "Failed to save game. Please try again.";
         toast.error(errorMessage);
       }
     }
@@ -440,10 +450,15 @@ export default function GamesListingModule() {
       case "ageGroup":
         return (
           <div className="text-sm text-gray-900">
-            {game.ageGroup ||
-              (game.ageGroups && game.ageGroups.length > 0
-                ? game.ageGroups[0]
-                : "N/A")}
+            {game.ageGroups && game.ageGroups.length > 0 ? (
+              <div className="space-y-1">
+                {game.ageGroups.map((age, index) => (
+                  <div key={index}>{age}</div>
+                ))}
+              </div>
+            ) : (
+              game.ageGroup || "N/A"
+            )}
           </div>
         );
       case "gender":

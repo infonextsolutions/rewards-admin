@@ -783,6 +783,41 @@ export const useRewards = () => {
     }
   };
 
+  const fetchXPDecaySettingsV2 = async (filters = {}) => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (
+        filters.status !== undefined &&
+        filters.status !== null &&
+        filters.status !== ""
+      ) {
+        params.status = filters.status;
+      }
+      const response = await apiClient.get("/admin/xp-decay-v2", {
+        params,
+      });
+      const result = response.data;
+      if (result.success && result.data) {
+        const transformedData = result.data.map((item) => ({
+          id: item._id,
+          ...item,
+        }));
+        setXpDecaySettings(transformedData);
+        setLoading(false);
+        return { success: true, data: transformedData, total: result.total };
+      }
+      setLoading(false);
+      return { success: false, data: [], total: 0 };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
   const fetchSingleXPDecay = async (id) => {
     setLoading(true);
     try {
@@ -1236,7 +1271,201 @@ export const useRewards = () => {
       throw new Error(errorMessage);
     }
   };
+  const fetchSingleXPDecayV2 = async (id) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(`/admin/xp-decay-v2/${id}`);
+      const result = response.data;
 
+      if (result.success && result.data) {
+        const transformedData = {
+          id: result.data._id,
+          ...result.data,
+        };
+
+        setLoading(false);
+        return { success: true, data: transformedData };
+      }
+
+      setLoading(false);
+      return { success: false, data: null };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const createXPDecayV2 = async (formData) => {
+    setLoading(true);
+    try {
+      const { id, ...data } = formData;
+      const response = await apiClient.post("/admin/xp-decay-v2", data);
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const updateXPDecayV2 = async (id, formData) => {
+    setLoading(true);
+    try {
+      const { ...data } = formData;
+      const response = await apiClient.put(
+        `/admin/xp-decay-v2/${id}`,
+        data
+      );
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const deleteXPDecayV2 = async (id) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.delete(`/admin/xp-decay-v2/${id}`);
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const toggleXPDecayStatusV2 = async (id, status) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch(`/admin/xp-decay-v2/${id}/status`, {
+        status,
+      });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const toggleXPDecayNotificationV2 = async (id, notificationEnabled) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch(`/admin/xp-decay-v2/${id}/notification`, {
+        notificationEnabled,
+      });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkUpdateXPDecayStatusV2 = async (ids, status) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.patch("/admin/xp-decay-v2/bulk-status", {
+        ids,
+        status,
+      });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, data: result.data, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const bulkDeleteXPDecayV2 = async (ids) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.post("/admin/xp-decay-v2/bulk-delete", {
+         ids 
+      });
+      const result = response.data;
+
+      if (result.success) {
+        setLoading(false);
+        return { success: true, message: result.message };
+      }
+
+      setLoading(false);
+      return { success: false };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(errorMessage);
+      setLoading(false);
+      throw new Error(errorMessage);
+    }
+  };
+  
   return {
     xpTiers,
     xpDecaySettings,
@@ -1280,5 +1509,14 @@ export const useRewards = () => {
     bulkDeleteXPDecay,
     fetchDailyRewards,
     updateDailyRewards,
+    fetchXPDecaySettingsV2,
+    fetchSingleXPDecayV2,
+    createXPDecayV2,
+    updateXPDecayV2,
+    deleteXPDecayV2,
+    toggleXPDecayStatusV2,
+    toggleXPDecayNotificationV2,
+    bulkUpdateXPDecayStatusV2,
+    bulkDeleteXPDecayV2,
   };
 };

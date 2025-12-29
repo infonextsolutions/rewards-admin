@@ -174,7 +174,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           : 0, // Convert coins to dollars (50 coins = 1 dollar)
         taskCount: game.taskCount || 0,
         activeVisible:
-          game.active !== undefined ? game.active : game.activeVisible ?? true,
+          game.status !== undefined ? (game.status === true || game.status === "Active") : game.activeVisible ?? true,
         fallbackGame: game.fallbackGame ?? false,
         thumbnail: game.thumbnail || null,
         thumbnailWidth: game.thumbnailWidth || 300,
@@ -369,7 +369,18 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
             ? response.data.data
             : [response.data.data];
           console.log("Fetched games:", games);
-          setGamesList(games);
+          // Filter games by selected platform
+          const filteredGames = games.filter(game => {
+            if (!game.devices && !game.device_platform) return true; // Include if no device info
+            if (game.devices && Array.isArray(game.devices)) {
+              return game.devices.some(device => device.toLowerCase() === platform.toLowerCase());
+            }
+            if (game.device_platform) {
+              return game.device_platform.toLowerCase() === platform.toLowerCase();
+            }
+            return false;
+          });
+          setGamesList(filteredGames);
         } else {
           setGamesList([]);
         }
@@ -558,6 +569,12 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       toast.error(
         "Age Range is required. Please select at least one age group."
       );
+      return;
+    }
+
+    // Validate UI Section (required for all games)
+    if (!formData.uiSection || !formData.uiSection.trim()) {
+      toast.error("UI Section is required");
       return;
     }
 
@@ -919,7 +936,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    UI Section
+                    UI Section <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.uiSection}
@@ -928,6 +945,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
                     disabled={loadingUISections}
+                    required
                   >
                     <option value="">Choose UI Section...</option>
                     {(() => {

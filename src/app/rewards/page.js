@@ -46,7 +46,16 @@ export default function RewardsPage() {
     toggleXPDecayStatus,
     toggleXPDecayNotification,
     bulkUpdateXPDecayStatus,
-    bulkDeleteXPDecay
+    bulkDeleteXPDecay,
+    fetchXPDecaySettingsV2,
+    fetchSingleXPDecayV2,
+    createXPDecayV2,
+    updateXPDecayV2,
+    deleteXPDecayV2,
+    toggleXPDecayStatusV2,
+    toggleXPDecayNotificationV2,
+    bulkUpdateXPDecayStatusV2,
+    bulkDeleteXPDecayV2,
   } = useRewards();
   const [activeTab, setActiveTab] = useState("XP Tiers");
   const [selectedItems, setSelectedItems] = useState([]);
@@ -140,7 +149,7 @@ export default function RewardsPage() {
     } else if (activeTab === 'XP Decay Settings') {
       const loadXPDecay = async () => {
         try {
-          await fetchXPDecaySettings();
+          await fetchXPDecaySettingsV2();
         } catch (error) {
           const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
           toast.error(errorMessage);
@@ -184,10 +193,10 @@ export default function RewardsPage() {
           await fetchXPTiers();
         }
       } else if (activeTab === 'XP Decay Settings') {
-        const result = await bulkUpdateXPDecayStatus(selectedItems, status);
+        const result = await bulkUpdateXPDecayStatusV2(selectedItems, status);
         if (result.success) {
           toast.success(result.message || `${selectedItems.length} XP Decay Settings updated successfully!`);
-          await fetchXPDecaySettings();
+          await fetchXPDecaySettingsV2();
         }
       } else {
         await bulkUpdateStatus(activeTab, selectedItems, status);
@@ -218,10 +227,10 @@ export default function RewardsPage() {
           await fetchXPTiers();
         }
       } else if (activeTab === 'XP Decay Settings') {
-        const result = await bulkDeleteXPDecay(selectedItems);
+        const result = await bulkDeleteXPDecayV2(selectedItems);
         if (result.success) {
           toast.success(result.message || `${selectedItems.length} XP Decay Settings deleted successfully!`);
-          await fetchXPDecaySettings();
+          await fetchXPDecaySettingsV2();
         }
       } else {
         toast.error('Bulk delete not supported for this tab');
@@ -247,10 +256,10 @@ export default function RewardsPage() {
       } else if (activeTab === 'XP Decay Settings') {
         const item = xpDecaySettings.find(i => i.id === itemId);
         if (item) {
-          const result = await toggleXPDecayStatus(itemId, !item.status);
+          const result = await toggleXPDecayStatusV2(itemId, !item.status);
           if (result.success) {
             toast.success(result.message || 'XP Decay status updated successfully!');
-            await fetchXPDecaySettings();
+            await fetchXPDecaySettingsV2();
           }
         }
       } else {
@@ -309,7 +318,7 @@ export default function RewardsPage() {
       }
     } else if (activeTab === 'XP Decay Settings') {
       try {
-        const result = await fetchSingleXPDecay(item.id);
+        const result = await fetchSingleXPDecayV2(item.id);
         if (result.success) {
           setEditingItem(result.data);
           setShowEditModal(true);
@@ -359,17 +368,17 @@ export default function RewardsPage() {
         // API Integration for XP Decay Settings
         if (editingItem) {
           // Update existing XP decay setting
-          const result = await updateXPDecay(editingItem.id, itemData);
+          const result = await updateXPDecayV2(editingItem.id, itemData);
           if (result.success) {
             toast.success(result.message || 'XP Decay updated successfully!');
-            await fetchXPDecaySettings();
+            await fetchXPDecaySettingsV2();
           }
         } else {
           // Create new XP decay setting
-          const result = await createXPDecay(itemData);
+          const result = await createXPDecayV2(itemData);
           if (result.success) {
             toast.success(result.message || 'XP Decay created successfully!');
-            await fetchXPDecaySettings();
+            await fetchXPDecaySettingsV2();
           }
         }
         setShowAddModal(false);
@@ -408,13 +417,13 @@ export default function RewardsPage() {
         }
       } else if (activeTab === 'XP Decay Settings') {
         // Use API to delete XP decay setting
-        const result = await deleteXPDecay(deletingItem.id);
+        const result = await deleteXPDecayV2(deletingItem.id);
         if (result.success) {
           toast.success(result.message || 'XP Decay deleted successfully!');
           setShowDeleteConfirm(false);
           setDeletingItem(null);
           // Refresh XP Decay list
-          await fetchXPDecaySettings();
+          await fetchXPDecaySettingsV2();
         }
       } else {
         await deleteItem(activeTab, deletingItem.id);
@@ -515,10 +524,10 @@ export default function RewardsPage() {
                 try {
                   const item = xpDecaySettings.find(i => i.id === itemId);
                   if (item) {
-                    const result = await toggleXPDecayNotification(itemId, !item.notificationToggle);
+                    const result = await toggleXPDecayNotificationV2(itemId, !item.notificationEnabled);
                     if (result.success) {
                       toast.success(result.message || 'Notification setting updated successfully!');
-                      await fetchXPDecaySettings();
+                      await fetchXPDecaySettingsV2();
                     }
                   }
                 } catch (error) {
