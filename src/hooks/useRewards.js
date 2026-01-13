@@ -794,7 +794,7 @@ export const useRewards = () => {
       ) {
         params.status = filters.status;
       }
-      const response = await apiClient.get("/admin/xp-decay-v2", {
+      const response = await apiClient.get("/admin/rewards/xp-decay-v2", {
         params,
       });
       const result = response.data;
@@ -1274,7 +1274,7 @@ export const useRewards = () => {
   const fetchSingleXPDecayV2 = async (id) => {
     setLoading(true);
     try {
-      const response = await apiClient.get(`/admin/xp-decay-v2/${id}`);
+      const response = await apiClient.get(`/admin/rewards/xp-decay-v2/${id}`);
       const result = response.data;
 
       if (result.success && result.data) {
@@ -1302,7 +1302,7 @@ export const useRewards = () => {
     setLoading(true);
     try {
       const { id, ...data } = formData;
-      const response = await apiClient.post("/admin/xp-decay-v2", data);
+      const response = await apiClient.post("/admin/rewards/xp-decay-v2", data);
       const result = response.data;
 
       if (result.success) {
@@ -1326,7 +1326,7 @@ export const useRewards = () => {
     try {
       const { ...data } = formData;
       const response = await apiClient.put(
-        `/admin/xp-decay-v2/${id}`,
+        `/admin/rewards/xp-decay-v2/${id}`,
         data
       );
       const result = response.data;
@@ -1350,7 +1350,9 @@ export const useRewards = () => {
   const deleteXPDecayV2 = async (id) => {
     setLoading(true);
     try {
-      const response = await apiClient.delete(`/admin/xp-decay-v2/${id}`);
+      const response = await apiClient.delete(
+        `/admin/rewards/xp-decay-v2/${id}`
+      );
       const result = response.data;
 
       if (result.success) {
@@ -1372,9 +1374,12 @@ export const useRewards = () => {
   const toggleXPDecayStatusV2 = async (id, status) => {
     setLoading(true);
     try {
-      const response = await apiClient.patch(`/admin/xp-decay-v2/${id}/status`, {
-        status,
-      });
+      const response = await apiClient.patch(
+        `/admin/rewards/xp-decay-v2/${id}/status`,
+        {
+          status,
+        }
+      );
       const result = response.data;
 
       if (result.success) {
@@ -1396,9 +1401,12 @@ export const useRewards = () => {
   const toggleXPDecayNotificationV2 = async (id, notificationEnabled) => {
     setLoading(true);
     try {
-      const response = await apiClient.patch(`/admin/xp-decay-v2/${id}/notification`, {
-        notificationEnabled,
-      });
+      const response = await apiClient.patch(
+        `/admin/xp-decay-v2/${id}/notification`,
+        {
+          notificationEnabled,
+        }
+      );
       const result = response.data;
 
       if (result.success) {
@@ -1420,10 +1428,13 @@ export const useRewards = () => {
   const bulkUpdateXPDecayStatusV2 = async (ids, status) => {
     setLoading(true);
     try {
-      const response = await apiClient.patch("/admin/xp-decay-v2/bulk-status", {
-        ids,
-        status,
-      });
+      const response = await apiClient.patch(
+        "/admin/rewards/xp-decay-v2/bulk-status",
+        {
+          ids,
+          status,
+        }
+      );
       const result = response.data;
 
       if (result.success) {
@@ -1445,9 +1456,12 @@ export const useRewards = () => {
   const bulkDeleteXPDecayV2 = async (ids) => {
     setLoading(true);
     try {
-      const response = await apiClient.post("/admin/xp-decay-v2/bulk-delete", {
-         ids 
-      });
+      const response = await apiClient.post(
+        "/admin/rewards/xp-decay-v2/bulk-delete",
+        {
+          ids,
+        }
+      );
       const result = response.data;
 
       if (result.success) {
@@ -1465,7 +1479,7 @@ export const useRewards = () => {
       throw new Error(errorMessage);
     }
   };
-  
+
   return {
     xpTiers,
     xpDecaySettings,
