@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, memo } from "react";
+import { useRouter } from "next/navigation";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 // Color palette for professional charts - moved outside component
@@ -12,6 +13,15 @@ const chartColors = {
 };
 
 const TopPlayedGameSnapshot = memo(({ data, loading }) => {
+  const router = useRouter();
+
+  // Handler for game navigation
+  const handleGameClick = () => {
+    if (data?.gameId) {
+      router.push(`/offers/tasks?game=${encodeURIComponent(data.gameId)}`);
+    }
+  };
+
   // Memoize normalized demographics to avoid recalculation on every render
   const normalizedDemographics = useMemo(() => {
     const gameData = data || {
@@ -268,6 +278,29 @@ const TopPlayedGameSnapshot = memo(({ data, loading }) => {
     );
   }
 
+  // Show message when no data is available
+  if (!data) {
+    return (
+      <div
+        className="relative w-full min-h-[400px] rounded-[10px] overflow-hidden p-8"
+        style={{
+          background:
+            "radial-gradient(50% 50% at 50% 50%, rgba(88,48,173,1) 0%, rgba(42,34,102,1) 100%)",
+        }}
+      >
+        <h1 className="text-2xl font-semibold text-white mb-8">
+          Top Played Game
+        </h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-white text-lg font-medium">No game data available</p>
+            <p className="text-gray-300 text-sm mt-2">Data will appear once games are played</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative w-full min-h-[400px] rounded-[10px] overflow-hidden p-8"
@@ -283,8 +316,12 @@ const TopPlayedGameSnapshot = memo(({ data, loading }) => {
       {/* Game Banner & Title + Metrics Section */}
       <div className="flex items-start gap-8 mb-8">
         {/* Game Icon & Title */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-[240px] h-[240px] bg-white rounded-[12px] overflow-hidden border-[3px] border-solid border-[#d3f8d2] shadow-lg">
+        <div
+          className={`flex flex-col items-center gap-4 ${data?.gameId ? 'cursor-pointer group' : ''}`}
+          onClick={handleGameClick}
+          title={data?.gameId ? 'Click to view game details' : ''}
+        >
+          <div className={`relative w-[240px] h-[240px] bg-white rounded-[12px] overflow-hidden border-[3px] border-solid border-[#d3f8d2] shadow-lg ${data?.gameId ? 'group-hover:border-[#00a389] group-hover:shadow-xl transition-all duration-200' : ''}`}>
             <img
               className="w-full h-full object-cover"
               alt={finalGameData.name}
@@ -298,7 +335,7 @@ const TopPlayedGameSnapshot = memo(({ data, loading }) => {
               }}
             />
           </div>
-          <h2 className="font-bold text-[#fff2ab] text-2xl text-center leading-tight">
+          <h2 className={`font-bold text-[#fff2ab] text-2xl text-center leading-tight ${data?.gameId ? 'group-hover:text-[#00a389] transition-colors duration-200' : ''}`}>
             {finalGameData.name.split(" - ")[0]}
           </h2>
         </div>

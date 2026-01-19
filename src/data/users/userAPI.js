@@ -120,10 +120,21 @@ const userAPIs = {
   },
 
   // Export users to CSV
-  async exportUsers(format = 'csv') {
+  async exportUsers(format = 'csv', filters = {}) {
     try {
+      const params = {
+        format,
+        ...(filters.search && { search: filters.search }),
+        ...(filters.tier && { tier: filters.tier }),
+        ...(filters.status && { status: filters.status }),
+        ...(filters.gender && { gender: filters.gender }),
+        ...(filters.ageRange && { ageRange: filters.ageRange }),
+        ...(filters.memberSince && { memberSince: filters.memberSince }),
+        ...(filters.location && { location: filters.location })
+      };
+
       const response = await apiClient.get('/admin/users/export', {
-        params: { format },
+        params,
         responseType: 'blob' // Important for file download
       });
 
@@ -141,6 +152,18 @@ const userAPIs = {
       return { success: true, message: 'Users exported successfully' };
     } catch (error) {
       console.error('Export users error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get all unique locations
+  async getUniqueLocations() {
+    try {
+      const response = await apiClient.get('/admin/users/locations');
+      console.log('🔵 User API - Unique locations from backend:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Get unique locations error:', error);
       throw error.response?.data || error;
     }
   }

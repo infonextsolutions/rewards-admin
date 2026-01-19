@@ -259,22 +259,8 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
               // If empty, clear immediately
               if (value === "") {
                 onFilterChange("search", "");
-              } else {
-                // Debounce search - update after 250ms of no typing
-                // This is the only debounce for search (Dashboard won't add more)
-                const timeout = setTimeout(() => {
-                  onFilterChange("search", value);
-                }, 250);
-                setSearchTimeout(timeout);
               }
-            }}
-            onBlur={() => {
-              // Update filter immediately when user leaves the input
-              if (searchTimeout) {
-                clearTimeout(searchTimeout);
-                setSearchTimeout(null);
-              }
-              onFilterChange("search", searchValue);
+              // Note: Removed auto-search debounce - search only triggers on button click or Enter key
             }}
             disabled={loading}
             placeholder="Search by game title or game ID"
@@ -356,43 +342,56 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
             ))}
           </select>
           {filters.dateRange === "custom" && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                value={filters.customStartDate || ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Clear any existing timeout
-                  if (customDateTimeout) {
-                    clearTimeout(customDateTimeout);
-                  }
-                  // Update the filter immediately for UI responsiveness
-                  onFilterChange("customStartDate", value);
-                  // Note: API call will be debounced in Dashboard component
-                  // when both dates are set, so we don't need to debounce here
-                }}
-                disabled={loading}
-                className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Start Date"
-              />
-              <input
-                type="date"
-                value={filters.customEndDate || ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Clear any existing timeout
-                  if (customDateTimeout) {
-                    clearTimeout(customDateTimeout);
-                  }
-                  // Update the filter immediately for UI responsiveness
-                  onFilterChange("customEndDate", value);
-                  // Note: API call will be debounced in Dashboard component
-                  // when both dates are set, so we don't need to debounce here
-                }}
-                disabled={loading}
-                className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="End Date"
-              />
+            <div className="mt-2 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={filters.customStartDate || ""}
+                  max={filters.customEndDate || undefined}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Clear any existing timeout
+                    if (customDateTimeout) {
+                      clearTimeout(customDateTimeout);
+                    }
+                    // Update the filter immediately for UI responsiveness
+                    onFilterChange("customStartDate", value);
+                    // Note: API call will be debounced in Dashboard component
+                    // when both dates are set, so we don't need to debounce here
+                  }}
+                  disabled={loading}
+                  className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Start Date"
+                />
+                <input
+                  type="date"
+                  value={filters.customEndDate || ""}
+                  min={filters.customStartDate || undefined}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Clear any existing timeout
+                    if (customDateTimeout) {
+                      clearTimeout(customDateTimeout);
+                    }
+                    // Update the filter immediately for UI responsiveness
+                    onFilterChange("customEndDate", value);
+                    // Note: API call will be debounced in Dashboard component
+                    // when both dates are set, so we don't need to debounce here
+                  }}
+                  disabled={loading}
+                  className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="End Date"
+                />
+              </div>
+              {filters.customStartDate && filters.customEndDate &&
+               new Date(filters.customStartDate) > new Date(filters.customEndDate) && (
+                <div className="text-xs text-red-600 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  End date must be after start date
+                </div>
+              )}
             </div>
           )}
         </div>
