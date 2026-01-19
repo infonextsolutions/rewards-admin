@@ -52,31 +52,39 @@ export default function UsersPage() {
   // API handles filtering, use users directly
   const paginatedUsers = users;
 
-  // Effect to dynamically update location filter options
+  // Effect to fetch unique locations from API
   useEffect(() => {
-    if (users && users.length > 0) {
-      const uniqueLocations = [
-        ...new Set(
-          users
-            .map((user) => user.location)
+    const fetchUniqueLocations = async () => {
+      try {
+        const response = await userAPIs.getUniqueLocations();
+        if (response.success && response.data.locations) {
+          // Extract location strings from the API response
+          const uniqueLocations = response.data.locations
+            .map((loc) => loc.location)
             .filter((location) => location && location !== "N/A")
-        ),
-      ].sort();
+            .sort();
 
-      setDynamicFilterOptions((prevOptions) =>
-        prevOptions.map((filter) => {
-          if (filter.id === "location") {
-            return {
-              ...filter,
-              options:
-                uniqueLocations.length > 0 ? uniqueLocations : filter.options,
-            };
-          }
-          return filter;
-        })
-      );
-    }
-  }, [users]);
+          setDynamicFilterOptions((prevOptions) =>
+            prevOptions.map((filter) => {
+              if (filter.id === "location") {
+                return {
+                  ...filter,
+                  options:
+                    uniqueLocations.length > 0 ? uniqueLocations : filter.options,
+                };
+              }
+              return filter;
+            })
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching unique locations:", error);
+        // Fall back to existing behavior if API fails
+      }
+    };
+
+    fetchUniqueLocations();
+  }, []); // Only fetch once on component mount
 
   // Console log users data from backend
   useEffect(() => {
@@ -111,7 +119,19 @@ export default function UsersPage() {
   const handleExport = async () => {
     try {
       toast.loading("Exporting users...", { id: "export-users" });
-      await userAPIs.exportUsers("csv");
+
+      // Pass current filters to export
+      const exportFilters = {
+        search: localSearchTerm,
+        tier: selectedFilters.tierLevel,
+        status: selectedFilters.status,
+        gender: selectedFilters.gender,
+        ageRange: selectedFilters.ageRange,
+        memberSince: selectedFilters.memberSince,
+        location: selectedFilters.location,
+      };
+
+      await userAPIs.exportUsers("csv", exportFilters);
       toast.success("Users exported successfully!", { id: "export-users" });
     } catch (error) {
       console.error("Error exporting users:", error);

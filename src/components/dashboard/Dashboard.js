@@ -59,6 +59,12 @@ const Dashboard = () => {
           startDate.setHours(0, 0, 0, 0);
           endDate = new Date(filters.customEndDate);
           endDate.setHours(23, 59, 59, 999);
+
+          // Validate that end date is not before start date
+          if (startDate > endDate) {
+            console.warn('Invalid date range: End date is before start date');
+            return null; // Don't trigger API call with invalid date range
+          }
         } else {
           // If custom dates not complete, don't trigger API call yet
           // Return undefined to prevent API call
@@ -284,6 +290,7 @@ const Dashboard = () => {
       const trimmedTitle = gameTitle.split(" - ")[0].trim();
 
       return {
+        gameId: dashboardData.topPlayedGame.gameId,
         name: trimmedTitle,
         banner: bannerImageUrl,
         avgXP: dashboardData.topPlayedGame.analytics?.averageXP || 0,
@@ -297,18 +304,8 @@ const Dashboard = () => {
         },
       };
     }
-    return {
-      name: "N/A",
-      banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
-      avgXP: 0,
-      rewardConversion: 0,
-      demographics: {
-        age: [],
-        gender: [],
-        region: [],
-        tier: [],
-      },
-    };
+    // Return null when no top played game exists
+    return null;
   }, [dashboardData.topPlayedGame]);
 
   const revenueByGame = useMemo(
