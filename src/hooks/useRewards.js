@@ -1,45 +1,45 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import apiClient from "../lib/apiClient";
+import { useState } from 'react'
+import apiClient from '../lib/apiClient'
 import {
   MOCK_XP_TIERS,
   MOCK_XP_DECAY_SETTINGS,
   MOCK_XP_CONVERSIONS,
   MOCK_BONUS_LOGIC,
-} from "../data/rewards";
+} from '../data/rewards'
 
 // Use shared apiClient from lib/apiClient.js which has baseURL: "http://localhost:4001/api"
 // For rewards endpoints, we'll use paths like "/admin/rewards/xp-decay"
 
 export const useRewards = () => {
-  const [xpTiers, setXpTiers] = useState([]);
-  const [xpDecaySettings, setXpDecaySettings] = useState([]);
-  const [xpConversions, setXpConversions] = useState([]);
-  const [bonusLogic, setBonusLogic] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [xpTiers, setXpTiers] = useState([])
+  const [xpDecaySettings, setXpDecaySettings] = useState([])
+  const [xpConversions, setXpConversions] = useState([])
+  const [bonusLogic, setBonusLogic] = useState([])
+  const [auditLogs, setAuditLogs] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const getDataByTab = (activeTab) => {
     switch (activeTab) {
-      case "XP Tiers":
-        return xpTiers;
-      case "XP Decay Settings":
-        return xpDecaySettings;
-      case "XP Conversion":
-        return xpConversions;
-      case "Daily Rewards":
-        return []; // Daily Rewards uses a custom component, not a table
+      case 'XP Tiers':
+        return xpTiers
+      case 'XP Decay Settings':
+        return xpDecaySettings
+      case 'XP Conversion':
+        return xpConversions
+      case 'Daily Rewards':
+        return [] // Daily Rewards uses a custom component, not a table
       default:
-        return [];
+        return []
     }
-  };
+  }
 
   // EXCLUDED: Copy of Data KPIs file mapping and audit logging not supported per requirements
   const logAction = (action, activeTab, itemData, itemId = null) => {
     // Audit logging and KPI mapping disabled per requirements
-    console.log("Audit logging and KPI file mapping disabled per requirements");
+    console.log('Audit logging and KPI file mapping disabled per requirements')
 
     /* ORIGINAL CODE - COMMENTED OUT
     const logEntry = {
@@ -53,292 +53,292 @@ export const useRewards = () => {
     };
     setAuditLogs(prev => [logEntry, ...prev]);
     */
-  };
+  }
 
   const validateBusinessRules = (
     activeTab,
     itemData,
     itemId = null,
-    currentData = null
+    currentData = null,
   ) => {
-    const errors = [];
+    const errors = []
 
-    if (activeTab === "Bonus Logic") {
+    if (activeTab === 'Bonus Logic') {
       // Check for duplicate active bonus types
-      const existingBonuses = currentData || bonusLogic;
+      const existingBonuses = currentData || bonusLogic
       const activeBonusOfSameType = existingBonuses.find(
         (bonus) =>
           bonus.bonusType === itemData.bonusType &&
           bonus.active &&
-          bonus.id !== itemId
-      );
+          bonus.id !== itemId,
+      )
 
       if (activeBonusOfSameType && itemData.active) {
         errors.push(
-          `Only one active bonus of type "${itemData.bonusType}" is allowed. Please deactivate the existing one first.`
-        );
+          `Only one active bonus of type "${itemData.bonusType}" is allowed. Please deactivate the existing one first.`,
+        )
       }
     }
 
-    if (activeTab === "XP Tiers") {
+    if (activeTab === 'XP Tiers') {
       // Check for overlapping XP ranges
-      const existingTiers = currentData || xpTiers;
+      const existingTiers = currentData || xpTiers
       const overlappingTier = existingTiers.find(
         (tier) =>
           tier.id !== itemId &&
           ((itemData.xpMin >= tier.xpMin && itemData.xpMin <= tier.xpMax) ||
             (itemData.xpMax >= tier.xpMin && itemData.xpMax <= tier.xpMax) ||
-            (itemData.xpMin <= tier.xpMin && itemData.xpMax >= tier.xpMax))
-      );
+            (itemData.xpMin <= tier.xpMin && itemData.xpMax >= tier.xpMax)),
+      )
 
       if (overlappingTier) {
         errors.push(
-          `XP range overlaps with existing tier "${overlappingTier.tierName}".`
-        );
+          `XP range overlaps with existing tier "${overlappingTier.tierName}".`,
+        )
       }
     }
 
-    return errors;
-  };
+    return errors
+  }
 
   const updateItem = async (activeTab, itemId, itemData) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      console.log(`Updating ${activeTab} item:`, itemId, itemData);
+      console.log(`Updating ${activeTab} item:`, itemId, itemData)
 
       // Validate business rules
       const validationErrors = validateBusinessRules(
         activeTab,
         itemData,
-        itemId
-      );
+        itemId,
+      )
       if (validationErrors.length > 0) {
-        throw new Error(validationErrors.join(" "));
+        throw new Error(validationErrors.join(' '))
       }
 
-      let updatedItem;
+      let updatedItem
 
       switch (activeTab) {
-        case "XP Tiers":
+        case 'XP Tiers':
           setXpTiers((prev) =>
             prev.map((item) => {
               if (item.id === itemId) {
-                updatedItem = { ...item, ...itemData };
-                return updatedItem;
+                updatedItem = { ...item, ...itemData }
+                return updatedItem
               }
-              return item;
-            })
-          );
-          break;
-        case "XP Decay Settings":
+              return item
+            }),
+          )
+          break
+        case 'XP Decay Settings':
           setXpDecaySettings((prev) =>
             prev.map((item) => {
               if (item.id === itemId) {
-                updatedItem = { ...item, ...itemData };
-                return updatedItem;
+                updatedItem = { ...item, ...itemData }
+                return updatedItem
               }
-              return item;
-            })
-          );
-          break;
-        case "XP Conversion":
+              return item
+            }),
+          )
+          break
+        case 'XP Conversion':
           setXpConversions((prev) =>
             prev.map((item) => {
               if (item.id === itemId) {
-                updatedItem = { ...item, ...itemData };
-                return updatedItem;
+                updatedItem = { ...item, ...itemData }
+                return updatedItem
               }
-              return item;
-            })
-          );
-          break;
-        case "Bonus Logic":
+              return item
+            }),
+          )
+          break
+        case 'Bonus Logic':
           setBonusLogic((prev) =>
             prev.map((item) => {
               if (item.id === itemId) {
-                updatedItem = { ...item, ...itemData };
-                return updatedItem;
+                updatedItem = { ...item, ...itemData }
+                return updatedItem
               }
-              return item;
-            })
-          );
-          break;
+              return item
+            }),
+          )
+          break
       }
 
       // Log the action
-      logAction("UPDATE", activeTab, updatedItem, itemId);
+      logAction('UPDATE', activeTab, updatedItem, itemId)
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setLoading(false);
-      return { success: true };
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setLoading(false)
+      return { success: true }
     } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      throw err;
+      setError(err.message)
+      setLoading(false)
+      throw err
     }
-  };
+  }
 
   const addItem = async (activeTab, itemData) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      console.log(`Adding ${activeTab} item:`, itemData);
+      console.log(`Adding ${activeTab} item:`, itemData)
 
       // Validate business rules
-      const validationErrors = validateBusinessRules(activeTab, itemData);
+      const validationErrors = validateBusinessRules(activeTab, itemData)
       if (validationErrors.length > 0) {
-        throw new Error(validationErrors.join(" "));
+        throw new Error(validationErrors.join(' '))
       }
 
       const newItem = {
         id: Date.now(),
         ...itemData,
         // Add auto-generated fields based on tab
-        ...(activeTab === "XP Tiers" && {
+        ...(activeTab === 'XP Tiers' && {
           xpRange: `${itemData.xpMin} - ${itemData.xpMax} XP`,
           iconSrc: itemData.badgeFile
             ? URL.createObjectURL(itemData.badgeFile)
-            : "https://c.animaapp.com/mf180vyvQGfAhJ/img/---icon--star--9@2x.png",
+            : 'https://c.animaapp.com/mf180vyvQGfAhJ/img/---icon--star--9@2x.png',
         }),
-        ...(activeTab === "XP Decay Settings" && {
+        ...(activeTab === 'XP Decay Settings' && {
           xpRange:
             itemData.xpRange ||
             `${itemData.xpMin || 0} - ${itemData.xpMax || 999} XP`,
         }),
-      };
+      }
 
       switch (activeTab) {
-        case "XP Tiers":
-          setXpTiers((prev) => [...prev, newItem]);
-          break;
-        case "XP Decay Settings":
-          setXpDecaySettings((prev) => [...prev, newItem]);
-          break;
-        case "XP Conversion":
-          setXpConversions((prev) => [...prev, newItem]);
-          break;
-        case "Bonus Logic":
-          setBonusLogic((prev) => [...prev, newItem]);
-          break;
+        case 'XP Tiers':
+          setXpTiers((prev) => [...prev, newItem])
+          break
+        case 'XP Decay Settings':
+          setXpDecaySettings((prev) => [...prev, newItem])
+          break
+        case 'XP Conversion':
+          setXpConversions((prev) => [...prev, newItem])
+          break
+        case 'Bonus Logic':
+          setBonusLogic((prev) => [...prev, newItem])
+          break
       }
 
       // Log the action
-      logAction("CREATE", activeTab, newItem);
+      logAction('CREATE', activeTab, newItem)
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setLoading(false);
-      return { success: true };
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setLoading(false)
+      return { success: true }
     } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      throw err;
+      setError(err.message)
+      setLoading(false)
+      throw err
     }
-  };
+  }
 
   const deleteItem = async (activeTab, itemId) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      console.log(`Deleting ${activeTab} item:`, itemId);
+      console.log(`Deleting ${activeTab} item:`, itemId)
 
-      let deletedItem;
+      let deletedItem
 
       switch (activeTab) {
-        case "XP Tiers":
-          deletedItem = xpTiers.find((item) => item.id === itemId);
-          setXpTiers((prev) => prev.filter((item) => item.id !== itemId));
-          break;
-        case "XP Decay Settings":
-          deletedItem = xpDecaySettings.find((item) => item.id === itemId);
+        case 'XP Tiers':
+          deletedItem = xpTiers.find((item) => item.id === itemId)
+          setXpTiers((prev) => prev.filter((item) => item.id !== itemId))
+          break
+        case 'XP Decay Settings':
+          deletedItem = xpDecaySettings.find((item) => item.id === itemId)
           setXpDecaySettings((prev) =>
-            prev.filter((item) => item.id !== itemId)
-          );
-          break;
-        case "XP Conversion":
-          deletedItem = xpConversions.find((item) => item.id === itemId);
-          setXpConversions((prev) => prev.filter((item) => item.id !== itemId));
-          break;
-        case "Bonus Logic":
-          deletedItem = bonusLogic.find((item) => item.id === itemId);
-          setBonusLogic((prev) => prev.filter((item) => item.id !== itemId));
-          break;
+            prev.filter((item) => item.id !== itemId),
+          )
+          break
+        case 'XP Conversion':
+          deletedItem = xpConversions.find((item) => item.id === itemId)
+          setXpConversions((prev) => prev.filter((item) => item.id !== itemId))
+          break
+        case 'Bonus Logic':
+          deletedItem = bonusLogic.find((item) => item.id === itemId)
+          setBonusLogic((prev) => prev.filter((item) => item.id !== itemId))
+          break
       }
 
       // Log the action
       if (deletedItem) {
-        logAction("DELETE", activeTab, deletedItem, itemId);
+        logAction('DELETE', activeTab, deletedItem, itemId)
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setLoading(false);
-      return { success: true };
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setLoading(false)
+      return { success: true }
     } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      throw err;
+      setError(err.message)
+      setLoading(false)
+      throw err
     }
-  };
+  }
 
   const toggleItemStatus = async (activeTab, itemId) => {
-    const currentData = getDataByTab(activeTab);
-    const item = currentData.find((i) => i.id === itemId);
+    const currentData = getDataByTab(activeTab)
+    const item = currentData.find((i) => i.id === itemId)
     if (item) {
-      await updateItem(activeTab, itemId, { status: !item.status });
+      await updateItem(activeTab, itemId, { status: !item.status })
     }
-  };
+  }
 
   const bulkUpdateStatus = async (activeTab, itemIds, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const promises = itemIds.map((id) =>
-        updateItem(activeTab, id, { status })
-      );
-      await Promise.all(promises);
-      setLoading(false);
-      return { success: true };
+        updateItem(activeTab, id, { status }),
+      )
+      await Promise.all(promises)
+      setLoading(false)
+      return { success: true }
     } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      throw err;
+      setError(err.message)
+      setLoading(false)
+      throw err
     }
-  };
+  }
 
   const fetchBonusLogic = async (filters = {}) => {
-    setLoading(true);
+    setLoading(true)
     try {
       // Build query parameters - only append if explicitly provided
-      const params = {};
+      const params = {}
 
       // Only add filters if they are explicitly set (not undefined/null/empty string)
       if (
         filters.status !== undefined &&
         filters.status !== null &&
-        filters.status !== ""
+        filters.status !== ''
       ) {
-        params.status = filters.status;
+        params.status = filters.status
       }
       if (
         filters.bonusType !== undefined &&
         filters.bonusType !== null &&
-        filters.bonusType !== ""
+        filters.bonusType !== ''
       ) {
-        params.bonusType = filters.bonusType;
+        params.bonusType = filters.bonusType
       }
       if (
         filters.active !== undefined &&
         filters.active !== null &&
-        filters.active !== ""
+        filters.active !== ''
       ) {
-        params.active = filters.active;
+        params.active = filters.active
       }
       if (
         filters.category !== undefined &&
         filters.category !== null &&
-        filters.category !== ""
+        filters.category !== ''
       ) {
-        params.category = filters.category;
+        params.category = filters.category
       }
 
-      const response = await apiClient.get("/bonus-logic", { params });
-      const result = response.data;
+      const response = await apiClient.get('/bonus-logic', { params })
+      const result = response.data
 
       if (result.success && result.data) {
         // Transform API data to match the expected format
@@ -357,29 +357,29 @@ export const useRewards = () => {
           metadata: item.metadata,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
-        }));
+        }))
 
-        setBonusLogic(transformedData);
-        setLoading(false);
-        return { success: true, data: transformedData, total: result.total };
+        setBonusLogic(transformedData)
+        setLoading(false)
+        return { success: true, data: transformedData, total: result.total }
       }
 
-      setLoading(false);
-      return { success: false, data: [], total: 0 };
+      setLoading(false)
+      return { success: false, data: [], total: 0 }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const fetchSingleBonusLogic = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.get(`/bonus-logic/${id}`);
-      const result = response.data;
+      const response = await apiClient.get(`/bonus-logic/${id}`)
+      const result = response.data
 
       if (result.success && result.data) {
         // Transform API data to match the expected format
@@ -398,122 +398,122 @@ export const useRewards = () => {
           metadata: result.data.metadata,
           createdAt: result.data.createdAt,
           updatedAt: result.data.updatedAt,
-        };
+        }
 
-        setLoading(false);
-        return { success: true, data: transformedData };
+        setLoading(false)
+        return { success: true, data: transformedData }
       }
 
-      setLoading(false);
-      return { success: false, data: null };
+      setLoading(false)
+      return { success: false, data: null }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const updateBonusLogic = async (id, data) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.put(`/bonus-logic/${id}`, data);
-      const result = response.data;
+      const response = await apiClient.put(`/bonus-logic/${id}`, data)
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const deleteBonusLogic = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.delete(`/bonus-logic/${id}`);
-      const result = response.data;
+      const response = await apiClient.delete(`/bonus-logic/${id}`)
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const toggleBonusLogicStatus = async (id, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.patch(`/bonus-logic/${id}/status`, {
         status,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const fetchXPTiers = async (filters = {}) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const params = {};
+      const params = {}
 
       if (
         filters.status !== undefined &&
         filters.status !== null &&
-        filters.status !== ""
+        filters.status !== ''
       ) {
-        params.status = filters.status;
+        params.status = filters.status
       }
       if (
         filters.tierName !== undefined &&
         filters.tierName !== null &&
-        filters.tierName !== ""
+        filters.tierName !== ''
       ) {
-        params.tierName = filters.tierName;
+        params.tierName = filters.tierName
       }
       if (
         filters.xpRange !== undefined &&
         filters.xpRange !== null &&
-        filters.xpRange !== ""
+        filters.xpRange !== ''
       ) {
-        params.xpRange = filters.xpRange;
+        params.xpRange = filters.xpRange
       }
 
-      const response = await apiClient.get("/admin/rewards/xp-tiers", {
+      const response = await apiClient.get('/admin/rewards/xp-tiers', {
         params,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success && result.data) {
         const transformedData = result.data.map((item) => ({
@@ -536,29 +536,29 @@ export const useRewards = () => {
           order: item.order,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
-        }));
+        }))
 
-        setXpTiers(transformedData);
-        setLoading(false);
-        return { success: true, data: transformedData, total: result.total };
+        setXpTiers(transformedData)
+        setLoading(false)
+        return { success: true, data: transformedData, total: result.total }
       }
 
-      setLoading(false);
-      return { success: false, data: [], total: 0 };
+      setLoading(false)
+      return { success: false, data: [], total: 0 }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const fetchSingleXPTier = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.get(`/admin/rewards/xp-tiers/${id}`);
-      const result = response.data;
+      const response = await apiClient.get(`/admin/rewards/xp-tiers/${id}`)
+      const result = response.data
 
       if (result.success && result.data) {
         const transformedData = {
@@ -581,85 +581,85 @@ export const useRewards = () => {
           order: result.data.order,
           createdAt: result.data.createdAt,
           updatedAt: result.data.updatedAt,
-        };
+        }
 
-        setLoading(false);
-        return { success: true, data: transformedData };
+        setLoading(false)
+        return { success: true, data: transformedData }
       }
 
-      setLoading(false);
-      return { success: false, data: null };
+      setLoading(false)
+      return { success: false, data: null }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const createXPTier = async (formData) => {
-    setLoading(true);
+    setLoading(true)
     try {
       // Create FormData for multipart/form-data request
-      const data = new FormData();
-      data.append("tierName", formData.tierName);
-      data.append("xpMin", formData.xpMin);
-      data.append("xpMax", formData.xpMax);
-      data.append("accessBenefits", formData.accessBenefits || "");
-      data.append("status", formData.status);
+      const data = new FormData()
+      data.append('tierName', formData.tierName)
+      data.append('xpMin', formData.xpMin)
+      data.append('xpMax', formData.xpMax)
+      data.append('accessBenefits', formData.accessBenefits || '')
+      data.append('status', formData.status)
 
       // Add badge if provided (can be string or file)
       if (formData.badge && !formData.badgeFile) {
-        data.append("badge", formData.badge);
+        data.append('badge', formData.badge)
       }
 
       // Add badge file if provided
       if (formData.badgeFile) {
-        data.append("badgeFile", formData.badgeFile);
+        data.append('badgeFile', formData.badgeFile)
       }
 
-      const response = await apiClient.post("/admin/rewards/xp-tiers", data, {
+      const response = await apiClient.post('/admin/rewards/xp-tiers', data, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          'Content-Type': 'multipart/form-data',
         },
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const updateXPTier = async (id, formData) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const data = new FormData();
-      data.append("tierName", formData.tierName);
-      data.append("xpMin", formData.xpMin);
-      data.append("xpMax", formData.xpMax);
-      data.append("accessBenefits", formData.accessBenefits || "");
-      data.append("status", formData.status);
+      const data = new FormData()
+      data.append('tierName', formData.tierName)
+      data.append('xpMin', formData.xpMin)
+      data.append('xpMax', formData.xpMax)
+      data.append('accessBenefits', formData.accessBenefits || '')
+      data.append('status', formData.status)
 
       // Add badge if provided (can be string or file)
       if (formData.badge && !formData.badgeFile) {
-        data.append("badge", formData.badge);
+        data.append('badge', formData.badge)
       }
 
       // Add badge file if provided
       if (formData.badgeFile) {
-        data.append("badgeFile", formData.badgeFile);
+        data.append('badgeFile', formData.badgeFile)
       }
 
       const response = await apiClient.put(
@@ -667,81 +667,81 @@ export const useRewards = () => {
         data,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'multipart/form-data',
           },
-        }
-      );
-      const result = response.data;
+        },
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const deleteXPTier = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.delete(`/admin/rewards/xp-tiers/${id}`);
-      const result = response.data;
+      const response = await apiClient.delete(`/admin/rewards/xp-tiers/${id}`)
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const fetchXPDecaySettings = async (filters = {}) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const params = {};
+      const params = {}
 
       if (
         filters.status !== undefined &&
         filters.status !== null &&
-        filters.status !== ""
+        filters.status !== ''
       ) {
-        params.status = filters.status;
+        params.status = filters.status
       }
       if (
         filters.tierName !== undefined &&
         filters.tierName !== null &&
-        filters.tierName !== ""
+        filters.tierName !== ''
       ) {
-        params.tierName = filters.tierName;
+        params.tierName = filters.tierName
       }
       if (
         filters.decayRuleType !== undefined &&
         filters.decayRuleType !== null &&
-        filters.decayRuleType !== ""
+        filters.decayRuleType !== ''
       ) {
-        params.decayRuleType = filters.decayRuleType;
+        params.decayRuleType = filters.decayRuleType
       }
 
-      const response = await apiClient.get("/admin/rewards/xp-decay", {
+      const response = await apiClient.get('/admin/rewards/xp-decay', {
         params,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success && result.data) {
         const transformedData = result.data.map((item) => ({
@@ -765,64 +765,64 @@ export const useRewards = () => {
           order: item.order,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
-        }));
+        }))
 
-        setXpDecaySettings(transformedData);
-        setLoading(false);
-        return { success: true, data: transformedData, total: result.total };
+        setXpDecaySettings(transformedData)
+        setLoading(false)
+        return { success: true, data: transformedData, total: result.total }
       }
 
-      setLoading(false);
-      return { success: false, data: [], total: 0 };
+      setLoading(false)
+      return { success: false, data: [], total: 0 }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const fetchXPDecaySettingsV2 = async (filters = {}) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const params = {};
+      const params = {}
       if (
         filters.status !== undefined &&
         filters.status !== null &&
-        filters.status !== ""
+        filters.status !== ''
       ) {
-        params.status = filters.status;
+        params.status = filters.status
       }
-      const response = await apiClient.get("/admin/rewards/xp-decay-v2", {
+      const response = await apiClient.get('/admin/rewards/xp-decay-v2', {
         params,
-      });
-      const result = response.data;
+      })
+      const result = response.data
       if (result.success && result.data) {
         const transformedData = result.data.map((item) => ({
           id: item._id,
           ...item,
-        }));
-        setXpDecaySettings(transformedData);
-        setLoading(false);
-        return { success: true, data: transformedData, total: result.total };
+        }))
+        setXpDecaySettings(transformedData)
+        setLoading(false)
+        return { success: true, data: transformedData, total: result.total }
       }
-      setLoading(false);
-      return { success: false, data: [], total: 0 };
+      setLoading(false)
+      return { success: false, data: [], total: 0 }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const fetchSingleXPDecay = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.get(`/admin/rewards/xp-decay/${id}`);
-      const result = response.data;
+      const response = await apiClient.get(`/admin/rewards/xp-decay/${id}`)
+      const result = response.data
 
       if (result.success && result.data) {
         const transformedData = {
@@ -845,25 +845,25 @@ export const useRewards = () => {
           order: result.data.order,
           createdAt: result.data.createdAt,
           updatedAt: result.data.updatedAt,
-        };
+        }
 
-        setLoading(false);
-        return { success: true, data: transformedData };
+        setLoading(false)
+        return { success: true, data: transformedData }
       }
 
-      setLoading(false);
-      return { success: false, data: null };
+      setLoading(false)
+      return { success: false, data: null }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const createXPDecay = async (formData) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const data = {
         tierName: formData.tierName,
@@ -874,29 +874,29 @@ export const useRewards = () => {
         status: formData.status,
         notificationToggle: formData.notificationToggle,
         xpDeductionAmount: formData.xpDeductionAmount,
-      };
-
-      const response = await apiClient.post("/admin/rewards/xp-decay", data);
-      const result = response.data;
-
-      if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
       }
 
-      setLoading(false);
-      return { success: false };
+      const response = await apiClient.post('/admin/rewards/xp-decay', data)
+      const result = response.data
+
+      if (result.success) {
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
+      }
+
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const updateXPDecay = async (id, formData) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const data = {
         tierName: formData.tierName,
@@ -907,578 +907,578 @@ export const useRewards = () => {
         status: formData.status,
         notificationToggle: formData.notificationToggle,
         xpDeductionAmount: formData.xpDeductionAmount,
-      };
+      }
 
       const response = await apiClient.put(
         `/admin/rewards/xp-decay/${id}`,
-        data
-      );
-      const result = response.data;
+        data,
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const deleteXPDecay = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.delete(`/admin/rewards/xp-decay/${id}`);
-      const result = response.data;
+      const response = await apiClient.delete(`/admin/rewards/xp-decay/${id}`)
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   // XP Tiers - Additional endpoints
   const toggleXPTierStatus = async (id, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.patch(`/xp-tiers/${id}/status`, {
         status,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkUpdateXPTiersStatus = async (ids, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.patch("/xp-tiers/bulk-status", {
+      const response = await apiClient.patch('/xp-tiers/bulk-status', {
         ids,
         status,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkDeleteXPTiers = async (ids) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.delete("/xp-tiers/bulk-delete", {
+      const response = await apiClient.delete('/xp-tiers/bulk-delete', {
         data: { ids },
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   // XP Decay Settings - Additional endpoints
   const toggleXPDecayStatus = async (id, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.patch(`/xp-decay/${id}/status`, {
         status,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const toggleXPDecayNotification = async (id, notificationToggle) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.patch(`/xp-decay/${id}/notification`, {
         notificationToggle,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkUpdateXPDecayStatus = async (ids, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.patch("/xp-decay/bulk-status", {
+      const response = await apiClient.patch('/xp-decay/bulk-status', {
         ids,
         status,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkDeleteXPDecay = async (ids) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.delete("/xp-decay/bulk-delete", {
+      const response = await apiClient.delete('/xp-decay/bulk-delete', {
         data: { ids },
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   // Bonus Logic - Additional endpoints
   const toggleBonusLogicActive = async (id, active) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.patch(`/bonus-logic/${id}/active`, {
         active,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkUpdateBonusLogicStatus = async (ids, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.patch("/bonus-logic/bulk-status", {
+      const response = await apiClient.patch('/bonus-logic/bulk-status', {
         ids,
         status,
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkDeleteBonusLogic = async (ids) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.delete("/bonus-logic/bulk-delete", {
+      const response = await apiClient.delete('/bonus-logic/bulk-delete', {
         data: { ids },
-      });
-      const result = response.data;
+      })
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const createBonusLogic = async (formData) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const data = {
         bonusType: formData.bonusType,
         triggerCondition: formData.triggerCondition,
         rewardValue: formData.rewardValue,
         active: formData.active,
-      };
-
-      const response = await apiClient.post("/bonus-logic", data);
-      const result = response.data;
-
-      if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
       }
 
-      setLoading(false);
-      return { success: false };
+      const response = await apiClient.post('/bonus-logic', data)
+      const result = response.data
+
+      if (result.success) {
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
+      }
+
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   // Daily Rewards V2 API functions
   const fetchDailyRewards = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.get("/admin/daily-rewards-v2/config");
-      const result = response.data;
+      const response = await apiClient.get('/admin/daily-rewards-v2/config')
+      const result = response.data
       if (result.success && result.data) {
-        setLoading(false);
-        return { success: true, data: result.data };
+        setLoading(false)
+        return { success: true, data: result.data }
       }
-      setLoading(false);
-      return { success: false, data: null };
+      setLoading(false)
+      return { success: false, data: null }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const updateDailyRewards = async (data) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.post(
-        "/admin/daily-rewards-v2/config",
-        data
-      );
-      const result = response.data;
+        '/admin/daily-rewards-v2/config',
+        data,
+      )
+      const result = response.data
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
   const fetchSingleXPDecayV2 = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const response = await apiClient.get(`/admin/rewards/xp-decay-v2/${id}`);
-      const result = response.data;
+      const response = await apiClient.get(`/admin/rewards/xp-decay-v2/${id}`)
+      const result = response.data
 
       if (result.success && result.data) {
         const transformedData = {
           id: result.data._id,
           ...result.data,
-        };
+        }
 
-        setLoading(false);
-        return { success: true, data: transformedData };
+        setLoading(false)
+        return { success: true, data: transformedData }
       }
 
-      setLoading(false);
-      return { success: false, data: null };
+      setLoading(false)
+      return { success: false, data: null }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const createXPDecayV2 = async (formData) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const { id, ...data } = formData;
-      const response = await apiClient.post("/admin/rewards/xp-decay-v2", data);
-      const result = response.data;
+      const { id, ...data } = formData
+      const response = await apiClient.post('/admin/rewards/xp-decay-v2', data)
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const updateXPDecayV2 = async (id, formData) => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const { ...data } = formData;
+      const { ...data } = formData
       const response = await apiClient.put(
         `/admin/rewards/xp-decay-v2/${id}`,
-        data
-      );
-      const result = response.data;
+        data,
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const deleteXPDecayV2 = async (id) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.delete(
-        `/admin/rewards/xp-decay-v2/${id}`
-      );
-      const result = response.data;
+        `/admin/rewards/xp-decay-v2/${id}`,
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const toggleXPDecayStatusV2 = async (id, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.patch(
         `/admin/rewards/xp-decay-v2/${id}/status`,
         {
           status,
-        }
-      );
-      const result = response.data;
+        },
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
-  const toggleXPDecayNotificationV2 = async (id, notificationEnabled) => {
-    setLoading(true);
+  const toggleXPDecayNotificationV2 = async (id, sendNotification) => {
+    setLoading(true)
     try {
       const response = await apiClient.patch(
-        `/admin/xp-decay-v2/${id}/notification`,
+        `/admin/rewards/xp-decay-v2/${id}/notification`,
         {
-          notificationEnabled,
-        }
-      );
-      const result = response.data;
+          sendNotification,
+        },
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkUpdateXPDecayStatusV2 = async (ids, status) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.patch(
-        "/admin/rewards/xp-decay-v2/bulk-status",
+        '/admin/rewards/xp-decay-v2/bulk-status',
         {
           ids,
           status,
-        }
-      );
-      const result = response.data;
+        },
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, data: result.data, message: result.message };
+        setLoading(false)
+        return { success: true, data: result.data, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   const bulkDeleteXPDecayV2 = async (ids) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.post(
-        "/admin/rewards/xp-decay-v2/bulk-delete",
+        '/admin/rewards/xp-decay-v2/bulk-delete',
         {
           ids,
-        }
-      );
-      const result = response.data;
+        },
+      )
+      const result = response.data
 
       if (result.success) {
-        setLoading(false);
-        return { success: true, message: result.message };
+        setLoading(false)
+        return { success: true, message: result.message }
       }
 
-      setLoading(false);
-      return { success: false };
+      setLoading(false)
+      return { success: false }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+        err.response?.data?.error || err.response?.data?.message || err.message
+      setError(errorMessage)
+      setLoading(false)
+      throw new Error(errorMessage)
     }
-  };
+  }
 
   return {
     xpTiers,
@@ -1532,5 +1532,5 @@ export const useRewards = () => {
     toggleXPDecayNotificationV2,
     bulkUpdateXPDecayStatusV2,
     bulkDeleteXPDecayV2,
-  };
-};
+  }
+}
