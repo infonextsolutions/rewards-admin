@@ -563,7 +563,7 @@ export default function RewardsPage() {
             // Toast message is already shown in DailyRewards component
           }}
           onCancel={() => {
-            // Handle cancel if needed
+            setActiveTab('XP Tiers')
           }}
         />
       ) : (
