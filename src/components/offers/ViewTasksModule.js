@@ -1,21 +1,22 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { gamesAPI } from '../../data/games';
-import apiClient from '../../lib/apiClient';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import LoadingSpinner from "../ui/LoadingSpinner";
+import { gamesAPI } from "../../data/games";
+import apiClient from "../../lib/apiClient";
+import toast from "react-hot-toast";
 
 export default function ViewTasksModule() {
   const searchParams = useSearchParams();
-  const gameFilter = searchParams.get('game');
+  const gameFilter = searchParams.get("game");
 
   const [gameData, setGameData] = useState(null);
   const [besitosRawData, setBesitosRawData] = useState(null);
   const [goals, setGoals] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -35,29 +36,42 @@ export default function ViewTasksModule() {
     try {
       const game = await gamesAPI.getGameById(gameFilter);
       setGameData(game);
-      
+
       // Fetch full game data from API to get besitosRawData
-      const response = await apiClient.get(`/admin/game-offers/games/${gameFilter}`);
+      const response = await apiClient.get(
+        `/admin/game-offers/games/${gameFilter}`
+      );
       const fullGameData = response.data.data;
-      
+
       // Store entire besitosRawData
       if (fullGameData.besitosRawData) {
         setBesitosRawData(fullGameData.besitosRawData);
-        
-        // Extract goals from besitosRawData
+
+        // Extract goals from besitosRawData (for Besitos)
         if (fullGameData.besitosRawData.goals) {
           setGoals(fullGameData.besitosRawData.goals);
         } else {
           setGoals([]);
         }
+
+        // Extract events from besitosRawData (for BitLabs)
+        if (
+          fullGameData.besitosRawData.events &&
+          Array.isArray(fullGameData.besitosRawData.events)
+        ) {
+          setEvents(fullGameData.besitosRawData.events);
+        } else {
+          setEvents([]);
+        }
       } else {
         setBesitosRawData(null);
         setGoals([]);
+        setEvents([]);
       }
     } catch (err) {
-      console.error('Error fetching game data:', err);
-      setError('Failed to load game data. Please try again.');
-      toast.error('Failed to load game data');
+      console.error("Error fetching game data:", err);
+      setError("Failed to load game data. Please try again.");
+      toast.error("Failed to load game data");
     } finally {
       setLoading(false);
     }
@@ -71,26 +85,26 @@ export default function ViewTasksModule() {
   // Helper function to format field values
   const formatFieldValue = (key, value) => {
     if (value === null || value === undefined) {
-      return 'N/A';
+      return "N/A";
     }
-    if (typeof value === 'boolean') {
-      return value ? 'Yes' : 'No';
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
     }
-    if (typeof value === 'object' && !Array.isArray(value)) {
+    if (typeof value === "object" && !Array.isArray(value)) {
       return JSON.stringify(value, null, 2);
     }
     if (Array.isArray(value)) {
       if (value.length === 0) {
-        return 'None';
+        return "None";
       }
       // Special handling for arrays of objects
-      if (value.length > 0 && typeof value[0] === 'object') {
+      if (value.length > 0 && typeof value[0] === "object") {
         return JSON.stringify(value, null, 2);
       }
-      return value.join(', ');
+      return value.join(", ");
     }
     // Handle HTML content
-    if (typeof value === 'string' && value.includes('<')) {
+    if (typeof value === "string" && value.includes("<")) {
       return value;
     }
     return String(value);
@@ -98,52 +112,204 @@ export default function ViewTasksModule() {
 
   // Render field value with special handling for images and URLs
   const renderFieldValue = (key, value) => {
-    if (key === 'image' || key === 'square_image' || key === 'large_image') {
+    // Handle creatives object (BitLabs) - display all images as actual images
+    if (key === "creatives" && value && typeof value === "object") {
+      const creatives = value;
+      return (
+        <div className="mt-2 space-y-4">
+          {/* Icon */}
+          {creatives.icon && (
+            <div>
+              <div className="text-xs font-medium text-gray-600 mb-2">Icon</div>
+              <img
+                src={creatives.icon}
+                alt="Game icon"
+                className="w-24 h-24 object-cover rounded-md border border-gray-200"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                }}
+              />
+            </div>
+          )}
+          {/* Images by size */}
+          {creatives.images &&
+            typeof creatives.images === "object" &&
+            Object.keys(creatives.images).length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-gray-600 mb-2">
+                  Images
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {Object.entries(creatives.images).map(([size, url]) => (
+                    <div key={size} className="space-y-1">
+                      <img
+                        src={url}
+                        alt={`${size} image`}
+                        className="w-full h-24 object-cover rounded-md border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => window.open(url, "_blank")}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                      <p className="text-xs text-gray-500 text-center">
+                        {size}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+        </div>
+      );
+    }
+
+    // Handle events array (BitLabs tasks) - display one by one
+    if (key === "events" && Array.isArray(value) && value.length > 0) {
+      return (
+        <div className="mt-2 space-y-3">
+          {value.map((event, index) => (
+            <div
+              key={index}
+              className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+            >
+              <h5 className="text-sm font-semibold text-gray-900 mb-2">
+                {event.name || `Event ${index + 1}`}
+              </h5>
+              <div className="space-y-1 text-xs text-gray-600">
+                {event.points && (
+                  <div className="flex items-center">
+                    <span className="font-medium mr-2">Points:</span>
+                    <span>{event.points}</span>
+                  </div>
+                )}
+                {event.payout && parseFloat(event.payout) > 0 && (
+                  <div className="flex items-center">
+                    <span className="font-medium mr-2">Payout:</span>
+                    <span>${parseFloat(event.payout).toFixed(2)}</span>
+                  </div>
+                )}
+                {event.type && (
+                  <div className="flex items-center">
+                    <span className="font-medium mr-2">Type:</span>
+                    <span className="capitalize">{event.type}</span>
+                  </div>
+                )}
+                {event.payable !== undefined && (
+                  <div className="flex items-center">
+                    <span className="font-medium mr-2">Payable:</span>
+                    <span
+                      className={
+                        event.payable ? "text-green-600" : "text-gray-500"
+                      }
+                    >
+                      {event.payable ? "Yes" : "No"}
+                    </span>
+                  </div>
+                )}
+                {event.ttc_minutes > 0 && (
+                  <div className="flex items-center">
+                    <span className="font-medium mr-2">Time to Complete:</span>
+                    <span>{event.ttc_minutes} minutes</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Handle image fields
+    if (
+      key === "image" ||
+      key === "square_image" ||
+      key === "large_image" ||
+      key === "icon_url"
+    ) {
       return (
         <div className="mt-2">
-          <img 
-            src={value} 
-            alt={key} 
+          <img
+            src={value}
+            alt={key}
             className="max-w-full h-auto rounded-md border border-gray-200"
             onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'block';
+              e.target.style.display = "none";
+              e.target.nextSibling.style.display = "block";
             }}
           />
-          <div style={{ display: 'none' }} className="text-xs text-gray-500 mt-1">
+          <div
+            style={{ display: "none" }}
+            className="text-xs text-gray-500 mt-1"
+          >
             {value}
           </div>
         </div>
       );
     }
-    if (key === 'url') {
+
+    // Handle URL fields - make clickable
+    if (
+      key === "url" ||
+      key === "click_url" ||
+      key === "support_url" ||
+      key === "impression_url" ||
+      key === "clickUrl" ||
+      key === "supportUrl" ||
+      key === "impressionUrl" ||
+      (typeof value === "string" &&
+        (value.startsWith("http://") || value.startsWith("https://")))
+    ) {
       return (
-        <a 
-          href={value} 
-          target="_blank" 
+        <a
+          href={value}
+          target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 underline break-all"
+          className="text-blue-600 hover:text-blue-800 underline break-all text-sm"
         >
           {value}
         </a>
       );
     }
-    if (key === 'description' || key === 'details') {
+
+    // Handle screenshot URLs array
+    if (key === "screenshot_urls" && Array.isArray(value) && value.length > 0) {
       return (
-        <div 
+        <div className="mt-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {value.map((url, index) => (
+              <img
+                key={index}
+                src={url}
+                alt={`Screenshot ${index + 1}`}
+                className="w-full h-24 object-cover rounded-md border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => window.open(url, "_blank")}
+                onError={(e) => {
+                  e.target.style.display = "none";
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Handle description with HTML
+    if (key === "description" || key === "details") {
+      return (
+        <div
           className="text-sm text-gray-900 prose prose-sm max-w-none"
           dangerouslySetInnerHTML={{ __html: value }}
         />
       );
     }
+
+    // Default: format as text/JSON
     return (
       <div className="text-sm text-gray-900 break-words whitespace-pre-wrap">
         {formatFieldValue(key, value)}
       </div>
     );
   };
-
-
 
   return (
     <div className="space-y-6">
@@ -160,7 +326,7 @@ export default function ViewTasksModule() {
                   <ArrowLeftIcon className="h-5 w-5" />
                 </Link>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  View Tasks - Besitos Raw Data
+                  View Tasks - Raw Data
                 </h2>
                 {gameFilter && (
                   <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
@@ -174,7 +340,7 @@ export default function ViewTasksModule() {
                 )}
               </div>
               <p className="mt-1 text-sm text-gray-600">
-                Displaying all besitosRawData fields and goals for this game
+                Displaying all raw data fields and tasks/events for this game
               </p>
             </div>
           </div>
@@ -200,14 +366,22 @@ export default function ViewTasksModule() {
             {/* Besitos Raw Data Fields (excluding goals) */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                Besitos Raw Data
+                Raw Data
               </h3>
               <div className="bg-gray-50 rounded-lg p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {Object.entries(besitosRawData)
-                    .filter(([key]) => key !== 'goals') // Exclude goals, will show separately
+                    .filter(
+                      ([key]) =>
+                        key !== "goals" &&
+                        key !== "events" &&
+                        key !== "app_metadata"
+                    ) // Exclude goals, events, and app_metadata, will show separately
                     .map(([key, value]) => (
-                      <div key={key} className="bg-white border border-gray-200 rounded-lg p-4">
+                      <div
+                        key={key}
+                        className="bg-white border border-gray-200 rounded-lg p-4"
+                      >
                         <div className="space-y-2">
                           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                             {formatFieldName(key)}
@@ -220,7 +394,73 @@ export default function ViewTasksModule() {
               </div>
             </div>
 
-            {/* Goals Display */}
+            {/* Screenshots from app_metadata (for BitLabs) */}
+            {besitosRawData?.app_metadata?.screenshot_urls &&
+              Array.isArray(besitosRawData.app_metadata.screenshot_urls) &&
+              besitosRawData.app_metadata.screenshot_urls.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                    Screenshots (
+                    {besitosRawData.app_metadata.screenshot_urls.length})
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {besitosRawData.app_metadata.screenshot_urls.map(
+                      (url, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={url}
+                            alt={`Screenshot ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => window.open(url, "_blank")}
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+            {/* Events/Tasks Display (for BitLabs) */}
+            {besitosRawData?.events &&
+              Array.isArray(besitosRawData.events) &&
+              besitosRawData.events.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                    Tasks/Events ({besitosRawData.events.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {besitosRawData.events.map((event, index) => (
+                      <div
+                        key={index}
+                        className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                      >
+                        <div className="space-y-3">
+                          <h4 className="text-md font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+                            {event.name || `Event ${index + 1}`}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Object.entries(event).map(([key, value]) => (
+                              <div key={key} className="space-y-1">
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                  {formatFieldName(key)}
+                                </div>
+                                <div className="text-sm text-gray-900 break-words">
+                                  {formatFieldValue(key, value)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Goals Display (for Besitos) */}
             {goals.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">

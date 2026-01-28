@@ -165,7 +165,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         gameId: game.gameId || game.id || "",
         title: game.title || "",
         description: game.description || "",
-        sdk: game.sdk || "",
+        sdk: game.sdk || game.sdkProvider || "",
         xptrRules: game.xptrRules || "",
         rewardXP: game.rewardXP || 0,
         rewardCoins: game.rewardCoins || 0,
@@ -174,7 +174,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           : 0, // Convert coins to dollars (50 coins = 1 dollar)
         taskCount: game.taskCount || 0,
         activeVisible:
-          game.status !== undefined ? (game.status === true || game.status === "Active") : game.activeVisible ?? true,
+          game.status !== undefined
+            ? game.status === true || game.status === "Active"
+            : game.activeVisible ?? true,
         fallbackGame: game.fallbackGame ?? false,
         thumbnail: game.thumbnail || null,
         thumbnailWidth: game.thumbnailWidth || 300,
@@ -370,13 +372,17 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
             : [response.data.data];
           console.log("Fetched games:", games);
           // Filter games by selected platform
-          const filteredGames = games.filter(game => {
+          const filteredGames = games.filter((game) => {
             if (!game.devices && !game.device_platform) return true; // Include if no device info
             if (game.devices && Array.isArray(game.devices)) {
-              return game.devices.some(device => device.toLowerCase() === platform.toLowerCase());
+              return game.devices.some(
+                (device) => device.toLowerCase() === platform.toLowerCase()
+              );
             }
             if (game.device_platform) {
-              return game.device_platform.toLowerCase() === platform.toLowerCase();
+              return (
+                game.device_platform.toLowerCase() === platform.toLowerCase()
+              );
             }
             return false;
           });
@@ -721,7 +727,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   >
                     <option value="">Choose SDK Game...</option>
                     {sdkProviders.map((sdk) => (
-                      <option key={sdk.id} value={sdk.name}>
+                      <option key={sdk.id} value={sdk.id}>
                         {sdk.name}
                       </option>
                     ))}

@@ -466,20 +466,22 @@ export default function GamesListingModule() {
           <div className="text-sm text-gray-900">{game.gender || "N/A"}</div>
         );
       case "cpi":
+        // Support both Besitos and BitLabs
+        const cpi = game.besitosRawData?.cpi || game.besitosRawData?.epc;
         return (
           <div className="text-sm text-gray-900">
-            {game.besitosRawData?.cpi
-              ? `$${game.besitosRawData.cpi.toFixed(2)}`
-              : "N/A"}
+            {cpi ? `$${parseFloat(cpi).toFixed(2)}` : "N/A"}
           </div>
         );
       case "amount":
-        const amount = game.besitosRawData?.amount;
+        // Support both Besitos and BitLabs
+        const amount =
+          game.besitosRawData?.amount || game.besitosRawData?.payout;
         const currency = game.besitosRawData?.amount_currency || "$";
         return (
           <div className="text-sm text-gray-900">
             {amount !== undefined && amount !== null
-              ? `${currency}${amount.toFixed(2)}`
+              ? `${currency}${parseFloat(amount).toFixed(2)}`
               : "N/A"}
           </div>
         );
