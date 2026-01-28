@@ -177,6 +177,28 @@ const surveyAPIs = {
     }
   },
 
+  // Get Besitos surveys
+  async getBesitosSurveys({ platform, country, page = 1, limit = 20 } = {}) {
+    try {
+      const response = await apiClient.get(
+        "/admin/game-offers/non-game-offers/by-sdk/besitos",
+        {
+          params: {
+            type: "survey",
+            country,
+            platform,
+            page,
+            limit,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get Besitos surveys error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
   // Get BitLab non-game offers (Admin route)
   async getBitLabNonGameOffers({
     type = "cashback",

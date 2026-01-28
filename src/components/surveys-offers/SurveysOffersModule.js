@@ -14,7 +14,7 @@ export default function SurveysOffersModule() {
     // { id: 'sdk-manager', label: 'SDK Manager', icon: 'settings' },
     // { id: 'live-offers', label: 'Live Offers & Analytics', icon: 'chart' },
     { id: "non-gaming", label: "Non-Gaming Offers", icon: "gift" },
-    { id: 'bitlab-surveys', label: 'BitLab Surveys', icon: 'clipboard' },
+    { id: 'bitlab-surveys', label: 'Surveys', icon: 'clipboard' },
     { id: "synced-offers", label: "All Synced Data", icon: "database" },
   ];
 

@@ -20,6 +20,7 @@ export default function BitLabSurveys() {
 
   const [configuredSurveys, setConfiguredSurveys] = useState([]);
   const [countryFilter, setCountryFilter] = useState("US"); // Country code filter (default: US)
+  const [sdkProvider, setSdkProvider] = useState("bitlabs"); // SDK provider: "bitlabs" or "besitos"
 
   // Sort filter states (dropdown for ascending/descending)
   const [sortFilters, setSortFilters] = useState({
@@ -35,29 +36,28 @@ export default function BitLabSurveys() {
 
   // Fetch surveys
   const fetchSurveys = async (page = pagination.currentPage) => {
-    console.log("🔵 [ADMIN FRONTEND] BitLabSurveys: fetchSurveys called", {
-      page,
-      countryFilter,
-      itemsPerPage: pagination.itemsPerPage,
-    });
     setLoading(true);
     try {
-      // Use admin route for non-game offers with type=survey filter
-      const queryParams = {
-        type: "survey",
-        page,
-        limit: pagination.itemsPerPage,
-        country: countryFilter,
-      };
-      console.log("🔵 [ADMIN FRONTEND] Sending query to backend:", queryParams);
-      const response = await surveyAPIs.getBitLabNonGameOffers(queryParams);
-      console.log("🔵 [ADMIN FRONTEND] Received response from backend:", {
-        success: response.success,
-        hasCategorized: !!response.categorized,
-        surveysCount: response.categorized?.surveys?.length || 0,
-        totalOffers: response.total || 0,
-      });
-
+      let response;
+      
+      if (sdkProvider === "besitos") {
+        // Fetch Besitos surveys
+        const queryParams = {
+          country: countryFilter,
+          page,
+          limit: pagination.itemsPerPage,
+        };
+        response = await surveyAPIs.getBesitosSurveys(queryParams);
+      } else {
+        // Fetch BitLabs surveys (default)
+        const queryParams = {
+          type: "survey",
+          page,
+          limit: pagination.itemsPerPage,
+          country: countryFilter,
+        };
+        response = await surveyAPIs.getBitLabNonGameOffers(queryParams);
+      }
       if (response.success && response.categorized) {
         const surveys = response.categorized.surveys || [];
         const mappedSurveys = surveys.map((survey) => ({
@@ -75,7 +75,7 @@ export default function BitLabSurveys() {
           confirmationTime: survey.confirmationTime || "",
           pendingTime: survey.pendingTime || 0,
           isAvailable: survey.isAvailable !== false,
-          provider: survey.provider || "bitlabs",
+          provider: survey.provider || sdkProvider,
           requirements: survey.requirements || "",
           thingsToKnow: survey.thingsToKnow || [],
           category:
@@ -120,7 +120,7 @@ export default function BitLabSurveys() {
               survey.estimatedTime || survey.duration || survey.loi || 0,
             clickUrl: survey.clickUrl || survey.surveyUrl || survey.url || "",
             isAvailable: survey.isAvailable !== false,
-            provider: survey.provider || "bitlabs",
+            provider: survey.provider || sdkProvider,
             category:
               typeof survey.category === "string"
                 ? survey.category
@@ -182,6 +182,12 @@ export default function BitLabSurveys() {
     fetchConfiguredSurveys();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch surveys when SDK provider or country changes
+  useEffect(() => {
+    fetchSurveys(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sdkProvider, countryFilter]);
 
   const handlePageChange = (newPage) => {
     fetchSurveys(newPage);
@@ -395,9 +401,9 @@ export default function BitLabSurveys() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">BitLab Surveys</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Surveys</h2>
           <p className="text-gray-600 mt-1">
-            Select surveys to show on user side
+            Select surveys from {sdkProvider === "besitos" ? "Besitos" : "BitLabs"} to show on user side
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -416,7 +422,25 @@ export default function BitLabSurveys() {
 
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* SDK Provider Filter */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-2">
+              SDK Provider
+            </label>
+            <select
+              value={sdkProvider}
+              onChange={(e) => {
+                setSdkProvider(e.target.value);
+                setPagination((prev) => ({ ...prev, currentPage: 1 }));
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+            >
+              <option value="bitlabs">BitLabs</option>
+              <option value="besitos">Besitos</option>
+            </select>
+          </div>
+
           {/* Country Filter */}
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-2">
@@ -519,7 +543,7 @@ export default function BitLabSurveys() {
 
       {/* Loading State */}
       {loading ? (
-        <LoadingSpinner message="Loading BitLab surveys..." />
+        <LoadingSpinner message={`Loading ${sdkProvider === "besitos" ? "Besitos" : "BitLabs"} surveys...`} />
       ) : (
         <>
           {/* Surveys Table */}
