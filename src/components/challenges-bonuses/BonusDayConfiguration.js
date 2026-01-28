@@ -396,7 +396,13 @@ export default function BonusDayConfiguration({
           config={streakBonusConfig}
           onSave={async (data) => {
             if (onSaveStreakBonusConfig) {
-              await onSaveStreakBonusConfig(data);
+              try {
+                await onSaveStreakBonusConfig(data);
+                toast.success('Streak bonus configuration saved successfully');
+                setShowStreakConfig(false);
+              } catch (error) {
+                toast.error('Failed to save streak bonus configuration. Please try again.');
+              }
             }
           }}
           onCancel={() => setShowStreakConfig(false)}
