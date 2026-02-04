@@ -234,6 +234,15 @@ export default function DailyChallengeCalendarView({
           endOfThisWeek.setDate(startOfThisWeek.getDate() + 6)
 
           switch (dateRangeFilter) {
+            case 'today': {
+              const today = new Date()
+              today.setHours(0, 0, 0, 0)
+              const tomorrow = new Date(today)
+              tomorrow.setDate(today.getDate() + 1)
+              tomorrow.setHours(0, 0, 0, 0)
+              matchesDateRange = challengeDate >= today && challengeDate < tomorrow
+              break
+            }
             case 'this-week': {
               matchesDateRange =
                 challengeDate >= startOfThisWeek &&
@@ -393,7 +402,28 @@ export default function DailyChallengeCalendarView({
   }
 
   const goToToday = () => {
-    setCurrentDate(new Date())
+    const today = new Date()
+    setCurrentDate(today)
+    
+    // Find today's challenges
+    const todayDateString = today.toISOString().split('T')[0]
+    const todayChallenges = challenges.filter((challenge) => {
+      if (!challenge.date) return false
+      const challengeDateString =
+        typeof challenge.date === 'string'
+          ? challenge.date.split('T')[0]
+          : new Date(challenge.date).toISOString().split('T')[0]
+      return challengeDateString === todayDateString
+    })
+    
+    // Perform the same actions as clicking on a day
+    onDateSelect?.(today)
+    setSelectedDateChallenges(todayChallenges)
+    
+    // If there are no challenges for today, open add modal
+    if (todayChallenges.length === 0) {
+      onAddChallenge()
+    }
   }
 
   const handleDateClick = (dayData) => {
@@ -756,12 +786,12 @@ export default function DailyChallengeCalendarView({
 
             {/* Calendar Navigation */}
             <div className='flex items-center space-x-4'>
-              <button
+              {/* <button
                 onClick={goToToday}
                 className='px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'
               >
                 Today
-              </button>
+              </button> */}
 
               {/* View Mode Controls */}
               <div className='flex items-center space-x-1 bg-gray-100 p-1 rounded-lg'>
@@ -860,6 +890,28 @@ export default function DailyChallengeCalendarView({
                     const value = e.target.value
                     setDateRangeFilter(value)
 
+                    // When "Today" is selected, switch to Day view and set current date to today
+                    if (value === 'today') {
+                      const today = new Date()
+                      setViewMode('day')
+                      setCurrentDate(today)
+                      
+                      // Also trigger date selection to match Day button behavior
+                      onDateSelect?.(today)
+                      
+                      // Find today's challenges and set them as selected
+                      const todayDateString = today.toISOString().split('T')[0]
+                      const todayChallenges = challenges.filter((challenge) => {
+                        if (!challenge.date) return false
+                        const challengeDateString =
+                          typeof challenge.date === 'string'
+                            ? challenge.date.split('T')[0]
+                            : new Date(challenge.date).toISOString().split('T')[0]
+                        return challengeDateString === todayDateString
+                      })
+                      setSelectedDateChallenges(todayChallenges)
+                    }
+
                     // When in week view, move the visible week for quick navigation
                     if (viewMode === 'week') {
                       const todayForWeek = new Date()
@@ -883,10 +935,16 @@ export default function DailyChallengeCalendarView({
                       setCustomStartDate('')
                       setCustomEndDate('')
                     }
+                    
+                    // Reset selected date challenges when switching away from today
+                    if (value !== 'today') {
+                      setSelectedDateChallenges([])
+                    }
                   }}
                   className='border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500'
                 >
                   <option value='all'>All Dates</option>
+                  <option value='today'>Today</option>
                   <option value='this-week'>This Week</option>
                   <option value='this-month'>This Month</option>
                   <option value='next-month'>Next Month</option>
@@ -1017,6 +1075,7 @@ export default function DailyChallengeCalendarView({
                       newDate.setDate(currentDate.getDate() - 7)
                       setCurrentDate(newDate)
                     }
+                    setCurrentPage(currentPage - 1)
                   }}
                   className='px-3 py-1 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500'
                 >

@@ -322,8 +322,8 @@ export function AddEditModal({
         errors.tierName = 'Please select a valid XP Tier'
       }
 
-      if (!formData.xpMin || formData.xpMin < 0) {
-        errors.xpMin = 'Min XP must be a positive number'
+      if (formData.xpMin == null || isNaN(formData.xpMin) || formData.xpMin < 0) {
+        errors.xpMin = 'Min XP must be 0 or greater'
       }
 
       if (!formData.xpMax || formData.xpMax <= formData.xpMin) {
@@ -341,8 +341,8 @@ export function AddEditModal({
         errors.inactivityDuration = 'Format: "7 Days", "2 Weeks", etc.'
       }
 
-      if (!formData.minimumXpLimit || formData.minimumXpLimit < 0) {
-        errors.minimumXpLimit = 'Min XP limit must be a positive number'
+      if (formData.minimumXpLimit == null || isNaN(formData.minimumXpLimit) || formData.minimumXpLimit < 0) {
+        errors.minimumXpLimit = 'Min XP limit must be 0 or greater'
       }
 
       // Validate XP deduction amount for Fixed and Stepwise rule types
