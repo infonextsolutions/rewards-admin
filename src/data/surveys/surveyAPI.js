@@ -1,6 +1,10 @@
 // Survey & Non-Gaming Offers API module
 import apiClient from "../../lib/apiClient";
 
+// Base URL used ONLY for Bitlabs survey (type=survey). Besitos survey and all other
+// routes keep using the default apiClient base URL (e.g. localhost or env).
+const BITLABS_SURVEY_API_BASE = "http://103.185.212.117:4001/api";
+
 const surveyAPIs = {
   // Mock success response
   mockSuccess: () => Promise.resolve({ success: true }),
@@ -177,7 +181,7 @@ const surveyAPIs = {
     }
   },
 
-  // Get Besitos surveys
+  // Get Besitos surveys (always uses default base URL – no override)
   async getBesitosSurveys({ platform, country, page = 1, limit = 20 } = {}) {
     try {
       const response = await apiClient.get(
@@ -224,24 +228,30 @@ const surveyAPIs = {
         requestParams.country = country;
       }
 
+      // Only Bitlabs survey uses shared base URL (103.185.212.117:4001). Besitos survey
+      // and Bitlabs cashback/other types use default base URL.
+      const isBitlabsSurvey = type === "survey";
+      const requestConfig = {
+        params: requestParams,
+        paramsSerializer: {
+          indexes: null, // Serialize arrays as devices[]=value1&devices[]=value2
+        },
+      };
+      if (isBitlabsSurvey) {
+        requestConfig.baseURL = BITLABS_SURVEY_API_BASE;
+      }
+
       console.log("🟢 [ADMIN API CLIENT] Request parameters:", {
         url: "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
+        baseURL: isBitlabsSurvey ? BITLABS_SURVEY_API_BASE : "(default)",
         params: requestParams,
         page,
         limit,
       });
-      // Configure paramsSerializer to handle arrays correctly
-      // Arrays will be serialized as devices[]=android&devices[]=iphone
-      const paramsSerializer = {
-        indexes: null, // Serialize arrays as devices[]=value1&devices[]=value2
-      };
 
       const response = await apiClient.get(
         "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
-        {
-          params: requestParams,
-          paramsSerializer: paramsSerializer,
-        }
+        requestConfig
       );
       console.log("🟢 [ADMIN API CLIENT] Response received:", {
         success: response.data?.success,

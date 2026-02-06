@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
+
+
 
 // const API_BASE = "http://localhost:4001/api";
 
