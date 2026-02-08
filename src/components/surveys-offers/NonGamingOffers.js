@@ -60,44 +60,69 @@ export default function NonGamingOffers() {
 
         if (response.success && response.categorized) {
           const cashbackOffers = response.categorized.cashback || [];
-          const mappedOffers = cashbackOffers.map((offer) => ({
-            id: offer.id || offer.offerId || offer.merchant_id?.toString(),
-            offerId: offer.offerId || offer.id || offer.merchant_id?.toString(),
-            title:
-              offer.title ||
-              offer.name ||
-              offer.merchant_name ||
-              "Untitled Cashback Offer",
-            description: offer.description || "",
-            type: "cashback",
-            category:
-              typeof offer.category === "string"
-                ? offer.category
-                : offer.category?.name || offer.primary_category || "Cashback",
-            icon:
-              offer.icon || offer.banner || offer.images?.cardImageSmall || "",
-            banner: offer.banner || offer.icon || offer.images?.cardImage || "",
-            reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
-            clickUrl: offer.clickUrl || offer.url || offer.click_url || "",
-            provider: offer.provider || "bitlabs",
-            // Cashback-specific fields
-            merchant_name: offer.merchant_name || "",
-            cashback: offer.cashback || offer.original_cashback || "0",
-            currency: offer.currency || "USD",
-            primary_category: offer.primary_category || "",
-            images: offer.images || {},
-            reward_delay_days: offer.reward_delay_days || 0,
-            flat_payout: offer.flat_payout || false,
-            up_to: offer.up_to || false,
-            country_code: offer.country_code || "",
-            terms: offer.terms || [],
-            tier_mappings: offer.tier_mappings || [],
-            rank: offer.rank || 0,
-            // Additional fields
-            estimatedTime: offer.estimatedTime || 0,
-            isAvailable: offer.isAvailable !== false,
-            sdkProvider: offer.sdkProvider || offer.provider || "bitlabs",
-          }));
+          const mappedOffers = cashbackOffers.map((offer) => {
+            const payout = offer.events?.[0];
+            const payoutNum = payout ? parseFloat(payout.payout) : parseFloat(offer.total_points) || 0;
+            const pointsNum = parseFloat(offer.total_points) || (payout ? parseFloat(payout.points) : 0) || 0;
+            const userCoins = offer.userRewardCoins ?? Math.round(payoutNum * 0.2);
+            const userXP = offer.userRewardXP ?? Math.round(userCoins * 0.5);
+            const epcVal = offer.epc != null ? parseFloat(offer.epc) : 0;
+            const pendingTimeSec = offer.pending_time != null ? Number(offer.pending_time) : 0;
+            return {
+              id: offer.id ?? offer.offerId ?? offer.merchant_id?.toString(),
+              offerId: offer.offerId ?? offer.id ?? offer.merchant_id?.toString(),
+              title:
+                offer.title ||
+                offer.name ||
+                offer.anchor ||
+                offer.merchant_name ||
+                "Untitled Cashback Offer",
+              description: offer.description || "",
+              type: "cashback",
+              category:
+                typeof offer.category === "string"
+                  ? offer.category
+                  : Array.isArray(offer.categories) && offer.categories[0]
+                  ? offer.categories[0]
+                  : offer.category?.name || offer.primary_category || "Cashback",
+              icon:
+                offer.creatives?.icon ||
+                offer.icon ||
+                offer.banner ||
+                offer.images?.cardImageSmall ||
+                "",
+              banner:
+                offer.creatives?.icon ||
+                offer.banner ||
+                offer.icon ||
+                offer.images?.cardImage ||
+                "",
+              reward: offer.reward || { coins: userCoins, currency: "points", xp: userXP },
+              clickUrl: offer.clickUrl || offer.url || offer.click_url || "",
+              provider: offer.provider || "bitlabs",
+              merchant_name: offer.merchant_name || offer.name || offer.anchor || "",
+              cashback: offer.cashback || offer.original_cashback || "0",
+              currency: offer.currency || "USD",
+              primary_category: offer.primary_category || offer.categories?.[0] || "",
+              images: offer.images || {},
+              reward_delay_days: offer.reward_delay_days ?? (pendingTimeSec ? Math.round(pendingTimeSec / 86400) : 0),
+              flat_payout: offer.flat_payout || false,
+              up_to: offer.up_to || false,
+              country_code: offer.country_code || offer.geo_targeting?.countries?.[0]?.country_code || "",
+              terms: offer.terms || [],
+              tier_mappings: offer.tier_mappings || [],
+              rank: offer.rank || 0,
+              total_points: offer.total_points ?? payout?.points ?? "0",
+              epc: offer.epc != null ? String(offer.epc) : "0",
+              pending_time: offer.pending_time ?? 0,
+              events: offer.events || [],
+              userRewardCoins: userCoins,
+              userRewardXP: userXP,
+              estimatedTime: offer.estimatedTime ?? (pendingTimeSec ? Math.round(pendingTimeSec / 3600) : 0),
+              isAvailable: offer.isAvailable !== false,
+              sdkProvider: offer.sdkProvider || offer.provider || "bitlabs",
+            };
+          });
 
           setOffers(mappedOffers);
           setPagination({
@@ -208,9 +233,16 @@ export default function NonGamingOffers() {
 
         if (response.success && response.categorized) {
           const shoppingOffers = response.categorized.shopping || [];
-          const mappedOffers = shoppingOffers.map((offer) => ({
-            id: offer.id || offer.offerId || offer.id?.toString(),
-            offerId: offer.offerId || offer.id || offer.id?.toString(),
+          const mappedOffers = shoppingOffers.map((offer) => {
+            const payout = offer.events?.[0];
+            const pointsNum = parseFloat(offer.total_points) || (payout ? parseFloat(payout.points) : 0) || 0;
+            const payoutNum = payout ? parseFloat(payout.payout) : 0;
+            const valueForReward = pointsNum > 0 ? pointsNum : payoutNum;
+            const userCoins = offer.userRewardCoins ?? Math.round(valueForReward * 0.2);
+            const userXP = offer.userRewardXP ?? Math.round(userCoins * 0.5);
+            return {
+            id: offer.id ?? offer.offerId ?? offer.id?.toString(),
+            offerId: offer.offerId ?? offer.id ?? offer.id?.toString(),
             title:
               offer.title ||
               offer.name ||
@@ -237,17 +269,18 @@ export default function NonGamingOffers() {
               offer.creatives?.images?.["600x300"] ||
               offer.creatives?.icon ||
               "",
-            reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
+            reward: offer.reward || { coins: userCoins, currency: "points", xp: userXP },
+            userRewardCoins: userCoins,
+            userRewardXP: userXP,
             clickUrl: offer.clickUrl || offer.url || offer.click_url || "",
             provider: offer.provider || "bitlabs",
-            // Shopping-specific fields
             anchor: offer.anchor || "",
             product_name: offer.product_name || "",
             product_id: offer.product_id || "",
             total_points: offer.total_points || "0",
             confirmation_time:
               offer.confirmation_time || offer.confirmationTime || "",
-            pending_time: offer.pending_time || offer.pendingTime || 0,
+            pending_time: offer.pending_time ?? offer.pendingTime ?? 0,
             offer_expires_at:
               offer.offer_expires_at || offer.offerExpiresAt || null,
             creatives: offer.creatives || {},
@@ -269,7 +302,8 @@ export default function NonGamingOffers() {
             estimatedTime: offer.estimatedTime || 0,
             isAvailable: offer.isAvailable !== false,
             sdkProvider: offer.sdkProvider || offer.provider || "bitlabs",
-          }));
+            };
+          });
 
           setOffers(mappedOffers);
           setPagination({
@@ -299,26 +333,29 @@ export default function NonGamingOffers() {
             (offer) => offer.type !== "survey" && offer.type !== "surveys"
           );
           const mappedOffers = allOffers.map((offer) => ({
-            id: offer.id || offer.offerId || offer.surveyId,
-            offerId: offer.offerId || offer.id || offer.surveyId,
-            title: offer.title || offer.name || "Untitled Offer",
+            id: offer.id ?? offer.offerId ?? offer.surveyId ?? offer.product_id ?? offer.merchant_id,
+            offerId: offer.offerId ?? offer.id ?? offer.surveyId,
+            title: offer.title || offer.name || offer.anchor || offer.product_name || offer.merchant_name || "Untitled Offer",
             description: offer.description || "",
             type: offer.type || "other",
             category:
               typeof offer.category === "string"
                 ? offer.category
+                : Array.isArray(offer.categories) && offer.categories[0]
+                ? (typeof offer.categories[0] === "string" ? offer.categories[0] : offer.categories[0]?.name)
                 : offer.category?.name || "General",
-            icon: offer.icon || offer.banner || "",
-            banner: offer.banner || offer.icon || "",
+            icon: offer.creatives?.icon || offer.icon || offer.banner || "",
+            banner: offer.creatives?.icon || offer.banner || offer.icon || "",
             reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
             clickUrl:
               offer.clickUrl ||
+              offer.click_url ||
               offer.surveyUrl ||
               offer.downloadUrl ||
               offer.url ||
               "",
             provider: offer.provider || "bitlabs",
-            estimatedTime: offer.estimatedTime || offer.duration || 0,
+            estimatedTime: offer.estimatedTime ?? offer.duration ?? 0,
             isAvailable: offer.isAvailable !== false,
           }));
 
@@ -454,14 +491,18 @@ export default function NonGamingOffers() {
     fetchOffers(newPage, typeFilter);
   };
 
-  // Check if offer is already configured
+  // Check if offer is already configured (compare as strings so 1672633 matches "1672633")
   const isConfigured = (offerId) => {
-    return configuredOffers.some((c) => c.externalId === offerId);
+    if (offerId == null) return false;
+    const idStr = String(offerId);
+    return configuredOffers.some((c) => c.externalId != null && String(c.externalId) === idStr);
   };
 
   // Get configured offer by external ID
   const getConfiguredOffer = (offerId) => {
-    return configuredOffers.find((c) => c.externalId === offerId);
+    if (offerId == null) return null;
+    const idStr = String(offerId);
+    return configuredOffers.find((c) => c.externalId != null && String(c.externalId) === idStr) || null;
   };
 
   // Handle toggle for individual offer
@@ -1227,18 +1268,29 @@ export default function NonGamingOffers() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {typeFilter === "cashback"
-                        ? "Cashback"
+                        ? "Points / Cashback"
                         : typeFilter === "shopping" ||
                           typeFilter === "magic-receipts"
                         ? "Points"
                         : "Reward"}
                     </th>
-                    {(typeFilter === "shopping" ||
+                    {(typeFilter === "cashback" ||
+                      typeFilter === "shopping" ||
                       typeFilter === "magic-receipts") && (
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         EPC
                       </th>
                     )}
+                    {(typeFilter === "cashback" ||
+                      typeFilter === "shopping" ||
+                      typeFilter === "magic-receipts") && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Time
+                      </th>
+                    )}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User reward (coins / XP)
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Category
                     </th>
@@ -1266,10 +1318,12 @@ export default function NonGamingOffers() {
                     <tr>
                       <td
                         colSpan={
-                          typeFilter === "shopping" ||
-                          typeFilter === "magic-receipts"
-                            ? "8"
-                            : "7"
+                          typeFilter === "cashback"
+                            ? 10
+                            : typeFilter === "shopping" ||
+                              typeFilter === "magic-receipts"
+                            ? 10
+                            : 8
                         }
                         className="px-6 py-4 text-center text-gray-500"
                       >
@@ -1294,11 +1348,11 @@ export default function NonGamingOffers() {
                           "Untitled"
                         : offer.title || "Untitled";
 
-                      // Image source based on type
+                      // Image source based on type (Publisher API: creatives.icon, icon)
                       const imageSrc = isCashback
-                        ? offer.images?.cardImageSmall
+                        ? offer.creatives?.icon || offer.icon || offer.images?.cardImageSmall
                         : isShopping || isMagicReceipt
-                        ? offer.creatives?.icon || offer.icon_url
+                        ? offer.creatives?.icon || offer.icon_url || offer.icon
                         : null;
 
                       return (
@@ -1337,7 +1391,8 @@ export default function NonGamingOffers() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {isCashback &&
-                            (offer.cashback || offer.original_cashback) ? (
+                            (offer.cashback || offer.original_cashback) &&
+                            parseFloat(offer.cashback || offer.original_cashback) > 0 ? (
                               <div className="text-sm">
                                 <span className="font-semibold text-emerald-600">
                                   {offer.cashback || offer.original_cashback}%
@@ -1353,12 +1408,14 @@ export default function NonGamingOffers() {
                                   </span>
                                 )}
                               </div>
-                            ) : (isShopping || isMagicReceipt) &&
-                              offer.total_points ? (
+                            ) : (isCashback && (offer.total_points || offer.events?.[0]?.points)) ||
+                              ((isShopping || isMagicReceipt) && offer.total_points) ? (
                               <div className="text-sm">
                                 <span className="font-semibold text-emerald-600">
                                   {parseInt(
-                                    offer.total_points
+                                    offer.total_points ||
+                                      offer.events?.[0]?.points ||
+                                      0
                                   ).toLocaleString()}{" "}
                                   pts
                                 </span>
@@ -1367,10 +1424,11 @@ export default function NonGamingOffers() {
                               <span className="text-sm text-gray-400">N/A</span>
                             )}
                           </td>
-                          {(typeFilter === "shopping" ||
+                          {(typeFilter === "cashback" ||
+                            typeFilter === "shopping" ||
                             typeFilter === "magic-receipts") && (
                             <td className="px-6 py-4 whitespace-nowrap">
-                              {(isShopping || isMagicReceipt) && offer.epc ? (
+                              {offer.epc != null && String(offer.epc) !== "0" ? (
                                 <div className="text-sm">
                                   <span className="font-semibold text-blue-600">
                                     ${offer.epc}
@@ -1383,6 +1441,37 @@ export default function NonGamingOffers() {
                               )}
                             </td>
                           )}
+                          {(typeFilter === "cashback" ||
+                            typeFilter === "shopping" ||
+                            typeFilter === "magic-receipts") && (
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {offer.pending_time != null &&
+                              Number(offer.pending_time) > 0 ? (
+                                <div className="text-sm text-gray-900">
+                                  {Number(offer.pending_time) >= 86400
+                                    ? `${Math.round(Number(offer.pending_time) / 86400)} days`
+                                    : `${Math.round(Number(offer.pending_time) / 3600)} hrs`}
+                                </div>
+                              ) : offer.reward_delay_days != null ? (
+                                <div className="text-sm text-gray-900">
+                                  {offer.reward_delay_days} days
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">N/A</span>
+                              )}
+                            </td>
+                          )}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm">
+                              <span className="font-medium text-emerald-700">
+                                {offer.userRewardCoins ?? offer.reward?.coins ?? 0} coins
+                              </span>
+                              <span className="text-gray-500 mx-1">/</span>
+                              <span className="font-medium text-amber-700">
+                                {offer.userRewardXP ?? offer.reward?.xp ?? 0} XP
+                              </span>
+                            </div>
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                               {(isShopping || isMagicReceipt) &&

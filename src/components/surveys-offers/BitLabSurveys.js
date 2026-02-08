@@ -60,40 +60,46 @@ export default function BitLabSurveys() {
       }
       if (response.success && response.categorized) {
         const surveys = response.categorized.surveys || [];
-        const mappedSurveys = surveys.map((survey) => ({
-          id: survey.id || survey.surveyId || survey.offerId,
-          surveyId: survey.surveyId || survey.id || survey.offerId,
-          offerId: survey.offerId || survey.id || survey.surveyId,
-          title: survey.title || survey.name || "Untitled Survey",
-          description: survey.description || "",
-          icon: survey.icon || survey.banner || "",
-          banner: survey.banner || survey.icon || "",
-          reward: survey.reward || { coins: 0, currency: "points", xp: 0 },
-          estimatedTime:
-            survey.estimatedTime || survey.duration || survey.loi || 0,
-          clickUrl: survey.clickUrl || survey.surveyUrl || survey.url || "",
-          confirmationTime: survey.confirmationTime || "",
-          pendingTime: survey.pendingTime || 0,
-          isAvailable: survey.isAvailable !== false,
-          provider: survey.provider || sdkProvider,
-          requirements: survey.requirements || "",
-          thingsToKnow: survey.thingsToKnow || [],
-          category:
-            typeof survey.category === "string"
-              ? survey.category
-              : survey.category?.name || "Survey",
-          // Bitlabs specific fields
-          value: survey.value ? parseFloat(survey.value) : 0, // Publisher reward value
-          cpi: survey.cpi ? parseFloat(survey.cpi) : 0, // USD payment to publisher
-          loi: survey.loi ? parseFloat(survey.loi) : survey.estimatedTime || 0, // Length of interview (minutes)
-          cr: survey.cr || 0, // Conversion rate
-          rating: survey.rating || 0, // Survey rating
-          country: survey.country || "",
-          language: survey.language || "",
-          // User reward fields (calculated with 20% margin)
-          userRewardCoins: survey.userRewardCoins || survey.reward?.coins || 0, // User gets 20% of value as coins
-          userRewardXP: survey.userRewardXP || survey.reward?.xp || 0, // User gets 50% of coins as XP
-        }));
+        // Map Bitlabs Publisher API response (id, anchor, name, click_url, creatives.icon, events[].payout, total_points, geo_targeting.countries)
+        const mappedSurveys = surveys.map((survey) => {
+          const isPublisherFormat = survey.click_url != null || (survey.anchor != null && survey.events != null);
+          const payout = survey.events?.[0];
+          const valueNum = survey.value != null ? parseFloat(survey.value) : (payout ? parseFloat(payout.payout) : parseFloat(survey.total_points) || 0);
+          const userCoins = survey.userRewardCoins ?? Math.round(valueNum * 0.2);
+          const userXP = survey.userRewardXP ?? Math.round(userCoins * 0.5);
+          const countries = survey.geo_targeting?.countries || survey.countries || (survey.country ? [survey.country] : []);
+          const countryCodes = Array.isArray(countries) ? countries.map((c) => (typeof c === "object" ? c?.country_code : c)).filter(Boolean) : [];
+          const categoryVal = survey.categories?.[0] ?? survey.category;
+          const categoryStr = typeof categoryVal === "string" ? categoryVal : (categoryVal?.name || categoryVal?.name_internal || "Survey");
+          return {
+            id: survey.id ?? survey.surveyId ?? survey.offerId ?? survey.product_id,
+            surveyId: survey.surveyId ?? survey.id ?? survey.offerId,
+            offerId: survey.offerId ?? survey.id ?? survey.surveyId,
+            title: survey.title || survey.name || survey.anchor || survey.product_name || "Untitled Survey",
+            description: survey.description || "",
+            icon: (isPublisherFormat ? survey.creatives?.icon : null) || survey.icon || survey.banner || "",
+            banner: (isPublisherFormat ? survey.creatives?.icon : null) || survey.banner || survey.icon || "",
+            reward: survey.reward || { coins: userCoins, currency: "points", xp: userXP },
+            estimatedTime: survey.estimatedTime ?? survey.duration ?? survey.loi ?? (survey.session_hours ? Math.round(survey.session_hours / 60) : 0),
+            clickUrl: survey.clickUrl || survey.click_url || survey.surveyUrl || survey.url || "",
+            confirmationTime: survey.confirmationTime || "",
+            pendingTime: survey.pendingTime ?? survey.pending_time ?? 0,
+            isAvailable: survey.isAvailable !== false,
+            provider: survey.provider || sdkProvider,
+            requirements: survey.requirements || "",
+            thingsToKnow: survey.thingsToKnow ?? survey.things_to_know ?? [],
+            category: categoryStr,
+            value: valueNum,
+            cpi: survey.cpi != null ? parseFloat(survey.cpi) : (payout ? parseFloat(payout.payout) : 0),
+            loi: survey.loi != null ? parseFloat(survey.loi) : survey.estimatedTime ?? 0,
+            cr: survey.cr ? parseFloat(survey.cr) : 0,
+            rating: survey.rating || 0,
+            country: survey.country || countryCodes[0] || "",
+            language: survey.language || "",
+            userRewardCoins: userCoins,
+            userRewardXP: userXP,
+          };
+        });
 
         setSurveys(mappedSurveys);
         setPagination({
@@ -103,43 +109,44 @@ export default function BitLabSurveys() {
           itemsPerPage: pagination.itemsPerPage,
         });
       } else if (response.success && !response.categorized) {
-        // Fallback: if categorized is not available, try data array
+        // Fallback: if categorized is not available, try data array (Bitlabs Publisher API may return data directly)
         const surveys = response.data || [];
         const mappedSurveys = surveys
-          .filter((s) => s.type === "survey" || s.offerType === "survey")
-          .map((survey) => ({
-            id: survey.id || survey.surveyId || survey.offerId,
-            surveyId: survey.surveyId || survey.id || survey.offerId,
-            offerId: survey.offerId || survey.id || survey.surveyId,
-            title: survey.title || survey.name || "Untitled Survey",
-            description: survey.description || "",
-            icon: survey.icon || survey.banner || "",
-            banner: survey.banner || survey.icon || "",
-            reward: survey.reward || { coins: 0, currency: "points", xp: 0 },
-            estimatedTime:
-              survey.estimatedTime || survey.duration || survey.loi || 0,
-            clickUrl: survey.clickUrl || survey.surveyUrl || survey.url || "",
-            isAvailable: survey.isAvailable !== false,
-            provider: survey.provider || sdkProvider,
-            category:
-              typeof survey.category === "string"
-                ? survey.category
-                : survey.category?.name || "Survey",
-            // Bitlabs specific fields
-            value: survey.value ? parseFloat(survey.value) : 0,
-            cpi: survey.cpi ? parseFloat(survey.cpi) : 0,
-            loi: survey.loi
-              ? parseFloat(survey.loi)
-              : survey.estimatedTime || 0,
-            cr: survey.cr || 0,
-            rating: survey.rating || 0,
-            country: survey.country || "",
-            language: survey.language || "",
-            // User reward fields (calculated with 20% margin)
-            userRewardCoins:
-              survey.userRewardCoins || survey.reward?.coins || 0, // User gets 20% of value as coins
-            userRewardXP: survey.userRewardXP || survey.reward?.xp || 0, // User gets 50% of coins as XP
-          }));
+          .filter((s) => s.type === "survey" || s.offerType === "survey" || s.is_game === false)
+          .map((survey) => {
+            const payout = survey.events?.[0];
+            const valueNum = survey.value != null ? parseFloat(survey.value) : (payout ? parseFloat(payout.payout) : parseFloat(survey.total_points) || 0);
+            const userCoins = survey.userRewardCoins ?? Math.round(valueNum * 0.2);
+            const userXP = survey.userRewardXP ?? Math.round(userCoins * 0.5);
+            const countries = survey.geo_targeting?.countries || survey.countries || (survey.country ? [survey.country] : []);
+            const countryCodes = Array.isArray(countries) ? countries.map((c) => (typeof c === "object" ? c?.country_code : c)).filter(Boolean) : [];
+            const categoryVal = survey.categories?.[0] ?? survey.category;
+            const categoryStr = typeof categoryVal === "string" ? categoryVal : (categoryVal?.name || categoryVal?.name_internal || "Survey");
+            return {
+              id: survey.id ?? survey.surveyId ?? survey.offerId ?? survey.product_id,
+              surveyId: survey.surveyId ?? survey.id ?? survey.offerId,
+              offerId: survey.offerId ?? survey.id ?? survey.surveyId,
+              title: survey.title || survey.name || survey.anchor || survey.product_name || "Untitled Survey",
+              description: survey.description || "",
+              icon: survey.creatives?.icon || survey.icon || survey.banner || "",
+              banner: survey.creatives?.icon || survey.banner || survey.icon || "",
+              reward: survey.reward || { coins: userCoins, currency: "points", xp: userXP },
+              estimatedTime: survey.estimatedTime ?? survey.duration ?? survey.loi ?? 0,
+              clickUrl: survey.clickUrl || survey.click_url || survey.surveyUrl || survey.url || "",
+              isAvailable: survey.isAvailable !== false,
+              provider: survey.provider || sdkProvider,
+              category: categoryStr,
+              value: valueNum,
+              cpi: survey.cpi != null ? parseFloat(survey.cpi) : (payout ? parseFloat(payout.payout) : 0),
+              loi: survey.loi != null ? parseFloat(survey.loi) : survey.estimatedTime ?? 0,
+              cr: survey.cr ? parseFloat(survey.cr) : 0,
+              rating: survey.rating || 0,
+              country: survey.country || countryCodes[0] || "",
+              language: survey.language || "",
+              userRewardCoins: userCoins,
+              userRewardXP: userXP,
+            };
+          });
         setSurveys(mappedSurveys);
         setPagination({
           currentPage: page,
@@ -183,9 +190,10 @@ export default function BitLabSurveys() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Refetch surveys when SDK provider or country changes
+  // Refetch surveys and configured list when SDK provider or country changes
   useEffect(() => {
     fetchSurveys(1);
+    fetchConfiguredSurveys();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sdkProvider, countryFilter]);
 
@@ -210,20 +218,26 @@ export default function BitLabSurveys() {
     };
   }, [surveys]);
 
-  // Get configured survey database ID
+  // Get configured survey database ID (compare as strings so 1672224 matches "1672224")
   const getConfiguredSurveyId = (surveyId) => {
-    const configured = configuredSurveys.find((c) => c.externalId === surveyId);
+    if (surveyId == null) return null;
+    const idStr = String(surveyId);
+    const configured = configuredSurveys.find((c) => c.externalId != null && String(c.externalId) === idStr);
     return configured ? configured._id || configured.id : null;
   };
 
   // Check if survey is already configured
   const isConfigured = (surveyId) => {
-    return configuredSurveys.some((c) => c.externalId === surveyId);
+    if (surveyId == null) return false;
+    const idStr = String(surveyId);
+    return configuredSurveys.some((c) => c.externalId != null && String(c.externalId) === idStr);
   };
 
   // Get configured survey status
   const getConfiguredSurveyStatus = (surveyId) => {
-    const configured = configuredSurveys.find((c) => c.externalId === surveyId);
+    if (surveyId == null) return null;
+    const idStr = String(surveyId);
+    const configured = configuredSurveys.find((c) => c.externalId != null && String(c.externalId) === idStr);
     return configured ? configured.status : null;
   };
 
@@ -280,7 +294,8 @@ export default function BitLabSurveys() {
           "survey",
           undefined,
           countryFilter,
-          targetAudience
+          targetAudience,
+          sdkProvider
         );
         if (response.success) {
           toast.success("Survey synced successfully");
@@ -298,7 +313,7 @@ export default function BitLabSurveys() {
         setPendingSyncSurvey(null);
       }
     },
-    [pendingSyncSurvey, countryFilter]
+    [pendingSyncSurvey, countryFilter, sdkProvider]
   );
 
   // Handle modal confirmation

@@ -297,7 +297,7 @@ const surveyAPIs = {
     }
   },
 
-  // Sync BitLab non-gaming offers to database (admin configuration)
+  // Sync survey/non-game offers to database (same route for Bitlabs and Besitos)
   async syncBitLabOffers({
     offerIds,
     offerType = "all",
@@ -305,6 +305,7 @@ const surveyAPIs = {
     devices = undefined,
     country = undefined,
     targetAudience = undefined,
+    sdk = "bitlabs", // "bitlabs" | "besitos" - use "besitos" when syncing Besitos surveys
   } = {}) {
     try {
       console.log("API Call: syncBitLabOffers", {
@@ -314,6 +315,7 @@ const surveyAPIs = {
         devices,
         country,
         targetAudience,
+        sdk,
         url: "/admin/game-offers/non-game-offers/sync/bitlabs",
       });
       const response = await apiClient.post(
@@ -325,6 +327,7 @@ const surveyAPIs = {
           devices,
           country,
           targetAudience,
+          sdk,
         }
       );
       console.log("API Response: syncBitLabOffers", response.data);
@@ -342,15 +345,14 @@ const surveyAPIs = {
   },
 
   // Get configured non-gaming offers from database
-  async getConfiguredBitLabOffers({ offerType = "all", status = "all" } = {}) {
+  async getConfiguredBitLabOffers({ offerType = "all", status = "all", sdk } = {}) {
     try {
+      const params = { offerType, status };
+      if (sdk) params.sdk = sdk; // "bitlabs" | "besitos" | "all" – so toggle works for both SDKs
       const response = await apiClient.get(
         "/admin/game-offers/non-game-offers/configured/bitlabs",
         {
-          params: {
-            offerType,
-            status,
-          },
+          params,
         }
       );
       return response.data;
@@ -360,16 +362,16 @@ const surveyAPIs = {
     }
   },
 
-  // Sync single offer to database
+  // Sync single offer to database (Bitlabs or Besitos)
   async syncSingleBitLabOffer(
     offerId,
     offerType = "survey",
     devices = undefined,
     country = undefined,
-    targetAudience = undefined
+    targetAudience = undefined,
+    sdk = "bitlabs"
   ) {
     try {
-      // Prepare target audience data for single offer
       const offersWithAudience = targetAudience
         ? [{ offerId, targetAudience }]
         : undefined;
@@ -383,6 +385,7 @@ const surveyAPIs = {
           devices: devices,
           country: country,
           targetAudience: offersWithAudience,
+          sdk,
         }
       );
       return response.data;
