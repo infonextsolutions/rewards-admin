@@ -491,18 +491,32 @@ export default function NonGamingOffers() {
     fetchOffers(newPage, typeFilter);
   };
 
-  // Check if offer is already configured (compare as strings so 1672633 matches "1672633")
+  // Check if offer is already configured (compare multiple ID fields as strings)
+  // This matches both new records (externalId = Bitlabs offer.id) and any older records
+  // where we might have used product_id or other fields.
   const isConfigured = (offerId) => {
     if (offerId == null) return false;
     const idStr = String(offerId);
-    return configuredOffers.some((c) => c.externalId != null && String(c.externalId) === idStr);
+    return configuredOffers.some((c) => {
+      const externalId = c.externalId != null ? String(c.externalId) : null;
+      const offerIdField = c.offerId != null ? String(c.offerId) : null;
+      const idField = c.id != null ? String(c.id) : null;
+      return externalId === idStr || offerIdField === idStr || idField === idStr;
+    });
   };
 
-  // Get configured offer by external ID
+  // Get configured offer by ID (check externalId, offerId and _id)
   const getConfiguredOffer = (offerId) => {
     if (offerId == null) return null;
     const idStr = String(offerId);
-    return configuredOffers.find((c) => c.externalId != null && String(c.externalId) === idStr) || null;
+    return (
+      configuredOffers.find((c) => {
+        const externalId = c.externalId != null ? String(c.externalId) : null;
+        const offerIdField = c.offerId != null ? String(c.offerId) : null;
+        const idField = c.id != null ? String(c.id) : null;
+        return externalId === idStr || offerIdField === idStr || idField === idStr;
+      }) || null
+    );
   };
 
   // Handle toggle for individual offer
@@ -1534,9 +1548,13 @@ export default function NonGamingOffers() {
                                   }`}
                                 />
                               </button>
-                              {togglingOffers.has(offer.id) && (
+                              {togglingOffers.has(offer.id) ? (
                                 <span className="text-xs text-gray-500">
                                   Syncing...
+                                </span>
+                              ) : (
+                                <span className="text-xs text-gray-700 font-medium">
+                                  {configured ? "Synced" : "Not Synced"}
                                 </span>
                               )}
                             </div>
