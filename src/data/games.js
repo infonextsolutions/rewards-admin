@@ -320,6 +320,8 @@ export const gamesAPI = {
         updatedAt: game.updatedAt,
         createdBy: game.createdBy,
         thirdPartyGameData: game.thirdPartyGameData || game.besitosRawData || null,
+        // Device platform from API or raw data (device: "ios" | "android") for Edit modal
+        device: game.device || game.thirdPartyGameData?.device || game.besitosRawData?.device || null,
       };
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -473,6 +475,8 @@ export const gamesAPI = {
           },
           // Include raw data for CPI, amount, and other besitos data
           besitosRawData: game.besitosRawData || null,
+          // Device platform from API or raw Besitos data (device: "ios" | "android") for Edit modal
+          device: game.device || game.besitosRawData?.device || null,
           // Include rewards data
           rewards: game.rewards || { xp: 0, coins: 0 },
           // Include ageGroups array for ageGroup display

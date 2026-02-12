@@ -148,6 +148,45 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
 
   useEffect(() => {
     if (game) {
+      // Set device platform from the game: map response "device": "ios" | "android" → display "iOS" | "Android"
+      const gamePlatform = (() => {
+        const norm = (v) => String(v).toLowerCase().trim();
+        const toPlatform = (p) => {
+          if (!p) return null;
+          const n = norm(p);
+          if (n === "iphone" || n === "ios") return "ios";
+          if (n === "android") return "android";
+          return n;
+        };
+        // game.device (from API or mapped from besitosRawData.device in games.js)
+        if (game.device) {
+          const p = toPlatform(game.device);
+          if (p) return p;
+        }
+        // Fallback: raw Besitos/thirdParty data has "device": "ios" | "android"
+        const raw = game.besitosRawData || game.thirdPartyGameData;
+        if (raw?.device) {
+          const p = toPlatform(raw.device);
+          if (p) return p;
+        }
+        if (game.device_platform) {
+          const p = toPlatform(game.device_platform);
+          if (p) return p;
+        }
+        if (game.devices && Array.isArray(game.devices)) {
+          const hasIos = game.devices.some(
+            (d) => ["ios", "iphone"].includes(norm(d))
+          );
+          const hasAndroid = game.devices.some((d) => norm(d) === "android");
+          if (hasIos && !hasAndroid) return "ios";
+          if (hasAndroid) return "android";
+        }
+        return null;
+      })();
+      if (gamePlatform === "ios" || gamePlatform === "android") {
+        setPlatform(gamePlatform);
+      }
+
       // Debug: Log game data to help troubleshoot
       console.log("Loading game data for edit:", {
         gameId: game.gameId || game.id,
@@ -263,6 +302,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           game.thirdPartyGameData || game.besitosRawData || null,
       });
     } else {
+      setPlatform("android");
       setFormData({
         gameId: "",
         title: "",
