@@ -102,7 +102,16 @@ export default function WelcomeBonusTimerRules() {
           limit: 1000,
           status: "all",
         });
-        setAvailableGames(response.games || []);
+        const games = response.games || [];
+        setAvailableGames(games);
+        console.log("🎮 [WelcomeBonusTimer] Available games:", games.length, "games loaded");
+        // Log SDK provider distribution
+        const sdkCounts = games.reduce((acc, game) => {
+          const sdk = (game.sdk || game.sdkProvider || "unknown").toLowerCase();
+          acc[sdk] = (acc[sdk] || 0) + 1;
+          return acc;
+        }, {});
+        console.log("🎮 [WelcomeBonusTimer] SDK distribution:", sdkCounts);
       } catch (error) {
         console.error("Error fetching games:", error);
       }
@@ -140,28 +149,48 @@ export default function WelcomeBonusTimerRules() {
 
       setLoadingTasks(true);
       try {
-        // Fetch tasks from tasks API
+        // Fetch tasks from tasks API (GameTask model)
         let apiTasks = [];
         try {
           const tasksResponse = await tasksAPI.getTasksForGame(selectedGameId, {
             limit: 100,
           });
           apiTasks = tasksResponse.tasks || [];
+          console.log("✅ [WelcomeBonusTimer] Fetched tasks from GameTask API:", apiTasks.length);
+          if (apiTasks.length > 0) {
+            console.log("✅ [WelcomeBonusTimer] Sample task:", {
+              id: apiTasks[0].id,
+              name: apiTasks[0].name,
+              order: apiTasks[0].order,
+            });
+          }
         } catch (error) {
-          console.warn("Error fetching tasks from API:", error);
+          console.warn("⚠️ [WelcomeBonusTimer] Error fetching tasks from API:", error);
         }
 
-        // Fetch full game data to get besitosRawData
+        // Fetch full game data to get besitosRawData (for Besitos) or events (for Bitlabs)
         let besitosTasks = [];
+        let bitlabsTasks = [];
         try {
           const gameResponse = await apiClient.get(
             `/admin/game-offers/games/${selectedGameId}`
           );
           const gameData = gameResponse.data.data;
-          if (
-            gameData.besitosRawData?.goals &&
-            Array.isArray(gameData.besitosRawData.goals)
-          ) {
+          const sdkProvider = (gameData.sdkProvider || "").toLowerCase();
+          
+          console.log("🔍 [WelcomeBonusTimer] Game data:", {
+            gameId: selectedGameId,
+            sdkProvider: gameData.sdkProvider,
+            sdkProviderLower: sdkProvider,
+            hasBesitosRawData: !!gameData.besitosRawData,
+            hasGoals: !!gameData.besitosRawData?.goals,
+            hasEvents: !!gameData.besitosRawData?.events,
+            eventsCount: gameData.besitosRawData?.events?.length || 0,
+          });
+          
+          // Handle Besitos games: fetch goals from besitosRawData
+          if (sdkProvider === "besitos" && gameData.besitosRawData?.goals && Array.isArray(gameData.besitosRawData.goals)) {
+            console.log("✅ [WelcomeBonusTimer] Processing Besitos goals:", gameData.besitosRawData.goals.length);
             // Transform besitos goals to task format
             besitosTasks = gameData.besitosRawData.goals.map((goal, index) => ({
               id: goal.goal_id || `besitos_${index}`,
@@ -171,13 +200,65 @@ export default function WelcomeBonusTimerRules() {
               source: "besitos",
             }));
           }
+          
+          // Handle Bitlabs games: fetch events from besitosRawData.events
+          // Check for "bitlabs" (case-insensitive - already lowercased)
+          const isBitlabs = sdkProvider === "bitlabs" || sdkProvider.includes("bitlab");
+          if (isBitlabs && gameData.besitosRawData?.events && Array.isArray(gameData.besitosRawData.events)) {
+            console.log("✅ [WelcomeBonusTimer] Processing Bitlabs events:", gameData.besitosRawData.events.length);
+            
+            // For Bitlabs, use ALL events (not just payable ones)
+            // Tasks are primarily managed via GameTask model, events are just for reference
+            // If no payable events, use all events as fallback
+            let eventsToUse = gameData.besitosRawData.events.filter((e) => e.payable === true);
+            if (eventsToUse.length === 0) {
+              console.log("⚠️ [WelcomeBonusTimer] No payable events found, using all events as fallback");
+              eventsToUse = gameData.besitosRawData.events;
+            }
+            console.log("✅ [WelcomeBonusTimer] Events to use:", eventsToUse.length);
+            
+            // Sort events by type_id (1 = Install, 2+ = Steps/Levels)
+            const sortedEvents = [...eventsToUse].sort((a, b) => {
+              const typeA = a.type_id || 999;
+              const typeB = b.type_id || 999;
+              if (typeA !== typeB) return typeA - typeB;
+              return (a.name || a.uuid || "").localeCompare(b.name || b.uuid || "");
+            });
+            
+            // Transform Bitlabs events to task format
+            bitlabsTasks = sortedEvents.map((event, index) => ({
+              id: event.uuid || event.id || `bitlabs_${index}`,
+              name: event.name || `Event ${index + 1}`,
+              description: event.description || event.name || "",
+              order: event.type_id || index + 1,
+              source: "bitlabs",
+              typeId: event.type_id,
+              payout: event.payout || 0,
+            }));
+            console.log("✅ [WelcomeBonusTimer] Transformed Bitlabs tasks:", bitlabsTasks.length);
+          } else if (isBitlabs) {
+            console.warn("⚠️ [WelcomeBonusTimer] Bitlabs game selected but no events found:", {
+              hasBesitosRawData: !!gameData.besitosRawData,
+              hasEvents: !!gameData.besitosRawData?.events,
+              eventsType: typeof gameData.besitosRawData?.events,
+              eventsIsArray: Array.isArray(gameData.besitosRawData?.events),
+              besitosRawDataKeys: gameData.besitosRawData ? Object.keys(gameData.besitosRawData) : [],
+            });
+          }
         } catch (error) {
-          console.warn("Error fetching game data for besitos tasks:", error);
+          console.error("❌ [WelcomeBonusTimer] Error fetching game data for tasks:", error);
         }
 
         // Combine tasks from both sources, prioritizing API tasks
         const combinedTasks = [...apiTasks];
         const newTaskDataMap = new Map();
+        
+        console.log("📊 [WelcomeBonusTimer] Task summary:", {
+          apiTasks: apiTasks.length,
+          besitosTasks: besitosTasks.length,
+          bitlabsTasks: bitlabsTasks.length,
+          totalBeforeCombine: combinedTasks.length,
+        });
 
         // Store API tasks in map
         apiTasks.forEach((task) => {
@@ -203,6 +284,25 @@ export default function WelcomeBonusTimerRules() {
               isMongoId: false,
               goalId: besitosTask.id,
               goalText: besitosTask.name,
+            });
+          }
+        });
+
+        // Add bitlabs tasks that aren't already in API tasks
+        bitlabsTasks.forEach((bitlabsTask) => {
+          const exists = combinedTasks.some(
+            (task) =>
+              task.id === bitlabsTask.id || task.name === bitlabsTask.name
+          );
+          if (!exists) {
+            combinedTasks.push(bitlabsTask);
+            // Store bitlabs task info for later mapping
+            newTaskDataMap.set(bitlabsTask.id, {
+              ...bitlabsTask,
+              source: "bitlabs",
+              isMongoId: false,
+              eventId: bitlabsTask.id,
+              eventName: bitlabsTask.name,
             });
           }
         });
@@ -667,6 +767,72 @@ export default function WelcomeBonusTimerRules() {
             } catch (error) {
               console.error(
                 "Error finding/creating task for besitos goal:",
+                error
+              );
+              throw new Error(
+                `Failed to create task for "${taskData.name}". Please ensure tasks are created first.`
+              );
+            }
+          }
+
+          // If task is from bitlabs, find or create GameTask
+          if (taskData?.source === "bitlabs") {
+            try {
+              // Try to find existing GameTask by name/description/order
+              let existingTasks = [];
+              try {
+                const findTaskResponse = await apiClient.get(
+                  `/admin/game-offers/games/${selectedGameId}/tasks?search=${encodeURIComponent(
+                    taskData.name || ""
+                  )}`
+                );
+                existingTasks = findTaskResponse.data.data?.tasks || [];
+              } catch (searchError) {
+                // If search fails (404 or other), continue to create task
+                console.warn(
+                  "Task search failed, will create new task:",
+                  searchError.message
+                );
+              }
+
+              let matchingTask = existingTasks.find(
+                (t) =>
+                  t.name === taskData.name ||
+                  t.description === taskData.description ||
+                  t.order === taskData.order
+              );
+
+              if (matchingTask) {
+                return {
+                  taskId: matchingTask.id || matchingTask._id,
+                  order: bt.order,
+                  unlockCondition: bt.unlockCondition,
+                };
+              }
+
+              // If no matching task found, create one from bitlabs event
+              const createTaskResponse = await apiClient.post(
+                `/admin/game-offers/games/${selectedGameId}/tasks`,
+                {
+                  name: taskData.name || `Task ${bt.order}`,
+                  description: taskData.description || taskData.name || "",
+                  order: taskData.order || bt.order,
+                  completionRule: "manual",
+                  rewardType: "coins",
+                  rewardValue: taskData.payout || 0,
+                  isActive: true,
+                }
+              );
+
+              const newTask = createTaskResponse.data.data;
+              return {
+                taskId: newTask._id || newTask.id,
+                order: bt.order,
+                unlockCondition: bt.unlockCondition,
+              };
+            } catch (error) {
+              console.error(
+                "Error finding/creating task for bitlabs event:",
                 error
               );
               throw new Error(
@@ -1568,12 +1734,14 @@ export default function WelcomeBonusTimerRules() {
                         <p className="text-sm text-yellow-800">
                           No tasks available for this game. Tasks will be
                           fetched from:
-                          <br />• Game API tasks
-                          <br />• Game's besitosRawData goals
+                          <br />• Game API tasks (GameTask model)
+                          <br />• Besitos games: besitosRawData.goals
+                          <br />• Bitlabs games: besitosRawData.events (payable events)
                           <br />
                           <br />
                           If no tasks appear, the game may not have tasks
-                          configured yet.
+                          configured yet. For Bitlabs games, ensure the game
+                          has events stored in besitosRawData when synced.
                         </p>
                       </div>
                     ) : (
