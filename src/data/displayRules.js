@@ -113,6 +113,14 @@ export const displayRulesAPI = {
         userMilestones = ["first_time_user"];
       }
 
+      const metadata = {
+        description: ruleData.name || ruleData.metadata?.description || "",
+        notes: ruleData.description || ruleData.metadata?.notes || "",
+        priority: ruleData.priority || ruleData.metadata?.priority || 1,
+      };
+      if (ruleData.targetSegment) {
+        metadata.targetSegment = ruleData.targetSegment;
+      }
       const apiPayload = {
         ruleName: ruleData.ruleName || ruleData.name || `Rule ${Date.now()}`,
         userMilestones: userMilestones,
@@ -123,12 +131,11 @@ export const displayRulesAPI = {
         xpTier: ruleData.xpTier || null,
         membershipTier: ruleData.membershipTier || null,
         gameCountLimits: ruleData.gameCountLimits || null,
-        metadata: {
-          description: ruleData.name || ruleData.metadata?.description || "",
-          notes: ruleData.description || ruleData.metadata?.notes || "",
-          priority: ruleData.priority || ruleData.metadata?.priority || 1,
-        },
+        metadata,
       };
+      if (ruleData.targetSegment) {
+        apiPayload.targetSegment = ruleData.targetSegment;
+      }
 
       const response = await apiClient.post(
         "/admin/game-offers/display-rules",
@@ -218,18 +225,26 @@ export const displayRulesAPI = {
       if (ruleData.ruleName !== undefined)
         apiPayload.ruleName = ruleData.ruleName;
 
+      // Update targetSegment if provided (New Users, Engaged Users, or both)
+      if (ruleData.targetSegment !== undefined && ruleData.targetSegment !== null) {
+        apiPayload.targetSegment = ruleData.targetSegment;
+      }
+
       // Update metadata if provided
       if (
         ruleData.name ||
         ruleData.description ||
-        ruleData.priority !== undefined
+        ruleData.priority !== undefined ||
+        ruleData.targetSegment !== undefined
       ) {
-        apiPayload.metadata = {};
+        apiPayload.metadata = apiPayload.metadata || {};
         if (ruleData.name) apiPayload.metadata.description = ruleData.name;
         if (ruleData.description)
           apiPayload.metadata.notes = ruleData.description;
         if (ruleData.priority !== undefined)
           apiPayload.metadata.priority = ruleData.priority;
+        if (ruleData.targetSegment !== undefined && ruleData.targetSegment !== null)
+          apiPayload.metadata.targetSegment = ruleData.targetSegment;
       }
 
       const response = await apiClient.put(

@@ -154,6 +154,25 @@ export default function TransactionLog({ onSneakPeek }) {
             (t) => t.status?.toLowerCase() !== "pending"
           );
 
+          // Helper: format amount with finalXp for XP (not xp) and coins
+          const formatAmount = (t) => {
+            const meta = t.metadata || {};
+            const balanceType = t.balanceType || "coins";
+            const parts = [];
+            const coinsVal =
+              meta.coins ??
+              (balanceType === "coins" ? t.amount : null);
+            const finalXpVal =
+              meta.finalXp ??
+              (balanceType === "xp" ? t.amount : null);
+            if (coinsVal != null && Number(coinsVal) !== 0)
+              parts.push(`${Number(coinsVal)} coins`);
+            if (finalXpVal != null && Number(finalXpVal) !== 0)
+              parts.push(`${Number(finalXpVal)} finalXp`);
+            if (parts.length) return parts.join(", ");
+            return `${t.amount} ${balanceType === "xp" ? "finalXp" : balanceType}`;
+          };
+
           // Transform API data to component format
           // SW-36: Backend already filters out processing transactions
           const transformedTransactions = filteredTransactions.map((t) => ({
@@ -165,7 +184,7 @@ export default function TransactionLog({ onSneakPeek }) {
               "-",
             userEmail: t.userEmail || t.user?.email || "-",
             type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
-            amount: `${t.amount} ${t.balanceType || "coins"}`,
+            amount: formatAmount(t),
             description: t.description || "-",
             createdOn: t.createdAt
               ? (() => {

@@ -62,7 +62,16 @@ export default function TransactionDetails({ transactionId }) {
             userEmail: t.userEmail || t.user?.email || "-",
             userMobile: t.user?.mobile || "-",
             type: t.type ? t.type.charAt(0).toUpperCase() + t.type.slice(1) : "Unknown",
-            amount: `${t.amount} ${t.balanceType || "coins"}`,
+            amount: (() => {
+              const meta = t.metadata || {};
+              const bt = t.balanceType || "coins";
+              const coinsVal = meta.coins ?? (bt === "coins" ? t.amount : null);
+              const finalXpVal = meta.finalXp ?? (bt === "xp" ? t.amount : null);
+              const parts = [];
+              if (coinsVal != null && Number(coinsVal) !== 0) parts.push(`${Number(coinsVal)} coins`);
+              if (finalXpVal != null && Number(finalXpVal) !== 0) parts.push(`${Number(finalXpVal)} finalXp`);
+              return parts.length ? parts.join(", ") : `${t.amount} ${bt === "xp" ? "finalXp" : bt}`;
+            })(),
             description: t.description || "-",
             status: t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown",
             approval: t.isApproved ? "Yes" : "No",
@@ -87,7 +96,7 @@ export default function TransactionDetails({ transactionId }) {
             xpCurrent: t.user?.xp?.current || 0,
             xpTier: t.user?.xp?.tier || 0,
             xpStreak: t.user?.xp?.streak || 0,
-            xpReward: t.metadata?.xp || 0,
+            xpReward: t.metadata?.finalXp ?? t.metadata?.xp ?? 0,
 
             // Additional metadata
             metadata: t.metadata || {},
@@ -424,10 +433,10 @@ export default function TransactionDetails({ transactionId }) {
                 {transaction.xpReward > 0 && (
                   <div>
                     <label className="block text-xs font-medium text-gray-500">
-                      XP Reward
+                      XP Reward (Xp)
                     </label>
                     <p className="text-sm text-emerald-600">
-                      +{transaction.xpReward} XP
+                      +{transaction.xpReward} Xp
                     </p>
                   </div>
                 )}

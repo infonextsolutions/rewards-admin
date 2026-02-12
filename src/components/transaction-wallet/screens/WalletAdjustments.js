@@ -389,31 +389,24 @@ export default function WalletAdjustments({ onSneakPeek }) {
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="text-sm font-medium text-gray-500">Coins</div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {(() => {
-                    const coins = userBalance.coins;
-                    if (typeof coins === "object" && coins !== null) {
-                      return coins.current || coins.total || 0;
-                    }
-                    return coins || 0;
-                  })()}
+                  {userBalance.wallet?.balance ?? 0}
                 </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="text-sm font-medium text-gray-500">XP</div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {(() => {
-                    const xp = userBalance.xp;
-                    if (typeof xp === "object" && xp !== null) {
-                      return xp.current || xp.total || 0;
-                    }
-                    return xp || 0;
-                  })()}
+                  {userBalance.xp?.current ?? userBalance.xp?.total ?? 0}
                 </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="text-sm font-medium text-gray-500">Tier</div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {userBalance.tier || "N/A"}
+                  {userBalance.xp?.tierName ??
+                    (() => {
+                      const tierNum = userBalance.xp?.tier;
+                      const tierNames = { 1: "Junior", 2: "Middle", 3: "Senior" };
+                      return tierNum != null ? (tierNames[tierNum] ?? `Tier ${tierNum}`) : "N/A";
+                    })()}
                 </div>
               </div>
             </div>

@@ -1137,10 +1137,10 @@ export default function DailyChallengeCalendarView({
               </div>
             </div>
 
-            <div className='flex items-center space-x-2 text-gray-600'>
+            {/* <div className='flex items-center space-x-2 text-gray-600'>
               <EyeSlashIcon className='h-4 w-4' />
               <span>Hidden from users</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

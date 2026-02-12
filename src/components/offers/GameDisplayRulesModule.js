@@ -422,9 +422,10 @@ export default function GameDisplayRulesModule() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rule Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Milestone column hidden */}
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Milestone
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Target Segment
                 </th>
@@ -448,7 +449,7 @@ export default function GameDisplayRulesModule() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center">
+                  <td colSpan="7" className="px-6 py-8 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <LoadingSpinner size="lg" className="text-indigo-600" />
                       <p className="mt-3 text-sm text-gray-500">
@@ -460,7 +461,7 @@ export default function GameDisplayRulesModule() {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="7"
                     className="px-6 py-8 text-center text-red-600"
                   >
                     {error}
@@ -469,7 +470,7 @@ export default function GameDisplayRulesModule() {
               ) : filteredRules.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="7"
                     className="px-6 py-8 text-center text-gray-500"
                   >
                     {searchTerm || filterEnabled !== "all"
@@ -510,7 +511,8 @@ export default function GameDisplayRulesModule() {
                           )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    {/* Milestone column hidden */}
+                    {/* <td className="px-6 py-4">
                       <div>
                         <MilestoneBadge milestone={rule.milestone} />
                         {rule.userMilestones &&
@@ -522,12 +524,28 @@ export default function GameDisplayRulesModule() {
                             </div>
                           )}
                       </div>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-xs text-gray-600">
-                        {rule.targetSegment ||
-                          rule.metadata?.targetSegment ||
-                          "All Users"}
+                        {(() => {
+                          const limits = rule.gameCountLimits;
+                          const hasNew = limits?.newUsersLimit != null;
+                          const hasEngaged = limits?.engagedUsersLimit != null;
+                          if (hasNew && hasEngaged) {
+                            return "New Users, Engaged Users";
+                          }
+                          if (hasEngaged && !hasNew) {
+                            return "Engaged Users";
+                          }
+                          if (hasNew && !hasEngaged) {
+                            return "New Users";
+                          }
+                          return (
+                            rule.targetSegment ||
+                            rule.metadata?.targetSegment ||
+                            "All Users"
+                          );
+                        })()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -538,10 +556,16 @@ export default function GameDisplayRulesModule() {
                     <td className="px-6 py-4">
                       {rule.gameCountLimits ? (
                         <div className="text-xs space-y-1">
-                          {rule.gameCountLimits.newUsersLimit && (
+                          {rule.gameCountLimits.newUsersLimit != null && (
                             <div className="text-gray-700">
                               <span className="font-medium">New Users:</span>{" "}
                               {rule.gameCountLimits.newUsersLimit}
+                            </div>
+                          )}
+                          {rule.gameCountLimits.engagedUsersLimit != null && (
+                            <div className="text-gray-700">
+                              <span className="font-medium">Engaged Users:</span>{" "}
+                              {rule.gameCountLimits.engagedUsersLimit}
                             </div>
                           )}
                           {rule.gameCountLimits.xpTierLimits && (

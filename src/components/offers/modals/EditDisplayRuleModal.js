@@ -6,6 +6,7 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 const targetSegmentOptions = [
   "New Users",
   "Engaged Users",
+  "New Users, Engaged Users",
 ];
 
 export default function EditDisplayRuleModal({
@@ -310,8 +311,8 @@ export default function EditDisplayRuleModal({
                   empty to use default value above.
                 </p>
 
-                {/* New Users Limit - Only show when "New Users" is selected */}
-                {formData.targetSegment === "New Users" && (
+                {/* New Users Limit - Show when "New Users" or "New Users, Engaged Users" */}
+                {(formData.targetSegment === "New Users" || formData.targetSegment === "New Users, Engaged Users") && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     New Users Limit
@@ -341,8 +342,8 @@ export default function EditDisplayRuleModal({
                 </div>
                 )}
 
-                {/* Engaged Users Limit - Only show when "Engaged Users" is selected */}
-                {formData.targetSegment === "Engaged Users" && (
+                {/* Engaged Users Limit - Show when "Engaged Users" or "New Users, Engaged Users" */}
+                {(formData.targetSegment === "Engaged Users" || formData.targetSegment === "New Users, Engaged Users") && (
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Engaged Users Limit
