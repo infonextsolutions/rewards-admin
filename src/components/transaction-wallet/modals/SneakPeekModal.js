@@ -28,13 +28,13 @@ export default function SneakPeekModal({ userId, isOpen, onClose }) {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          `https://rewardsapi.hireagent.co/api/admin/transactions/users/${userId}/sneak-peek`,
+          `https://rewardsuatapi.hireagent.co/api/admin/transactions/users/${userId}/sneak-peek`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         const result = await response.json();
@@ -266,7 +266,7 @@ export default function SneakPeekModal({ userId, isOpen, onClose }) {
                           <div className="flex items-center gap-2 mb-1">
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTransactionTypeColor(
-                                transaction.type
+                                transaction.type,
                               )}`}
                             >
                               {transaction.type.charAt(0).toUpperCase() +
@@ -274,7 +274,7 @@ export default function SneakPeekModal({ userId, isOpen, onClose }) {
                             </span>
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                                transaction.status
+                                transaction.status,
                               )}`}
                             >
                               {transaction.status.charAt(0).toUpperCase() +
@@ -301,12 +301,23 @@ export default function SneakPeekModal({ userId, isOpen, onClose }) {
                             {(() => {
                               const meta = transaction.metadata || {};
                               const bt = transaction.balanceType || "coins";
-                              const coinsVal = meta.coins ?? (bt === "coins" ? transaction.amount : null);
-                              const finalXpVal = meta.finalXp ?? (bt === "xp" ? transaction.amount : null);
+                              const coinsVal =
+                                meta.coins ??
+                                (bt === "coins" ? transaction.amount : null);
+                              const finalXpVal =
+                                meta.finalXp ??
+                                (bt === "xp" ? transaction.amount : null);
                               const parts = [];
-                              if (coinsVal != null && Number(coinsVal) !== 0) parts.push(`${Number(coinsVal)} coins`);
-                              if (finalXpVal != null && Number(finalXpVal) !== 0) parts.push(`${Number(finalXpVal)} finalXp`);
-                              return parts.length ? parts.join(", ") : `${transaction.amount} ${bt === "xp" ? "finalXp" : bt}`;
+                              if (coinsVal != null && Number(coinsVal) !== 0)
+                                parts.push(`${Number(coinsVal)} coins`);
+                              if (
+                                finalXpVal != null &&
+                                Number(finalXpVal) !== 0
+                              )
+                                parts.push(`${Number(finalXpVal)} finalXp`);
+                              return parts.length
+                                ? parts.join(", ")
+                                : `${transaction.amount} ${bt === "xp" ? "finalXp" : bt}`;
                             })()}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">

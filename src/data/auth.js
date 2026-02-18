@@ -1,8 +1,8 @@
 // Authentication API service
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4001/api";
+  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
 
-// const API_BASE = "https://rewardsapi.hireagent.co/api";
+// const API_BASE = "http://localhost:8000/api";
 // git stat
 export const authAPI = {
   // Admin login
@@ -35,7 +35,7 @@ export const authAPI = {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem(
           "biometricRequired",
-          JSON.stringify(data.biometricRequired)
+          JSON.stringify(data.biometricRequired),
         );
       }
 
@@ -73,7 +73,7 @@ export const authAPI = {
           token,
           user: JSON.parse(user),
           biometricRequired: JSON.parse(
-            localStorage.getItem("biometricRequired") || "false"
+            localStorage.getItem("biometricRequired") || "false",
           ),
         };
       }
