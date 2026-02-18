@@ -34,6 +34,7 @@ export default function SyncedOffersView() {
       const response = await surveyAPIs.getConfiguredBitLabOffers({
         offerType: typeFilter,
         status: statusFilter,
+        sdk: "all",
       });
       console.log("Synced offers response:", response);
 
@@ -148,7 +149,12 @@ export default function SyncedOffersView() {
         Coins:
           offer.coinReward || offer.userRewardCoins || offer.reward?.coins || 0,
         XP: offer.userRewardXP || offer.reward?.xp || 0,
-        "Time (min)": offer.estimatedTime || offer.loi || 0,
+        "Time (min)":
+          offer.estimatedTime === 0 ||
+          (offer.sdkId?.name &&
+            String(offer.sdkId.name).toLowerCase().includes("everflow"))
+            ? "NIL"
+            : offer.estimatedTime ?? offer.loi ?? 0,
         "Age Range":
           offer.targetAudience?.age?.length > 0
             ? offer.targetAudience.age.join(", ")
@@ -423,7 +429,10 @@ export default function SyncedOffersView() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {offer.estimatedTime || offer.loi || 0} min
+                            {offer.estimatedTime === 0 ||
+                            (offer.sdkId?.name && String(offer.sdkId.name).toLowerCase().includes("everflow"))
+                              ? "NIL"
+                              : `${offer.estimatedTime ?? offer.loi ?? 0} min`}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

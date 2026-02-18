@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
-// const API_BASE = "http://localhost:4001/api";
+  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
+// const API_BASE = "http://localhost:8000/api";
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -25,7 +25,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor - Handle token expiration and authentication errors
@@ -57,7 +57,7 @@ apiClient.interceptors.response.use(
 
     // Return the error for further handling
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
