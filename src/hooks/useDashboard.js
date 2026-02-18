@@ -56,6 +56,7 @@ export function useDashboard() {
     topGame: false,
     revenue: false,
     attribution: false,
+    alerts: false,
   });
   const [error, setError] = useState(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -76,6 +77,7 @@ export function useDashboard() {
           topGame: true,
           revenue: true,
           attribution: true,
+          alerts: true,
         });
         setIsInitialLoad(false);
       }
@@ -178,6 +180,20 @@ export function useDashboard() {
             .finally(() => {
               setLoading((prev) => ({ ...prev, attribution: false }));
             }),
+
+          // Alerts - Independent of filters, always fetch latest
+          DASHBOARD_API.getAlerts(signal)
+            .then((response) => {
+              if (response.data?.success) {
+                setDashboardData((prev) => ({
+                  ...prev,
+                  alerts: response.data.data.alerts || [],
+                }));
+              }
+            })
+            .finally(() => {
+              setLoading((prev) => ({ ...prev, alerts: false }));
+            }),
         ]);
 
         // Wait for KPIs first, then other sections
@@ -195,6 +211,7 @@ export function useDashboard() {
             topGame: false,
             revenue: false,
             attribution: false,
+            alerts: false,
           });
           return;
         }

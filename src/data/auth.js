@@ -1,19 +1,25 @@
 // Authentication API service
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
+  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4001/api";
 
-// const API_BASE = "http://localhost:4001/api";
+// const API_BASE = "https://rewardsapi.hireagent.co/api";
 // git stat
 export const authAPI = {
   // Admin login
   async login(credentials) {
     try {
+      // Transform credentials to match backend expectations
+      const loginData = {
+        emailOrMobile: credentials.email, // Backend expects emailOrMobile field
+        password: credentials.password
+      };
+
       const response = await fetch(`${API_BASE}/auth/admin-login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(loginData),
       });
 
       if (!response.ok) {

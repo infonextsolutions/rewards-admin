@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
-// const API_BASE = "http://localhost:4001/api";
+  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4001/api";
+// const API_BASE = "https://rewardsapi.hireagent.co/api";
 
 // Create axios instance with default config
 const apiClient = axios.create({

@@ -9,6 +9,7 @@ import RetentionTrendGraph from "./RetentionTrendGraph";
 import TopPlayedGameSnapshot from "./TopPlayedGameSnapshot";
 import RevenueVsRewardTable from "./RevenueVsRewardTable";
 import AttributionPerformanceTable from "./AttributionPerformanceTable";
+import AlertsPanel from "./AlertsPanel";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -320,6 +321,10 @@ const Dashboard = () => {
     () => dashboardData.retention?.current,
     [dashboardData.retention?.current]
   );
+  const alertsData = useMemo(
+    () => dashboardData.alerts || [],
+    [dashboardData.alerts]
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
@@ -346,22 +351,38 @@ const Dashboard = () => {
       {/* KPI Cards - Show immediately with loading state */}
       <KPICards data={dashboardData} loading={loadingStates.kpis} />
 
-      {/* Retention Trend Graph Section */}
-      <div className="mb-6">
-        <RetentionTrendGraph
-          data={retentionData}
-          retentionCurrent={retentionCurrent}
-          filters={filters}
-          loading={loadingStates.retention}
-        />
-      </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        {/* Left Column - 2/3 width */}
+        <div className="xl:col-span-2 space-y-6">
+          {/* Retention Trend Graph Section */}
+          <RetentionTrendGraph
+            data={retentionData}
+            retentionCurrent={retentionCurrent}
+            filters={filters}
+            loading={loadingStates.retention}
+          />
 
-      {/* Top Played Game Section */}
-      <div className="mb-6">
-        <TopPlayedGameSnapshot
-          data={topGameData}
-          loading={loadingStates.topGame}
-        />
+          {/* Top Played Game Section */}
+          <TopPlayedGameSnapshot
+            data={topGameData}
+            loading={loadingStates.topGame}
+          />
+        </div>
+
+        {/* Right Column - 1/3 width */}
+        <div className="xl:col-span-1">
+          {/* Alerts Panel */}
+          <AlertsPanel
+            alerts={alertsData}
+            loading={loadingStates.alerts || loading}
+            onRefresh={() => {
+              if (apiFilters) {
+                fetchDashboardData(apiFilters);
+              }
+            }}
+          />
+        </div>
       </div>
 
       {/* Tables Section */}

@@ -66,6 +66,11 @@ export const DASHBOARD_API = {
     return apiClient.get(url, { signal });
   },
 
+  // Get Alerts only - Fast endpoint for alerts panel
+  getAlerts: (signal = null) => {
+    return apiClient.get("/admin/dashboard/alerts", { signal });
+  },
+
   // Legacy: Get all data in one call (for backward compatibility)
   getDashboardData: (filters = {}, signal = null) => {
     const params = new URLSearchParams();

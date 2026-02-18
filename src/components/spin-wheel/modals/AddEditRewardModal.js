@@ -62,13 +62,37 @@ export default function AddEditRewardModal({
     setErrors({});
   }, [reward, isOpen]);
 
-  // Calculate remaining probability
-  const remainingProbability = useMemo(() => {
-    const usedProbability = existingRewards
-      .filter((r) => r.active && (!isEdit || r.id !== reward?.id))
-      .reduce((sum, r) => sum + (r.probability || 0), 0);
-    return 100 - usedProbability;
+  // Calculate remaining probability per tier (BUG-063 fix)
+  const remainingProbabilityPerTier = useMemo(() => {
+    const allTiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+    const remaining = {};
+    
+    allTiers.forEach(tier => {
+      // Get rewards that affect this tier (excluding current reward if editing)
+      const tierRewards = existingRewards.filter(r => 
+        r.active && 
+        r.tierVisibility.includes(tier) && 
+        (!isEdit || r.id !== reward?.id)
+      );
+      
+      const usedInTier = tierRewards.reduce((sum, r) => sum + (r.probability || 0), 0);
+      remaining[tier] = Math.max(0, 100 - usedInTier);
+    });
+    
+    return remaining;
   }, [existingRewards, isEdit, reward?.id]);
+
+  // Get minimum remaining probability for selected tiers
+  const getMinRemainingForSelectedTiers = () => {
+    if (!formData.tierVisibility.length) return 100;
+    
+    // If "All Tiers" is selected, check all tiers
+    const tiersToCheck = formData.tierVisibility.includes('All Tiers') 
+      ? ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond']
+      : formData.tierVisibility;
+    
+    return Math.min(...tiersToCheck.map(tier => remainingProbabilityPerTier[tier] || 100));
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -100,24 +124,41 @@ export default function AddEditRewardModal({
       newErrors.amount = "Amount must be 1,000,000 or less";
     }
 
-    // Probability validation
-    if (!formData.probability || formData.probability <= 0) {
-      newErrors.probability = "Probability must be greater than 0";
-    } else if (formData.probability > 100) {
-      newErrors.probability = "Probability cannot exceed 100%";
-    } else if (formData.probability > remainingProbability && formData.active) {
-      newErrors.probability = `Probability cannot exceed ${remainingProbability}% (remaining available)`;
-    } else {
-      // Check for duplicate probability (only for active rewards)
-      const duplicateProbability = existingRewards.find(
-        (r) =>
-          r.active &&
-          Math.abs(r.probability - parseFloat(formData.probability)) < 0.01 && // Allow for floating point precision
-          (!isEdit || r.id !== reward?.id)
-      );
-      if (duplicateProbability) {
-        newErrors.probability = `A reward with ${formData.probability}% probability already exists. Please deactivate the existing reward first or use a different probability.`;
+    // Probability validation (BUG-063 fix: per-tier validation)
+    if (formData.probability) {
+      const prob = parseFloat(formData.probability);
+      if (prob <= 0 || prob > 100) {
+        newErrors.probability = 'Probability must be between 1 and 100';
+      } else {
+        // Check for duplicates within the same tier
+        const selectedTiers = formData.tierVisibility.includes('All Tiers') 
+          ? ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond']
+          : formData.tierVisibility;
+        
+        for (const tier of selectedTiers) {
+          // Check for duplicate probabilities in this tier
+          const tierRewards = existingRewards.filter(r => 
+            r.active && 
+            r.tierVisibility.includes(tier) && 
+            (!isEdit || r.id !== reward?.id)
+          );
+          
+          const duplicates = tierRewards.filter(r => r.probability === prob);
+          if (duplicates.length > 0) {
+            newErrors.probability = `Probability ${prob}% is already used by another reward in ${tier} tier`;
+            break;
+          }
+          
+          // Check tier probability limit
+          const tierRemaining = remainingProbabilityPerTier[tier] || 0;
+          if (prob > tierRemaining) {
+            newErrors.probability = `Cannot exceed ${tierRemaining}% (remaining available for ${tier} tier)`;
+            break;
+          }
+        }
       }
+    } else {
+      newErrors.probability = 'Probability is required';
     }
 
     // Tier visibility validation
