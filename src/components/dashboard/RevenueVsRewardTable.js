@@ -14,6 +14,8 @@ const RevenueVsRewardTable = memo(
     },
     loading = false,
     filters = null,
+    selectedRetentionDay = "D7",
+    onRetentionDayChange = () => {},
     onPageChange = () => {},
   }) => {
     // Map API data to table format - memoized for performance
@@ -30,7 +32,9 @@ const RevenueVsRewardTable = memo(
           const marginPercent =
             game.marginPercent ||
             (revenue > 0 ? (marginDollar / revenue) * 100 : 0);
-          const d7Retention = game.d7Retention || 0;
+          
+          // Use generic retention field (supports any retention day)
+          const retention = game.retention || game.d7Retention || 0;
 
           return {
             id: index + 1,
@@ -40,7 +44,7 @@ const RevenueVsRewardTable = memo(
             rewardCost: rewardCost,
             marginDollar: marginDollar,
             marginPercent: marginPercent,
-            d7Retention: d7Retention,
+            retention: retention,
             gameId: game.gameId,
           };
         });
@@ -132,6 +136,31 @@ const RevenueVsRewardTable = memo(
                 Profitability analysis by game performance
               </p>
             </div>
+            
+            {/* Retention Day Dropdown */}
+            <div className="relative">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Retention Metric
+              </label>
+              <select
+                value={selectedRetentionDay}
+                onChange={(e) => onRetentionDayChange(e.target.value)}
+                disabled={loading}
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 text-sm font-medium shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
+              >
+                <option value="D1">D1 Retention</option>
+                <option value="D3">D3 Retention</option>
+                <option value="D4">D4 Retention</option>
+                <option value="D5">D5 Retention</option>
+                <option value="D6">D6 Retention</option>
+                <option value="D7">D7 Retention</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 mt-5">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* Table */}
@@ -157,7 +186,7 @@ const RevenueVsRewardTable = memo(
                         Margin %
                       </th>
                       <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
-                        D7 Retention
+                        {selectedRetentionDay} Retention
                       </th>
                     </tr>
                   </thead>
@@ -204,10 +233,10 @@ const RevenueVsRewardTable = memo(
                         <td className="py-4 px-2 text-right">
                           <span
                             className={`font-semibold text-sm ${getRetentionColor(
-                              game.d7Retention
+                              game.retention
                             )}`}
                           >
-                            {game.d7Retention.toFixed(1)}%
+                            {game.retention.toFixed(1)}%
                           </span>
                         </td>
                       </tr>

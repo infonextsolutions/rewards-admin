@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo, memo } from "react";
+import React, { useMemo, memo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { DASHBOARD_API } from "../../data/dashboard";
 
 // Color palette for professional charts - moved outside component
 const chartColors = {
@@ -12,8 +13,29 @@ const chartColors = {
   tier: ["#f59e0b", "#fbbf24", "#fcd34d", "#fde68a"],
 };
 
-const TopPlayedGameSnapshot = memo(({ data, loading }) => {
+const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGameChange, filters }) => {
   const router = useRouter();
+  const [gamesList, setGamesList] = useState([]);
+  const [loadingGames, setLoadingGames] = useState(false);
+
+  // Fetch games list on mount
+  useEffect(() => {
+    const fetchGames = async () => {
+      setLoadingGames(true);
+      try {
+        const response = await DASHBOARD_API.getGamesList();
+        if (response.data?.success) {
+          setGamesList(response.data.data.games || []);
+        }
+      } catch (error) {
+        console.error('Error fetching games list:', error);
+      } finally {
+        setLoadingGames(false);
+      }
+    };
+
+    fetchGames();
+  }, []);
 
   // Handler for game navigation
   const handleGameClick = () => {
@@ -288,9 +310,35 @@ const TopPlayedGameSnapshot = memo(({ data, loading }) => {
             "radial-gradient(50% 50% at 50% 50%, rgba(88,48,173,1) 0%, rgba(42,34,102,1) 100%)",
         }}
       >
-        <h1 className="text-2xl font-semibold text-white mb-8">
-          Top Played Game
-        </h1>
+        {/* Header with Title and Dropdown */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-semibold text-white">
+            Top Played Game
+          </h1>
+          
+          {/* Game Selection Dropdown */}
+          <div className="relative">
+            <select
+              value={selectedGame}
+              onChange={(e) => onGameChange(e.target.value)}
+              disabled={loadingGames || loading}
+              className="appearance-none bg-[#02020280] text-white border border-[#ffffff33] rounded-lg px-4 py-2 pr-10 text-sm font-medium shadow-lg backdrop-blur-sm hover:bg-[#02020299] focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+            >
+              <option value="auto">Auto (Most Played)</option>
+              {gamesList.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {game.title}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-white text-lg font-medium">No game data available</p>
@@ -309,9 +357,34 @@ const TopPlayedGameSnapshot = memo(({ data, loading }) => {
           "radial-gradient(50% 50% at 50% 50%, rgba(88,48,173,1) 0%, rgba(42,34,102,1) 100%)",
       }}
     >
-      <h1 className="text-2xl font-semibold text-white mb-8">
-        Top Played Game
-      </h1>
+      {/* Header with Title and Dropdown */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-semibold text-white">
+          Top Played Game
+        </h1>
+        
+        {/* Game Selection Dropdown */}
+        <div className="relative">
+          <select
+            value={selectedGame}
+            onChange={(e) => onGameChange(e.target.value)}
+            disabled={loadingGames || loading}
+            className="appearance-none bg-[#02020280] text-white border border-[#ffffff33] rounded-lg px-4 py-2 pr-10 text-sm font-medium shadow-lg backdrop-blur-sm hover:bg-[#02020299] focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+          >
+            <option value="auto">Auto (Most Played)</option>
+            {gamesList.map((game) => (
+              <option key={game.id} value={game.id}>
+                {game.title}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </div>
+      </div>
 
       {/* Game Banner & Title + Metrics Section */}
       <div className="flex items-start gap-8 mb-8">
