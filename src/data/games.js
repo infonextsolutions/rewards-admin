@@ -438,6 +438,7 @@ export const gamesAPI = {
             ? `${game.metadata.estimatedPlayTime} min`
             : "N/A",
           retentionRate: game.analytics?.retentionRate || 0,
+          completionRate: game.completionRate !== undefined ? game.completionRate : 0,
           clickRate: 0, // Not in API
           installRate: 0, // Not in API
           marketingChannel: game.marketingChannel || "",

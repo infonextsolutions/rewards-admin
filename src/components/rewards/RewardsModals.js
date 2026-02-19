@@ -104,13 +104,14 @@ export function AddEditModal({
   }, [isOpen, activeTab]);
 
   // Fetch XP tiers when modal opens for XP Decay Settings
-  // This fetches from the XP Tiers tab data to get xpMin and xpMax values
+  // This fetches from the XP Tiers V2 tab data to get xpMin and xpMax values
   useEffect(() => {
     if (isOpen && activeTab === "XP Decay Settings") {
       const fetchXpTiers = async () => {
         setLoadingXpTiers(true);
         try {
-          const response = await apiClient.get("/admin/rewards/xp-tiers", {
+          // CRITICAL FIX: Fetch from XP Tiers V2 API instead of V1
+          const response = await apiClient.get("/admin/rewards/xp-tiers-v2", {
             params: { status: true },
           });
           const result = response.data;
@@ -120,7 +121,7 @@ export function AddEditModal({
             setXpTiers([]);
           }
         } catch (error) {
-          console.error("Error fetching XP tiers:", error);
+          console.error("Error fetching XP tiers V2:", error);
           setXpTiers([]);
         } finally {
           setLoadingXpTiers(false);
@@ -167,31 +168,25 @@ export function AddEditModal({
   }, [formData.tierName, multipliers, activeTab]);
 
   // Auto-populate XP Range when tier is selected in XP Decay Settings
-  // XP Range is derived from xpMin and xpMax values set in the XP Tiers tab
+  // XP Range is derived from xpMin and xpMax values set in the XP Tiers V2 tab
   useEffect(() => {
     if (activeTab === "XP Decay Settings") {
       if (formData.tierName && xpTiers.length > 0) {
-        // Find the tier from XP Tiers tab data (uses 'tierName' field)
-        // Match by exact tierName or check if tierName contains/starts with the selected tier
+        // CRITICAL FIX: Find the tier from XP Tiers V2 data (uses 'tier' field, not 'tierName')
+        // XP Tiers V2 has enum values: Junior, Middle, Senior
         const selectedTierLower = formData.tierName.toLowerCase();
         const tier = xpTiers.find((t) => {
-          if (!t.tierName) return false;
-          const tierNameLower = t.tierName.toLowerCase();
-          return (
-            tierNameLower === selectedTierLower ||
-            tierNameLower.startsWith(selectedTierLower) ||
-            selectedTierLower.startsWith(tierNameLower.split(" ")[0]) // Match first word
-          );
+          if (!t.tier) return false;
+          const tierLower = t.tier.toLowerCase();
+          return tierLower === selectedTierLower;
         });
 
         if (tier) {
           // Use existing xpRange if available, otherwise format from xpMin and xpMax
           let newXpRange = "";
           if (tier.xpRange) {
-            // Use the xpRange field if it exists (may already include "XP" suffix)
-            newXpRange = tier.xpRange.includes("XP")
-              ? tier.xpRange
-              : `${tier.xpRange} XP`;
+            // Use the xpRange field if it exists
+            newXpRange = tier.xpRange;
           } else if (tier.xpMin !== undefined && tier.xpMin !== null) {
             // Format XP Range from xpMin and xpMax values
             if (
@@ -199,9 +194,9 @@ export function AddEditModal({
               tier.xpMax === undefined ||
               tier.xpMax === Infinity
             ) {
-              newXpRange = `${tier.xpMin}+ XP`;
+              newXpRange = `${tier.xpMin}+`;
             } else {
-              newXpRange = `${tier.xpMin} - ${tier.xpMax} XP`;
+              newXpRange = `${tier.xpMin} - ${tier.xpMax}`;
             }
           }
 
@@ -635,6 +630,11 @@ export function AddEditModal({
                     <option value="Middle">Middle</option>
                     <option value="Senior">Senior</option>
                   </select>
+                  {formErrors.tierName && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formErrors.tierName}
+                    </p>
+                  )}
                 </div>
 
                 <div>
