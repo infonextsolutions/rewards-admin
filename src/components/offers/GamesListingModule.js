@@ -58,6 +58,7 @@ export default function GamesListingModule() {
     { key: "coins", label: "Coins" },
     // { key: "defaultTasks", label: "Default Tasks" }, // Commented out - hidden
     // { key: "retentionRate", label: "Retention Rate" }, // Commented out - hidden
+    { key: "completionRate", label: "Completion Rate" },
     { key: "clickRate", label: "Click Rate" },
     { key: "installRate", label: "Install Rate" },
     { key: "marketingChannel", label: "Marketing Channel" },
@@ -531,6 +532,14 @@ export default function GamesListingModule() {
       //       {game.retentionRate}%
       //     </span>
       //   );
+      case "completionRate":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 text-sm">
+            {game.completionRate !== undefined && game.completionRate !== null
+              ? `${game.completionRate}%`
+              : "0%"}
+          </span>
+        );
       case "clickRate":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-800 text-sm">

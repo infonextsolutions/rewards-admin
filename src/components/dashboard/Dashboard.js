@@ -27,6 +27,12 @@ const Dashboard = () => {
     customEndDate: "",
   });
 
+  // State for selected game in Top Played Game section
+  const [selectedTopGame, setSelectedTopGame] = useState("auto");
+  
+  // State for selected retention day in Revenue table
+  const [selectedRetentionDay, setSelectedRetentionDay] = useState("D7");
+
   // Convert filters to API format
   const apiFilters = useMemo(() => {
     const now = new Date();
@@ -107,12 +113,12 @@ const Dashboard = () => {
     filters.customEndDate,
   ]);
 
-  const { dashboardData, loading, loadingStates, error, fetchDashboardData } =
+  const { dashboardData, loading, loadingStates, error, fetchDashboardData, fetchTopGameOnly, fetchRevenueOnly } =
     useDashboard();
 
   // Optimized fetch function - instant for dropdowns, debounced for search
   const optimizedFetch = useCallback(
-    (filtersToUse, isSearch = false) => {
+    (filtersToUse, isSearch = false, selectedGame = null) => {
       // Cancel previous request if exists (only for filter changes, not initial mount)
       if (abortControllerRef.current && !isInitialMount.current) {
         abortControllerRef.current.abort();
@@ -131,7 +137,7 @@ const Dashboard = () => {
       // Dropdown filters: instant response (0ms delay)
       // Search: already debounced to 250ms in FilterControls, so we can call immediately here
       // This prevents double debouncing and makes the UI feel much faster
-      fetchDashboardData(filtersToUse, abortControllerRef.current?.signal);
+      fetchDashboardData(filtersToUse, abortControllerRef.current?.signal, selectedGame);
     },
     [fetchDashboardData]
   );
@@ -220,13 +226,13 @@ const Dashboard = () => {
         filterTimeoutRef.current = setTimeout(() => {
           // Double-check filters haven't changed during debounce
           if (filtersChanged(prevFiltersRef.current, apiFilters)) {
-            fetchDashboardData(apiFilters, abortControllerRef.current?.signal);
+            fetchDashboardData(apiFilters, abortControllerRef.current?.signal, selectedTopGame);
             prevFiltersRef.current = apiFilters;
           }
         }, 600);
       } else {
         // For other filter changes, use optimized fetch (instant for dropdowns)
-        optimizedFetch(apiFilters, isSearchChange);
+        optimizedFetch(apiFilters, isSearchChange, selectedTopGame);
         prevFiltersRef.current = apiFilters;
       }
     }
@@ -245,6 +251,7 @@ const Dashboard = () => {
     fetchDashboardData,
     filters.dateRange,
     filtersChanged,
+    selectedTopGame,
   ]);
 
   const handleFilterChange = useCallback((filterKey, value) => {
@@ -253,6 +260,25 @@ const Dashboard = () => {
       [filterKey]: value,
     }));
   }, []);
+
+  // Handler for top game selection
+  const handleTopGameChange = useCallback((gameId) => {
+    setSelectedTopGame(gameId);
+    // Fetch only the top game data with the selected game
+    if (apiFilters) {
+      fetchTopGameOnly(apiFilters, gameId);
+    }
+  }, [apiFilters, fetchTopGameOnly]);
+
+  // Handler for retention day selection
+  const handleRetentionDayChange = useCallback((retentionDay) => {
+    setSelectedRetentionDay(retentionDay);
+    // Fetch only the revenue data with the selected retention day
+    if (apiFilters) {
+      const filtersWithRetention = { ...apiFilters, retentionDay };
+      fetchRevenueOnly(filtersWithRetention, 1); // Reset to page 1
+    }
+  }, [apiFilters, fetchRevenueOnly]);
 
   // Memoize data transformations for performance
   const retentionData = useMemo(
@@ -367,6 +393,9 @@ const Dashboard = () => {
           <TopPlayedGameSnapshot
             data={topGameData}
             loading={loadingStates.topGame}
+            selectedGame={selectedTopGame}
+            onGameChange={handleTopGameChange}
+            filters={apiFilters}
           />
         </div>
 
@@ -393,9 +422,12 @@ const Dashboard = () => {
           pagination={dashboardData.revenuePagination}
           loading={loadingStates.revenue}
           filters={apiFilters}
+          selectedRetentionDay={selectedRetentionDay}
+          onRetentionDayChange={handleRetentionDayChange}
           onPageChange={(page) => {
             if (apiFilters) {
-              fetchRevenuePage(apiFilters, page);
+              const filtersWithRetention = { ...apiFilters, retentionDay: selectedRetentionDay };
+              fetchRevenuePage(filtersWithRetention, page);
             }
           }}
         />
