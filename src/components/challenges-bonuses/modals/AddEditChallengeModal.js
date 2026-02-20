@@ -211,12 +211,15 @@ export default function AddEditChallengeModal({
       }
     }
 
-    // Validate past dates
-    const selectedDateObj = new Date(formData.date);
+    // Validate past dates (compare date-only to avoid timezone making future dates appear as past)
+    const selectedDateStr = formData.date ? String(formData.date).split("T")[0] : "";
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDateObj < today && !challenge) {
+    const todayStr = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+    if (selectedDateStr && selectedDateStr < todayStr && !challenge) {
       newErrors.date = "Cannot create challenges for past dates";
     }
 
@@ -452,6 +455,13 @@ export default function AddEditChallengeModal({
 
   if (!isOpen) return null;
 
+  const today = new Date();
+  const todayDateStr = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-screen overflow-y-auto">
@@ -557,6 +567,7 @@ export default function AddEditChallengeModal({
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
                   }
+                  min={challenge ? undefined : todayDateStr}
                   className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
                     errors.date ? "border-red-300" : "border-gray-300"
                   }`}
