@@ -495,22 +495,9 @@ export const useRewards = () => {
       ) {
         params.status = filters.status
       }
-      if (
-        filters.tierName !== undefined &&
-        filters.tierName !== null &&
-        filters.tierName !== ''
-      ) {
-        params.tierName = filters.tierName
-      }
-      if (
-        filters.xpRange !== undefined &&
-        filters.xpRange !== null &&
-        filters.xpRange !== ''
-      ) {
-        params.xpRange = filters.xpRange
-      }
 
-      const response = await apiClient.get('/admin/rewards/xp-tiers', {
+      // CRITICAL FIX: Use XP Tiers V2 API endpoint
+      const response = await apiClient.get('/admin/rewards/xp-tiers-v2', {
         params,
       })
       const result = response.data
@@ -518,22 +505,14 @@ export const useRewards = () => {
       if (result.success && result.data) {
         const transformedData = result.data.map((item) => ({
           id: item._id,
-          tierName: item.tierName,
-          tierColor: item.tierColor,
-          bgColor: item.bgColor,
-          borderColor: item.borderColor,
-          iconSrc: item.iconSrc,
+          tier: item.tier,
+          tierName: item.tier, // Map tier to tierName for compatibility
           xpMin: item.xpMin,
           xpMax: item.xpMax,
           xpRange: item.xpRange,
-          badge: item.badge,
-          badgeFile: item.badgeFile,
-          accessBenefits: item.accessBenefits,
-          benefits: item.benefits,
-          multipliers: item.multipliers,
-          requirements: item.requirements,
+          accessBenefit: item.accessBenefit,
+          accessBenefits: item.accessBenefit, // Map for compatibility
           status: item.status,
-          order: item.order,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         }))
@@ -557,28 +536,21 @@ export const useRewards = () => {
   const fetchSingleXPTier = async (id) => {
     setLoading(true)
     try {
-      const response = await apiClient.get(`/admin/rewards/xp-tiers/${id}`)
+      // CRITICAL FIX: Use XP Tiers V2 API endpoint
+      const response = await apiClient.get(`/admin/rewards/xp-tiers-v2/${id}`)
       const result = response.data
 
       if (result.success && result.data) {
         const transformedData = {
           id: result.data._id,
-          tierName: result.data.tierName,
-          tierColor: result.data.tierColor,
-          bgColor: result.data.bgColor,
-          borderColor: result.data.borderColor,
-          iconSrc: result.data.iconSrc,
+          tier: result.data.tier,
+          tierName: result.data.tier, // Map tier to tierName for compatibility
           xpMin: result.data.xpMin,
           xpMax: result.data.xpMax,
           xpRange: result.data.xpRange,
-          badge: result.data.badge,
-          badgeFile: result.data.badgeFile,
-          accessBenefits: result.data.accessBenefits,
-          benefits: result.data.benefits,
-          multipliers: result.data.multipliers,
-          requirements: result.data.requirements,
+          accessBenefit: result.data.accessBenefit,
+          accessBenefits: result.data.accessBenefit, // Map for compatibility
           status: result.data.status,
-          order: result.data.order,
           createdAt: result.data.createdAt,
           updatedAt: result.data.updatedAt,
         }
@@ -601,29 +573,16 @@ export const useRewards = () => {
   const createXPTier = async (formData) => {
     setLoading(true)
     try {
-      // Create FormData for multipart/form-data request
-      const data = new FormData()
-      data.append('tierName', formData.tierName)
-      data.append('xpMin', formData.xpMin)
-      data.append('xpMax', formData.xpMax)
-      data.append('accessBenefits', formData.accessBenefits || '')
-      data.append('status', formData.status)
-
-      // Add badge if provided (can be string or file)
-      if (formData.badge && !formData.badgeFile) {
-        data.append('badge', formData.badge)
+      // CRITICAL FIX: Map tierName to tier for V2 API
+      const data = {
+        tier: formData.tierName || formData.tier,
+        xpMin: formData.xpMin,
+        xpMax: formData.xpMax,
+        status: formData.status,
       }
 
-      // Add badge file if provided
-      if (formData.badgeFile) {
-        data.append('badgeFile', formData.badgeFile)
-      }
-
-      const response = await apiClient.post('/admin/rewards/xp-tiers', data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      // CRITICAL FIX: Use XP Tiers V2 API endpoint (JSON, not FormData)
+      const response = await apiClient.post('/admin/rewards/xp-tiers-v2', data)
       const result = response.data
 
       if (result.success) {
@@ -645,31 +604,18 @@ export const useRewards = () => {
   const updateXPTier = async (id, formData) => {
     setLoading(true)
     try {
-      const data = new FormData()
-      data.append('tierName', formData.tierName)
-      data.append('xpMin', formData.xpMin)
-      data.append('xpMax', formData.xpMax)
-      data.append('accessBenefits', formData.accessBenefits || '')
-      data.append('status', formData.status)
-
-      // Add badge if provided (can be string or file)
-      if (formData.badge && !formData.badgeFile) {
-        data.append('badge', formData.badge)
+      // CRITICAL FIX: Map tierName to tier for V2 API
+      const data = {
+        tier: formData.tierName || formData.tier,
+        xpMin: formData.xpMin,
+        xpMax: formData.xpMax,
+        status: formData.status,
       }
 
-      // Add badge file if provided
-      if (formData.badgeFile) {
-        data.append('badgeFile', formData.badgeFile)
-      }
-
+      // CRITICAL FIX: Use XP Tiers V2 API endpoint (JSON, not FormData)
       const response = await apiClient.put(
-        `/admin/rewards/xp-tiers/${id}`,
+        `/admin/rewards/xp-tiers-v2/${id}`,
         data,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        },
       )
       const result = response.data
 
@@ -692,7 +638,8 @@ export const useRewards = () => {
   const deleteXPTier = async (id) => {
     setLoading(true)
     try {
-      const response = await apiClient.delete(`/admin/rewards/xp-tiers/${id}`)
+      // CRITICAL FIX: Use XP Tiers V2 API endpoint
+      const response = await apiClient.delete(`/admin/rewards/xp-tiers-v2/${id}`)
       const result = response.data
 
       if (result.success) {
@@ -957,7 +904,8 @@ export const useRewards = () => {
   const toggleXPTierStatus = async (id, status) => {
     setLoading(true)
     try {
-      const response = await apiClient.patch(`/xp-tiers/${id}/status`, {
+      // CRITICAL FIX: Use XP Tiers V2 API endpoint
+      const response = await apiClient.patch(`/admin/rewards/xp-tiers-v2/${id}/status`, {
         status,
       })
       const result = response.data
@@ -1301,7 +1249,12 @@ export const useRewards = () => {
   const createXPDecayV2 = async (formData) => {
     setLoading(true)
     try {
-      const { id, ...data } = formData
+      const { id, tierName, ...rest } = formData
+      // CRITICAL FIX: Map tierName to tier for backend compatibility
+      const data = {
+        ...rest,
+        tier: tierName || formData.tier, // Use tierName from form, fallback to tier if exists
+      }
       const response = await apiClient.post('/admin/rewards/xp-decay-v2', data)
       const result = response.data
 
@@ -1324,7 +1277,12 @@ export const useRewards = () => {
   const updateXPDecayV2 = async (id, formData) => {
     setLoading(true)
     try {
-      const { ...data } = formData
+      const { tierName, ...rest } = formData
+      // CRITICAL FIX: Map tierName to tier for backend compatibility
+      const data = {
+        ...rest,
+        tier: tierName || formData.tier, // Use tierName from form, fallback to tier if exists
+      }
       const response = await apiClient.put(
         `/admin/rewards/xp-decay-v2/${id}`,
         data,

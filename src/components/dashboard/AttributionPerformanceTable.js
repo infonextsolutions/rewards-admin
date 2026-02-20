@@ -34,6 +34,7 @@ const AttributionPerformanceTable = memo(({ data, loading }) => {
             d1Retention: item.d1Retention || 0,
             revenue: item.revenue || 0,
             rewardCost: item.rewardCost || 0,
+            marketingCost: item.marketingCost || 0, // New field
             marginPercent: item.marginPercent || 0,
           };
         })
@@ -70,6 +71,7 @@ const AttributionPerformanceTable = memo(({ data, loading }) => {
         totalInstalls: 0,
         totalRevenue: 0,
         totalRewardCost: 0,
+        totalMarketingCost: 0,
         avgRetention: 0,
       };
     }
@@ -78,6 +80,10 @@ const AttributionPerformanceTable = memo(({ data, loading }) => {
       totalRevenue: displayData.reduce((sum, item) => sum + item.revenue, 0),
       totalRewardCost: displayData.reduce(
         (sum, item) => sum + item.rewardCost,
+        0
+      ),
+      totalMarketingCost: displayData.reduce(
+        (sum, item) => sum + item.marketingCost,
         0
       ),
       avgRetention:
@@ -162,6 +168,9 @@ const AttributionPerformanceTable = memo(({ data, loading }) => {
                     Revenue
                   </th>
                   <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
+                    Marketing Cost
+                  </th>
+                  <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
                     Reward Cost
                   </th>
                   <th className="text-right py-3 px-2 text-sm font-medium text-gray-600">
@@ -204,6 +213,11 @@ const AttributionPerformanceTable = memo(({ data, loading }) => {
                     <td className="py-4 px-2 text-right">
                       <span className="font-semibold text-gray-900 text-sm">
                         {formatCurrency(source.revenue)}
+                      </span>
+                    </td>
+                    <td className="py-4 px-2 text-right">
+                      <span className="font-semibold text-orange-600 text-sm">
+                        {formatCurrency(source.marketingCost)}
                       </span>
                     </td>
                     <td className="py-4 px-2 text-right">

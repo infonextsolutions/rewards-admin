@@ -63,7 +63,7 @@ export function useDashboard() {
 
   // Fetch all dashboard data in parallel for faster loading
   const fetchDashboardData = useCallback(
-    async (filters = {}, signal = null) => {
+    async (filters = {}, signal = null, selectedGameId = null) => {
       if (signal?.aborted) {
         return;
       }
@@ -85,6 +85,11 @@ export function useDashboard() {
 
       try {
         const filtersToUse = filters;
+        
+        // Add selectedGameId to filters for top game API
+        const topGameFilters = selectedGameId && selectedGameId !== "auto"
+          ? { ...filtersToUse, selectedGameId }
+          : filtersToUse;
 
         // Load KPIs first (fastest), then load others in parallel
         const kpisPromise = DASHBOARD_API.getKPIs(filtersToUse, signal)
@@ -122,7 +127,7 @@ export function useDashboard() {
             }),
 
           // Top Game
-          DASHBOARD_API.getTopGame(filtersToUse, signal)
+          DASHBOARD_API.getTopGame(topGameFilters, signal)
             .then((response) => {
               if (response.data?.success) {
                 setDashboardData((prev) => ({
@@ -289,6 +294,101 @@ export function useDashboard() {
     []
   );
 
+  // Fetch only top game data (for game selection dropdown)
+  const fetchTopGameOnly = useCallback(
+    async (filters = {}, selectedGameId = null, signal = null) => {
+      if (signal?.aborted) {
+        return;
+      }
+
+      setLoading((prev) => ({ ...prev, topGame: true }));
+
+      try {
+        const topGameFilters = selectedGameId && selectedGameId !== "auto"
+          ? { ...filters, selectedGameId }
+          : filters;
+
+        const response = await DASHBOARD_API.getTopGame(topGameFilters, signal);
+
+        if (response.data?.success) {
+          setDashboardData((prev) => ({
+            ...prev,
+            topPlayedGame: response.data.data.topPlayedGame || null,
+          }));
+        }
+      } catch (err) {
+        if (
+          err.name !== "AbortError" &&
+          err.code !== "ERR_CANCELED" &&
+          err.message !== "canceled"
+        ) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(
+              "[Dashboard] Error fetching top game:",
+              err.message
+            );
+          }
+          toast.error("Failed to fetch game data");
+        }
+      } finally {
+        setLoading((prev) => ({ ...prev, topGame: false }));
+      }
+    },
+    []
+  );
+
+  // Fetch only revenue data (for retention day selection)
+  const fetchRevenueOnly = useCallback(
+    async (filters = {}, page = 1, signal = null) => {
+      if (signal?.aborted) {
+        return;
+      }
+
+      setLoading((prev) => ({ ...prev, revenue: true }));
+
+      try {
+        const response = await DASHBOARD_API.getRevenue(
+          filters,
+          page,
+          50,
+          signal
+        );
+
+        if (response.data?.success) {
+          const revenueData = response.data.data.revenueByGame || [];
+          const pagination = response.data.data.pagination || {
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            itemsPerPage: 50,
+          };
+          setDashboardData((prev) => ({
+            ...prev,
+            revenueByGame: revenueData,
+            revenuePagination: pagination,
+          }));
+        }
+      } catch (err) {
+        if (
+          err.name !== "AbortError" &&
+          err.code !== "ERR_CANCELED" &&
+          err.message !== "canceled"
+        ) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(
+              "[Dashboard] Error fetching revenue:",
+              err.message
+            );
+          }
+          toast.error("Failed to fetch revenue data");
+        }
+      } finally {
+        setLoading((prev) => ({ ...prev, revenue: false }));
+      }
+    },
+    []
+  );
+
   return {
     dashboardData,
     loading: isLoading,
@@ -296,6 +396,8 @@ export function useDashboard() {
     error,
     fetchDashboardData,
     fetchRevenuePage, // New function for pagination
+    fetchTopGameOnly, // New function for top game selection
+    fetchRevenueOnly, // New function for retention day selection
     clearError: () => setError(null),
   };
 }
