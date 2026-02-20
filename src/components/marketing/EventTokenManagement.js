@@ -284,46 +284,6 @@ export default function EventTokenManagement() {
               </div>
             </div>
 
-            {/* Adjust documentation links */}
-            <div className="mb-4 text-xs text-gray-500 border border-gray-200 rounded-md p-3 bg-gray-50">
-              <span className="font-medium text-gray-600">Adjust:</span>{" "}
-              <a
-                href="https://help.adjust.com/en/article/raw-data-exports"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#00a389] hover:underline"
-              >
-                Raw data exports
-              </a>
-              {" · "}
-              <a
-                href="https://help.adjust.com/en/article/add-events"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#00a389] hover:underline"
-              >
-                Add events (SDK + S2S)
-              </a>
-              {" · "}
-              <a
-                href="https://help.adjust.com/en/article/s2s-security"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#00a389] hover:underline"
-              >
-                S2S security
-              </a>
-              {" · "}
-              <a
-                href="https://dev.adjust.com/en/api/s2s-api/events/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#00a389] hover:underline"
-              >
-                S2S API events
-              </a>
-            </div>
-
             {/* Search */}
             <div className="mb-4">
               <div className="relative">
