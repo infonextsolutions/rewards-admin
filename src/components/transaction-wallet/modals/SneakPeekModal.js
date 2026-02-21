@@ -314,10 +314,10 @@ export default function SneakPeekModal({ userId, isOpen, onClose }) {
                                 finalXpVal != null &&
                                 Number(finalXpVal) !== 0
                               )
-                                parts.push(`${Number(finalXpVal)} finalXp`);
+                                parts.push(`${Number(finalXpVal)} xp`);
                               return parts.length
                                 ? parts.join(", ")
-                                : `${transaction.amount} ${bt === "xp" ? "finalXp" : bt}`;
+                                : `${transaction.amount} ${bt === "xp" ? "xp" : bt}`;
                             })()}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
