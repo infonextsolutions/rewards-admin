@@ -9,7 +9,8 @@ import RetentionTrendGraph from "./RetentionTrendGraph";
 import TopPlayedGameSnapshot from "./TopPlayedGameSnapshot";
 import RevenueVsRewardTable from "./RevenueVsRewardTable";
 import AttributionPerformanceTable from "./AttributionPerformanceTable";
-import AlertsPanel from "./AlertsPanel";
+// ADM-DR-029 FIX: Hide system alerts from dashboard
+// import AlertsPanel from "./AlertsPanel";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -347,10 +348,11 @@ const Dashboard = () => {
     () => dashboardData.retention?.current,
     [dashboardData.retention?.current]
   );
-  const alertsData = useMemo(
-    () => dashboardData.alerts || [],
-    [dashboardData.alerts]
-  );
+  // ADM-DR-029 FIX: System alerts hidden from dashboard
+  // const alertsData = useMemo(
+  //   () => dashboardData.alerts || [],
+  //   [dashboardData.alerts]
+  // );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
@@ -399,9 +401,8 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Right Column - 1/3 width */}
-        <div className="xl:col-span-1">
-          {/* Alerts Panel */}
+        {/* ADM-DR-029 FIX: Right Column - System Alerts Panel Hidden */}
+        {/* <div className="xl:col-span-1">
           <AlertsPanel
             alerts={alertsData}
             loading={loadingStates.alerts || loading}
@@ -411,7 +412,7 @@ const Dashboard = () => {
               }
             }}
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Tables Section */}
