@@ -30,12 +30,11 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
           const games = response.data.data.games || [];
           
           // Additional frontend deduplication safeguard
-          // Remove duplicates based on gameId or id
+          // Remove duplicates based on title (what user sees in dropdown)
           const uniqueGames = games.filter((game, index, self) => {
-            // Find first occurrence of this gameId
+            // Find first occurrence of this title
             const firstIndex = self.findIndex(g => 
-              (g.gameId && game.gameId && g.gameId === game.gameId) || 
-              (g.id === game.id)
+              g.title && game.title && g.title.trim().toLowerCase() === game.title.trim().toLowerCase()
             );
             // Keep only if this is the first occurrence
             return index === firstIndex;
