@@ -114,7 +114,7 @@ const Dashboard = () => {
     filters.customEndDate,
   ]);
 
-  const { dashboardData, loading, loadingStates, error, fetchDashboardData, fetchTopGameOnly, fetchRevenueOnly } =
+  const { dashboardData, loading, loadingStates, error, fetchDashboardData, fetchTopGameOnly, fetchRevenueOnly, fetchRevenuePage } =
     useDashboard();
 
   // Optimized fetch function - instant for dropdowns, debounced for search
