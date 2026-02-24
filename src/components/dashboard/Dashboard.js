@@ -113,7 +113,7 @@ const Dashboard = () => {
     filters.customEndDate,
   ]);
 
-  const { dashboardData, loading, loadingStates, error, fetchDashboardData, fetchTopGameOnly, fetchRevenueOnly } =
+  const { dashboardData, loading, loadingStates, error, fetchDashboardData, fetchTopGameOnly, fetchRevenueOnly, fetchRevenuePage } =
     useDashboard();
 
   // Optimized fetch function - instant for dropdowns, debounced for search
@@ -388,15 +388,6 @@ const Dashboard = () => {
             filters={filters}
             loading={loadingStates.retention}
           />
-
-          {/* Top Played Game Section */}
-          <TopPlayedGameSnapshot
-            data={topGameData}
-            loading={loadingStates.topGame}
-            selectedGame={selectedTopGame}
-            onGameChange={handleTopGameChange}
-            filters={apiFilters}
-          />
         </div>
 
         {/* Right Column - 1/3 width */}
@@ -412,6 +403,17 @@ const Dashboard = () => {
             }}
           />
         </div>
+      </div>
+
+      {/* Top Played Game Section - Full Width */}
+      <div className="mb-6">
+        <TopPlayedGameSnapshot
+          data={topGameData}
+          loading={loadingStates.topGame}
+          selectedGame={selectedTopGame}
+          onGameChange={handleTopGameChange}
+          filters={apiFilters}
+        />
       </div>
 
       {/* Tables Section */}
