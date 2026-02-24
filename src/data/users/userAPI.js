@@ -11,7 +11,8 @@ const userAPIs = {
     gender = '',
     ageRange = '',
     memberSince = '',
-    location = ''
+    location = '',
+    marketingChannel = ''
   } = {}) {
     try {
       const params = {
@@ -23,7 +24,8 @@ const userAPIs = {
         ...(gender && { gender }),
         ...(ageRange && { ageRange }),
         ...(memberSince && { memberSince }),
-        ...(location && { location })
+        ...(location && { location }),
+        ...(marketingChannel && { marketingChannel })
       };
 
       const response = await apiClient.get('/admin/users', { params });
@@ -130,7 +132,8 @@ const userAPIs = {
         ...(filters.gender && { gender: filters.gender }),
         ...(filters.ageRange && { ageRange: filters.ageRange }),
         ...(filters.memberSince && { memberSince: filters.memberSince }),
-        ...(filters.location && { location: filters.location })
+        ...(filters.location && { location: filters.location }),
+        ...(filters.marketingChannel && { marketingChannel: filters.marketingChannel })
       };
 
       const response = await apiClient.get('/admin/users/export', {
@@ -164,6 +167,18 @@ const userAPIs = {
       return response.data;
     } catch (error) {
       console.error('Get unique locations error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get all unique marketing channels
+  async getUniqueMarketingChannels() {
+    try {
+      const response = await apiClient.get('/admin/users/marketing-channels');
+      console.log('🔵 User API - Unique marketing channels from backend:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Get unique marketing channels error:', error);
       throw error.response?.data || error;
     }
   }

@@ -2,8 +2,10 @@
 
 import React, { useMemo, memo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ChartTooltip } from "recharts";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { DASHBOARD_API } from "../../data/dashboard";
+import Tooltip from "../common/Tooltip";
 
 // Color palette for professional charts - moved outside component
 const chartColors = {
@@ -25,7 +27,20 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
       try {
         const response = await DASHBOARD_API.getGamesList();
         if (response.data?.success) {
-          setGamesList(response.data.data.games || []);
+          const games = response.data.data.games || [];
+          
+          // Additional frontend deduplication safeguard
+          // Remove duplicates based on title (what user sees in dropdown)
+          const uniqueGames = games.filter((game, index, self) => {
+            // Find first occurrence of this title
+            const firstIndex = self.findIndex(g => 
+              g.title && game.title && g.title.trim().toLowerCase() === game.title.trim().toLowerCase()
+            );
+            // Keep only if this is the first occurrence
+            return index === firstIndex;
+          });
+          
+          setGamesList(uniqueGames);
         }
       } catch (error) {
         console.error('Error fetching games list:', error);
@@ -191,10 +206,13 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
       // Don't show labels for empty state
       if (isEmpty) return null;
 
-      const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
+      // Position label at 50% between inner and outer radius (more centered)
+      // This prevents overflow outside the pie chart boundaries
+      const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
       const x = cx + radius * Math.cos(-midAngle * RADIAN);
       const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
+      // Only show labels for segments larger than 5% to avoid clutter
       return percent > 0.05 ? (
         <text
           x={x}
@@ -225,8 +243,8 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
                 cy="50%"
                 labelLine={false}
                 label={renderCustomizedLabel}
-                outerRadius={50}
-                innerRadius={25}
+                outerRadius={48}
+                innerRadius={26}
                 fill="#8884d8"
                 dataKey="value"
                 paddingAngle={2}
@@ -240,7 +258,7 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
                   />
                 ))}
               </Pie>
-              <Tooltip
+              <ChartTooltip
                 formatter={(value, name, props) => {
                   if (isEmpty) return ["No Data", "Empty"];
                   const percentage =
@@ -420,7 +438,23 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
               <div className="text-5xl font-bold text-[#00a389] mb-2">
                 {finalGameData.avgXP.toLocaleString()}
               </div>
-              <div className="text-white font-medium text-sm">Avg. XP</div>
+              <div className="text-white font-medium text-sm flex items-center justify-center gap-2">
+                Avg. XP
+                <Tooltip 
+                  content={
+                    <div className="text-left">
+                      <p className="font-semibold mb-2">Average XP per User</p>
+                      <p className="text-xs">
+                        The average amount of XP (experience points) earned by users 
+                        who played this game.
+                      </p>
+                    </div>
+                  }
+                  position="top"
+                >
+                  <InformationCircleIcon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
+                </Tooltip>
+              </div>
             </div>
           </div>
 
@@ -429,8 +463,30 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
               <div className="text-5xl font-bold text-[#00a389] mb-2">
                 {finalGameData.rewardConversion}%
               </div>
-              <div className="text-white font-medium text-sm whitespace-pre-line">
+              <div className="text-white font-medium text-sm whitespace-pre-line flex items-center justify-center gap-2">
                 Reward{"\n"}Conversion
+                <Tooltip 
+                  content={
+                    <div className="text-left">
+                      <p className="font-semibold mb-2">Reward Conversion Rate</p>
+                      <p className="text-xs mb-2">
+                        <strong>Formula:</strong> (Users with Rewards / Total Users) × 100
+                      </p>
+                      <p className="text-xs mb-2">
+                        Shows the percentage of users who played this game and 
+                        received rewards for completing it.
+                      </p>
+                      <div className="text-xs mt-2 pt-2 border-t border-gray-700">
+                        <p className="mb-1"><strong>High (&gt;70%):</strong> Good completion rate</p>
+                        <p className="mb-1"><strong>Medium (30-70%):</strong> Average completion</p>
+                        <p><strong>Low (&lt;30%):</strong> Many users abandon</p>
+                      </div>
+                    </div>
+                  }
+                  position="top"
+                >
+                  <InformationCircleIcon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
+                </Tooltip>
               </div>
             </div>
           </div>

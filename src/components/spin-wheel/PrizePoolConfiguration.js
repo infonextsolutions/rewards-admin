@@ -30,12 +30,30 @@ export default function PrizePoolConfiguration({
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
 
-  // Calculate total probability
-  const totalProbability = useMemo(() => {
-    return rewards
-      .filter((reward) => reward.active)
-      .reduce((sum, reward) => sum + (reward.probability || 0), 0);
+  // Calculate per-tier probability totals (BUG-063 Fix)
+  const tierProbabilities = useMemo(() => {
+    const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+    const tierTotals = {};
+    
+    tiers.forEach(tier => {
+      tierTotals[tier] = rewards
+        .filter(reward => reward.active && reward.tierVisibility?.includes(tier))
+        .reduce((sum, reward) => sum + (reward.probability || 0), 0);
+    });
+    
+    return tierTotals;
   }, [rewards]);
+
+  // Get the highest tier probability for display
+  const maxTierProbability = useMemo(() => {
+    const probabilities = Object.values(tierProbabilities);
+    return probabilities.length > 0 ? Math.max(...probabilities) : 0;
+  }, [tierProbabilities]);
+
+  // Check if any tier exceeds 100%
+  const hasExcessiveTier = useMemo(() => {
+    return Object.values(tierProbabilities).some(prob => prob > 100);
+  }, [tierProbabilities]);
 
   // Filter rewards
   const filteredRewards = useMemo(() => {
@@ -116,9 +134,8 @@ export default function PrizePoolConfiguration({
   };
 
   const getProbabilityColor = () => {
-    if (totalProbability > 100) return "text-red-600 bg-red-50 border-red-200";
-    if (totalProbability === 100)
-      return "text-emerald-600 bg-emerald-50 border-emerald-200";
+    if (hasExcessiveTier) return "text-red-600 bg-red-50 border-red-200";
+    if (maxTierProbability >= 90) return "text-emerald-600 bg-emerald-50 border-emerald-200";
     return "text-amber-600 bg-amber-50 border-amber-200";
   };
 
@@ -197,17 +214,43 @@ export default function PrizePoolConfiguration({
                 Prize Pool Configuration
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Manage rewards, probabilities, and prize pool settings
+                Manage rewards, probabilities, and prize pool settings. Each tier can independently reach 100%.
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              {/* Total Probability Indicator */}
+              {/* Per-Tier Probability Indicator (BUG-063 Fix) */}
               <div
                 className={`px-3 py-2 rounded-lg border text-sm font-medium ${getProbabilityColor()}`}
               >
-                Total Probability: {totalProbability.toFixed(1)}%
-                {totalProbability > 100 && (
-                  <span className="ml-2 text-xs">(Exceeds 100%)</span>
+                <div className="flex items-center space-x-2">
+                  <span>Tier Probabilities:</span>
+                  <div className="flex items-center space-x-1">
+                    {Object.entries(tierProbabilities)
+                      .filter(([tier, prob]) => prob > 0)
+                      .map(([tier, prob]) => (
+                        <span
+                          key={tier}
+                          className={`px-2 py-1 rounded text-xs ${
+                            prob > 100 
+                              ? 'bg-red-100 text-red-700' 
+                              : prob >= 90 
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                          title={`${tier} tier total probability`}
+                        >
+                          {tier}: {prob.toFixed(1)}%
+                        </span>
+                      ))}
+                  </div>
+                </div>
+                {hasExcessiveTier && (
+                  <div className="mt-1 text-xs text-red-600">
+                    ⚠️ Some tiers exceed 100% limit
+                  </div>
+                )}
+                {Object.values(tierProbabilities).every(prob => prob === 0) && (
+                  <span className="text-gray-500">No active rewards</span>
                 )}
               </div>
               <button

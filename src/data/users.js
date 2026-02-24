@@ -259,4 +259,9 @@ export const USER_FILTER_OPTIONS = [
     label: "Age Range",
     options: ["18-24", "25-34", "35-44", "45-54", "55+"],
   },
+  {
+    id: "marketingChannel",
+    label: "Marketing Channel",
+    options: [], // Will be populated dynamically from API
+  },
 ];
