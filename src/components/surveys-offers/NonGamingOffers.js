@@ -12,7 +12,7 @@ import * as XLSX from "xlsx";
 export default function NonGamingOffers() {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [sdkFilter, setSdkFilter] = useState("bitlabs"); // bitlabs | everflow
+  const [sdkFilter, setSdkFilter] = useState("bitlabs"); // bitlabs | everflow | affise
   const fetchIdRef = useRef(0); // ignore stale responses when provider/filters change
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -125,6 +125,80 @@ export default function NonGamingOffers() {
               reward_delay_days: offer.reward_delay_days ?? 0,
               confirmation_time: offer.confirmation_time || "",
               status: offer.status || (offer.offer_status === "active" ? "live" : "live"),
+            };
+          });
+
+          setOffers(mappedOffers);
+          setPagination({
+            currentPage: page,
+            totalPages: 1,
+            totalItems: mappedOffers.length,
+            itemsPerPage: pagination.itemsPerPage,
+          });
+        }
+        return;
+      }
+
+      // Affise: fetch all offers and map to same UI shape as Everflow (no cashback/magic/shopping subtypes)
+      if (sdkFilter === "affise") {
+        response = await surveyAPIs.getAffiseOffers({
+          type: "all",
+          ...(countryFilter &&
+            countryFilter !== "US" && { country: countryFilter }),
+        });
+
+        if (thisFetchId !== fetchIdRef.current) return;
+
+        if (!response.success) {
+          setOffers([]);
+          setPagination({
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            itemsPerPage: pagination.itemsPerPage,
+          });
+          const msg = response.error?.message || "Failed to load Affise offers";
+          const thirdParty = response.error?.thirdPartyResponse;
+          const detail = thirdParty
+            ? ` [Affise: status=${thirdParty.status}, error=${thirdParty.error}]`
+            : "";
+          if (msg) toast.error(msg + detail);
+          return;
+        }
+
+        if (response.success && Array.isArray(response.data)) {
+          const mappedOffers = response.data.map((offer) => {
+            const coins = offer.userRewardCoins ?? offer.coinReward ?? 30;
+            const xp = offer.userRewardXP ?? 10;
+            return {
+              id: offer.id ?? offer.offerId ?? offer.network_offer_id?.toString(),
+              offerId: offer.offerId ?? offer.network_offer_id?.toString() ?? offer.id,
+              title: offer.title || "Untitled Offer",
+              description: offer.description || "",
+              type: offer.offerType || offer.type || "other",
+              category: offer.category || "General",
+              icon: offer.thumbnailUrl || offer.logo || "",
+              banner: offer.thumbnailUrl || offer.logo || "",
+              coinReward: offer.coinReward ?? coins,
+              userRewardCoins: coins,
+              userRewardXP: xp,
+              reward: offer.reward || { coins, currency: offer.currency || "USD", xp },
+              clickUrl: offer.clickUrl || offer.tracking_url || "",
+              provider: "affise",
+              estimatedTime: offer.estimatedTime ?? 0,
+              isAvailable: offer.isAvailable !== false,
+              sdkProvider: "affise",
+              merchant_name: offer.title || "",
+              primary_category: offer.category || "",
+              currency: offer.currency || "USD",
+              payoutAmount: offer.payoutAmount ?? 0,
+              creativeBundleUrl: offer.creativeBundleUrl || "",
+              total_points: (offer.payoutAmount ?? 0).toString(),
+              epc: offer.epc || "0",
+              pending_time: offer.pending_time ?? 0,
+              reward_delay_days: offer.reward_delay_days ?? 0,
+              confirmation_time: offer.confirmation_time || "",
+              status: offer.status || "live",
             };
           });
 
@@ -504,7 +578,7 @@ export default function NonGamingOffers() {
       const response = await surveyAPIs.getConfiguredBitLabOffers({
         offerType: "all",
         status: "all",
-        sdk: sdkFilter === "everflow" ? "everflow" : sdkFilter === "besitos" ? "besitos" : "bitlabs",
+        sdk: sdkFilter === "everflow" ? "everflow" : sdkFilter === "besitos" ? "besitos" : sdkFilter === "affise" ? "affise" : "bitlabs",
       });
       console.log("Configured offers response:", response);
       if (response.success) {
@@ -646,15 +720,22 @@ export default function NonGamingOffers() {
           });
           setShowTargetAudienceModal(true);
           return;
-        } else {
+        }
+        if (sdkFilter === "affise") {
           setPendingSyncAction({
-            type: "single",
+            type: "single_affise",
             offerId: offerId,
-            offerType: offer.type || typeFilter,
           });
           setShowTargetAudienceModal(true);
           return;
         }
+        setPendingSyncAction({
+          type: "single",
+          offerId: offerId,
+          offerType: offer.type || typeFilter,
+        });
+        setShowTargetAudienceModal(true);
+        return;
       }
 
       await fetchConfiguredOffers();
@@ -887,15 +968,34 @@ export default function NonGamingOffers() {
 
     setSyncing(true);
     try {
-      const backendType = getBackendOfferType(typeFilter);
-      const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
-      const country = countryFilter;
-
-      // Prepare target audience data for each offer
       const offersWithAudience = pendingSyncAction.offerIds.map((offerId) => ({
         offerId,
         targetAudience: targetAudience,
       }));
+
+      if (sdkFilter === "affise") {
+        const response = await surveyAPIs.syncAffiseOffers({
+          offerIds: pendingSyncAction.offerIds,
+          autoActivate: true,
+          targetAudience: offersWithAudience,
+        });
+        if (response.success) {
+          toast.success(
+            `Successfully synced ${response.data.syncedCount} Affise offer(s)! ${
+              response.data.updatedCount > 0 ? `${response.data.updatedCount} updated.` : ""
+            }`
+          );
+          setSelectedOffers([]);
+          fetchOffers(1, typeFilter);
+          fetchConfiguredOffers();
+        }
+        setPendingSyncAction(null);
+        return;
+      }
+
+      const backendType = getBackendOfferType(typeFilter);
+      const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
+      const country = countryFilter;
 
       const response = await surveyAPIs.syncBitLabOffers({
         offerIds: pendingSyncAction.offerIds,
@@ -915,7 +1015,6 @@ export default function NonGamingOffers() {
           }`
         );
         setSelectedOffers([]);
-        // Refresh offers and configured list
         fetchOffers(1, typeFilter);
         fetchConfiguredOffers();
       }
@@ -952,15 +1051,34 @@ export default function NonGamingOffers() {
 
     setSyncing(true);
     try {
-      const backendType = getBackendOfferType(typeFilter);
-      const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
-      const country = countryFilter;
-
-      // Prepare target audience data for each offer
       const offersWithAudience = pendingSyncAction.offerIds.map((offerId) => ({
         offerId,
         targetAudience: targetAudience,
       }));
+
+      if (sdkFilter === "affise") {
+        const response = await surveyAPIs.syncAffiseOffers({
+          offerIds: pendingSyncAction.offerIds,
+          autoActivate: true,
+          targetAudience: offersWithAudience,
+        });
+        if (response.success) {
+          toast.success(
+            `Successfully synced ${response.data.syncedCount} Affise offer(s)! ${
+              response.data.updatedCount > 0 ? `${response.data.updatedCount} updated.` : ""
+            }`
+          );
+          setSelectedOffers([]);
+          fetchOffers(1, typeFilter);
+          fetchConfiguredOffers();
+        }
+        setPendingSyncAction(null);
+        return;
+      }
+
+      const backendType = getBackendOfferType(typeFilter);
+      const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
+      const country = countryFilter;
 
       const response = await surveyAPIs.syncBitLabOffers({
         offerIds: pendingSyncAction.offerIds,
@@ -980,7 +1098,6 @@ export default function NonGamingOffers() {
           }`
         );
         setSelectedOffers([]);
-        // Refresh offers and configured list
         fetchOffers(1, typeFilter);
         fetchConfiguredOffers();
       }
@@ -1014,6 +1131,36 @@ export default function NonGamingOffers() {
     } catch (error) {
       console.error("Error syncing Everflow offer:", error);
       toast.error(error.message || "Failed to sync Everflow offer");
+    } finally {
+      setTogglingOffers((prev) => {
+        const next = new Set(prev);
+        next.delete(offerId);
+        return next;
+      });
+    }
+  };
+
+  // Handle single Affise offer sync after modal confirmation
+  const performSingleAffiseSync = async (targetAudience) => {
+    if (!pendingSyncAction || pendingSyncAction.type !== "single_affise") return;
+
+    const offerId = pendingSyncAction.offerId;
+    setTogglingOffers((prev) => new Set(prev).add(offerId));
+    setShowTargetAudienceModal(false);
+    setPendingSyncAction(null);
+    try {
+      const response = await surveyAPIs.syncAffiseOffers({
+        offerIds: [offerId],
+        autoActivate: true,
+        targetAudience: [{ offerId: String(offerId), targetAudience }],
+      });
+      if (response?.success) {
+        toast.success("Affise offer added (30 coins, 10 XP)");
+        await fetchConfiguredOffers();
+      }
+    } catch (error) {
+      console.error("Error syncing Affise offer:", error);
+      toast.error(error.message || "Failed to sync Affise offer");
     } finally {
       setTogglingOffers((prev) => {
         const next = new Set(prev);
@@ -1067,6 +1214,8 @@ export default function NonGamingOffers() {
 
     if (pendingSyncAction.type === "single_everflow") {
       performSingleEverflowSync(targetAudience);
+    } else if (pendingSyncAction.type === "single_affise") {
+      performSingleAffiseSync(targetAudience);
     } else if (pendingSyncAction.type === "single") {
       performSingleSync(targetAudience);
     } else if (pendingSyncAction.type === "selected") {
@@ -1292,14 +1441,15 @@ export default function NonGamingOffers() {
               onChange={(e) => {
                 const next = e.target.value;
                 setSdkFilter(next);
-                // For Everflow, force "all" since BitLabs-specific types don't apply
-                if (next === "everflow") setTypeFilter("all");
+                // For Everflow/Affise, force "all" since BitLabs-specific types don't apply
+                if (next === "everflow" || next === "affise") setTypeFilter("all");
                 if (next === "bitlabs" && typeFilter === "all") setTypeFilter("cashback");
               }}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
               <option value="bitlabs">BitLabs</option>
               <option value="everflow">Everflow</option>
+              <option value="affise">Affise</option>
             </select>
           </div>
 
@@ -1311,7 +1461,7 @@ export default function NonGamingOffers() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              disabled={sdkFilter === "everflow"}
+              disabled={sdkFilter === "everflow" || sdkFilter === "affise"}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
               {typeOptions.map((option) => (
@@ -1440,7 +1590,7 @@ export default function NonGamingOffers() {
                         ? "Points"
                         : "Reward"}
                     </th>
-                    {sdkFilter === "everflow" && (
+                    {(sdkFilter === "everflow" || sdkFilter === "affise") && (
                       <>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Payout
@@ -1499,7 +1649,7 @@ export default function NonGamingOffers() {
                             : typeFilter === "shopping" ||
                               typeFilter === "magic-receipts"
                             ? 10
-                            : 8) + (sdkFilter === "everflow" ? 2 : 0)
+                            : 8) + (sdkFilter === "everflow" || sdkFilter === "affise" ? 2 : 0)
                         }
                         className="px-6 py-4 text-center text-gray-500"
                       >
@@ -1600,7 +1750,7 @@ export default function NonGamingOffers() {
                               <span className="text-sm text-gray-400">N/A</span>
                             )}
                           </td>
-                          {sdkFilter === "everflow" && (
+                          {(sdkFilter === "everflow" || sdkFilter === "affise") && (
                             <>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className="text-sm font-semibold text-gray-900">
@@ -1801,13 +1951,15 @@ export default function NonGamingOffers() {
         onConfirm={handleTargetAudienceConfirm}
         offerCount={
           pendingSyncAction?.type === "single" ||
-          pendingSyncAction?.type === "single_everflow"
+          pendingSyncAction?.type === "single_everflow" ||
+          pendingSyncAction?.type === "single_affise"
             ? 1
             : pendingSyncAction?.offerIds?.length || 0
         }
         offerTitle={
           pendingSyncAction?.type === "single" ||
-          pendingSyncAction?.type === "single_everflow"
+          pendingSyncAction?.type === "single_everflow" ||
+          pendingSyncAction?.type === "single_affise"
             ? "offer"
             : "offers"
         }
