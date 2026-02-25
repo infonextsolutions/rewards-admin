@@ -2,7 +2,13 @@
 
 import React, { useMemo, memo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ChartTooltip } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as ChartTooltip,
+} from "recharts";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { DASHBOARD_API } from "../../data/dashboard";
 import Tooltip from "../common/Tooltip";
@@ -15,311 +21,375 @@ const chartColors = {
   tier: ["#f59e0b", "#fbbf24", "#fcd34d", "#fde68a"],
 };
 
-const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGameChange, filters }) => {
-  const router = useRouter();
-  const [gamesList, setGamesList] = useState([]);
-  const [loadingGames, setLoadingGames] = useState(false);
+const TopPlayedGameSnapshot = memo(
+  ({ data, loading, selectedGame = "auto", onGameChange, filters }) => {
+    const router = useRouter();
+    const [gamesList, setGamesList] = useState([]);
+    const [loadingGames, setLoadingGames] = useState(false);
 
-  // Fetch games list on mount
-  useEffect(() => {
-    const fetchGames = async () => {
-      setLoadingGames(true);
-      try {
-        const response = await DASHBOARD_API.getGamesList();
-        if (response.data?.success) {
-          const games = response.data.data.games || [];
-          
-          // Additional frontend deduplication safeguard
-          // Remove duplicates based on title (what user sees in dropdown)
-          const uniqueGames = games.filter((game, index, self) => {
-            // Find first occurrence of this title
-            const firstIndex = self.findIndex(g => 
-              g.title && game.title && g.title.trim().toLowerCase() === game.title.trim().toLowerCase()
-            );
-            // Keep only if this is the first occurrence
-            return index === firstIndex;
-          });
-          
-          setGamesList(uniqueGames);
+    // Fetch games list on mount
+    useEffect(() => {
+      const fetchGames = async () => {
+        setLoadingGames(true);
+        try {
+          const response = await DASHBOARD_API.getGamesList();
+          if (response.data?.success) {
+            const games = response.data.data.games || [];
+
+            // Additional frontend deduplication safeguard
+            // Remove duplicates based on title (what user sees in dropdown)
+            const uniqueGames = games.filter((game, index, self) => {
+              // Find first occurrence of this title
+              const firstIndex = self.findIndex(
+                (g) =>
+                  g.title &&
+                  game.title &&
+                  g.title.trim().toLowerCase() ===
+                    game.title.trim().toLowerCase(),
+              );
+              // Keep only if this is the first occurrence
+              return index === firstIndex;
+            });
+
+            setGamesList(uniqueGames);
+          }
+        } catch (error) {
+          console.error("Error fetching games list:", error);
+        } finally {
+          setLoadingGames(false);
         }
-      } catch (error) {
-        console.error('Error fetching games list:', error);
-      } finally {
-        setLoadingGames(false);
+      };
+
+      fetchGames();
+    }, []);
+
+    // Handler for game navigation
+    const handleGameClick = () => {
+      if (data?.gameId) {
+        router.push(`/offers/tasks?game=${encodeURIComponent(data.gameId)}`);
       }
     };
 
-    fetchGames();
-  }, []);
+    // Memoize normalized demographics to avoid recalculation on every render
+    const normalizedDemographics = useMemo(() => {
+      const gameData = data || {
+        name: "N/A",
+        banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
+        avgXP: 0,
+        rewardConversion: 0,
+        demographics: {
+          age: [],
+          gender: [],
+          region: [],
+          tier: [],
+        },
+      };
 
-  // Handler for game navigation
-  const handleGameClick = () => {
-    if (data?.gameId) {
-      router.push(`/offers/tasks?game=${encodeURIComponent(data.gameId)}`);
-    }
-  };
+      const demographics = gameData.demographics || {};
 
-  // Memoize normalized demographics to avoid recalculation on every render
-  const normalizedDemographics = useMemo(() => {
-    const gameData = data || {
-      name: "N/A",
-      banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
-      avgXP: 0,
-      rewardConversion: 0,
-      demographics: {
-        age: [],
-        gender: [],
-        region: [],
-        tier: [],
-      },
-    };
+      // Normalize age data
+      let normalizedAge = Array.isArray(demographics.age)
+        ? demographics.age
+        : demographics.age && typeof demographics.age === "object"
+          ? Object.entries(demographics.age).map(([name, value], index) => ({
+              name,
+              value: value || 0,
+              color: chartColors.age[index % chartColors.age.length],
+            }))
+          : [];
 
-    const demographics = gameData.demographics || {};
+      // Filter out unwanted age ranges (35-44, 45-54, 55+)
+      normalizedAge = normalizedAge.filter(
+        (item) =>
+          item.name !== "35-44" && item.name !== "45-54" && item.name !== "55+",
+      );
 
-    // Normalize age data
-    let normalizedAge = Array.isArray(demographics.age)
-      ? demographics.age
-      : demographics.age && typeof demographics.age === "object"
-      ? Object.entries(demographics.age).map(([name, value], index) => ({
-          name,
-          value: value || 0,
-          color: chartColors.age[index % chartColors.age.length],
-        }))
-      : [];
+      // Normalize gender data
+      let normalizedGender = Array.isArray(demographics.gender)
+        ? demographics.gender
+        : demographics.gender && typeof demographics.gender === "object"
+          ? Object.entries(demographics.gender).map(([name, value], index) => ({
+              name,
+              value: value || 0,
+              color: chartColors.gender[index % chartColors.gender.length],
+            }))
+          : [];
 
-    // Filter out unwanted age ranges (35-44, 45-54, 55+)
-    normalizedAge = normalizedAge.filter(
-      (item) =>
-        item.name !== "35-44" && item.name !== "45-54" && item.name !== "55+"
+      // Filter out "Other" gender
+      normalizedGender = normalizedGender.filter(
+        (item) => item.name.toLowerCase() !== "other",
+      );
+
+      // Normalize region data
+      let normalizedRegion = Array.isArray(demographics.region)
+        ? demographics.region
+        : demographics.region && typeof demographics.region === "object"
+          ? Object.entries(demographics.region).map(([name, value], index) => ({
+              name,
+              value: value || 0,
+              color: chartColors.region[index % chartColors.region.length],
+            }))
+          : [];
+
+      // Normalize tier data
+      let normalizedTier = Array.isArray(demographics.tier)
+        ? demographics.tier
+        : demographics.tier && typeof demographics.tier === "object"
+          ? Object.entries(demographics.tier).map(([name, value], index) => ({
+              name,
+              value: value || 0,
+              color: chartColors.tier[index % chartColors.tier.length],
+            }))
+          : [];
+
+      return {
+        age: normalizedAge,
+        gender: normalizedGender,
+        region: normalizedRegion,
+        tier: normalizedTier,
+      };
+    }, [data]);
+
+    // Memoize final game data
+    const finalGameData = useMemo(() => {
+      const gameData = data || {
+        name: "N/A",
+        banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
+        avgXP: 0,
+        rewardConversion: 0,
+        demographics: {
+          age: [],
+          gender: [],
+          region: [],
+          tier: [],
+        },
+      };
+
+      return {
+        ...gameData,
+        demographics: normalizedDemographics,
+        rewardConversion: gameData.rewardConversion || 0,
+      };
+    }, [data, normalizedDemographics]);
+
+    const statsData = useMemo(
+      () => [
+        {
+          value: finalGameData.avgXP,
+          label: "Avg. XP",
+          color: "#00a389",
+        },
+        {
+          value: `${finalGameData.rewardConversion}%`,
+          label: "Reward\nConversion",
+          color: "#00a389",
+        },
+      ],
+      [finalGameData.avgXP, finalGameData.rewardConversion],
     );
 
-    // Normalize gender data
-    let normalizedGender = Array.isArray(demographics.gender)
-      ? demographics.gender
-      : demographics.gender && typeof demographics.gender === "object"
-      ? Object.entries(demographics.gender).map(([name, value], index) => ({
-          name,
-          value: value || 0,
-          color: chartColors.gender[index % chartColors.gender.length],
-        }))
-      : [];
+    const DonutChart = ({ data, title }) => {
+      const RADIAN = Math.PI / 180;
 
-    // Filter out "Other" gender
-    normalizedGender = normalizedGender.filter(
-      (item) => item.name.toLowerCase() !== "other"
-    );
+      // Ensure data is an array, default to empty array
+      const chartData = Array.isArray(data) ? data : [];
 
-    // Normalize region data
-    let normalizedRegion = Array.isArray(demographics.region)
-      ? demographics.region
-      : demographics.region && typeof demographics.region === "object"
-      ? Object.entries(demographics.region).map(([name, value], index) => ({
-          name,
-          value: value || 0,
-          color: chartColors.region[index % chartColors.region.length],
-        }))
-      : [];
+      // If data is empty, show empty chart with a placeholder
+      const isEmpty =
+        chartData.length === 0 || chartData.every((item) => item.value === 0);
 
-    // Normalize tier data
-    let normalizedTier = Array.isArray(demographics.tier)
-      ? demographics.tier
-      : demographics.tier && typeof demographics.tier === "object"
-      ? Object.entries(demographics.tier).map(([name, value], index) => ({
-          name,
-          value: value || 0,
-          color: chartColors.tier[index % chartColors.tier.length],
-        }))
-      : [];
+      // Calculate total for percentage calculation
+      const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
-    return {
-      age: normalizedAge,
-      gender: normalizedGender,
-      region: normalizedRegion,
-      tier: normalizedTier,
-    };
-  }, [data]);
+      // For empty data, create a single segment to show empty state
+      const displayData = isEmpty
+        ? [{ name: "No Data", value: 100, color: "#6b7280" }]
+        : chartData;
 
-  // Memoize final game data
-  const finalGameData = useMemo(() => {
-    const gameData = data || {
-      name: "N/A",
-      banner: "https://c.animaapp.com/7TgsSdEJ/img/image-16@2x.png",
-      avgXP: 0,
-      rewardConversion: 0,
-      demographics: {
-        age: [],
-        gender: [],
-        region: [],
-        tier: [],
-      },
-    };
+      const renderCustomizedLabel = ({
+        cx,
+        cy,
+        midAngle,
+        innerRadius,
+        outerRadius,
+        percent,
+      }) => {
+        // Don't show labels for empty state
+        if (isEmpty) return null;
 
-    return {
-      ...gameData,
-      demographics: normalizedDemographics,
-      rewardConversion: gameData.rewardConversion || 0,
-    };
-  }, [data, normalizedDemographics]);
+        // Position label at 50% between inner and outer radius (more centered)
+        // This prevents overflow outside the pie chart boundaries
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-  const statsData = useMemo(
-    () => [
-      {
-        value: finalGameData.avgXP,
-        label: "Avg. XP",
-        color: "#00a389",
-      },
-      {
-        value: `${finalGameData.rewardConversion}%`,
-        label: "Reward\nConversion",
-        color: "#00a389",
-      },
-    ],
-    [finalGameData.avgXP, finalGameData.rewardConversion]
-  );
+        // Only show labels for segments larger than 5% to avoid clutter
+        return percent > 0.05 ? (
+          <text
+            x={x}
+            y={y}
+            fill="white"
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={10}
+            fontWeight="bold"
+            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+          >
+            {`${(percent * 100).toFixed(0)}%`}
+          </text>
+        ) : null;
+      };
 
-  const DonutChart = ({ data, title }) => {
-    const RADIAN = Math.PI / 180;
+      return (
+        <div className="bg-[#02020280] rounded-[8px] p-4 shadow-[0px_0px_4px_#00000040] backdrop-blur-sm">
+          <h3 className="text-center font-semibold text-white text-sm mb-3">
+            {title}
+          </h3>
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={displayData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderCustomizedLabel}
+                  outerRadius={48}
+                  innerRadius={26}
+                  fill="#8884d8"
+                  dataKey="value"
+                  paddingAngle={2}
+                >
+                  {displayData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke="#020202"
+                      strokeWidth={1}
+                    />
+                  ))}
+                </Pie>
+                <ChartTooltip
+                  formatter={(value, name, props) => {
+                    if (isEmpty) return ["No Data", "Empty"];
+                    const percentage =
+                      total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return [`${value} (${percentage}%)`, props.payload.name];
+                  }}
+                  labelStyle={{ color: "#374151", fontWeight: "bold" }}
+                  contentStyle={{
+                    backgroundColor: "white",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    padding: "8px",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
 
-    // Ensure data is an array, default to empty array
-    const chartData = Array.isArray(data) ? data : [];
-
-    // If data is empty, show empty chart with a placeholder
-    const isEmpty =
-      chartData.length === 0 || chartData.every((item) => item.value === 0);
-
-    // Calculate total for percentage calculation
-    const total = chartData.reduce((sum, item) => sum + item.value, 0);
-
-    // For empty data, create a single segment to show empty state
-    const displayData = isEmpty
-      ? [{ name: "No Data", value: 100, color: "#6b7280" }]
-      : chartData;
-
-    const renderCustomizedLabel = ({
-      cx,
-      cy,
-      midAngle,
-      innerRadius,
-      outerRadius,
-      percent,
-    }) => {
-      // Don't show labels for empty state
-      if (isEmpty) return null;
-
-      // Position label at 50% between inner and outer radius (more centered)
-      // This prevents overflow outside the pie chart boundaries
-      const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-      const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-      // Only show labels for segments larger than 5% to avoid clutter
-      return percent > 0.05 ? (
-        <text
-          x={x}
-          y={y}
-          fill="white"
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={10}
-          fontWeight="bold"
-          style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
-        >
-          {`${(percent * 100).toFixed(0)}%`}
-        </text>
-      ) : null;
-    };
-
-    return (
-      <div className="bg-[#02020280] rounded-[8px] p-4 shadow-[0px_0px_4px_#00000040] backdrop-blur-sm">
-        <h3 className="text-center font-semibold text-white text-sm mb-3">
-          {title}
-        </h3>
-        <div className="h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={displayData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={renderCustomizedLabel}
-                outerRadius={48}
-                innerRadius={26}
-                fill="#8884d8"
-                dataKey="value"
-                paddingAngle={2}
-              >
-                {displayData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.color}
-                    stroke="#020202"
-                    strokeWidth={1}
-                  />
-                ))}
-              </Pie>
-              <ChartTooltip
-                formatter={(value, name, props) => {
-                  if (isEmpty) return ["No Data", "Empty"];
-                  const percentage =
-                    total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                  return [`${value} (${percentage}%)`, props.payload.name];
-                }}
-                labelStyle={{ color: "#374151", fontWeight: "bold" }}
-                contentStyle={{
-                  backgroundColor: "white",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  padding: "8px",
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          {/* Legend */}
+          {!isEmpty && (
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
+              {chartData.map((item, index) => {
+                const percentage =
+                  total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+                return (
+                  <div key={index} className="flex items-center text-xs">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full mr-1.5 shadow-sm"
+                      style={{ backgroundColor: item.color }}
+                    ></div>
+                    <span className="text-white truncate max-w-20 font-medium">
+                      {item.name}
+                    </span>
+                    <span className="text-white/70 ml-1">({percentage}%)</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {isEmpty && (
+            <div className="mt-2 text-center">
+              <span className="text-white text-xs opacity-70">
+                No data available
+              </span>
+            </div>
+          )}
         </div>
+      );
+    };
 
-        {/* Legend */}
-        {!isEmpty && (
-          <div className="mt-2 flex flex-wrap justify-center gap-2">
-            {chartData.map((item, index) => {
-              const percentage =
-                total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
-              return (
-                <div key={index} className="flex items-center text-xs">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full mr-1.5 shadow-sm"
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span className="text-white truncate max-w-20 font-medium">
-                    {item.name}
-                  </span>
-                  <span className="text-white/70 ml-1">({percentage}%)</span>
-                </div>
-              );
-            })}
+    if (loading) {
+      return (
+        <div className="relative w-full h-[299px] rounded-[10px] overflow-hidden bg-gradient-to-br from-purple-600 to-indigo-800 animate-pulse">
+          <div className="absolute w-full h-full bg-gray-200/20"></div>
+        </div>
+      );
+    }
+
+    // Show message when no data is available
+    if (!data) {
+      return (
+        <div
+          className="relative w-full min-h-[400px] rounded-[10px] overflow-hidden p-8"
+          style={{
+            background:
+              "radial-gradient(50% 50% at 50% 50%, rgba(88,48,173,1) 0%, rgba(42,34,102,1) 100%)",
+          }}
+        >
+          {/* Header with Title and Dropdown */}
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl font-semibold text-white">
+              Top Played Game
+            </h1>
+
+            {/* Game Selection Dropdown */}
+            <div className="relative">
+              <select
+                value={selectedGame}
+                onChange={(e) => onGameChange(e.target.value)}
+                disabled={loadingGames || loading}
+                className="appearance-none bg-[#02020280] text-white border border-[#ffffff33] rounded-lg px-4 py-2 pr-10 text-sm font-medium shadow-lg backdrop-blur-sm hover:bg-[#02020299] focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+              >
+                <option value="auto">Auto (Most Played)</option>
+                {gamesList.map((game) => (
+                  <option key={game.id} value={game.id}>
+                    {game.title}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
-        )}
-        {isEmpty && (
-          <div className="mt-2 text-center">
-            <span className="text-white text-xs opacity-70">
-              No data available
-            </span>
+
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-white text-lg font-medium">
+                No game data available
+              </p>
+              <p className="text-gray-300 text-sm mt-2">
+                Data will appear once games are played
+              </p>
+            </div>
           </div>
-        )}
-      </div>
-    );
-  };
+        </div>
+      );
+    }
 
-  if (loading) {
-    return (
-      <div className="relative w-full h-[299px] rounded-[10px] overflow-hidden bg-gradient-to-br from-purple-600 to-indigo-800 animate-pulse">
-        <div className="absolute w-full h-full bg-gray-200/20"></div>
-      </div>
-    );
-  }
-
-  // Show message when no data is available
-  if (!data) {
     return (
       <div
         className="relative w-full min-h-[400px] rounded-[10px] overflow-hidden p-8"
@@ -330,10 +400,8 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
       >
         {/* Header with Title and Dropdown */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-white">
-            Top Played Game
-          </h1>
-          
+          <h1 className="text-2xl font-semibold text-white">Top Played Game</h1>
+
           {/* Game Selection Dropdown */}
           <div className="relative">
             <select
@@ -351,149 +419,122 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
           </div>
         </div>
-        
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <p className="text-white text-lg font-medium">No game data available</p>
-            <p className="text-gray-300 text-sm mt-2">Data will appear once games are played</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div
-      className="relative w-full min-h-[400px] rounded-[10px] overflow-hidden p-8"
-      style={{
-        background:
-          "radial-gradient(50% 50% at 50% 50%, rgba(88,48,173,1) 0%, rgba(42,34,102,1) 100%)",
-      }}
-    >
-      {/* Header with Title and Dropdown */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-semibold text-white">
-          Top Played Game
-        </h1>
-        
-        {/* Game Selection Dropdown */}
-        <div className="relative">
-          <select
-            value={selectedGame}
-            onChange={(e) => onGameChange(e.target.value)}
-            disabled={loadingGames || loading}
-            className="appearance-none bg-[#02020280] text-white border border-[#ffffff33] rounded-lg px-4 py-2 pr-10 text-sm font-medium shadow-lg backdrop-blur-sm hover:bg-[#02020299] focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+        {/* Game Banner & Title + Metrics Section */}
+        <div className="flex items-start gap-8 mb-8">
+          {/* Game Icon & Title */}
+          <div
+            className={`flex flex-col items-center gap-4 ${data?.gameId ? "cursor-pointer group" : ""}`}
+            onClick={handleGameClick}
+            title={data?.gameId ? "Click to view game details" : ""}
           >
-            <option value="auto">Auto (Most Played)</option>
-            {gamesList.map((game) => (
-              <option key={game.id} value={game.id}>
-                {game.title}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Game Banner & Title + Metrics Section */}
-      <div className="flex items-start gap-8 mb-8">
-        {/* Game Icon & Title */}
-        <div
-          className={`flex flex-col items-center gap-4 ${data?.gameId ? 'cursor-pointer group' : ''}`}
-          onClick={handleGameClick}
-          title={data?.gameId ? 'Click to view game details' : ''}
-        >
-          <div className={`relative w-[240px] h-[240px] bg-white rounded-[12px] overflow-hidden border-[3px] border-solid border-[#d3f8d2] shadow-lg ${data?.gameId ? 'group-hover:border-[#00a389] group-hover:shadow-xl transition-all duration-200' : ''}`}>
-            <img
-              className="w-full h-full object-cover"
-              alt={finalGameData.name}
-              src={finalGameData.banner}
-              onError={(e) => {
-                e.target.style.display = "none";
-                const displayName = finalGameData.name.split(" - ")[0];
-                e.target.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">${displayName.charAt(
-                  0
-                )}</div>`;
-              }}
-            />
-          </div>
-          <h2 className={`font-bold text-[#fff2ab] text-2xl text-center leading-tight ${data?.gameId ? 'group-hover:text-[#00a389] transition-colors duration-200' : ''}`}>
-            {finalGameData.name.split(" - ")[0]}
-          </h2>
-        </div>
-
-        {/* Key Metrics Cards */}
-        <div className="flex gap-6 flex-1">
-          <div className="bg-[#02020280] rounded-[8px] p-6 shadow-[0px_0px_4px_#00000040] flex-1 backdrop-blur-sm">
-            <div className="text-center">
-              <div className="text-5xl font-bold text-[#00a389] mb-2">
-                {finalGameData.avgXP.toLocaleString()}
-              </div>
-              <div className="text-white font-medium text-sm flex items-center justify-center gap-2">
-                Avg. XP
-                <Tooltip 
-                  content={
-                    <div className="text-left">
-                      <p className="font-semibold mb-2">Average XP per User</p>
-                      <p className="text-xs">
-                        The average amount of XP (experience points) earned by users 
-                        who played this game.
-                      </p>
-                    </div>
-                  }
-                  position="top"
-                >
-                  <InformationCircleIcon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
-                </Tooltip>
-              </div>
+            <div
+              className={`relative w-[240px] h-[240px] bg-white rounded-[12px] overflow-hidden border-[3px] border-solid border-[#d3f8d2] shadow-lg ${data?.gameId ? "group-hover:border-[#00a389] group-hover:shadow-xl transition-all duration-200" : ""}`}
+            >
+              <img
+                className="w-full h-full object-cover"
+                alt={finalGameData.name}
+                src={finalGameData.banner}
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  const displayName = finalGameData.name.split(" - ")[0];
+                  e.target.parentElement.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">${displayName.charAt(
+                    0,
+                  )}</div>`;
+                }}
+              />
             </div>
+            <h2
+              className={`font-bold text-[#fff2ab] text-2xl text-center leading-tight ${data?.gameId ? "group-hover:text-[#00a389] transition-colors duration-200" : ""}`}
+            >
+              {finalGameData.name.split(" - ")[0]}
+            </h2>
           </div>
 
-          <div className="bg-[#02020280] rounded-[8px] p-6 shadow-[0px_0px_4px_#00000040] flex-1 backdrop-blur-sm">
-            <div className="text-center">
-              <div className="text-5xl font-bold text-[#00a389] mb-2">
-                {finalGameData.rewardConversion}%
-              </div>
-              <div className="text-white font-medium text-sm whitespace-pre-line flex items-center justify-center gap-2">
-                Reward{"\n"}Conversion
-                <Tooltip 
-                  content={
-                    <div className="text-left">
-                      <p className="font-semibold mb-2">Reward Conversion Rate</p>
-                      <p className="text-xs mb-2">
-                        <strong>Formula:</strong> (Users with Rewards / Total Users) × 100
-                      </p>
-                      <p className="text-xs mb-2">
-                        Shows the percentage of users who played this game and 
-                        received rewards for completing it.
-                      </p>
-                      <div className="text-xs mt-2 pt-2 border-t border-gray-700">
-                        <p className="mb-1"><strong>High (&gt;70%):</strong> Good completion rate</p>
-                        <p className="mb-1"><strong>Medium (30-70%):</strong> Average completion</p>
-                        <p><strong>Low (&lt;30%):</strong> Many users abandon</p>
+          {/* Key Metrics Cards */}
+          <div className="flex gap-6 flex-1">
+            <div className="bg-[#02020280] rounded-[8px]  h-[240px]  p-6 shadow-[0px_0px_4px_#00000040] flex-1 backdrop-blur-sm">
+              <div className="text-center flex items-center justify-center mt-16 ">
+                <div className="text-5xl font-bold text-[#00a389] mb-2">
+                  {finalGameData.avgXP.toLocaleString()}
+                </div>
+                <div className="text-white font-medium text-sm flex items-center justify-center gap-2">
+                  Avg. XP
+                  <Tooltip
+                    content={
+                      <div className="text-left">
+                        <p className="font-semibold mb-2">
+                          Average XP per User
+                        </p>
+                        <p className="text-xs">
+                          The average amount of XP (experience points) earned by
+                          users who played this game.
+                        </p>
                       </div>
-                    </div>
-                  }
-                  position="top"
-                >
-                  <InformationCircleIcon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
-                </Tooltip>
+                    }
+                    position="top"
+                  >
+                    <InformationCircleIcon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
+                  </Tooltip>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#02020280] rounded-[8px] h-[240px] p-6 shadow-[0px_0px_4px_#00000040] flex-1 items-center  backdrop-blur-sm">
+              <div className="text-center flex items-center justify-center mt-16 ">
+                <div className="text-5xl font-bold text-[#00a389] mb-2">
+                  {finalGameData.rewardConversion}%
+                </div>
+                <div className="text-white font-medium text-sm whitespace-pre-line flex items-center justify-center gap-2">
+                  Reward{"\n"}Conversion
+                  <Tooltip
+                    content={
+                      <div className="text-left">
+                        <p className="font-semibold mb-2">
+                          Reward Conversion Rate
+                        </p>
+                        <p className="text-xs mb-2">
+                          <strong>Formula:</strong> (Users with Rewards / Total
+                          Users) × 100
+                        </p>
+                        <p className="text-xs mb-2">
+                          Shows the percentage of users who played this game and
+                          received rewards for completing it.
+                        </p>
+                        <div className="text-xs mt-2 pt-2 border-t border-gray-700">
+                          <p className="mb-1">
+                            <strong>High (&gt;70%):</strong> Good completion
+                            rate
+                          </p>
+                          <p className="mb-1">
+                            <strong>Medium (30-70%):</strong> Average completion
+                          </p>
+                          <p>
+                            <strong>Low (&lt;30%):</strong> Many users abandon
+                          </p>
+                        </div>
+                      </div>
+                    }
+                    position="top"
+                  >
+                    <InformationCircleIcon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
+                  </Tooltip>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Filter Controls */}
-        {/* <div className="flex gap-4">
+          {/* Filter Controls */}
+          {/* <div className="flex gap-4">
           <button className="inline-flex h-[30px] items-center gap-1.5 px-3 py-1.5 bg-[#fff2ab33] rounded-[20px] border border-solid border-[#ffde5b]">
             <span className="font-semibold text-[#fff2ab] text-sm">
               Age &amp; Gender
@@ -509,21 +550,22 @@ const TopPlayedGameSnapshot = memo(({ data, loading, selectedGame = "auto", onGa
             </span>
           </button>
         </div> */}
+        </div>
+
+        {/* Donut Charts for Demographics */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <DonutChart data={finalGameData.demographics.age} title="Age" />
+
+          <DonutChart data={finalGameData.demographics.gender} title="Gender" />
+
+          <DonutChart data={finalGameData.demographics.region} title="Region" />
+
+          <DonutChart data={finalGameData.demographics.tier} title="Tier" />
+        </div>
       </div>
-
-      {/* Donut Charts for Demographics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <DonutChart data={finalGameData.demographics.age} title="Age" />
-
-        <DonutChart data={finalGameData.demographics.gender} title="Gender" />
-
-        <DonutChart data={finalGameData.demographics.region} title="Region" />
-
-        <DonutChart data={finalGameData.demographics.tier} title="Tier" />
-      </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 TopPlayedGameSnapshot.displayName = "TopPlayedGameSnapshot";
 

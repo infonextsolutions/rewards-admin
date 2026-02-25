@@ -199,52 +199,55 @@ export default function DailyRewards({ onSave, onCancel }) {
       const updatedWeeks = prev.weeklyMultiplier.additionalWeeks.map((item, i) =>
         i === index ? { ...item, [field]: value } : item
       );
-      
-      // Check for duplicate week numbers if updating weekNumber field
+
       if (field === "weekNumber") {
-        const newWeekNumber = parseInt(value) || value;
-        let errorMessage = "";
-        
-        // Check for conflicts with fixed week multipliers (week2, week3, week4)
-        if (newWeekNumber === 2 && prev.weeklyMultiplier.week2) {
-          errorMessage = "Duplicate week not allowed";
-          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
-          toast.error("Duplicate week not allowed");
-          return prev;
-        }
-        if (newWeekNumber === 3 && prev.weeklyMultiplier.week3) {
-          errorMessage = "Duplicate week not allowed";
-          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
-          toast.error("Duplicate week not allowed");
-          return prev;
-        }
-        if (newWeekNumber === 4 && prev.weeklyMultiplier.week4) {
-          errorMessage = "Duplicate week not allowed";
-          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
-          toast.error("Duplicate week not allowed");
-          return prev;
-        }
-        
-        // Check for duplicates within additionalWeeks
-        const duplicateExists = updatedWeeks.some(
-          (item, i) => i !== index && (parseInt(item.weekNumber) || item.weekNumber) === newWeekNumber
-        );
-        
-        if (duplicateExists) {
-          errorMessage = "Duplicate week not allowed";
-          setDuplicateWeekErrors((prevErrors) => ({ ...prevErrors, [index]: errorMessage }));
-          toast.error("Duplicate week not allowed");
-          return prev; // Don't update if duplicate
-        }
-        
-        // Clear error if no duplicate
+        // Clear any existing error when week number changes — re-validate once multiplier is entered
         setDuplicateWeekErrors((prevErrors) => {
           const newErrors = { ...prevErrors };
           delete newErrors[index];
           return newErrors;
         });
       }
-      
+
+      if (field === "multiplier") {
+        // Only validate for duplicates once the user has entered the multiplier (both values now set)
+        const currentWeekNumber = parseInt(updatedWeeks[index].weekNumber) || updatedWeeks[index].weekNumber;
+
+        let isDuplicate = false;
+
+        // Check for conflicts with fixed week multipliers (week2, week3, week4)
+        if (
+          (currentWeekNumber === 2 && prev.weeklyMultiplier.week2) ||
+          (currentWeekNumber === 3 && prev.weeklyMultiplier.week3) ||
+          (currentWeekNumber === 4 && prev.weeklyMultiplier.week4)
+        ) {
+          isDuplicate = true;
+        }
+
+        // Check for duplicates within additionalWeeks
+        if (!isDuplicate) {
+          isDuplicate = updatedWeeks.some(
+            (item, i) =>
+              i !== index &&
+              (parseInt(item.weekNumber) || item.weekNumber) === currentWeekNumber
+          );
+        }
+
+        if (isDuplicate) {
+          setDuplicateWeekErrors((prevErrors) => ({
+            ...prevErrors,
+            [index]: "Duplicate week not allowed",
+          }));
+          toast.error("Duplicate week not allowed");
+        } else {
+          setDuplicateWeekErrors((prevErrors) => {
+            const newErrors = { ...prevErrors };
+            delete newErrors[index];
+            return newErrors;
+          });
+        }
+      }
+
       return {
         ...prev,
         weeklyMultiplier: {
