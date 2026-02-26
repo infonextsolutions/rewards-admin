@@ -10,6 +10,7 @@ export default function DailyRewards({ onSave, onCancel }) {
   const [showMultiplierModal, setShowMultiplierModal] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [duplicateWeekErrors, setDuplicateWeekErrors] = useState({});
+  const [configId, setConfigId] = useState(null); // Store config ID for updates
 
   // Main configuration state - matching API V2 structure
   const [config, setConfig] = useState({
@@ -73,6 +74,10 @@ export default function DailyRewards({ onSave, onCancel }) {
       const response = await apiClient.get("/admin/daily-rewards-v2/config");
       if (response.data.success && response.data.data) {
         const data = response.data.data;
+        
+        // Store config ID for updates
+        setConfigId(data._id);
+        
         // Transform API response to match component state
         setConfig({
           version: data.version || 2,
@@ -453,12 +458,19 @@ export default function DailyRewards({ onSave, onCancel }) {
         },
       };
 
-      const response = await apiClient.post(
-        "/admin/daily-rewards-v2/config",
+      const response = await apiClient[configId ? 'put' : 'post'](
+        configId 
+          ? `/admin/daily-rewards-v2/config/${configId}`  // UPDATE existing
+          : "/admin/daily-rewards-v2/config",              // CREATE new
         apiPayload
       );
       if (response.data.success) {
         toast.success("Daily Rewards configuration saved successfully!");
+
+        // Store config ID if this was a new config
+        if (!configId && response.data.data?._id) {
+          setConfigId(response.data.data._id);
+        }
 
         // Update state directly from response to preserve isActive value
         if (response.data.data) {
