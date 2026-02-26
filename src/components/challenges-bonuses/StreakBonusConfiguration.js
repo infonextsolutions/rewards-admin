@@ -1,19 +1,39 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from "react";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function StreakBonusConfiguration({
   config = null,
   onSave,
   onCancel,
-  loading = false
+  loading = false,
 }) {
   const [milestones, setMilestones] = useState([
-    { day: 7, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' },
-    { day: 14, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' },
-    { day: 21, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' },
-    { day: 30, active: true, rewards: [{ type: 'coins', value: 0 }], claimMode: 'auto' }
+    {
+      day: 7,
+      active: true,
+      rewards: [{ type: "coins", value: 0 }],
+      claimMode: "auto",
+    },
+    {
+      day: 14,
+      active: true,
+      rewards: [{ type: "coins", value: 0 }],
+      claimMode: "auto",
+    },
+    {
+      day: 21,
+      active: true,
+      rewards: [{ type: "coins", value: 0 }],
+      claimMode: "auto",
+    },
+    {
+      day: 30,
+      active: true,
+      rewards: [{ type: "coins", value: 0 }],
+      claimMode: "auto",
+    },
   ]);
   const [errors, setErrors] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
@@ -22,38 +42,54 @@ export default function StreakBonusConfiguration({
   useEffect(() => {
     if (config && config.milestones) {
       // Sort milestones by day to ensure correct order
-      const sortedMilestones = [...config.milestones].sort((a, b) => a.day - b.day).map(milestone => {
-        // Handle backward compatibility: convert old format (rewardType/rewardValue) to new format (rewards array)
-        if (milestone.rewardType && milestone.rewardValue !== undefined) {
-          return {
-            ...milestone,
-            rewards: [{ type: milestone.rewardType, value: milestone.rewardValue }]
-          };
-        }
-        // Ensure rewards array exists
-        if (!milestone.rewards || !Array.isArray(milestone.rewards) || milestone.rewards.length === 0) {
-          return {
-            ...milestone,
-            rewards: [{ type: 'coins', value: 0 }]
-          };
-        }
-        return milestone;
-      });
+      const sortedMilestones = [...config.milestones]
+        .sort((a, b) => a.day - b.day)
+        .map((milestone) => {
+          // Handle backward compatibility: convert old format (rewardType/rewardValue) to new format (rewards array)
+          if (milestone.rewardType && milestone.rewardValue !== undefined) {
+            return {
+              ...milestone,
+              rewards: [
+                { type: milestone.rewardType, value: milestone.rewardValue },
+              ],
+            };
+          }
+          // Ensure rewards array exists
+          if (
+            !milestone.rewards ||
+            !Array.isArray(milestone.rewards) ||
+            milestone.rewards.length === 0
+          ) {
+            return {
+              ...milestone,
+              rewards: [{ type: "coins", value: 0 }],
+            };
+          }
+          return milestone;
+        });
       setMilestones(sortedMilestones);
       setHasChanges(false);
-      
+
       // Validate for duplicates on load
       const loadErrors = {};
-      sortedMilestones.forEach(milestone => {
-        if (milestone.active && milestone.rewards && milestone.rewards.length > 1) {
-          const rewardTypes = milestone.rewards.map(r => r.type);
+      sortedMilestones.forEach((milestone) => {
+        if (
+          milestone.active &&
+          milestone.rewards &&
+          milestone.rewards.length > 1
+        ) {
+          const rewardTypes = milestone.rewards.map((r) => r.type);
           const uniqueTypes = new Set(rewardTypes);
           if (rewardTypes.length !== uniqueTypes.size) {
-            loadErrors[`${milestone.day}_rewards`] = 'Each reward type can only be selected once per milestone';
+            loadErrors[`${milestone.day}_rewards`] =
+              "Each reward type can only be selected once per milestone";
             milestone.rewards.forEach((reward, idx) => {
-              const typeCount = rewardTypes.filter(t => t === reward.type).length;
+              const typeCount = rewardTypes.filter(
+                (t) => t === reward.type,
+              ).length;
               if (typeCount > 1) {
-                loadErrors[`${milestone.day}_reward_${idx}_type`] = 'This reward type is already selected';
+                loadErrors[`${milestone.day}_reward_${idx}_type`] =
+                  "This reward type is already selected";
               }
             });
           }
@@ -66,17 +102,17 @@ export default function StreakBonusConfiguration({
   }, [config]);
 
   const handleMilestoneChange = (day, field, value) => {
-    setMilestones(prev => {
-      const updated = prev.map(m => 
-        m.day === day ? { ...m, [field]: value } : m
+    setMilestones((prev) => {
+      const updated = prev.map((m) =>
+        m.day === day ? { ...m, [field]: value } : m,
       );
       setHasChanges(true);
       return updated;
     });
-    
+
     // Clear error for this field
     if (errors[`${day}_${field}`]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[`${day}_${field}`];
         return newErrors;
@@ -85,36 +121,40 @@ export default function StreakBonusConfiguration({
   };
 
   const handleRewardChange = (day, rewardIndex, field, value) => {
-    setMilestones(prev => {
-      const updated = prev.map(m => {
+    setMilestones((prev) => {
+      const updated = prev.map((m) => {
         if (m.day === day) {
           // If changing reward type, check for duplicates
-          if (field === 'type') {
+          if (field === "type") {
             const otherRewardTypes = m.rewards
-              .map((r, idx) => idx !== rewardIndex ? r.type : null)
-              .filter(type => type !== null);
-            
+              .map((r, idx) => (idx !== rewardIndex ? r.type : null))
+              .filter((type) => type !== null);
+
             // Prevent selecting a type that's already selected in another reward
             if (otherRewardTypes.includes(value)) {
               // Set error for this specific reward type
-              setErrors(prevErrors => ({
+              setErrors((prevErrors) => ({
                 ...prevErrors,
-                [`${day}_reward_${rewardIndex}_type`]: 'This reward type is already selected'
+                [`${day}_reward_${rewardIndex}_type`]:
+                  "This reward type is already selected",
               }));
               return m; // Don't update if duplicate
             }
-            
+
             // Clear error if valid
-            setErrors(prevErrors => {
+            setErrors((prevErrors) => {
               const newErrors = { ...prevErrors };
               delete newErrors[`${day}_reward_${rewardIndex}_type`];
               delete newErrors[`${day}_rewards`];
               return newErrors;
             });
           }
-          
+
           const newRewards = [...m.rewards];
-          newRewards[rewardIndex] = { ...newRewards[rewardIndex], [field]: value };
+          newRewards[rewardIndex] = {
+            ...newRewards[rewardIndex],
+            [field]: value,
+          };
           return { ...m, rewards: newRewards };
         }
         return m;
@@ -125,16 +165,19 @@ export default function StreakBonusConfiguration({
   };
 
   const addReward = (day) => {
-    setMilestones(prev => {
-      const updated = prev.map(m => {
+    setMilestones((prev) => {
+      const updated = prev.map((m) => {
         if (m.day === day) {
           // Only allow adding if there are fewer than 2 rewards (max 2: coins and xp)
           if (m.rewards.length < 2) {
             // Determine which reward type to use for the new reward
             // If coins is already selected, use xp, otherwise use coins
-            const existingTypes = m.rewards.map(r => r.type);
-            const newType = existingTypes.includes('coins') ? 'xp' : 'coins';
-            return { ...m, rewards: [...m.rewards, { type: newType, value: 0 }] };
+            const existingTypes = m.rewards.map((r) => r.type);
+            const newType = existingTypes.includes("coins") ? "xp" : "coins";
+            return {
+              ...m,
+              rewards: [...m.rewards, { type: newType, value: 0 }],
+            };
           }
           return m;
         }
@@ -146,10 +189,13 @@ export default function StreakBonusConfiguration({
   };
 
   const removeReward = (day, rewardIndex) => {
-    setMilestones(prev => {
-      const updated = prev.map(m => {
+    setMilestones((prev) => {
+      const updated = prev.map((m) => {
         if (m.day === day && m.rewards.length > 1) {
-          return { ...m, rewards: m.rewards.filter((_, idx) => idx !== rewardIndex) };
+          return {
+            ...m,
+            rewards: m.rewards.filter((_, idx) => idx !== rewardIndex),
+          };
         }
         return m;
       });
@@ -160,74 +206,89 @@ export default function StreakBonusConfiguration({
 
   const validateForm = () => {
     const newErrors = {};
-    
-    milestones.forEach(milestone => {
+
+    milestones.forEach((milestone) => {
       if (milestone.active) {
         if (!milestone.rewards || milestone.rewards.length === 0) {
-          newErrors[`${milestone.day}_rewards`] = 'At least one reward is required';
+          newErrors[`${milestone.day}_rewards`] =
+            "At least one reward is required";
         } else {
           // Validate maximum 2 rewards per milestone
           if (milestone.rewards.length > 2) {
-            newErrors[`${milestone.day}_rewards`] = 'Maximum 2 rewards allowed per milestone (Coins and XP)';
+            newErrors[`${milestone.day}_rewards`] =
+              "Maximum 2 rewards allowed per milestone (Coins and XP)";
           }
-          
+
           // Validate no duplicate reward types within the same milestone
-          const rewardTypes = milestone.rewards.map(r => r.type);
+          const rewardTypes = milestone.rewards.map((r) => r.type);
           const uniqueTypes = new Set(rewardTypes);
           if (rewardTypes.length !== uniqueTypes.size) {
-            newErrors[`${milestone.day}_rewards`] = 'Each reward type can only be selected once per milestone';
+            newErrors[`${milestone.day}_rewards`] =
+              "Each reward type can only be selected once per milestone";
             // Also mark individual reward types that are duplicates
             milestone.rewards.forEach((reward, idx) => {
-              const typeCount = rewardTypes.filter(t => t === reward.type).length;
+              const typeCount = rewardTypes.filter(
+                (t) => t === reward.type,
+              ).length;
               if (typeCount > 1) {
-                newErrors[`${milestone.day}_reward_${idx}_type`] = 'This reward type is already selected';
+                newErrors[`${milestone.day}_reward_${idx}_type`] =
+                  "This reward type is already selected";
               }
             });
           }
-          
+
           milestone.rewards.forEach((reward, idx) => {
             if (reward.value === undefined || reward.value < 0) {
-              newErrors[`${milestone.day}_reward_${idx}_value`] = 'Reward value must be at least 0';
+              newErrors[`${milestone.day}_reward_${idx}_value`] =
+                "Reward value must be at least 0";
             }
           });
         }
       }
     });
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     if (!validateForm()) return;
-    
+
     try {
       await onSave({ milestones });
       setHasChanges(false);
     } catch (error) {
-      console.error('Error saving streak bonus configuration:', error);
+      console.error("Error saving streak bonus configuration:", error);
     }
   };
 
   const handleCancel = () => {
     // Reset to original config
     if (config && config.milestones) {
-      const sortedMilestones = [...config.milestones].sort((a, b) => a.day - b.day).map(milestone => {
-        // Handle backward compatibility
-        if (milestone.rewardType && milestone.rewardValue !== undefined) {
-          return {
-            ...milestone,
-            rewards: [{ type: milestone.rewardType, value: milestone.rewardValue }]
-          };
-        }
-        if (!milestone.rewards || !Array.isArray(milestone.rewards) || milestone.rewards.length === 0) {
-          return {
-            ...milestone,
-            rewards: [{ type: 'coins', value: 0 }]
-          };
-        }
-        return milestone;
-      });
+      const sortedMilestones = [...config.milestones]
+        .sort((a, b) => a.day - b.day)
+        .map((milestone) => {
+          // Handle backward compatibility
+          if (milestone.rewardType && milestone.rewardValue !== undefined) {
+            return {
+              ...milestone,
+              rewards: [
+                { type: milestone.rewardType, value: milestone.rewardValue },
+              ],
+            };
+          }
+          if (
+            !milestone.rewards ||
+            !Array.isArray(milestone.rewards) ||
+            milestone.rewards.length === 0
+          ) {
+            return {
+              ...milestone,
+              rewards: [{ type: "coins", value: 0 }],
+            };
+          }
+          return milestone;
+        });
       setMilestones(sortedMilestones);
     }
     setHasChanges(false);
@@ -236,16 +297,16 @@ export default function StreakBonusConfiguration({
   };
 
   const getRewardIcon = (rewardType) => {
-    return rewardType === 'coins' ? '🪙' : '⭐';
+    return rewardType === "coins" ? "🪙" : "⭐";
   };
 
-  const rewardTypes = ['coins', 'xp'];
+  const rewardTypes = ["coins", "xp"];
 
   // Helper function to get already selected reward types for a milestone (excluding current index)
   const getSelectedRewardTypes = (milestone, currentIndex) => {
     return milestone.rewards
-      .map((reward, idx) => idx !== currentIndex ? reward.type : null)
-      .filter(type => type !== null);
+      .map((reward, idx) => (idx !== currentIndex ? reward.type : null))
+      .filter((type) => type !== null);
   };
 
   return (
@@ -259,8 +320,9 @@ export default function StreakBonusConfiguration({
                 30-Day Streak Bonus Configuration
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Configure milestone rewards for users who maintain a continuous 30-day streak.
-                This configuration is separate from Daily Challenge bonus days.
+                Configure milestone rewards for users who maintain a continuous
+                30-day streak. This configuration is separate from Daily
+                Challenge bonus days.
               </p>
             </div>
           </div>
@@ -280,19 +342,23 @@ export default function StreakBonusConfiguration({
                   </h3>
                   <div className="flex items-center">
                     <label className="flex items-center cursor-pointer">
-                      <span className="mr-3 text-sm text-gray-700">
-                        {milestone.active ? 'Active' : 'Inactive'}
-                      </span>
+                      {/* <span className="mr-3 text-sm text-gray-700">
+                        {milestone.active ? "Active" : "Inactive"}
+                      </span> */}
                       <div className="relative">
                         <input
                           type="checkbox"
                           checked={milestone.active}
                           onChange={(e) =>
-                            handleMilestoneChange(milestone.day, 'active', e.target.checked)
+                            handleMilestoneChange(
+                              milestone.day,
+                              "active",
+                              e.target.checked,
+                            )
                           }
                           className="sr-only"
                         />
-                        <div
+                        {/* <div
                           className={`block w-14 h-8 rounded-full transition-colors duration-200 ease-in-out ${
                             milestone.active ? 'bg-emerald-600' : 'bg-gray-300'
                           }`}
@@ -302,7 +368,7 @@ export default function StreakBonusConfiguration({
                               milestone.active ? 'transform translate-x-6' : ''
                             }`}
                           />
-                        </div>
+                        </div> */}
                       </div>
                     </label>
                   </div>
@@ -322,10 +388,14 @@ export default function StreakBonusConfiguration({
                           disabled={milestone.rewards.length >= 2}
                           className={`text-sm font-medium ${
                             milestone.rewards.length >= 2
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-emerald-600 hover:text-emerald-700'
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-emerald-600 hover:text-emerald-700"
                           }`}
-                          title={milestone.rewards.length >= 2 ? 'Maximum 2 rewards allowed (Coins and XP)' : 'Add Reward'}
+                          title={
+                            milestone.rewards.length >= 2
+                              ? "Maximum 2 rewards allowed (Coins and XP)"
+                              : "Add Reward"
+                          }
                         >
                           + Add Reward
                         </button>
@@ -345,31 +415,49 @@ export default function StreakBonusConfiguration({
                                 <select
                                   value={reward.type}
                                   onChange={(e) =>
-                                    handleRewardChange(milestone.day, rewardIndex, 'type', e.target.value)
+                                    handleRewardChange(
+                                      milestone.day,
+                                      rewardIndex,
+                                      "type",
+                                      e.target.value,
+                                    )
                                   }
                                   className={`w-full px-3 py-2 text-sm border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                                    errors[`${milestone.day}_reward_${rewardIndex}_type`]
-                                      ? 'border-red-300'
-                                      : 'border-gray-300'
+                                    errors[
+                                      `${milestone.day}_reward_${rewardIndex}_type`
+                                    ]
+                                      ? "border-red-300"
+                                      : "border-gray-300"
                                   }`}
                                 >
-                                  {rewardTypes.map(type => {
-                                    const selectedTypes = getSelectedRewardTypes(milestone, rewardIndex);
-                                    const isDisabled = selectedTypes.includes(type);
+                                  {rewardTypes.map((type) => {
+                                    const selectedTypes =
+                                      getSelectedRewardTypes(
+                                        milestone,
+                                        rewardIndex,
+                                      );
+                                    const isDisabled =
+                                      selectedTypes.includes(type);
                                     return (
-                                      <option 
-                                        key={type} 
+                                      <option
+                                        key={type}
                                         value={type}
                                         disabled={isDisabled}
                                       >
-                                        {type === 'coins' ? 'Coins' : 'XP'}
+                                        {type === "coins" ? "Coins" : "XP"}
                                       </option>
                                     );
                                   })}
                                 </select>
-                                {errors[`${milestone.day}_reward_${rewardIndex}_type`] && (
+                                {errors[
+                                  `${milestone.day}_reward_${rewardIndex}_type`
+                                ] && (
                                   <p className="mt-1 text-xs text-red-600">
-                                    {errors[`${milestone.day}_reward_${rewardIndex}_type`]}
+                                    {
+                                      errors[
+                                        `${milestone.day}_reward_${rewardIndex}_type`
+                                      ]
+                                    }
                                   </p>
                                 )}
                               </div>
@@ -388,14 +476,16 @@ export default function StreakBonusConfiguration({
                                       handleRewardChange(
                                         milestone.day,
                                         rewardIndex,
-                                        'value',
-                                        parseInt(e.target.value) || 0
+                                        "value",
+                                        parseInt(e.target.value) || 0,
                                       )
                                     }
                                     className={`w-full px-3 py-2 pr-10 text-sm border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                                      errors[`${milestone.day}_reward_${rewardIndex}_value`]
-                                        ? 'border-red-300'
-                                        : 'border-gray-300'
+                                      errors[
+                                        `${milestone.day}_reward_${rewardIndex}_value`
+                                      ]
+                                        ? "border-red-300"
+                                        : "border-gray-300"
                                     }`}
                                     placeholder="0"
                                   />
@@ -403,9 +493,15 @@ export default function StreakBonusConfiguration({
                                     {getRewardIcon(reward.type)}
                                   </span>
                                 </div>
-                                {errors[`${milestone.day}_reward_${rewardIndex}_value`] && (
+                                {errors[
+                                  `${milestone.day}_reward_${rewardIndex}_value`
+                                ] && (
                                   <p className="mt-1 text-xs text-red-600">
-                                    {errors[`${milestone.day}_reward_${rewardIndex}_value`]}
+                                    {
+                                      errors[
+                                        `${milestone.day}_reward_${rewardIndex}_value`
+                                      ]
+                                    }
                                   </p>
                                 )}
                               </div>
@@ -413,7 +509,9 @@ export default function StreakBonusConfiguration({
                             {milestone.rewards.length > 1 && (
                               <button
                                 type="button"
-                                onClick={() => removeReward(milestone.day, rewardIndex)}
+                                onClick={() =>
+                                  removeReward(milestone.day, rewardIndex)
+                                }
                                 className="mt-6 text-red-600 hover:text-red-700"
                                 title="Remove reward"
                               >
@@ -438,7 +536,11 @@ export default function StreakBonusConfiguration({
                       <select
                         value={milestone.claimMode}
                         onChange={(e) =>
-                          handleMilestoneChange(milestone.day, 'claimMode', e.target.value)
+                          handleMilestoneChange(
+                            milestone.day,
+                            "claimMode",
+                            e.target.value,
+                          )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
                       >
@@ -446,9 +548,9 @@ export default function StreakBonusConfiguration({
                         <option value="watch_ad">Watch Ad</option>
                       </select>
                       <p className="mt-1 text-xs text-gray-500">
-                        {milestone.claimMode === 'auto'
-                          ? 'Reward is automatically awarded'
-                          : 'User must watch an ad to claim'}
+                        {milestone.claimMode === "auto"
+                          ? "Reward is automatically awarded"
+                          : "User must watch an ad to claim"}
                       </p>
                     </div>
                   </div>
@@ -456,7 +558,8 @@ export default function StreakBonusConfiguration({
 
                 {!milestone.active && (
                   <div className="text-sm text-gray-500 italic">
-                    This milestone is inactive and will be skipped by the streak logic.
+                    This milestone is inactive and will be skipped by the streak
+                    logic.
                   </div>
                 )}
               </div>
@@ -478,7 +581,7 @@ export default function StreakBonusConfiguration({
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CheckIcon className="h-4 w-4 mr-2" />
-              {loading ? 'Saving...' : 'Save Configuration'}
+              {loading ? "Saving..." : "Save Configuration"}
             </button>
           </div>
 
@@ -505,16 +608,21 @@ export default function StreakBonusConfiguration({
                 <div className="mt-2 text-sm text-blue-700">
                   <ul className="list-disc list-inside space-y-1">
                     <li>
-                      Users must log in each day and complete at least one required game task to maintain the streak.
+                      Users must log in each day and complete at least one
+                      required game task to maintain the streak.
                     </li>
                     <li>
-                      When a user reaches a configured milestone day, the system checks if the milestone is active and issues the reward based on the configured settings.
+                      When a user reaches a configured milestone day, the system
+                      checks if the milestone is active and issues the reward
+                      based on the configured settings.
                     </li>
                     <li>
-                      If a user misses a day, the streak resets to the last unlocked milestone (not to Day 0).
+                      If a user misses a day, the streak resets to the last
+                      unlocked milestone (not to Day 0).
                     </li>
                     <li>
-                      Only milestones marked as Active are processed by the streak logic.
+                      Only milestones marked as Active are processed by the
+                      streak logic.
                     </li>
                   </ul>
                 </div>
@@ -526,4 +634,3 @@ export default function StreakBonusConfiguration({
     </div>
   );
 }
-
