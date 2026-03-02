@@ -170,20 +170,21 @@ export default function NonGamingOffers() {
           const mappedOffers = response.data.map((offer) => {
             const coins = offer.userRewardCoins ?? offer.coinReward ?? 30;
             const xp = offer.userRewardXP ?? 10;
+            const payout = offer.cpi ?? offer.payoutAmount ?? 0;
             return {
-              id: offer.id ?? offer.offerId ?? offer.network_offer_id?.toString(),
-              offerId: offer.offerId ?? offer.network_offer_id?.toString() ?? offer.id,
+              id: offer.id?.toString() ?? offer.offer_id ?? offer.offerId,
+              offerId: offer.offer_id ?? offer.offerId ?? offer.id?.toString(),
               title: offer.title || "Untitled Offer",
               description: offer.description || "",
-              type: offer.offerType || offer.type || "other",
+              type: offer.offerType || offer.payout_type || offer.type || "other",
               category: offer.category || "General",
-              icon: offer.thumbnailUrl || offer.logo || "",
-              banner: offer.thumbnailUrl || offer.logo || "",
+              icon: offer.logo || offer.thumbnailUrl || "",
+              banner: offer.logo || offer.thumbnailUrl || "",
               coinReward: offer.coinReward ?? coins,
               userRewardCoins: coins,
               userRewardXP: xp,
               reward: offer.reward || { coins, currency: offer.currency || "USD", xp },
-              clickUrl: offer.clickUrl || offer.tracking_url || "",
+              clickUrl: offer.click_url || offer.clickUrl || offer.preview_url || "",
               provider: "affise",
               estimatedTime: offer.estimatedTime ?? 0,
               isAvailable: offer.isAvailable !== false,
@@ -191,13 +192,19 @@ export default function NonGamingOffers() {
               merchant_name: offer.title || "",
               primary_category: offer.category || "",
               currency: offer.currency || "USD",
-              payoutAmount: offer.payoutAmount ?? 0,
+              payoutAmount: payout,
               creativeBundleUrl: offer.creativeBundleUrl || "",
-              total_points: (offer.payoutAmount ?? 0).toString(),
-              epc: offer.epc || "0",
+              total_points: payout.toString(),
+              epc: offer.epc !== undefined ? String(offer.epc) : "0",
+              affiliate_epc: offer.affiliate_epc !== undefined ? String(offer.affiliate_epc) : "0",
               pending_time: offer.pending_time ?? 0,
               reward_delay_days: offer.reward_delay_days ?? 0,
               confirmation_time: offer.confirmation_time || "",
+              allowed_countries: offer.allowed_countries || offer.payment_countries || [],
+              allowed_os: offer.allowed_os || [],
+              device_types: offer.device_types || [],
+              daily_cap: offer.daily_cap ?? null,
+              strictly_country: offer.strictly_country ?? 0,
               status: offer.status || "live",
             };
           });
@@ -1679,7 +1686,7 @@ export default function NonGamingOffers() {
                         ? offer.creatives?.icon || offer.icon || offer.images?.cardImageSmall
                         : isShopping || isMagicReceipt
                         ? offer.creatives?.icon || offer.icon_url || offer.icon
-                        : null;
+                        : offer.icon || offer.banner || null;
 
                       return (
                         <tr
@@ -1745,6 +1752,17 @@ export default function NonGamingOffers() {
                                   ).toLocaleString()}{" "}
                                   pts
                                 </span>
+                              </div>
+                            ) : (offer.sdkProvider === "affise" || offer.sdkProvider === "everflow") ? (
+                              <div className="text-sm">
+                                <span className="font-semibold text-gray-700">
+                                  {offer.payout_type || offer.type || "—"}
+                                </span>
+                                {offer.payment_goal && (
+                                  <span className="text-xs text-gray-500 ml-1">
+                                    (goal: {offer.payment_goal})
+                                  </span>
+                                )}
                               </div>
                             ) : (
                               <span className="text-sm text-gray-400">N/A</span>
