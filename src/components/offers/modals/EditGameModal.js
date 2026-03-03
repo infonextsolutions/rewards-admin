@@ -174,8 +174,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           if (p) return p;
         }
         if (game.devices && Array.isArray(game.devices)) {
-          const hasIos = game.devices.some(
-            (d) => ["ios", "iphone"].includes(norm(d))
+          const hasIos = game.devices.some((d) =>
+            ["ios", "iphone"].includes(norm(d)),
           );
           const hasAndroid = game.devices.some((d) => norm(d) === "android");
           if (hasIos && !hasAndroid) return "ios";
@@ -213,7 +213,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           : 0, // Convert coins to dollars (50 coins = 1 dollar)
         taskCount: game.taskCount || 0,
         activeVisible:
-          game.status !== undefined ? (game.status === true || game.status === "Active") : game.activeVisible ?? true,
+          game.status !== undefined
+            ? game.status === true || game.status === "Active"
+            : (game.activeVisible ?? true),
         fallbackGame: game.fallbackGame ?? false,
         thumbnail: game.thumbnail || null,
         thumbnailWidth: game.thumbnailWidth || 300,
@@ -377,7 +379,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         sections = sections.map((section) =>
           typeof section === "string"
             ? section
-            : section.name || section.value || section
+            : section.name || section.value || section,
         );
         setUiSections(sections);
       } catch (error) {
@@ -401,7 +403,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       try {
         const sdkName = formData.sdk.toLowerCase();
         const response = await apiClient.get(
-          `/admin/game-offers/games/by-sdk/${sdkName}?device_platform=${platform}`
+          `/admin/game-offers/games/by-sdk/${sdkName}?device_platform=${platform}`,
         );
 
         if (response.data.success && response.data.data) {
@@ -410,13 +412,17 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
             : [response.data.data];
           console.log("Fetched games:", games);
           // Filter games by selected platform
-          const filteredGames = games.filter(game => {
+          const filteredGames = games.filter((game) => {
             if (!game.devices && !game.device_platform) return true; // Include if no device info
             if (game.devices && Array.isArray(game.devices)) {
-              return game.devices.some(device => device.toLowerCase() === platform.toLowerCase());
+              return game.devices.some(
+                (device) => device.toLowerCase() === platform.toLowerCase(),
+              );
             }
             if (game.device_platform) {
-              return game.device_platform.toLowerCase() === platform.toLowerCase();
+              return (
+                game.device_platform.toLowerCase() === platform.toLowerCase()
+              );
             }
             return false;
           });
@@ -543,7 +549,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         "Game not found in gamesList. gameId:",
         gameId,
         "Available games:",
-        gamesList
+        gamesList,
       );
     }
   };
@@ -596,7 +602,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     // Validate XP Tiers (at least one must be selected)
     if (!formData.xpTiers || formData.xpTiers.length === 0) {
       toast.error(
-        "Please select at least one XP Tier (Junior, Mid, or Senior)"
+        "Please select at least one XP Tier (Junior, Mid, or Senior)",
       );
       return;
     }
@@ -607,7 +613,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       formData.segments.ageGroups.length === 0
     ) {
       toast.error(
-        "Age Range is required. Please select at least one age group."
+        "Age Range is required. Please select at least one age group.",
       );
       return;
     }
@@ -621,13 +627,13 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     // Validate XP Tier values
     const validTiers = ["Junior", "Mid", "Senior"];
     const invalidTiers = formData.xpTiers.filter(
-      (t) => !validTiers.includes(t)
+      (t) => !validTiers.includes(t),
     );
     if (invalidTiers.length > 0) {
       toast.error(
         `Invalid XP tiers: ${invalidTiers.join(
-          ", "
-        )}. Must be one of: Junior, Mid, Senior`
+          ", ",
+        )}. Must be one of: Junior, Mid, Senior`,
       );
       return;
     }
@@ -643,7 +649,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     const xpMultiplier = parseFloat(formData.xpMultiplier);
     if (isNaN(xpMultiplier) || xpMultiplier < 0.1) {
       toast.error(
-        "Stepwise Multiplier must be a number greater than or equal to 0.1"
+        "Stepwise Multiplier must be a number greater than or equal to 0.1",
       );
       return;
     }
@@ -782,8 +788,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                       {!formData.sdk
                         ? "Select SDK first..."
                         : loadingGames
-                        ? "Loading games..."
-                        : "Choose game..."}
+                          ? "Loading games..."
+                          : "Choose game..."}
                     </option>
                     {gamesList.map((game) => (
                       <option key={game.id} value={game.id}>
@@ -917,7 +923,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     onChange={(e) =>
                       handleInputChange(
                         "baseXP",
-                        parseFloat(e.target.value) || 0
+                        parseFloat(e.target.value) || 0,
                       )
                     }
                     placeholder="e.g., 10"
@@ -941,7 +947,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     onChange={(e) =>
                       handleInputChange(
                         "xpMultiplier",
-                        parseFloat(e.target.value) || 1.0
+                        parseFloat(e.target.value) || 1.0,
                       )
                     }
                     placeholder="e.g., 1.5"
@@ -1001,7 +1007,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                         "Wallet",
                       ];
                       const filteredUISections = uiSections.filter(
-                        (section) => !hiddenSections.includes(section)
+                        (section) => !hiddenSections.includes(section),
                       );
                       return filteredUISections.map((section) => (
                         <option key={section} value={section}>
@@ -1169,7 +1175,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     onChange={(e) =>
                       handleInputChange(
                         "segments.marketingChannel",
-                        e.target.value
+                        e.target.value,
                       )
                     }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"

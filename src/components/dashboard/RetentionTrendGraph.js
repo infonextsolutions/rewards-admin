@@ -71,7 +71,7 @@ const RetentionTrendGraph = memo(
           }
           return null;
         },
-      []
+      [],
     );
 
     if (loading) {
@@ -217,7 +217,7 @@ const RetentionTrendGraph = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 RetentionTrendGraph.displayName = "RetentionTrendGraph";

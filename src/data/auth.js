@@ -1,6 +1,6 @@
 // Authentication API service
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
+  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
 
 // const API_BASE = "http://localhost:8000/api";
 // git stat
@@ -11,7 +11,7 @@ export const authAPI = {
       // Transform credentials to match backend expectations
       const loginData = {
         emailOrMobile: credentials.email, // Backend expects emailOrMobile field
-        password: credentials.password
+        password: credentials.password,
       };
 
       const response = await fetch(`${API_BASE}/auth/admin-login`, {

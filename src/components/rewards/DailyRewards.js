@@ -74,10 +74,10 @@ export default function DailyRewards({ onSave, onCancel }) {
       const response = await apiClient.get("/admin/daily-rewards-v2/config");
       if (response.data.success && response.data.data) {
         const data = response.data.data;
-        
+
         // Store config ID for updates
         setConfigId(data._id);
-        
+
         // Transform API response to match component state
         setConfig({
           version: data.version || 2,
@@ -117,7 +117,7 @@ export default function DailyRewards({ onSave, onCancel }) {
     setConfig((prev) => ({
       ...prev,
       days: prev.days.map((day, idx) =>
-        idx === dayIndex ? { ...day, [field]: value } : day
+        idx === dayIndex ? { ...day, [field]: value } : day,
       ),
     }));
   };
@@ -142,12 +142,12 @@ export default function DailyRewards({ onSave, onCancel }) {
         prev.weeklyMultiplier.additionalWeeks.length > 0
           ? Math.max(
               ...prev.weeklyMultiplier.additionalWeeks.map(
-                (w) => parseInt(w.weekNumber) || w.weekNumber
-              )
+                (w) => parseInt(w.weekNumber) || w.weekNumber,
+              ),
             )
           : 4;
       const newWeekNumber = parseInt(currentMaxWeek + 1);
-      
+
       // Check if the new week number conflicts with fixed weeks
       if (
         (newWeekNumber === 2 && prev.weeklyMultiplier.week2) ||
@@ -157,7 +157,7 @@ export default function DailyRewards({ onSave, onCancel }) {
         toast.error("Duplicate week not allowed");
         return prev;
       }
-      
+
       return {
         ...prev,
         weeklyMultiplier: {
@@ -177,7 +177,7 @@ export default function DailyRewards({ onSave, onCancel }) {
       weeklyMultiplier: {
         ...prev.weeklyMultiplier,
         additionalWeeks: prev.weeklyMultiplier.additionalWeeks.filter(
-          (_, i) => i !== index
+          (_, i) => i !== index,
         ),
       },
     }));
@@ -201,8 +201,8 @@ export default function DailyRewards({ onSave, onCancel }) {
 
   const updateAdditionalMultiplier = (index, field, value) => {
     setConfig((prev) => {
-      const updatedWeeks = prev.weeklyMultiplier.additionalWeeks.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
+      const updatedWeeks = prev.weeklyMultiplier.additionalWeeks.map(
+        (item, i) => (i === index ? { ...item, [field]: value } : item),
       );
 
       if (field === "weekNumber") {
@@ -216,7 +216,9 @@ export default function DailyRewards({ onSave, onCancel }) {
 
       if (field === "multiplier") {
         // Only validate for duplicates once the user has entered the multiplier (both values now set)
-        const currentWeekNumber = parseInt(updatedWeeks[index].weekNumber) || updatedWeeks[index].weekNumber;
+        const currentWeekNumber =
+          parseInt(updatedWeeks[index].weekNumber) ||
+          updatedWeeks[index].weekNumber;
 
         let isDuplicate = false;
 
@@ -234,7 +236,8 @@ export default function DailyRewards({ onSave, onCancel }) {
           isDuplicate = updatedWeeks.some(
             (item, i) =>
               i !== index &&
-              (parseInt(item.weekNumber) || item.weekNumber) === currentWeekNumber
+              (parseInt(item.weekNumber) || item.weekNumber) ===
+                currentWeekNumber,
           );
         }
 
@@ -281,7 +284,7 @@ export default function DailyRewards({ onSave, onCancel }) {
             parseFloat(day.coinValue) < 0
           ) {
             errors.push(
-              `Day ${day.dayNumber}: Coin value is required and must be >= 0`
+              `Day ${day.dayNumber}: Coin value is required and must be >= 0`,
             );
           }
         }
@@ -292,7 +295,7 @@ export default function DailyRewards({ onSave, onCancel }) {
             parseFloat(day.xpValue) < 0
           ) {
             errors.push(
-              `Day ${day.dayNumber}: XP value is required and must be >= 0`
+              `Day ${day.dayNumber}: XP value is required and must be >= 0`,
             );
           }
         }
@@ -348,10 +351,10 @@ export default function DailyRewards({ onSave, onCancel }) {
         errors.push("Week 4 Multiplier must be >= 1.0");
       }
       // Check for duplicate week numbers in additionalWeeks and conflicts with fixed weeks
-      const weekNumbers = config.weeklyMultiplier.additionalWeeks.map((item) =>
-        parseInt(item.weekNumber) || item.weekNumber
+      const weekNumbers = config.weeklyMultiplier.additionalWeeks.map(
+        (item) => parseInt(item.weekNumber) || item.weekNumber,
       );
-      
+
       // Check for conflicts with fixed week multipliers
       if (weekNumbers.includes(2) && config.weeklyMultiplier.week2) {
         errors.push("Duplicate week not allowed");
@@ -362,10 +365,10 @@ export default function DailyRewards({ onSave, onCancel }) {
       if (weekNumbers.includes(4) && config.weeklyMultiplier.week4) {
         errors.push("Duplicate week not allowed");
       }
-      
+
       // Check for duplicates within additionalWeeks
       const duplicateWeeks = weekNumbers.filter(
-        (week, index) => weekNumbers.indexOf(week) !== index
+        (week, index) => weekNumbers.indexOf(week) !== index,
       );
       if (duplicateWeeks.length > 0) {
         errors.push("Duplicate week not allowed");
@@ -458,11 +461,11 @@ export default function DailyRewards({ onSave, onCancel }) {
         },
       };
 
-      const response = await apiClient[configId ? 'put' : 'post'](
-        configId 
-          ? `/admin/daily-rewards-v2/config/${configId}`  // UPDATE existing
-          : "/admin/daily-rewards-v2/config",              // CREATE new
-        apiPayload
+      const response = await apiClient[configId ? "put" : "post"](
+        configId
+          ? `/admin/daily-rewards-v2/config/${configId}` // UPDATE existing
+          : "/admin/daily-rewards-v2/config", // CREATE new
+        apiPayload,
       );
       if (response.data.success) {
         toast.success("Daily Rewards configuration saved successfully!");
@@ -555,7 +558,7 @@ export default function DailyRewards({ onSave, onCancel }) {
             </p>
           </div>
           {renderToggle(config.isActive, () =>
-            setConfig((prev) => ({ ...prev, isActive: !prev.isActive }))
+            setConfig((prev) => ({ ...prev, isActive: !prev.isActive })),
           )}
         </div>
         {lastUpdated && (
@@ -624,7 +627,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                 .map((day, index) => {
                   // Find the original index in the full days array for proper state updates
                   const originalIndex = config.days.findIndex(
-                    (d) => d.dayNumber === day.dayNumber
+                    (d) => d.dayNumber === day.dayNumber,
                   );
                   return (
                     <tr
@@ -641,8 +644,8 @@ export default function DailyRewards({ onSave, onCancel }) {
                           handleDayRewardChange(
                             originalIndex,
                             "active",
-                            !day.active
-                          )
+                            !day.active,
+                          ),
                         )}
                       </td>
                       <td className="py-4 px-2">
@@ -652,7 +655,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                             handleDayRewardChange(
                               originalIndex,
                               "rewardType",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
@@ -671,7 +674,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                             handleDayRewardChange(
                               originalIndex,
                               "coinValue",
-                              parseFloat(e.target.value) || 0
+                              parseFloat(e.target.value) || 0,
                             )
                           }
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
@@ -693,7 +696,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                             handleDayRewardChange(
                               originalIndex,
                               "xpValue",
-                              parseFloat(e.target.value) || 0
+                              parseFloat(e.target.value) || 0,
                             )
                           }
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
@@ -712,8 +715,8 @@ export default function DailyRewards({ onSave, onCancel }) {
                           handleDayRewardChange(
                             originalIndex,
                             "claimableOnLoginOnly",
-                            !day.claimableOnLoginOnly
-                          )
+                            !day.claimableOnLoginOnly,
+                          ),
                         )}
                       </td>
                     </tr>
@@ -736,7 +739,7 @@ export default function DailyRewards({ onSave, onCancel }) {
             </p>
           </div>
           {renderToggle(config.bigReward.enabled, () =>
-            handleBigRewardChange("enabled", !config.bigReward.enabled)
+            handleBigRewardChange("enabled", !config.bigReward.enabled),
           )}
         </div>
 
@@ -767,8 +770,8 @@ export default function DailyRewards({ onSave, onCancel }) {
                   {renderToggle(config.bigReward.downgradeOnMiss, () =>
                     handleBigRewardChange(
                       "downgradeOnMiss",
-                      !config.bigReward.downgradeOnMiss
-                    )
+                      !config.bigReward.downgradeOnMiss,
+                    ),
                   )}
                   <span className="ml-2 text-sm text-gray-600">
                     {config.bigReward.downgradeOnMiss ? "Enabled" : "Disabled"}
@@ -789,7 +792,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                     onChange={(e) =>
                       handleBigRewardChange(
                         "coinValue",
-                        parseFloat(e.target.value) || 0
+                        parseFloat(e.target.value) || 0,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -811,7 +814,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                     onChange={(e) =>
                       handleBigRewardChange(
                         "xpValue",
-                        parseFloat(e.target.value) || 0
+                        parseFloat(e.target.value) || 0,
                       )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -883,8 +886,8 @@ export default function DailyRewards({ onSave, onCancel }) {
                   {renderToggle(config.weeklyMultiplier.enabled, () =>
                     handleMultiplierChange(
                       "enabled",
-                      !config.weeklyMultiplier.enabled
-                    )
+                      !config.weeklyMultiplier.enabled,
+                    ),
                   )}
                 </div>
 
@@ -901,7 +904,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                         onChange={(e) =>
                           handleMultiplierChange(
                             "week2",
-                            parseFloat(e.target.value) || 1.0
+                            parseFloat(e.target.value) || 1.0,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -921,7 +924,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                         onChange={(e) =>
                           handleMultiplierChange(
                             "week3",
-                            parseFloat(e.target.value) || 1.0
+                            parseFloat(e.target.value) || 1.0,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -940,7 +943,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                         onChange={(e) =>
                           handleMultiplierChange(
                             "week4",
-                            parseFloat(e.target.value) || 1.0
+                            parseFloat(e.target.value) || 1.0,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -963,7 +966,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                                 updateAdditionalMultiplier(
                                   index,
                                   "weekNumber",
-                                  parseInt(e.target.value) || 5
+                                  parseInt(e.target.value) || 5,
                                 )
                               }
                               className={`w-full px-3 py-2 border rounded-lg text-sm mb-2 ${
@@ -992,7 +995,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                                 updateAdditionalMultiplier(
                                   index,
                                   "multiplier",
-                                  parseFloat(e.target.value) || 1.0
+                                  parseFloat(e.target.value) || 1.0,
                                 )
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
@@ -1009,7 +1012,7 @@ export default function DailyRewards({ onSave, onCancel }) {
                             Remove
                           </button>
                         </div>
-                      )
+                      ),
                     )}
                     <button
                       type="button"
