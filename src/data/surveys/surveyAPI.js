@@ -3,7 +3,7 @@ import apiClient from "../../lib/apiClient";
 
 // Base URL used ONLY for Bitlabs survey (type=survey). Besitos survey and all other
 // routes keep using the default apiClient base URL (e.g. localhost or env).
-const BITLABS_SURVEY_API_BASE = "https://rewardsapi.hireagent.co/api";
+const BITLABS_SURVEY_API_BASE = "https://rewardsuatapi.hireagent.co/api";
 
 const surveyAPIs = {
   // Mock success response
