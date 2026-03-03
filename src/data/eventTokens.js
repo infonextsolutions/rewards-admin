@@ -24,6 +24,13 @@ export const eventTokensAPI = {
       if (params.isActive !== undefined && params.isActive !== null) {
         queryParams.append("isActive", params.isActive.toString());
       }
+      if (params.unique !== undefined && params.unique !== null) {
+        queryParams.append("unique", params.unique.toString());
+      }
+      if (params.environment) queryParams.append("environment", params.environment);
+      if (params.isRevenueEvent !== undefined && params.isRevenueEvent !== null) {
+        queryParams.append("isRevenueEvent", params.isRevenueEvent.toString());
+      }
       if (params.search) queryParams.append("search", params.search);
       if (params.page) queryParams.append("page", params.page.toString());
       if (params.limit) queryParams.append("limit", params.limit.toString());

@@ -37,6 +37,7 @@ export default function UsersPage() {
     status: "",
     gender: "",
     ageRange: "",
+    marketingChannel: "",
   });
 
   const [localSearchTerm, setLocalSearchTerm] = useState("");
@@ -86,6 +87,37 @@ export default function UsersPage() {
     fetchUniqueLocations();
   }, []); // Only fetch once on component mount
 
+  // Effect to fetch unique marketing channels from API
+  useEffect(() => {
+    const fetchUniqueMarketingChannels = async () => {
+      try {
+        const response = await userAPIs.getUniqueMarketingChannels();
+        if (response.success && response.data.channels) {
+          const uniqueChannels = response.data.channels
+            .filter((channel) => channel && channel !== "N/A")
+            .sort();
+
+          setDynamicFilterOptions((prevOptions) =>
+            prevOptions.map((filter) => {
+              if (filter.id === "marketingChannel") {
+                return {
+                  ...filter,
+                  options: uniqueChannels.length > 0 ? uniqueChannels : [],
+                };
+              }
+              return filter;
+            })
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching unique marketing channels:", error);
+        // Fall back to empty array if API fails
+      }
+    };
+
+    fetchUniqueMarketingChannels();
+  }, []); // Only fetch once on component mount
+
   // Console log users data from backend
   useEffect(() => {
     console.log("🟡 Users Page - Users data:", users);
@@ -107,6 +139,7 @@ export default function UsersPage() {
     selectedFilters.status,
     selectedFilters.gender,
     selectedFilters.ageRange,
+    selectedFilters.marketingChannel,
   ]);
 
   const handleFilterChange = (filterId, value) => {
@@ -129,6 +162,7 @@ export default function UsersPage() {
         ageRange: selectedFilters.ageRange,
         memberSince: selectedFilters.memberSince,
         location: selectedFilters.location,
+        marketingChannel: selectedFilters.marketingChannel,
       };
 
       await userAPIs.exportUsers("csv", exportFilters);
@@ -150,6 +184,7 @@ export default function UsersPage() {
       status: "",
       gender: "",
       ageRange: "",
+      marketingChannel: "",
     });
   };
 

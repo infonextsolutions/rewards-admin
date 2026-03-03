@@ -9,6 +9,8 @@ import RetentionTrendGraph from "./RetentionTrendGraph";
 import TopPlayedGameSnapshot from "./TopPlayedGameSnapshot";
 import RevenueVsRewardTable from "./RevenueVsRewardTable";
 import AttributionPerformanceTable from "./AttributionPerformanceTable";
+// ADM-DR-029 FIX: Hide system alerts from dashboard
+// import AlertsPanel from "./AlertsPanel";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -25,6 +27,12 @@ const Dashboard = () => {
     customStartDate: "",
     customEndDate: "",
   });
+
+  // State for selected game in Top Played Game section
+  const [selectedTopGame, setSelectedTopGame] = useState("auto");
+
+  // State for selected retention day in Revenue table
+  const [selectedRetentionDay, setSelectedRetentionDay] = useState("D7");
 
   // Convert filters to API format
   const apiFilters = useMemo(() => {
@@ -62,7 +70,7 @@ const Dashboard = () => {
 
           // Validate that end date is not before start date
           if (startDate > endDate) {
-            console.warn('Invalid date range: End date is before start date');
+            console.warn("Invalid date range: End date is before start date");
             return null; // Don't trigger API call with invalid date range
           }
         } else {
@@ -106,12 +114,20 @@ const Dashboard = () => {
     filters.customEndDate,
   ]);
 
-  const { dashboardData, loading, loadingStates, error, fetchDashboardData } =
-    useDashboard();
+  const {
+    dashboardData,
+    loading,
+    loadingStates,
+    error,
+    fetchDashboardData,
+    fetchTopGameOnly,
+    fetchRevenueOnly,
+    fetchRevenuePage,
+  } = useDashboard();
 
   // Optimized fetch function - instant for dropdowns, debounced for search
   const optimizedFetch = useCallback(
-    (filtersToUse, isSearch = false) => {
+    (filtersToUse, isSearch = false, selectedGame = null) => {
       // Cancel previous request if exists (only for filter changes, not initial mount)
       if (abortControllerRef.current && !isInitialMount.current) {
         abortControllerRef.current.abort();
@@ -130,9 +146,13 @@ const Dashboard = () => {
       // Dropdown filters: instant response (0ms delay)
       // Search: already debounced to 250ms in FilterControls, so we can call immediately here
       // This prevents double debouncing and makes the UI feel much faster
-      fetchDashboardData(filtersToUse, abortControllerRef.current?.signal);
+      fetchDashboardData(
+        filtersToUse,
+        abortControllerRef.current?.signal,
+        selectedGame,
+      );
     },
-    [fetchDashboardData]
+    [fetchDashboardData],
   );
 
   // Initial load - fetch immediately without debounce
@@ -219,13 +239,17 @@ const Dashboard = () => {
         filterTimeoutRef.current = setTimeout(() => {
           // Double-check filters haven't changed during debounce
           if (filtersChanged(prevFiltersRef.current, apiFilters)) {
-            fetchDashboardData(apiFilters, abortControllerRef.current?.signal);
+            fetchDashboardData(
+              apiFilters,
+              abortControllerRef.current?.signal,
+              selectedTopGame,
+            );
             prevFiltersRef.current = apiFilters;
           }
         }, 600);
       } else {
         // For other filter changes, use optimized fetch (instant for dropdowns)
-        optimizedFetch(apiFilters, isSearchChange);
+        optimizedFetch(apiFilters, isSearchChange, selectedTopGame);
         prevFiltersRef.current = apiFilters;
       }
     }
@@ -244,6 +268,7 @@ const Dashboard = () => {
     fetchDashboardData,
     filters.dateRange,
     filtersChanged,
+    selectedTopGame,
   ]);
 
   const handleFilterChange = useCallback((filterKey, value) => {
@@ -253,10 +278,35 @@ const Dashboard = () => {
     }));
   }, []);
 
+  // Handler for top game selection
+  const handleTopGameChange = useCallback(
+    (gameId) => {
+      setSelectedTopGame(gameId);
+      // Fetch only the top game data with the selected game
+      if (apiFilters) {
+        fetchTopGameOnly(apiFilters, gameId);
+      }
+    },
+    [apiFilters, fetchTopGameOnly],
+  );
+
+  // Handler for retention day selection
+  const handleRetentionDayChange = useCallback(
+    (retentionDay) => {
+      setSelectedRetentionDay(retentionDay);
+      // Fetch only the revenue data with the selected retention day
+      if (apiFilters) {
+        const filtersWithRetention = { ...apiFilters, retentionDay };
+        fetchRevenueOnly(filtersWithRetention, 1); // Reset to page 1
+      }
+    },
+    [apiFilters, fetchRevenueOnly],
+  );
+
   // Memoize data transformations for performance
   const retentionData = useMemo(
     () => dashboardData.retention?.trend || [],
-    [dashboardData.retention?.trend]
+    [dashboardData.retention?.trend],
   );
 
   const topGameData = useMemo(() => {
@@ -310,16 +360,21 @@ const Dashboard = () => {
 
   const revenueByGame = useMemo(
     () => dashboardData.revenueByGame || [],
-    [dashboardData.revenueByGame]
+    [dashboardData.revenueByGame],
   );
   const attributionData = useMemo(
     () => dashboardData.attribution || [],
-    [dashboardData.attribution]
+    [dashboardData.attribution],
   );
   const retentionCurrent = useMemo(
     () => dashboardData.retention?.current,
-    [dashboardData.retention?.current]
+    [dashboardData.retention?.current],
   );
+  // ADM-DR-029 FIX: System alerts hidden from dashboard
+  // const alertsData = useMemo(
+  //   () => dashboardData.alerts || [],
+  //   [dashboardData.alerts]
+  // );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
@@ -346,21 +401,41 @@ const Dashboard = () => {
       {/* KPI Cards - Show immediately with loading state */}
       <KPICards data={dashboardData} loading={loadingStates.kpis} />
 
-      {/* Retention Trend Graph Section */}
-      <div className="mb-6">
-        <RetentionTrendGraph
-          data={retentionData}
-          retentionCurrent={retentionCurrent}
-          filters={filters}
-          loading={loadingStates.retention}
-        />
+      {/* Main Content Grid */}
+      <div className="gap-6 mb-6">
+        {/* Left Column - 2/3 width */}
+        <div className="">
+          {/* Retention Trend Graph Section */}
+          <RetentionTrendGraph
+            data={retentionData}
+            retentionCurrent={retentionCurrent}
+            filters={filters}
+            loading={loadingStates.retention}
+          />
+        </div>
+
+        {/* ADM-DR-029 FIX: Right Column - System Alerts Panel Hidden */}
+        {/* <div className="xl:col-span-1">
+          <AlertsPanel
+            alerts={alertsData}
+            loading={loadingStates.alerts || loading}
+            onRefresh={() => {
+              if (apiFilters) {
+                fetchDashboardData(apiFilters);
+              }
+            }}
+          />
+        </div> */}
       </div>
 
-      {/* Top Played Game Section */}
+      {/* Top Played Game Section - Full Width */}
       <div className="mb-6">
         <TopPlayedGameSnapshot
           data={topGameData}
           loading={loadingStates.topGame}
+          selectedGame={selectedTopGame}
+          onGameChange={handleTopGameChange}
+          filters={apiFilters}
         />
       </div>
 
@@ -372,9 +447,15 @@ const Dashboard = () => {
           pagination={dashboardData.revenuePagination}
           loading={loadingStates.revenue}
           filters={apiFilters}
+          selectedRetentionDay={selectedRetentionDay}
+          onRetentionDayChange={handleRetentionDayChange}
           onPageChange={(page) => {
             if (apiFilters) {
-              fetchRevenuePage(apiFilters, page);
+              const filtersWithRetention = {
+                ...apiFilters,
+                retentionDay: selectedRetentionDay,
+              };
+              fetchRevenuePage(filtersWithRetention, page);
             }
           }}
         />

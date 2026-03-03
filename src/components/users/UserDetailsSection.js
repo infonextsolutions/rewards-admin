@@ -127,6 +127,10 @@ export const UserDetailsSection = ({ user }) => {
       value: getNotificationStatus(),
       isBadge: true,
     },
+    // Marketing Attribution (Adjust)
+    { label: "Click ID", value: user?.clickId || "N/A" },
+    { label: "Transaction ID", value: user?.transactionId || "N/A" },
+    { label: "Marketing Channel", value: user?.marketingChannel || "N/A" },
   ];
 
   // Action buttons per requirements - dynamically generated based on user status

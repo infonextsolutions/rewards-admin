@@ -154,7 +154,7 @@ export default function TransactionLog({ onSneakPeek }) {
             (t) => t.status?.toLowerCase() !== "pending"
           );
 
-          // Helper: format amount with finalXp for XP (not xp) and coins
+          // Helper: format amount with XP and coins
           const formatAmount = (t) => {
             const meta = t.metadata || {};
             const balanceType = t.balanceType || "coins";
@@ -168,9 +168,9 @@ export default function TransactionLog({ onSneakPeek }) {
             if (coinsVal != null && Number(coinsVal) !== 0)
               parts.push(`${Number(coinsVal)} coins`);
             if (finalXpVal != null && Number(finalXpVal) !== 0)
-              parts.push(`${Number(finalXpVal)} finalXp`);
+              parts.push(`${Number(finalXpVal)} xp`);
             if (parts.length) return parts.join(", ");
-            return `${t.amount} ${balanceType === "xp" ? "finalXp" : balanceType}`;
+            return `${t.amount} ${balanceType === "xp" ? "xp" : balanceType}`;
           };
 
           // Transform API data to component format

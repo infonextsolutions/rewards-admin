@@ -34,11 +34,25 @@ export const DASHBOARD_API = {
 
   // Get Top Played Game
   getTopGame: (filters = {}, signal = null) => {
-    const queryString = buildQueryString(filters);
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
+    if (filters.gameId) params.append("gameId", filters.gameId);
+    if (filters.source) params.append("source", filters.source);
+    if (filters.gender) params.append("gender", filters.gender);
+    if (filters.age) params.append("age", filters.age);
+    if (filters.selectedGameId) params.append("selectedGameId", filters.selectedGameId);
+    
+    const queryString = params.toString();
     const url = queryString
       ? `/admin/dashboard/top-game?${queryString}`
       : "/admin/dashboard/top-game";
     return apiClient.get(url, { signal });
+  },
+
+  // Get all games list for dropdown
+  getGamesList: (signal = null) => {
+    return apiClient.get("/admin/dashboard/games-list", { signal });
   },
 
   // Get Revenue by Game - with pagination
@@ -50,6 +64,7 @@ export const DASHBOARD_API = {
     if (filters.source) params.append("source", filters.source);
     if (filters.gender) params.append("gender", filters.gender);
     if (filters.age) params.append("age", filters.age);
+    if (filters.retentionDay) params.append("retentionDay", filters.retentionDay);
     params.append("page", page.toString());
     params.append("limit", limit.toString());
 
@@ -64,6 +79,11 @@ export const DASHBOARD_API = {
       ? `/admin/dashboard/attribution?${queryString}`
       : "/admin/dashboard/attribution";
     return apiClient.get(url, { signal });
+  },
+
+  // Get Alerts only - Fast endpoint for alerts panel
+  getAlerts: (signal = null) => {
+    return apiClient.get("/admin/dashboard/alerts", { signal });
   },
 
   // Legacy: Get all data in one call (for backward compatibility)

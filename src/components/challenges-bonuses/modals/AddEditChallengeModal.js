@@ -78,9 +78,9 @@ export default function AddEditChallengeModal({
           challenge.playTimeMinutes !== null
             ? String(challenge.playTimeMinutes)
             : challenge.requirements?.timeLimit !== undefined &&
-              challenge.requirements?.timeLimit !== null
-            ? String(challenge.requirements.timeLimit)
-            : "",
+                challenge.requirements?.timeLimit !== null
+              ? String(challenge.requirements.timeLimit)
+              : "",
         countriesInput: challenge.targetAudience?.countries?.[0] || "",
         ageMin:
           challenge.targetAudience?.ageRange?.min !== undefined
@@ -132,7 +132,7 @@ export default function AddEditChallengeModal({
         try {
           const sdkName = formData.sdkProvider.toLowerCase();
           const response = await apiClient.get(
-            `/admin/game-offers/games/by-sdk/${sdkName}`
+            `/admin/game-offers/games/by-sdk/${sdkName}`,
           );
           const result = response.data;
 
@@ -147,9 +147,11 @@ export default function AddEditChallengeModal({
                 ...(game.deepLink && { deepLink: game.deepLink }),
                 ...(game.clickUrl && { clickUrl: game.clickUrl }),
                 ...(game.creatives?.icon && { imageUrl: game.creatives.icon }),
-                ...(game.creatives?.images?.["275x275"] && { imageUrl: game.creatives.images["275x275"] }),
+                ...(game.creatives?.images?.["275x275"] && {
+                  imageUrl: game.creatives.images["275x275"],
+                }),
                 ...(game.icon_url && { imageUrl: game.icon_url }),
-              }))
+              })),
             );
           } else {
             setGamesList([]);
@@ -211,17 +213,27 @@ export default function AddEditChallengeModal({
       }
     }
 
-    // Validate past dates
-    const selectedDateObj = new Date(formData.date);
+    // Validate past dates (compare date-only to avoid timezone making future dates appear as past)
+    const selectedDateStr = formData.date
+      ? String(formData.date).split("T")[0]
+      : "";
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDateObj < today && !challenge) {
+    const todayStr = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+    if (selectedDateStr && selectedDateStr < todayStr && !challenge) {
       newErrors.date = "Cannot create challenges for past dates";
     }
 
     // Validate segment conflict: check if a challenge with the same segment already exists for the selected date
-    if (!challenge && formData.date && existingChallenges && existingChallenges.length > 0) {
+    if (
+      !challenge &&
+      formData.date &&
+      existingChallenges &&
+      existingChallenges.length > 0
+    ) {
       // Get the target audience for the new challenge
       const countries = formData.countriesInput
         ? [formData.countriesInput.trim().toUpperCase()]
@@ -236,13 +248,15 @@ export default function AddEditChallengeModal({
           : undefined;
       const genders =
         formData.genders && formData.genders.length > 0
-          ? formData.genders.map((g) => {
-              const lower = String(g).toLowerCase();
-              if (lower === "male") return "male";
-              if (lower === "female") return "female";
-              if (lower === "other") return "other";
-              return null;
-            }).filter(g => g !== null)
+          ? formData.genders
+              .map((g) => {
+                const lower = String(g).toLowerCase();
+                if (lower === "male") return "male";
+                if (lower === "female") return "female";
+                if (lower === "other") return "other";
+                return null;
+              })
+              .filter((g) => g !== null)
           : [];
 
       // Check for conflicts with existing challenges on the same date
@@ -264,27 +278,34 @@ export default function AddEditChallengeModal({
         const existingGenders = existingAudience.gender || [];
 
         // Check if country segment matches
-        const countriesMatch = 
+        const countriesMatch =
           (countries.length === 0 && existingCountries.length === 0) ||
-          (countries.length > 0 && existingCountries.length > 0 && 
-           countries[0] === existingCountries[0]);
+          (countries.length > 0 &&
+            existingCountries.length > 0 &&
+            countries[0] === existingCountries[0]);
 
         // Check if age range segment matches
         const ageMin1 = ageMin !== undefined ? ageMin : null;
         const ageMax1 = ageMax !== undefined ? ageMax : null;
-        const ageMin2 = existingAgeRange.min !== undefined ? existingAgeRange.min : null;
-        const ageMax2 = existingAgeRange.max !== undefined ? existingAgeRange.max : null;
-        
+        const ageMin2 =
+          existingAgeRange.min !== undefined ? existingAgeRange.min : null;
+        const ageMax2 =
+          existingAgeRange.max !== undefined ? existingAgeRange.max : null;
+
         const ageRangeMatches =
-          (ageMin1 === null && ageMax1 === null && ageMin2 === null && ageMax2 === null) ||
+          (ageMin1 === null &&
+            ageMax1 === null &&
+            ageMin2 === null &&
+            ageMax2 === null) ||
           (ageMin1 === ageMin2 && ageMax1 === ageMax2);
 
         // Check if gender segment matches
         const gendersMatch =
           (genders.length === 0 && existingGenders.length === 0) ||
-          (genders.length > 0 && existingGenders.length > 0 &&
-           genders.length === existingGenders.length &&
-           genders.every((g) => existingGenders.includes(g)));
+          (genders.length > 0 &&
+            existingGenders.length > 0 &&
+            genders.length === existingGenders.length &&
+            genders.every((g) => existingGenders.includes(g)));
 
         // Return true if any segment dimension matches (same segment)
         return countriesMatch || ageRangeMatches || gendersMatch;
@@ -304,9 +325,10 @@ export default function AddEditChallengeModal({
           segmentDesc.push(`gender: ${formData.genders.join(", ")}`);
         }
 
-        const segmentText = segmentDesc.length > 0
-          ? ` (${segmentDesc.join(", ")})`
-          : " (same segment)";
+        const segmentText =
+          segmentDesc.length > 0
+            ? ` (${segmentDesc.join(", ")})`
+            : " (same segment)";
 
         newErrors.date = `A challenge with the same segment${segmentText} already exists on this date. Please adjust the target audience or select a different date.`;
       }
@@ -348,8 +370,8 @@ export default function AddEditChallengeModal({
             new Set(
               formData.genders
                 .map((g) => mapGenderToApi(g))
-                .filter((g) => g !== null)
-            )
+                .filter((g) => g !== null),
+            ),
           )
         : [];
 
@@ -451,6 +473,13 @@ export default function AddEditChallengeModal({
   };
 
   if (!isOpen) return null;
+
+  const today = new Date();
+  const todayDateStr = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -557,6 +586,7 @@ export default function AddEditChallengeModal({
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
                   }
+                  min={challenge ? undefined : todayDateStr}
                   className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
                     errors.date ? "border-red-300" : "border-gray-300"
                   }`}
@@ -645,7 +675,7 @@ export default function AddEditChallengeModal({
                   value={formData.genders}
                   onChange={(e) => {
                     const options = Array.from(e.target.selectedOptions).map(
-                      (o) => o.value
+                      (o) => o.value,
                     );
                     setFormData({ ...formData, genders: options });
                   }}
@@ -719,8 +749,8 @@ export default function AddEditChallengeModal({
                     {loadingGames
                       ? "Loading games..."
                       : formData.sdkProvider
-                      ? "Select Game"
-                      : "Select SDK Provider first"}
+                        ? "Select Game"
+                        : "Select SDK Provider first"}
                   </option>
                   {gamesList.map((game) => (
                     <option key={game.id} value={game.gameId || game.id}>
@@ -911,8 +941,8 @@ export default function AddEditChallengeModal({
               {loading
                 ? "Saving..."
                 : challenge
-                ? "Update Challenge"
-                : "Create Challenge"}
+                  ? "Update Challenge"
+                  : "Create Challenge"}
             </button>
           </div>
         </form>

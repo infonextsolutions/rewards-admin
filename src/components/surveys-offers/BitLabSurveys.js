@@ -145,6 +145,8 @@ export default function BitLabSurveys() {
               language: survey.language || "",
               userRewardCoins: userCoins,
               userRewardXP: userXP,
+              revenue: survey.revenue || 0, // Revenue from backend
+              completions: survey.completions || 0, // Completions from backend
             };
           });
         setSurveys(mappedSurveys);
@@ -382,6 +384,8 @@ export default function BitLabSurveys() {
         "User Reward (XP)": survey.userRewardXP || survey.reward?.xp || 0,
         "Time (LOI - min)":
           survey.loi > 0 ? survey.loi : survey.estimatedTime || 0,
+        "Revenue (USD)": survey.revenue > 0 ? survey.revenue.toFixed(2) : "0.00",
+        "Completions": survey.completions || 0,
         Category: survey.category || "",
         Country: survey.country || "",
         Language: survey.language || "",
@@ -589,6 +593,9 @@ export default function BitLabSurveys() {
                       Time (LOI - min)
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Revenue
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Sync Status
                     </th>
                   </tr>
@@ -597,7 +604,7 @@ export default function BitLabSurveys() {
                   {filteredSurveys.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="8"
+                        colSpan="9"
                         className="px-6 py-4 text-center text-gray-500"
                       >
                         No surveys found
@@ -701,6 +708,14 @@ export default function BitLabSurveys() {
                               : survey.estimatedTime
                               ? `${survey.estimatedTime} min`
                               : "N/A"}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-green-600">
+                              ${survey.revenue > 0 ? survey.revenue.toFixed(2) : "0.00"}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {survey.completions || 0} completions
+                            </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center space-x-3">

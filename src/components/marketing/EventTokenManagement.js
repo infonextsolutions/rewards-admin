@@ -36,6 +36,9 @@ export default function EventTokenManagement() {
     category: "",
     isS2S: "",
     isActive: "",
+    unique: "",
+    environment: "",
+    isRevenueEvent: "",
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -59,6 +62,9 @@ export default function EventTokenManagement() {
     if (filters.isS2S !== "") apiFilters.isS2S = filters.isS2S === "true";
     if (filters.isActive !== "")
       apiFilters.isActive = filters.isActive === "true";
+    if (filters.unique !== "") apiFilters.unique = filters.unique === "true";
+    if (filters.environment) apiFilters.environment = filters.environment;
+    if (filters.isRevenueEvent !== "") apiFilters.isRevenueEvent = filters.isRevenueEvent === "true";
     if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
 
     // Always fetch from page 1, pagination is handled client-side
@@ -82,6 +88,9 @@ export default function EventTokenManagement() {
       if (filters.isS2S !== "") apiFilters.isS2S = filters.isS2S === "true";
       if (filters.isActive !== "")
         apiFilters.isActive = filters.isActive === "true";
+      if (filters.unique !== "") apiFilters.unique = filters.unique === "true";
+      if (filters.environment) apiFilters.environment = filters.environment;
+      if (filters.isRevenueEvent !== "") apiFilters.isRevenueEvent = filters.isRevenueEvent === "true";
       if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
       await fetchEventTokens(currentPage, apiFilters, itemsPerPage);
       setShowCreateModal(false);
@@ -104,6 +113,9 @@ export default function EventTokenManagement() {
       if (filters.isS2S !== "") apiFilters.isS2S = filters.isS2S === "true";
       if (filters.isActive !== "")
         apiFilters.isActive = filters.isActive === "true";
+      if (filters.unique !== "") apiFilters.unique = filters.unique === "true";
+      if (filters.environment) apiFilters.environment = filters.environment;
+      if (filters.isRevenueEvent !== "") apiFilters.isRevenueEvent = filters.isRevenueEvent === "true";
       if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
       await fetchEventTokens(currentPage, apiFilters, itemsPerPage);
       setShowCreateModal(false);
@@ -124,6 +136,9 @@ export default function EventTokenManagement() {
       if (filters.isS2S !== "") apiFilters.isS2S = filters.isS2S === "true";
       if (filters.isActive !== "")
         apiFilters.isActive = filters.isActive === "true";
+      if (filters.unique !== "") apiFilters.unique = filters.unique === "true";
+      if (filters.environment) apiFilters.environment = filters.environment;
+      if (filters.isRevenueEvent !== "") apiFilters.isRevenueEvent = filters.isRevenueEvent === "true";
       if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
       await fetchEventTokens(currentPage, apiFilters, itemsPerPage);
       setDeleteConfirm(null);
@@ -141,6 +156,9 @@ export default function EventTokenManagement() {
       if (filters.isS2S !== "") apiFilters.isS2S = filters.isS2S === "true";
       if (filters.isActive !== "")
         apiFilters.isActive = filters.isActive === "true";
+      if (filters.unique !== "") apiFilters.unique = filters.unique === "true";
+      if (filters.environment) apiFilters.environment = filters.environment;
+      if (filters.isRevenueEvent !== "") apiFilters.isRevenueEvent = filters.isRevenueEvent === "true";
       if (searchTerm.trim()) apiFilters.search = searchTerm.trim();
       await fetchEventTokens(currentPage, apiFilters, itemsPerPage);
     } catch (error) {
@@ -161,6 +179,9 @@ export default function EventTokenManagement() {
       category: "",
       isS2S: "",
       isActive: "",
+      unique: "",
+      environment: "",
+      isRevenueEvent: "",
     });
     setSearchTerm("");
     setCurrentPage(1);
@@ -170,6 +191,9 @@ export default function EventTokenManagement() {
     filters.category ||
     filters.isS2S !== "" ||
     filters.isActive !== "" ||
+    filters.unique !== "" ||
+    filters.environment !== "" ||
+    filters.isRevenueEvent !== "" ||
     searchTerm.trim();
 
   return (
@@ -279,29 +303,29 @@ export default function EventTokenManagement() {
 
             {/* Filter Options */}
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                {/* Category Filter */}
-                {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389]"
-              >
-                <option value="">All Categories</option>
-                {Array.isArray(categories) && categories.length > 0 ? (
-                  categories.map((cat) => (
-                    <option key={cat.category || cat} value={cat.category || cat}>
-                      {cat.category || cat} {cat.count ? `(${cat.count})` : ''}
-                    </option>
-                  ))
-                ) : null}
-              </select>
-            </div> */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 pt-4 border-t border-gray-200">
+                {/* Category Filter (Adjust raw data / event grouping) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={filters.category}
+                    onChange={(e) => handleFilterChange("category", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389]"
+                  >
+                    <option value="">All Categories</option>
+                    {Array.isArray(categories) && categories.length > 0 ? (
+                      categories.map((cat) => (
+                        <option key={cat.category || cat} value={cat.category || cat}>
+                          {cat.category || cat} {cat.count ? `(${cat.count})` : ""}
+                        </option>
+                      ))
+                    ) : null}
+                  </select>
+                </div>
 
-                {/* S2S Filter */}
+                {/* S2S Filter (Adjust S2S vs SDK) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     S2S Events
@@ -319,8 +343,8 @@ export default function EventTokenManagement() {
                   </select>
                 </div>
 
-                {/* Active Filter */}
-                {/* <div>
+                {/* Status Filter */}
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Status
                   </label>
@@ -335,7 +359,61 @@ export default function EventTokenManagement() {
                     <option value="true">Active Only</option>
                     <option value="false">Inactive Only</option>
                   </select>
-                </div> */}
+                </div>
+
+                {/* Unique Filter (Adjust deduplication) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unique
+                  </label>
+                  <select
+                    value={filters.unique}
+                    onChange={(e) =>
+                      handleFilterChange("unique", e.target.value)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389]"
+                  >
+                    <option value="">All</option>
+                    <option value="true">Unique only</option>
+                    <option value="false">Non-unique only</option>
+                  </select>
+                </div>
+
+                {/* Environment Filter (Adjust S2S: sandbox | production) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Environment
+                  </label>
+                  <select
+                    value={filters.environment}
+                    onChange={(e) =>
+                      handleFilterChange("environment", e.target.value)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389]"
+                  >
+                    <option value="">All</option>
+                    <option value="production">Production</option>
+                    <option value="sandbox">Sandbox</option>
+                  </select>
+                </div>
+
+                {/* Revenue Event Filter (Adjust S2S revenue events) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Revenue event
+                  </label>
+                  <select
+                    value={filters.isRevenueEvent}
+                    onChange={(e) =>
+                      handleFilterChange("isRevenueEvent", e.target.value)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389]"
+                  >
+                    <option value="">All</option>
+                    <option value="true">Revenue only</option>
+                    <option value="false">Non-revenue only</option>
+                  </select>
+                </div>
               </div>
             )}
           </div>
@@ -423,6 +501,12 @@ export default function EventTokenManagement() {
                         <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Active
                         </th>
+                        <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Env
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Revenue
+                        </th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Description
                         </th>
@@ -483,6 +567,20 @@ export default function EventTokenManagement() {
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 Inactive
                               </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {event.environment === "sandbox" ? "Sandbox" : "Production"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {event.isRevenueEvent ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                Yes
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-500">—</span>
                             )}
                           </td>
                           <td className="px-6 py-4">

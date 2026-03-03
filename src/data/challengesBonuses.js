@@ -1072,6 +1072,7 @@ export const challengesBonusesAPI = {
 
       // Map frontend fields to API structure
       const apiPayload = {
+        id: id, // Include document ID for editing
         title: `Day ${bonusDayData.bonusDay} Bonus Reward`,
         description: `Special bonus for ${bonusDayData.bonusDay}-day streak`,
         primaryReward: primaryReward || {

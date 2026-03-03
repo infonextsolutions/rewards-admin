@@ -57,11 +57,11 @@ export const gamesAPI = {
 
         const checkRes = await apiClient.post(
           "/admin/game-offers/games/check-variant",
-          checkPayload
+          checkPayload,
         );
         if (checkRes.data && checkRes.data.exists) {
           const err = new Error(
-            "A game variant with the same Game ID and segment already exists."
+            "A game variant with the same Game ID and segment already exists.",
           );
           err.isDuplicateVariant = true;
           throw err;
@@ -69,7 +69,10 @@ export const gamesAPI = {
       } catch (err) {
         if (err.isDuplicateVariant) throw err;
         // If check failed due to network/internal error, log and continue to attempt create
-        console.warn("Variant check failed, continuing to create:", err.message);
+        console.warn(
+          "Variant check failed, continuing to create:",
+          err.message,
+        );
       }
 
       // Create FormData for file upload
@@ -104,7 +107,7 @@ export const gamesAPI = {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       // Transform response back to frontend format
@@ -192,7 +195,7 @@ export const gamesAPI = {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       // Transform response back to frontend format
@@ -250,7 +253,7 @@ export const gamesAPI = {
   async getGameById(gameId) {
     try {
       const response = await apiClient.get(
-        `/admin/game-offers/games/${gameId}`
+        `/admin/game-offers/games/${gameId}`,
       );
 
       // Transform response to frontend format
@@ -319,9 +322,14 @@ export const gamesAPI = {
         createdAt: game.createdAt,
         updatedAt: game.updatedAt,
         createdBy: game.createdBy,
-        thirdPartyGameData: game.thirdPartyGameData || game.besitosRawData || null,
+        thirdPartyGameData:
+          game.thirdPartyGameData || game.besitosRawData || null,
         // Device platform from API or raw data (device: "ios" | "android") for Edit modal
-        device: game.device || game.thirdPartyGameData?.device || game.besitosRawData?.device || null,
+        device:
+          game.device ||
+          game.thirdPartyGameData?.device ||
+          game.besitosRawData?.device ||
+          null,
       };
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -373,7 +381,10 @@ export const gamesAPI = {
         // Convert XP Tier string to number for backend
         // Handle both string values (Junior, Mid, Senior) and numeric strings
         let xpTierNum = null;
-        if (typeof params.xpTier === "string" && !isNaN(parseInt(params.xpTier))) {
+        if (
+          typeof params.xpTier === "string" &&
+          !isNaN(parseInt(params.xpTier))
+        ) {
           // If it's already a number string, use it directly
           xpTierNum = parseInt(params.xpTier);
         } else {
@@ -393,8 +404,8 @@ export const gamesAPI = {
           params.adGame === "yes"
             ? "true"
             : params.adGame === "no"
-            ? "false"
-            : params.adGame;
+              ? "false"
+              : params.adGame;
         queryParams.append("adGame", adGameValue);
       }
       if (
@@ -413,7 +424,7 @@ export const gamesAPI = {
       }
 
       const response = await apiClient.get(
-        `/admin/game-offers/games?${queryParams.toString()}`
+        `/admin/game-offers/games?${queryParams.toString()}`,
       );
 
       // Transform API response to frontend format
@@ -425,19 +436,29 @@ export const gamesAPI = {
           title: game.title || "Untitled Game",
           sdk: game.sdkProvider || "N/A",
           xptrRules: game.xptrRules || "No rules defined",
-          taskCount: game.defaultTaskCount !== undefined ? game.defaultTaskCount : (game.taskCount || 0),
-          defaultTasks: game.defaultTaskCount !== undefined ? game.defaultTaskCount : (game.taskCount || 0), // For display in table - prioritize defaultTaskCount from DB
+          taskCount:
+            game.defaultTaskCount !== undefined
+              ? game.defaultTaskCount
+              : game.taskCount || 0,
+          defaultTasks:
+            game.defaultTaskCount !== undefined
+              ? game.defaultTaskCount
+              : game.taskCount || 0, // For display in table - prioritize defaultTaskCount from DB
           activeTasks: 0, // Not in API, placeholder
           // Countries field removed from Game model
           status: game.isActive ? "Active" : "Inactive",
           rewardXP: game.rewards?.xp || 0,
           rewardCoins: game.rewards?.coins || 0,
-          rewardAmount: game.rewards?.coins ? parseFloat((game.rewards.coins / 50).toFixed(2)) : 0, // Convert coins to dollars (50 coins = 1 dollar)
+          rewardAmount: game.rewards?.coins
+            ? parseFloat((game.rewards.coins / 50).toFixed(2))
+            : 0, // Convert coins to dollars (50 coins = 1 dollar)
           adSupported: game.isAdSupported || false,
           engagementTime: game.metadata?.estimatedPlayTime
             ? `${game.metadata.estimatedPlayTime} min`
             : "N/A",
           retentionRate: game.analytics?.retentionRate || 0,
+          completionRate:
+            game.completionRate !== undefined ? game.completionRate : 0,
           clickRate: 0, // Not in API
           installRate: 0, // Not in API
           marketingChannel: game.marketingChannel || "",
@@ -453,9 +474,18 @@ export const gamesAPI = {
             : "All",
           gameCategory: game.category || "N/A",
           uiSection: game.uiSection || "",
-          ageGroup: game.ageGroup || (game.ageGroups && game.ageGroups.length > 0 ? game.ageGroups[0] : "N/A"),
-          gender: game.gender ? game.gender.charAt(0).toUpperCase() + game.gender.slice(1) : "N/A",
-          difficulty: game.metadata?.difficulty ? game.metadata.difficulty.charAt(0).toUpperCase() + game.metadata.difficulty.slice(1) : "N/A",
+          ageGroup:
+            game.ageGroup ||
+            (game.ageGroups && game.ageGroups.length > 0
+              ? game.ageGroups[0]
+              : "N/A"),
+          gender: game.gender
+            ? game.gender.charAt(0).toUpperCase() + game.gender.slice(1)
+            : "N/A",
+          difficulty: game.metadata?.difficulty
+            ? game.metadata.difficulty.charAt(0).toUpperCase() +
+              game.metadata.difficulty.slice(1)
+            : "N/A",
           rating: game.metadata?.rating || "N/A",
           // Additional fields for preview/edit
           description: game.description || "",
@@ -500,7 +530,7 @@ export const gamesAPI = {
   async deleteGame(gameId) {
     try {
       const response = await apiClient.delete(
-        `/admin/game-offers/games/${gameId}`
+        `/admin/game-offers/games/${gameId}`,
       );
       return response.data;
     } catch (error) {
@@ -514,9 +544,7 @@ export const gamesAPI = {
    */
   async getUISections() {
     try {
-      const response = await apiClient.get(
-        "/admin/game-offers/ui-sections"
-      );
+      const response = await apiClient.get("/admin/game-offers/ui-sections");
       return response.data.data || response.data;
     } catch (error) {
       console.error("Error fetching UI sections:", error);
@@ -533,7 +561,7 @@ export const gamesAPI = {
         `/admin/game-offers/games/${gameId}`,
         {
           uiSection: uiSection,
-        }
+        },
       );
       return response.data.data;
     } catch (error) {

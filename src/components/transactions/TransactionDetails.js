@@ -69,8 +69,8 @@ export default function TransactionDetails({ transactionId }) {
               const finalXpVal = meta.finalXp ?? (bt === "xp" ? t.amount : null);
               const parts = [];
               if (coinsVal != null && Number(coinsVal) !== 0) parts.push(`${Number(coinsVal)} coins`);
-              if (finalXpVal != null && Number(finalXpVal) !== 0) parts.push(`${Number(finalXpVal)} finalXp`);
-              return parts.length ? parts.join(", ") : `${t.amount} ${bt === "xp" ? "finalXp" : bt}`;
+              if (finalXpVal != null && Number(finalXpVal) !== 0) parts.push(`${Number(finalXpVal)} xp`);
+              return parts.length ? parts.join(", ") : `${t.amount} ${bt === "xp" ? "xp" : bt}`;
             })(),
             description: t.description || "-",
             status: t.status ? t.status.charAt(0).toUpperCase() + t.status.slice(1) : "Unknown",

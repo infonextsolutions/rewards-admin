@@ -16,6 +16,8 @@ export default function CreateEventTokenModal({
     unique: false,
     category: "",
     isS2S: false,
+    environment: "production",
+    isRevenueEvent: false,
     description: "",
     metadata: {},
   });
@@ -61,6 +63,8 @@ export default function CreateEventTokenModal({
           unique: editData.unique || false,
           category: editData.category || "",
           isS2S: editData.isS2S || false,
+          environment: editData.environment || "production",
+          isRevenueEvent: editData.isRevenueEvent || false,
           description: editData.description || "",
           metadata: editData.metadata || {},
         });
@@ -69,8 +73,9 @@ export default function CreateEventTokenModal({
           token: "",
           name: "",
           unique: false,
-          // category: "",
           isS2S: false,
+          environment: "production",
+          isRevenueEvent: false,
           description: "",
           metadata: {},
         });
@@ -251,6 +256,34 @@ export default function CreateEventTokenModal({
               />
               <span className="ml-2 text-sm text-gray-700">S2S Event</span>
             </label>
+
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={formData.isRevenueEvent}
+                onChange={(e) => handleInputChange("isRevenueEvent", e.target.checked)}
+                className="w-4 h-4 text-[#00a389] border-gray-300 rounded focus:ring-[#00a389]"
+              />
+              <span className="ml-2 text-sm text-gray-700">Revenue event</span>
+            </label>
+          </div>
+
+          {/* Environment (Adjust S2S: sandbox | production) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Environment
+            </label>
+            <select
+              value={formData.environment}
+              onChange={(e) => handleInputChange("environment", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389]"
+            >
+              <option value="production">Production</option>
+              <option value="sandbox">Sandbox</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Adjust S2S: where to post event data (default: production)
+            </p>
           </div>
 
           {/* Description */}
