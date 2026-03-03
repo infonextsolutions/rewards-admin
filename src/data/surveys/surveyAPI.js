@@ -320,6 +320,38 @@ const surveyAPIs = {
     }
   },
 
+  // Get Affise offers (Admin route) - normalized by backend to same shape as Everflow
+  async getAffiseOffers({
+    type = "all",
+    category = "all",
+    page = 1,
+    limit = 20,
+    devices,
+    country,
+  } = {}) {
+    try {
+      const requestParams = {};
+      if (type) requestParams.type = type;
+      if (devices && devices.length > 0) requestParams.devices = devices;
+      if (country) requestParams.country = country;
+      if (category && category !== "all") requestParams.category = category;
+      if (page) requestParams.page = page;
+      if (limit) requestParams.limit = limit;
+
+      const response = await apiClient.get(
+        "/admin/game-offers/non-game-offers/by-sdk/affise",
+        {
+          params: requestParams,
+          paramsSerializer: { indexes: null },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get Affise offers error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
   // Get BitLab health check (public endpoint, no auth needed)
   async getBitLabHealth() {
     try {
@@ -423,6 +455,32 @@ const surveyAPIs = {
       return response.data;
     } catch (error) {
       console.error("Sync Everflow offers error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Sync Affise non-gaming offers to database (30 coins, 10 XP per offer)
+  async syncAffiseOffers({
+    offerIds = [],
+    autoActivate = true,
+    targetAudience = undefined,
+  } = {}) {
+    try {
+      const body = { offerIds, autoActivate };
+      if (
+        targetAudience &&
+        Array.isArray(targetAudience) &&
+        targetAudience.length > 0
+      ) {
+        body.targetAudience = targetAudience;
+      }
+      const response = await apiClient.post(
+        "/admin/game-offers/non-game-offers/sync/affise",
+        body,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Sync Affise offers error:", error);
       throw error.response?.data || error;
     }
   },
