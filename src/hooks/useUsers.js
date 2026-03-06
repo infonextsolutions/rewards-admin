@@ -16,6 +16,7 @@ export const useUsers = () => {
   });
   const [apiFilters, setApiFilters] = useState({
     search: '',
+    id: '',
     tier: '',
     status: '',
     gender: '',
@@ -62,8 +63,12 @@ export const useUsers = () => {
 
   // Apply filters to API
   const applyFilters = (searchTerm, filters) => {
+    const term = searchTerm || '';
+    // Detect MongoDB ObjectId: 24 hex characters
+    const isObjectId = /^[a-f0-9]{24}$/i.test(term);
     const newFilters = {
-      search: searchTerm || '',
+      search: isObjectId ? '' : term,
+      id: isObjectId ? term : '',
       tier: filters.tierLevel ? filters.tierLevel.toLowerCase() : '',
       status: filters.status || '',
       gender: filters.gender || '',
