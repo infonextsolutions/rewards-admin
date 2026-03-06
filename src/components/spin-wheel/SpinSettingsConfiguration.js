@@ -134,7 +134,7 @@ export default function SpinSettingsConfiguration({
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error("Error saving settings:", error);
-      toast.error(error.message || "Failed to save settings");
+      toast.error(error.error || error.response?.data?.error || error.message || "Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -245,7 +245,7 @@ export default function SpinSettingsConfiguration({
                     onChange={(e) =>
                       handleInputChange(
                         "cooldownPeriod",
-                        parseInt(e.target.value)
+                        parseInt(e.target.value),
                       )
                     }
                     className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
@@ -274,7 +274,7 @@ export default function SpinSettingsConfiguration({
                     onChange={(e) =>
                       handleInputChange(
                         "maxSpinsPerDay",
-                        parseInt(e.target.value)
+                        parseInt(e.target.value),
                       )
                     }
                     className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
@@ -297,7 +297,7 @@ export default function SpinSettingsConfiguration({
           {/* Eligibility Settings */}
           <div>
             <h3 className="text-base font-medium text-gray-900 mb-1">
-              Eligible XP Tiers
+              Eligible Membership Tiers
             </h3>
             <p className="text-xs text-gray-500 mb-4">
               Select one or more tiers that can access the spin wheel
