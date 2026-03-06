@@ -340,7 +340,6 @@ export function useSpinWheel() {
         }
       } catch (err) {
         console.error("Error updating settings:", err);
-        setError(err.message || "Failed to update settings");
         throw err;
       } finally {
         setLoading(false);
