@@ -398,13 +398,14 @@ export default function BitLabSurveys() {
       }));
 
       // Create workbook and worksheet
+      const providerLabel = sdkProvider === "besitos" ? "Besitos" : "BitLabs";
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "BitLab Surveys");
+      XLSX.utils.book_append_sheet(wb, ws, `${providerLabel} Surveys`);
 
       // Generate filename with timestamp
       const timestamp = new Date().toISOString().split("T")[0];
-      const filename = `bitlab-surveys-${timestamp}.xlsx`;
+      const filename = `${sdkProvider}-surveys-${timestamp}.xlsx`;
 
       // Write file and trigger download
       XLSX.writeFile(wb, filename);

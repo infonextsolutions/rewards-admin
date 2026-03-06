@@ -1,6 +1,6 @@
 // Authentication API service
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
+  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
 
 // const API_BASE = "http://localhost:8000/api";
 // git stat
