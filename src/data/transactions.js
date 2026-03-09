@@ -63,6 +63,7 @@ export const TRANSACTION_API = {
     if (params.adminId) queryParams.append("adminId", params.adminId);
     if (params.userId) queryParams.append("userId", params.userId);
     if (params.action) queryParams.append("action", params.action);
+    if (params.search) queryParams.append("search", params.search);
     if (params.startDate) queryParams.append("startDate", params.startDate);
     if (params.endDate) queryParams.append("endDate", params.endDate);
 

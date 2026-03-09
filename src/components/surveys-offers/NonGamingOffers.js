@@ -1490,41 +1490,45 @@ export default function NonGamingOffers() {
             </select>
           </div>
 
-          {/* Device Filter */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-2">
-              Filter by Device
-            </label>
-            <select
-              value={deviceFilter}
-              onChange={(e) => setDeviceFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-            >
-              {deviceOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Device Filter — hidden for Affise and Everflow (not applicable) */}
+          {sdkFilter !== "affise" && sdkFilter !== "everflow" && (
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-2">
+                Filter by Device
+              </label>
+              <select
+                value={deviceFilter}
+                onChange={(e) => setDeviceFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              >
+                {deviceOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* Country Filter */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-2">
-              Filter by Country
-            </label>
-            <select
-              value={countryFilter}
-              onChange={(e) => setCountryFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-            >
-              {countryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Country Filter — hidden for Affise and Everflow (not applicable) */}
+          {sdkFilter !== "affise" && sdkFilter !== "everflow" && (
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-2">
+                Filter by Country
+              </label>
+              <select
+                value={countryFilter}
+                onChange={(e) => setCountryFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              >
+                {countryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Cashback Sort Filter - Only show for cashback type */}
           {typeFilter === "cashback" && (
