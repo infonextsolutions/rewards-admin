@@ -31,7 +31,7 @@ export default function SyncedOffersView() {
         statusFilter,
         page,
       });
-      const response = await surveyAPIs.getConfiguredBitLabOffers({
+      const response = await surveyAPIs.getConfiguredOffers({
         offerType: typeFilter,
         status: statusFilter,
         sdk: "all",
