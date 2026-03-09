@@ -733,11 +733,13 @@ export default function GamesListingModule() {
                 disabled={masterDataLoading}
               >
                 <option value="all">All SDKs</option>
-                {sdkProviders.map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
+                {sdkProviders
+                  .filter((s) => ["bitlabs", "besitos"].includes(s.id?.toLowerCase()))
+                  .map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
               </select>
 
               {/* Ad Games filter - hidden */}

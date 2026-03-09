@@ -766,11 +766,13 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     disabled={masterDataLoading}
                   >
                     <option value="">Choose SDK Game...</option>
-                    {sdkProviders.map((sdk) => (
-                      <option key={sdk.id} value={sdk.name}>
-                        {sdk.name}
-                      </option>
-                    ))}
+                    {sdkProviders
+                      .filter((sdk) => ["bitlabs", "besitos"].includes(sdk.id?.toLowerCase()))
+                      .map((sdk) => (
+                        <option key={sdk.id} value={sdk.name}>
+                          {sdk.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
 

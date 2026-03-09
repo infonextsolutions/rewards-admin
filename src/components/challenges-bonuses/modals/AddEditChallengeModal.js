@@ -714,11 +714,13 @@ export default function AddEditChallengeModal({
                   }
                 >
                   <option value="">Select SDK Provider</option>
-                  {sdkProviders.map((sdk) => (
-                    <option key={sdk.id || sdk.name} value={sdk.id || sdk.name}>
-                      {sdk.name || sdk.id}
-                    </option>
-                  ))}
+                  {sdkProviders
+                    .filter((sdk) => ["bitlabs", "besitos"].includes((sdk.id || sdk.name)?.toLowerCase()))
+                    .map((sdk) => (
+                      <option key={sdk.id || sdk.name} value={sdk.id || sdk.name}>
+                        {sdk.name || sdk.id}
+                      </option>
+                    ))}
                 </select>
                 {errors.sdkProvider && (
                   <p className="mt-1 text-sm text-red-600">
