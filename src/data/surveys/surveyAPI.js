@@ -1,567 +1,221 @@
-// Survey & Non-Gaming Offers API module
+// Survey & Non-Gaming Offers API
+// All survey/non-gaming routes call the new /api/non-gaming-survey backend
 import apiClient from "../../lib/apiClient";
 
-// Base URL used ONLY for Bitlabs survey (type=survey). Besitos survey and all other
-// routes keep using the default apiClient base URL (e.g. localhost or env).
-const BITLABS_SURVEY_API_BASE = "https://rewardsuatapi.hireagent.co/api";
+const BASE = "/non-gaming-survey";
 
 const surveyAPIs = {
-  // Mock success response
-  mockSuccess: () => Promise.resolve({ success: true }),
+  // ── Fetch from SDK (admin preview — no DB write) ─────────────────────────
 
-  // Mock delay for realistic behavior
-  mockDelay: (ms = 500) => new Promise((resolve) => setTimeout(resolve, ms)),
-
-  // Get SDK list with pagination
-  async getSDKList({ page = 1, limit = 10 } = {}) {
+  // GET /api/non-gaming-survey/admin/non-gaming/fetch
+  // sdk: "bitlabs" | "everflow" | "affise"
+  // Returns: { success, data, categorized: { cashback, shopping, magicReceipts, surveys, other }, breakdown, total }
+  async fetchNonGamingOffers({ sdk = "bitlabs", type = "all", country, devices, page = 1, limit = 20 } = {}) {
     try {
-      const response = await apiClient.get("/admin/surveys/sdk/list", {
-        params: {
-          page,
-          limit,
-          search: "",
-          status: "all",
-          category: "all",
-        },
+      const params = { sdk, type, page, limit };
+      if (country) params.country = country;
+      if (devices && devices.length > 0) params.devices = devices;
+      const response = await apiClient.get(`${BASE}/admin/non-gaming/fetch`, {
+        params,
+        paramsSerializer: { indexes: null },
       });
-
       return response.data;
     } catch (error) {
-      console.error("Get SDK list error:", error);
+      console.error("fetchNonGamingOffers error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Create new SDK
+  // GET /api/non-gaming-survey/admin/surveys/fetch
+  // sdk: "bitlabs" | "besitos"
+  // Returns: { success, data: survey[], total }
+  async fetchSurveys({ sdk = "bitlabs", country, devices, page = 1, limit = 20 } = {}) {
+    try {
+      const params = { sdk, page, limit };
+      if (country) params.country = country;
+      if (devices && devices.length > 0) params.devices = devices;
+      const response = await apiClient.get(`${BASE}/admin/surveys/fetch`, {
+        params,
+        paramsSerializer: { indexes: null },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("fetchSurveys error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // ── Sync (save) to DB ────────────────────────────────────────────────────
+
+  // POST /api/non-gaming-survey/admin/non-gaming/sync
+  // sdk: "bitlabs" | "everflow" | "affise"
+  async syncNonGamingOffers({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience } = {}) {
+    try {
+      const response = await apiClient.post(`${BASE}/admin/non-gaming/sync`, {
+        sdk, offerIds, autoActivate, devices, country, targetAudience,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("syncNonGamingOffers error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // POST /api/non-gaming-survey/admin/surveys/sync
+  // sdk: "bitlabs" | "besitos"
+  async syncSurveys({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience } = {}) {
+    try {
+      const response = await apiClient.post(`${BASE}/admin/surveys/sync`, {
+        sdk, offerIds, autoActivate, devices, country, targetAudience,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("syncSurveys error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // ── Read / Delete configured offers from DB ──────────────────────────────
+
+  // GET /api/non-gaming-survey/admin/configured
+  // offerType: "all" | "survey" | "cashback" | "shopping" | "magic_receipt"
+  // status: "all" | "live" | "paused"
+  // sdk: "all" | "bitlabs" | "besitos" | "everflow" | "affise"
+  async getConfiguredOffers({ offerType = "all", status = "all", sdk = "all" } = {}) {
+    try {
+      const response = await apiClient.get(`${BASE}/admin/configured`, {
+        params: { offerType, status, sdk },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getConfiguredOffers error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // DELETE /api/non-gaming-survey/admin/configured/:id
+  async deleteConfiguredOffer(offerId) {
+    try {
+      const response = await apiClient.delete(`${BASE}/admin/configured/${offerId}`);
+      return response.data;
+    } catch (error) {
+      console.error("deleteConfiguredOffer error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // ── SDK Management (admin-surveys.js routes — unchanged) ─────────────────
+
+  async getSDKList({ page = 1, limit = 10 } = {}) {
+    try {
+      const response = await apiClient.get("/admin/surveys/sdk/list", {
+        params: { page, limit, search: "", status: "all", category: "all" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getSDKList error:", error);
+      throw error.response?.data || error;
+    }
+  },
+
   async createSDK(sdkData) {
     try {
       const response = await apiClient.post("/admin/surveys/sdk", sdkData);
       return response.data;
     } catch (error) {
-      console.error("Create SDK error:", error);
+      console.error("createSDK error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Get SDK details by ID
   async getSDKDetails(sdkId) {
     try {
       const response = await apiClient.get(`/admin/surveys/sdk/${sdkId}`);
       return response.data;
     } catch (error) {
-      console.error("Get SDK details error:", error);
+      console.error("getSDKDetails error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Update SDK configuration
   async updateSDKConfig(sdkId, configData) {
     try {
-      const response = await apiClient.put(
-        `/admin/surveys/sdk/${sdkId}/config`,
-        configData,
-      );
+      const response = await apiClient.put(`/admin/surveys/sdk/${sdkId}/config`, configData);
       return response.data;
     } catch (error) {
-      console.error("Update SDK config error:", error);
+      console.error("updateSDKConfig error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Update SDK segment rules
   async updateSDKSegmentRules(sdkId, segmentRules) {
     try {
-      const response = await apiClient.put(
-        `/admin/surveys/sdk/${sdkId}/segments`,
-        { segmentRules },
-      );
+      const response = await apiClient.put(`/admin/surveys/sdk/${sdkId}/segments`, { segmentRules });
       return response.data;
     } catch (error) {
-      console.error("Update SDK segment rules error:", error);
+      console.error("updateSDKSegmentRules error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Preview audience for segment rules
   async previewAudience(segmentRules) {
     try {
-      const response = await apiClient.post(
-        "/admin/surveys/sdk/audience-preview",
-        { segmentRules },
-      );
+      const response = await apiClient.post("/admin/surveys/sdk/audience-preview", { segmentRules });
       return response.data;
     } catch (error) {
-      console.error("Preview audience error:", error);
+      console.error("previewAudience error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Toggle SDK status (activate/deactivate)
   async toggleSDKStatus(sdkId) {
     try {
-      const response = await apiClient.patch(
-        `/admin/surveys/sdk/${sdkId}/status`,
-      );
+      const response = await apiClient.patch(`/admin/surveys/sdk/${sdkId}/status`);
       return response.data;
     } catch (error) {
-      console.error("Toggle SDK status error:", error);
+      console.error("toggleSDKStatus error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Get live offers with pagination
+  // ── Live Offers Analytics (admin-surveys.js routes — unchanged) ──────────
+
   async getLiveOffers({ page = 1, limit = 20 } = {}) {
     try {
-      const response = await apiClient.get("/admin/surveys/offers/live", {
-        params: { page, limit },
-      });
+      const response = await apiClient.get("/admin/surveys/offers/live", { params: { page, limit } });
       return response.data;
     } catch (error) {
-      console.error("Get live offers error:", error);
+      console.error("getLiveOffers error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Get offer details by ID
   async getOfferDetails(offerId) {
     try {
       const response = await apiClient.get(`/admin/surveys/offers/${offerId}`);
       return response.data;
     } catch (error) {
-      console.error("Get offer details error:", error);
+      console.error("getOfferDetails error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Update offer status
   async updateOfferStatus(offerId, status) {
     try {
-      const response = await apiClient.patch(
-        `/admin/surveys/offers/${offerId}/status`,
-        { status },
-      );
+      const response = await apiClient.patch(`/admin/surveys/offers/${offerId}/status`, { status });
       return response.data;
     } catch (error) {
-      console.error("Update offer status error:", error);
+      console.error("updateOfferStatus error:", error);
       throw error.response?.data || error;
     }
   },
 
-  // Update offer reward
   async updateOfferReward(offerId, coinReward) {
     try {
-      const response = await apiClient.patch(
-        `/admin/surveys/offers/${offerId}/reward`,
-        { coinReward },
-      );
+      const response = await apiClient.patch(`/admin/surveys/offers/${offerId}/reward`, { coinReward });
       return response.data;
     } catch (error) {
-      console.error("Update offer reward error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // ========== BitLab API Functions ==========
-
-  // Get BitLab surveys
-  async getBitLabSurveys({ platform, country, page = 1, limit = 20 } = {}) {
-    try {
-      const response = await apiClient.get("/bitlabs/surveys", {
-        params: {
-          platform,
-          country,
-          page,
-          limit,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Get BitLab surveys error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Get Besitos surveys (always uses default base URL – no override)
-  async getBesitosSurveys({ platform, country, page = 1, limit = 20 } = {}) {
-    try {
-      const response = await apiClient.get(
-        "/admin/game-offers/non-game-offers/by-sdk/besitos",
-        {
-          params: {
-            type: "survey",
-            country,
-            platform,
-            page,
-            limit,
-          },
-        },
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Get Besitos surveys error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Get BitLab non-game offers (Admin route)
-  async getBitLabNonGameOffers({
-    type = "cashback",
-    category = "all",
-    page = 1,
-    limit = 20,
-    devices,
-    country,
-  } = {}) {
-    try {
-      // Only include parameters that have values (not undefined/null)
-      const requestParams = {};
-
-      if (type) {
-        requestParams.type = type;
-      }
-
-      if (devices && devices.length > 0) {
-        requestParams.devices = devices;
-      }
-
-      if (country) {
-        requestParams.country = country;
-      }
-
-      // Only Bitlabs survey uses shared base URL (103.185.212.117:4001). Besitos survey
-      // and Bitlabs cashback/other types use default base URL.
-      const isBitlabsSurvey = type === "survey";
-      const requestConfig = {
-        params: requestParams,
-        paramsSerializer: {
-          indexes: null, // Serialize arrays as devices[]=value1&devices[]=value2
-        },
-      };
-      if (isBitlabsSurvey) {
-        requestConfig.baseURL = BITLABS_SURVEY_API_BASE;
-      }
-
-      console.log("🟢 [ADMIN API CLIENT] Request parameters:", {
-        url: "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
-        baseURL: isBitlabsSurvey ? BITLABS_SURVEY_API_BASE : "(default)",
-        params: requestParams,
-        page,
-        limit,
-      });
-
-      const response = await apiClient.get(
-        "/admin/game-offers/non-game-offers/by-sdk/bitlabs",
-        requestConfig,
-      );
-      console.log("🟢 [ADMIN API CLIENT] Response received:", {
-        success: response.data?.success,
-        hasData: !!response.data?.data,
-        hasCategorized: !!response.data?.categorized,
-        surveysCount: response.data?.categorized?.surveys?.length || 0,
-        totalOffers: response.data?.total || 0,
-        fullResponse: response.data,
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Get BitLab non-game offers error:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config,
-      });
-
-      // Provide more helpful error messages
-      if (error.code === "ECONNREFUSED" || error.message === "Network Error") {
-        const errorMsg = {
-          success: false,
-          message:
-            "Backend server is not running. Please start the backend server on port 4001.",
-          error: "Connection refused. Make sure the backend server is running.",
-        };
-        throw errorMsg;
-      }
-
-      throw error.response?.data || error;
-    }
-  },
-
-  // Get Everflow offers (Admin route) - normalized by backend to our standard fields
-  async getEverflowOffers({
-    type = "all",
-    category = "all",
-    page = 1,
-    limit = 20,
-    devices,
-    country,
-  } = {}) {
-    try {
-      const requestParams = {};
-
-      if (type) requestParams.type = type;
-      if (devices && devices.length > 0) requestParams.devices = devices;
-      if (country) requestParams.country = country;
-      if (category && category !== "all") requestParams.category = category;
-      // page/limit are not currently used by the backend route here, but we keep them for consistency
-      if (page) requestParams.page = page;
-      if (limit) requestParams.limit = limit;
-
-      const response = await apiClient.get(
-        "/admin/game-offers/non-game-offers/by-sdk/everflow",
-        {
-          params: requestParams,
-          paramsSerializer: { indexes: null },
-        },
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Get Everflow offers error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Get Affise offers (Admin route) - normalized by backend to same shape as Everflow
-  async getAffiseOffers({
-    type = "all",
-    category = "all",
-    page = 1,
-    limit = 20,
-    devices,
-    country,
-  } = {}) {
-    try {
-      const requestParams = {};
-      if (type) requestParams.type = type;
-      if (devices && devices.length > 0) requestParams.devices = devices;
-      if (country) requestParams.country = country;
-      if (category && category !== "all") requestParams.category = category;
-      if (page) requestParams.page = page;
-      if (limit) requestParams.limit = limit;
-
-      const response = await apiClient.get(
-        "/admin/game-offers/non-game-offers/by-sdk/affise",
-        {
-          params: requestParams,
-          paramsSerializer: { indexes: null },
-        },
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Get Affise offers error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Get BitLab health check (public endpoint, no auth needed)
-  async getBitLabHealth() {
-    try {
-      const response = await apiClient.get("/bitlabs/health");
-      return response.data;
-    } catch (error) {
-      console.error("Get BitLab health error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Sync survey/non-game offers to database (same route for Bitlabs and Besitos)
-  async syncBitLabOffers({
-    offerIds,
-    offerType = "all",
-    autoActivate = true,
-    devices = undefined,
-    country = undefined,
-    targetAudience = undefined,
-    sdk = "bitlabs", // "bitlabs" | "besitos" - use "besitos" when syncing Besitos surveys
-  } = {}) {
-    try {
-      console.log("API Call: syncBitLabOffers", {
-        offerIds,
-        offerType,
-        autoActivate,
-        devices,
-        country,
-        targetAudience,
-        sdk,
-        url: "/admin/game-offers/non-game-offers/sync/bitlabs",
-      });
-      const response = await apiClient.post(
-        "/admin/game-offers/non-game-offers/sync/bitlabs",
-        {
-          offerIds,
-          offerType,
-          autoActivate,
-          devices,
-          country,
-          targetAudience,
-          sdk,
-        },
-      );
-      console.log("API Response: syncBitLabOffers", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Sync BitLab offers error:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        config: error.config,
-      });
-      throw error.response?.data || error;
-    }
-  },
-
-  // Get configured non-gaming offers from database
-  async getConfiguredBitLabOffers({
-    offerType = "all",
-    status = "all",
-    sdk,
-  } = {}) {
-    try {
-      const params = { offerType, status };
-      if (sdk) params.sdk = sdk; // "bitlabs" | "besitos" | "all" – so toggle works for both SDKs
-      const response = await apiClient.get(
-        "/admin/game-offers/non-game-offers/configured/bitlabs",
-        {
-          params,
-        },
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Get configured offers error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Sync Everflow non-gaming offers to database (30 coins, 10 XP per offer)
-  // targetAudience: array of { offerId, targetAudience: { age, gender } } for segment form
-  async syncEverflowOffers({
-    offerIds = [],
-    autoActivate = true,
-    targetAudience = undefined,
-  } = {}) {
-    try {
-      const body = { offerIds, autoActivate };
-      if (
-        targetAudience &&
-        Array.isArray(targetAudience) &&
-        targetAudience.length > 0
-      ) {
-        body.targetAudience = targetAudience;
-      }
-      const response = await apiClient.post(
-        "/admin/game-offers/non-game-offers/sync/everflow",
-        body,
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Sync Everflow offers error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Sync Affise non-gaming offers to database (30 coins, 10 XP per offer)
-  async syncAffiseOffers({
-    offerIds = [],
-    autoActivate = true,
-    targetAudience = undefined,
-  } = {}) {
-    try {
-      const body = { offerIds, autoActivate };
-      if (
-        targetAudience &&
-        Array.isArray(targetAudience) &&
-        targetAudience.length > 0
-      ) {
-        body.targetAudience = targetAudience;
-      }
-      const response = await apiClient.post(
-        "/admin/game-offers/non-game-offers/sync/affise",
-        body,
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Sync Affise offers error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Sync single offer to database (Bitlabs or Besitos)
-  async syncSingleBitLabOffer(
-    offerId,
-    offerType = "survey",
-    devices = undefined,
-    country = undefined,
-    targetAudience = undefined,
-    sdk = "bitlabs",
-  ) {
-    try {
-      const offersWithAudience = targetAudience
-        ? [{ offerId, targetAudience }]
-        : undefined;
-
-      const response = await apiClient.post(
-        "/admin/game-offers/non-game-offers/sync/bitlabs",
-        {
-          offerIds: [offerId],
-          offerType: offerType,
-          autoActivate: true,
-          devices: devices,
-          country: country,
-          targetAudience: offersWithAudience,
-          sdk,
-        },
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Sync single offer error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Delete/Unsync a configured offer
-  async deleteConfiguredOffer(offerId) {
-    try {
-      const response = await apiClient.delete(
-        `/admin/game-offers/non-game-offers/configured/${offerId}`,
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Delete offer error:", error);
-      throw error.response?.data || error;
-    }
-  },
-
-  // Update survey status (active/inactive)
-  async updateSurveyStatus(surveyId, status) {
-    try {
-      // First, find the survey by externalId
-      const configuredResponse = await apiClient.get(
-        "/admin/game-offers/non-game-offers/configured/bitlabs",
-        {
-          params: {
-            offerType: "survey",
-            status: "all",
-          },
-        },
-      );
-
-      const surveys = configuredResponse.data?.data?.configuredOffers || [];
-      const survey = surveys.find((s) => s.externalId === surveyId);
-
-      if (!survey) {
-        throw new Error(
-          "Survey not found in configured offers. Please sync it first.",
-        );
-      }
-
-      // Update status using admin-surveys endpoint
-      const response = await apiClient.patch(
-        `/admin/surveys/offers/${survey._id || survey.id}/status`,
-        { status },
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Update survey status error:", error);
+      console.error("updateOfferReward error:", error);
       throw error.response?.data || error;
     }
   },

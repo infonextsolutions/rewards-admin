@@ -41,25 +41,22 @@ export default function BitLabSurveys() {
       let response;
       
       if (sdkProvider === "besitos") {
-        // Fetch Besitos surveys
-        const queryParams = {
+        response = await surveyAPIs.fetchSurveys({
+          sdk: "besitos",
           country: countryFilter,
           page,
           limit: pagination.itemsPerPage,
-        };
-        response = await surveyAPIs.getBesitosSurveys(queryParams);
+        });
       } else {
-        // Fetch BitLabs surveys (default)
-        const queryParams = {
-          type: "survey",
+        response = await surveyAPIs.fetchSurveys({
+          sdk: "bitlabs",
+          country: countryFilter,
           page,
           limit: pagination.itemsPerPage,
-          country: countryFilter,
-        };
-        response = await surveyAPIs.getBitLabNonGameOffers(queryParams);
+        });
       }
-      if (response.success && response.categorized) {
-        const surveys = response.categorized.surveys || [];
+      if (response.success && response.data) {
+        const surveys = response.data || [];
         // Map Bitlabs Publisher API response (id, anchor, name, click_url, creatives.icon, events[].payout, total_points, geo_targeting.countries)
         const mappedSurveys = surveys.map((survey) => {
           const isPublisherFormat = survey.click_url != null || (survey.anchor != null && survey.events != null);
@@ -173,7 +170,7 @@ export default function BitLabSurveys() {
   // Fetch configured surveys from database
   const fetchConfiguredSurveys = async () => {
     try {
-      const response = await surveyAPIs.getConfiguredBitLabOffers({
+      const response = await surveyAPIs.getConfiguredOffers({
         offerType: "survey",
         status: "all",
       });
@@ -291,14 +288,13 @@ export default function BitLabSurveys() {
       const surveyId = pendingSyncSurvey;
       setSyncingSurveys((prev) => new Set(prev).add(surveyId));
       try {
-        const response = await surveyAPIs.syncSingleBitLabOffer(
-          surveyId,
-          "survey",
-          undefined,
-          countryFilter,
-          targetAudience,
-          sdkProvider
-        );
+        const response = await surveyAPIs.syncSurveys({
+          sdk: sdkProvider,
+          offerIds: [surveyId],
+          autoActivate: true,
+          country: countryFilter,
+          targetAudience: targetAudience ? [{ offerId: String(surveyId), targetAudience }] : undefined,
+        });
         if (response.success) {
           toast.success("Survey synced successfully");
           fetchConfiguredSurveys(); // Refresh configured surveys

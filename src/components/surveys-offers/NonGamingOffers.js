@@ -56,7 +56,8 @@ export default function NonGamingOffers() {
       // Everflow does not provide BitLabs-specific non-gaming types (cashback/magic receipts/shopping)
       // For Everflow, we fetch all offers and map them into the same UI shape.
       if (sdkFilter === "everflow") {
-        response = await surveyAPIs.getEverflowOffers({
+        response = await surveyAPIs.fetchNonGamingOffers({
+          sdk: "everflow",
           type: "all",
           ...(countryFilter &&
             countryFilter !== "US" && { country: countryFilter }),
@@ -141,7 +142,8 @@ export default function NonGamingOffers() {
 
       // Affise: fetch all offers and map to same UI shape as Everflow (no cashback/magic/shopping subtypes)
       if (sdkFilter === "affise") {
-        response = await surveyAPIs.getAffiseOffers({
+        response = await surveyAPIs.fetchNonGamingOffers({
+          sdk: "affise",
           type: "all",
           ...(countryFilter &&
             countryFilter !== "US" && { country: countryFilter }),
@@ -223,7 +225,8 @@ export default function NonGamingOffers() {
       if (type === "cashback") {
         // Use admin route with type filter - only send necessary params
         const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
-        response = await surveyAPIs.getBitLabNonGameOffers({
+        response = await surveyAPIs.fetchNonGamingOffers({
+          sdk: "bitlabs",
           type: "cashback",
           ...(countryFilter &&
             countryFilter !== "US" && { country: countryFilter }),
@@ -312,7 +315,8 @@ export default function NonGamingOffers() {
       } else if (type === "magic-receipts") {
         // Use admin route with type filter - only send necessary params
         const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
-        response = await surveyAPIs.getBitLabNonGameOffers({
+        response = await surveyAPIs.fetchNonGamingOffers({
+          sdk: "bitlabs",
           type: "magic_receipt",
           ...(countryFilter &&
             countryFilter !== "US" && { country: countryFilter }),
@@ -400,7 +404,8 @@ export default function NonGamingOffers() {
       } else if (type === "shopping") {
         // Use admin route with type filter - only send necessary params
         const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
-        response = await surveyAPIs.getBitLabNonGameOffers({
+        response = await surveyAPIs.fetchNonGamingOffers({
+          sdk: "bitlabs",
           type: "shopping",
           ...(countryFilter &&
             countryFilter !== "US" && { country: countryFilter }),
@@ -497,7 +502,8 @@ export default function NonGamingOffers() {
       } else {
         // Get all non-game offers from admin route (excluding surveys) - only send necessary params
         const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
-        response = await surveyAPIs.getBitLabNonGameOffers({
+        response = await surveyAPIs.fetchNonGamingOffers({
+          sdk: "bitlabs",
           type: "all",
           ...(countryFilter &&
             countryFilter !== "US" && { country: countryFilter }),
@@ -582,7 +588,7 @@ export default function NonGamingOffers() {
   const fetchConfiguredOffers = async () => {
     try {
       console.log("Fetching configured offers...", { sdkFilter });
-      const response = await surveyAPIs.getConfiguredBitLabOffers({
+      const response = await surveyAPIs.getConfiguredOffers({
         offerType: "all",
         status: "all",
         sdk: sdkFilter === "everflow" ? "everflow" : sdkFilter === "besitos" ? "besitos" : sdkFilter === "affise" ? "affise" : "bitlabs",
@@ -981,7 +987,8 @@ export default function NonGamingOffers() {
       }));
 
       if (sdkFilter === "affise") {
-        const response = await surveyAPIs.syncAffiseOffers({
+        const response = await surveyAPIs.syncNonGamingOffers({
+          sdk: "affise",
           offerIds: pendingSyncAction.offerIds,
           autoActivate: true,
           targetAudience: offersWithAudience,
@@ -1004,9 +1011,9 @@ export default function NonGamingOffers() {
       const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
       const country = countryFilter;
 
-      const response = await surveyAPIs.syncBitLabOffers({
+      const response = await surveyAPIs.syncNonGamingOffers({
+        sdk: sdkFilter === "everflow" ? "everflow" : "bitlabs",
         offerIds: pendingSyncAction.offerIds,
-        offerType: backendType === "all" ? "all" : backendType,
         autoActivate: true,
         devices: devices,
         country: country,
@@ -1064,7 +1071,8 @@ export default function NonGamingOffers() {
       }));
 
       if (sdkFilter === "affise") {
-        const response = await surveyAPIs.syncAffiseOffers({
+        const response = await surveyAPIs.syncNonGamingOffers({
+          sdk: "affise",
           offerIds: pendingSyncAction.offerIds,
           autoActivate: true,
           targetAudience: offersWithAudience,
@@ -1087,9 +1095,9 @@ export default function NonGamingOffers() {
       const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
       const country = countryFilter;
 
-      const response = await surveyAPIs.syncBitLabOffers({
+      const response = await surveyAPIs.syncNonGamingOffers({
+        sdk: sdkFilter === "everflow" ? "everflow" : "bitlabs",
         offerIds: pendingSyncAction.offerIds,
-        offerType: backendType === "all" ? "all" : backendType,
         autoActivate: true,
         devices: devices,
         country: country,
@@ -1126,7 +1134,8 @@ export default function NonGamingOffers() {
     setShowTargetAudienceModal(false);
     setPendingSyncAction(null);
     try {
-      const response = await surveyAPIs.syncEverflowOffers({
+      const response = await surveyAPIs.syncNonGamingOffers({
+        sdk: "everflow",
         offerIds: [offerId],
         autoActivate: true,
         targetAudience: [{ offerId: String(offerId), targetAudience }],
@@ -1156,7 +1165,8 @@ export default function NonGamingOffers() {
     setShowTargetAudienceModal(false);
     setPendingSyncAction(null);
     try {
-      const response = await surveyAPIs.syncAffiseOffers({
+      const response = await surveyAPIs.syncNonGamingOffers({
+        sdk: "affise",
         offerIds: [offerId],
         autoActivate: true,
         targetAudience: [{ offerId: String(offerId), targetAudience }],
@@ -1190,13 +1200,14 @@ export default function NonGamingOffers() {
       const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
       const country = countryFilter;
 
-      const response = await surveyAPIs.syncSingleBitLabOffer(
-        offerId,
-        backendType === "all" ? "survey" : backendType,
+      const response = await surveyAPIs.syncNonGamingOffers({
+        sdk: sdkFilter === "everflow" ? "everflow" : sdkFilter === "affise" ? "affise" : "bitlabs",
+        offerIds: [offerId],
+        autoActivate: true,
         devices,
         country,
-        targetAudience
-      );
+        targetAudience: targetAudience ? [{ offerId: String(offerId), targetAudience }] : undefined,
+      });
 
       if (response.success) {
         toast.success("Offer synced successfully");
