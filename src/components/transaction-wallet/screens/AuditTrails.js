@@ -198,6 +198,7 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
       UNFREEZE_WALLET: "bg-green-100 text-green-800",
       VIEW_TRANSACTION: "bg-gray-100 text-gray-800",
       VIEW_USER_WALLET: "bg-gray-100 text-gray-800",
+      WALLET_SETTLEMENT: "bg-teal-100 text-teal-800",
     };
 
     // Convert action to readable format
@@ -378,6 +379,7 @@ Time: ${new Date(auditLog.timestamp).toLocaleString()}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Timestamp
+                  <span className="ml-1 text-emerald-600" title="Sorted: newest first">↓</span>
                 </th>
               </tr>
             </thead>

@@ -67,7 +67,7 @@ export default function TransactionLog({ onSneakPeek }) {
         if (typesResponse.data.success) {
           // SW-35: Filter to only show commonly used transaction types
           const commonTypes = typesResponse.data.data.filter((t) =>
-            ["credit", "debit", "redemption", "adjustment"].includes(t)
+            ["credit", "debit", "redemption", "adjustment"].includes(t),
           );
           // Capitalize first letter for display
           setTransactionTypes(
