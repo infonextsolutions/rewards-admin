@@ -108,6 +108,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     rewardXP: 0,
     rewardCoins: 0,
     rewardDollars: 0, // Dollar amount that converts to coins (50 coins = 1 dollar)
+    cpi: null, // CPI value from SDK/third-party data
     taskCount: 0,
     activeVisible: true,
     fallbackGame: false,
@@ -211,6 +212,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         rewardDollars: game.rewardCoins
           ? parseFloat((game.rewardCoins / 50).toFixed(2))
           : 0, // Convert coins to dollars (50 coins = 1 dollar)
+        cpi: game.besitosRawData?.cpi ?? game.thirdPartyGameData?.cpi ?? null,
         taskCount: game.taskCount || 0,
         activeVisible:
           game.status !== undefined
@@ -507,6 +509,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         title: "",
         rewardDollars: 0,
         rewardCoins: 0,
+        cpi: null,
         thirdPartyGameData: null,
       }));
       return;
@@ -542,6 +545,12 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         thumbnailAltText: `${selectedGame.title} game thumbnail`,
         rewardDollars: dollarAmount,
         rewardCoins: coins,
+        cpi:
+          selectedGame.cpi !== undefined && selectedGame.cpi !== null
+            ? parseFloat(selectedGame.cpi)
+            : selectedGame.epc !== undefined && selectedGame.epc !== null
+              ? parseFloat(selectedGame.epc)
+              : null,
         thirdPartyGameData: thirdPartyData,
       }));
     } else {
@@ -767,7 +776,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   >
                     <option value="">Choose SDK Game...</option>
                     {sdkProviders
-                      .filter((sdk) => ["bitlabs", "besitos"].includes(sdk.id?.toLowerCase()))
+                      .filter((sdk) =>
+                        ["bitlabs", "besitos"].includes(sdk.id?.toLowerCase()),
+                      )
                       .map((sdk) => (
                         <option key={sdk.id} value={sdk.name}>
                           {sdk.name}
@@ -819,6 +830,31 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 </div> */}
 
                 {/* XP Reward - Hidden in edit modal */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CPI (Cost Per Install)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 text-sm">$</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={
+                        formData.cpi !== null && formData.cpi !== undefined
+                          ? Number(formData.cpi).toFixed(2)
+                          : ""
+                      }
+                      readOnly
+                      disabled
+                      placeholder="N/A"
+                      className="w-full border border-gray-300 rounded-md pl-7 pr-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    CPI is received from the SDK and cannot be edited
+                  </p>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

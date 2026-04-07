@@ -467,11 +467,15 @@ export default function GamesListingModule() {
           <div className="text-sm text-gray-900">{game.gender || "N/A"}</div>
         );
       case "cpi":
+        const cpiVal =
+          game.besitosRawData?.cpi != null
+            ? parseFloat(game.besitosRawData.cpi)
+            : game.besitosRawData?.epc != null
+              ? parseFloat(game.besitosRawData.epc)
+              : null;
         return (
           <div className="text-sm text-gray-900">
-            {game.besitosRawData?.cpi
-              ? `$${game.besitosRawData.cpi.toFixed(2)}`
-              : "N/A"}
+            {cpiVal != null ? `$${cpiVal.toFixed(2)}` : "N/A"}
           </div>
         );
       case "amount":
