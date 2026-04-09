@@ -1482,11 +1482,17 @@ export default function NonGamingOffers() {
               disabled={sdkFilter === "everflow" || sdkFilter === "affise"}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
-              {typeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {typeOptions.map((option) => {
+                // For BitLabs, hide "All Offers" option
+                if (sdkFilter === "bitlabs" && option.value === "all") {
+                  return null;
+                }
+                return (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
