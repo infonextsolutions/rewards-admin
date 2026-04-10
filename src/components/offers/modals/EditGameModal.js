@@ -413,22 +413,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
             ? response.data.data
             : [response.data.data];
           console.log("Fetched games:", games);
-          // Filter games by selected platform
-          const filteredGames = games.filter((game) => {
-            if (!game.devices && !game.device_platform) return true; // Include if no device info
-            if (game.devices && Array.isArray(game.devices)) {
-              return game.devices.some(
-                (device) => device.toLowerCase() === platform.toLowerCase(),
-              );
-            }
-            if (game.device_platform) {
-              return (
-                game.device_platform.toLowerCase() === platform.toLowerCase()
-              );
-            }
-            return false;
-          });
-          setGamesList(filteredGames);
+          // API already filters by device_platform, no need to filter again
+          setGamesList(games);
         } else {
           setGamesList([]);
         }
@@ -671,6 +657,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       sdkProvider: formData.sdk,
       // xptrRules: formData.xptrRules, // Commented out - field not used anywhere in app logic
       xptrRules: "", // Set to empty string for backward compatibility
+      deviceType: platform, // iOS or Android based on platform dropdown
       rewardXP: parseInt(formData.rewardXP) || 0,
       rewardCoins: parseInt(formData.rewardCoins) || 0, // Calculated from dollars (50 coins = 1 dollar)
       defaultTaskCount: parseInt(formData.taskCount) || 0,

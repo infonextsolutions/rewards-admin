@@ -507,6 +507,8 @@ export const gamesAPI = {
           besitosRawData: game.besitosRawData || null,
           // Device platform from API or raw Besitos data (device: "ios" | "android") for Edit modal
           device: game.device || game.besitosRawData?.device || null,
+          // Device type - iOS or Android - stored when game is created
+          deviceType: game.deviceType || null,
           // Include rewards data
           rewards: game.rewards || { xp: 0, coins: 0 },
           // Include ageGroups array for ageGroup display
