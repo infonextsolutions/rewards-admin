@@ -39,7 +39,7 @@ export default function NonGamingOffers() {
   // Fetch non-game offers
   const fetchOffers = async (
     page = pagination.currentPage,
-    type = typeFilter
+    type = typeFilter,
   ) => {
     const thisFetchId = ++fetchIdRef.current;
     console.log("NonGamingOffers: fetchOffers called", {
@@ -118,14 +118,22 @@ export default function NonGamingOffers() {
                 offer.network_category_id?.toString() ||
                 "",
               currency: offer.currency || offer.currency_id || "USD",
-              payoutAmount: offer.payoutAmount ?? offer.relationship?.payouts?.entries?.[0]?.payout_amount,
-              creativeBundleUrl: offer.creativeBundleUrl || offer.relationship?.creative_bundle?.url || "",
-              total_points: offer.payoutAmount?.toString() ?? offer.total_points ?? "0",
+              payoutAmount:
+                offer.payoutAmount ??
+                offer.relationship?.payouts?.entries?.[0]?.payout_amount,
+              creativeBundleUrl:
+                offer.creativeBundleUrl ||
+                offer.relationship?.creative_bundle?.url ||
+                "",
+              total_points:
+                offer.payoutAmount?.toString() ?? offer.total_points ?? "0",
               epc: offer.epc || "0",
               pending_time: offer.pending_time ?? 0,
               reward_delay_days: offer.reward_delay_days ?? 0,
               confirmation_time: offer.confirmation_time || "",
-              status: offer.status || (offer.offer_status === "active" ? "live" : "live"),
+              status:
+                offer.status ||
+                (offer.offer_status === "active" ? "live" : "live"),
             };
           });
 
@@ -178,15 +186,21 @@ export default function NonGamingOffers() {
               offerId: offer.offer_id ?? offer.offerId ?? offer.id?.toString(),
               title: offer.title || "Untitled Offer",
               description: offer.description || "",
-              type: offer.offerType || offer.payout_type || offer.type || "other",
+              type:
+                offer.offerType || offer.payout_type || offer.type || "other",
               category: offer.category || "General",
               icon: offer.logo || offer.thumbnailUrl || "",
               banner: offer.logo || offer.thumbnailUrl || "",
               coinReward: offer.coinReward ?? coins,
               userRewardCoins: coins,
               userRewardXP: xp,
-              reward: offer.reward || { coins, currency: offer.currency || "USD", xp },
-              clickUrl: offer.click_url || offer.clickUrl || offer.preview_url || "",
+              reward: offer.reward || {
+                coins,
+                currency: offer.currency || "USD",
+                xp,
+              },
+              clickUrl:
+                offer.click_url || offer.clickUrl || offer.preview_url || "",
               provider: "affise",
               estimatedTime: offer.estimatedTime ?? 0,
               isAvailable: offer.isAvailable !== false,
@@ -198,16 +212,78 @@ export default function NonGamingOffers() {
               creativeBundleUrl: offer.creativeBundleUrl || "",
               total_points: payout.toString(),
               epc: offer.epc !== undefined ? String(offer.epc) : "0",
-              affiliate_epc: offer.affiliate_epc !== undefined ? String(offer.affiliate_epc) : "0",
+              affiliate_epc:
+                offer.affiliate_epc !== undefined
+                  ? String(offer.affiliate_epc)
+                  : "0",
               pending_time: offer.pending_time ?? 0,
               reward_delay_days: offer.reward_delay_days ?? 0,
               confirmation_time: offer.confirmation_time || "",
-              allowed_countries: offer.allowed_countries || offer.payment_countries || [],
+              allowed_countries:
+                offer.allowed_countries || offer.payment_countries || [],
               allowed_os: offer.allowed_os || [],
               device_types: offer.device_types || [],
               daily_cap: offer.daily_cap ?? null,
               strictly_country: offer.strictly_country ?? 0,
               status: offer.status || "live",
+            };
+          });
+
+          setOffers(mappedOffers);
+          setPagination({
+            currentPage: page,
+            totalPages: 1,
+            totalItems: mappedOffers.length,
+            itemsPerPage: pagination.itemsPerPage,
+          });
+        }
+        return;
+      }
+
+      // Besitos deals
+      if (sdkFilter === "besitos") {
+        response = await surveyAPIs.fetchNonGamingOffers({
+          sdk: "besitos",
+          type: "all",
+          ...(countryFilter &&
+            countryFilter !== "US" && { country: countryFilter }),
+        });
+
+        if (thisFetchId !== fetchIdRef.current) return;
+
+        if (response.success && Array.isArray(response.data)) {
+          const mappedOffers = response.data.map((offer) => {
+            const coins = offer.userRewardCoins ?? offer.coinReward ?? 0;
+            const xp = offer.userRewardXP ?? 0;
+            return {
+              id: offer.id ?? offer.offerId ?? "",
+              offerId: offer.offerId ?? offer.id ?? "",
+              title: offer.title || "Untitled Deal",
+              description: offer.description || "",
+              type: offer.offerType || "besitos_deal",
+              category: offer.category || "General",
+              icon: offer.icon || offer.thumbnail || "",
+              banner: offer.banner || offer.thumbnail || "",
+              coinReward: offer.coinReward ?? coins,
+              userRewardCoins: coins,
+              userRewardXP: xp,
+              reward: offer.reward || { coins, currency: offer.amount_currency || "USD", xp },
+              clickUrl: offer.clickUrl || offer.click_url || "",
+              click_url: offer.click_url || offer.clickUrl || "",
+              provider: "besitos",
+              estimatedTime: offer.estimatedTime ?? 0,
+              isAvailable: offer.isAvailable !== false,
+              sdkProvider: "besitos",
+              cpa: offer.cpa ?? 0,
+              amount: offer.amount ?? 0,
+              amount_currency: offer.amount_currency || "$",
+              image_text: offer.image_text || "",
+              card_text: offer.card_text || "",
+              details: offer.details || "",
+              points: offer.points || [],
+              goals: offer.goals || [],
+              budget_status: offer.budget_status || "",
+              state_filter: offer.state_filter || { type: "all", states: [] },
             };
           });
 
@@ -239,15 +315,23 @@ export default function NonGamingOffers() {
           const cashbackOffers = response.categorized.cashback || [];
           const mappedOffers = cashbackOffers.map((offer) => {
             const payout = offer.events?.[0];
-            const payoutNum = payout ? parseFloat(payout.payout) : parseFloat(offer.total_points) || 0;
-            const pointsNum = parseFloat(offer.total_points) || (payout ? parseFloat(payout.points) : 0) || 0;
-            const userCoins = offer.userRewardCoins ?? Math.round(payoutNum * 0.2);
+            const payoutNum = payout
+              ? parseFloat(payout.payout)
+              : parseFloat(offer.total_points) || 0;
+            const pointsNum =
+              parseFloat(offer.total_points) ||
+              (payout ? parseFloat(payout.points) : 0) ||
+              0;
+            const userCoins =
+              offer.userRewardCoins ?? Math.round(payoutNum * 0.2);
             const userXP = offer.userRewardXP ?? Math.round(userCoins * 0.5);
             const epcVal = offer.epc != null ? parseFloat(offer.epc) : 0;
-            const pendingTimeSec = offer.pending_time != null ? Number(offer.pending_time) : 0;
+            const pendingTimeSec =
+              offer.pending_time != null ? Number(offer.pending_time) : 0;
             return {
               id: offer.id ?? offer.offerId ?? offer.merchant_id?.toString(),
-              offerId: offer.offerId ?? offer.id ?? offer.merchant_id?.toString(),
+              offerId:
+                offer.offerId ?? offer.id ?? offer.merchant_id?.toString(),
               title:
                 offer.title ||
                 offer.name ||
@@ -260,8 +344,10 @@ export default function NonGamingOffers() {
                 typeof offer.category === "string"
                   ? offer.category
                   : Array.isArray(offer.categories) && offer.categories[0]
-                  ? offer.categories[0]
-                  : offer.category?.name || offer.primary_category || "Cashback",
+                    ? offer.categories[0]
+                    : offer.category?.name ||
+                      offer.primary_category ||
+                      "Cashback",
               icon:
                 offer.creatives?.icon ||
                 offer.icon ||
@@ -274,18 +360,29 @@ export default function NonGamingOffers() {
                 offer.icon ||
                 offer.images?.cardImage ||
                 "",
-              reward: offer.reward || { coins: userCoins, currency: "points", xp: userXP },
+              reward: offer.reward || {
+                coins: userCoins,
+                currency: "points",
+                xp: userXP,
+              },
               clickUrl: offer.clickUrl || offer.url || offer.click_url || "",
               provider: offer.provider || "bitlabs",
-              merchant_name: offer.merchant_name || offer.name || offer.anchor || "",
+              merchant_name:
+                offer.merchant_name || offer.name || offer.anchor || "",
               cashback: offer.cashback || offer.original_cashback || "0",
               currency: offer.currency || "USD",
-              primary_category: offer.primary_category || offer.categories?.[0] || "",
+              primary_category:
+                offer.primary_category || offer.categories?.[0] || "",
               images: offer.images || {},
-              reward_delay_days: offer.reward_delay_days ?? (pendingTimeSec ? Math.round(pendingTimeSec / 86400) : 0),
+              reward_delay_days:
+                offer.reward_delay_days ??
+                (pendingTimeSec ? Math.round(pendingTimeSec / 86400) : 0),
               flat_payout: offer.flat_payout || false,
               up_to: offer.up_to || false,
-              country_code: offer.country_code || offer.geo_targeting?.countries?.[0]?.country_code || "",
+              country_code:
+                offer.country_code ||
+                offer.geo_targeting?.countries?.[0]?.country_code ||
+                "",
               terms: offer.terms || [],
               tier_mappings: offer.tier_mappings || [],
               rank: offer.rank || 0,
@@ -295,7 +392,9 @@ export default function NonGamingOffers() {
               events: offer.events || [],
               userRewardCoins: userCoins,
               userRewardXP: userXP,
-              estimatedTime: offer.estimatedTime ?? (pendingTimeSec ? Math.round(pendingTimeSec / 3600) : 0),
+              estimatedTime:
+                offer.estimatedTime ??
+                (pendingTimeSec ? Math.round(pendingTimeSec / 3600) : 0),
               isAvailable: offer.isAvailable !== false,
               sdkProvider: offer.sdkProvider || offer.provider || "bitlabs",
             };
@@ -306,7 +405,7 @@ export default function NonGamingOffers() {
             currentPage: page,
             totalPages: Math.ceil(
               (response.categorized.cashback?.length || 0) /
-                pagination.itemsPerPage
+                pagination.itemsPerPage,
             ),
             totalItems: response.categorized.cashback?.length || 0,
             itemsPerPage: pagination.itemsPerPage,
@@ -342,8 +441,8 @@ export default function NonGamingOffers() {
               typeof offer.category === "string"
                 ? offer.category
                 : Array.isArray(offer.categories) && offer.categories.length > 0
-                ? offer.categories[0]
-                : offer.category?.name || "Magic Receipt",
+                  ? offer.categories[0]
+                  : offer.category?.name || "Magic Receipt",
             icon:
               offer.icon ||
               offer.banner ||
@@ -395,7 +494,7 @@ export default function NonGamingOffers() {
             currentPage: page,
             totalPages: Math.ceil(
               (response.categorized.magicReceipts?.length || 0) /
-                pagination.itemsPerPage
+                pagination.itemsPerPage,
             ),
             totalItems: response.categorized.magicReceipts?.length || 0,
             itemsPerPage: pagination.itemsPerPage,
@@ -418,73 +517,82 @@ export default function NonGamingOffers() {
           const shoppingOffers = response.categorized.shopping || [];
           const mappedOffers = shoppingOffers.map((offer) => {
             const payout = offer.events?.[0];
-            const pointsNum = parseFloat(offer.total_points) || (payout ? parseFloat(payout.points) : 0) || 0;
+            const pointsNum =
+              parseFloat(offer.total_points) ||
+              (payout ? parseFloat(payout.points) : 0) ||
+              0;
             const payoutNum = payout ? parseFloat(payout.payout) : 0;
             const valueForReward = pointsNum > 0 ? pointsNum : payoutNum;
-            const userCoins = offer.userRewardCoins ?? Math.round(valueForReward * 0.2);
+            const userCoins =
+              offer.userRewardCoins ?? Math.round(valueForReward * 0.2);
             const userXP = offer.userRewardXP ?? Math.round(userCoins * 0.5);
             return {
-            id: offer.id ?? offer.offerId ?? offer.id?.toString(),
-            offerId: offer.offerId ?? offer.id ?? offer.id?.toString(),
-            title:
-              offer.title ||
-              offer.name ||
-              offer.anchor ||
-              offer.product_name ||
-              "Untitled Shopping Offer",
-            description: offer.description || "",
-            type: "shopping",
-            category:
-              typeof offer.category === "string"
-                ? offer.category
-                : Array.isArray(offer.categories) && offer.categories.length > 0
-                ? offer.categories[0]
-                : offer.category?.name || "Shopping",
-            icon:
-              offer.icon ||
-              offer.banner ||
-              offer.icon_url ||
-              offer.creatives?.icon ||
-              "",
-            banner:
-              offer.banner ||
-              offer.icon ||
-              offer.creatives?.images?.["600x300"] ||
-              offer.creatives?.icon ||
-              "",
-            reward: offer.reward || { coins: userCoins, currency: "points", xp: userXP },
-            userRewardCoins: userCoins,
-            userRewardXP: userXP,
-            clickUrl: offer.clickUrl || offer.url || offer.click_url || "",
-            provider: offer.provider || "bitlabs",
-            anchor: offer.anchor || "",
-            product_name: offer.product_name || "",
-            product_id: offer.product_id || "",
-            total_points: offer.total_points || "0",
-            confirmation_time:
-              offer.confirmation_time || offer.confirmationTime || "",
-            pending_time: offer.pending_time ?? offer.pendingTime ?? 0,
-            offer_expires_at:
-              offer.offer_expires_at || offer.offerExpiresAt || null,
-            creatives: offer.creatives || {},
-            categories: offer.categories || [],
-            epc: offer.epc || "0",
-            events: offer.events || [],
-            requirements: offer.requirements || "",
-            things_to_know: offer.things_to_know || offer.thingsToKnow || [],
-            mobile_verification_required:
-              offer.mobile_verification_required ||
-              offer.mobileVerificationRequired ||
-              false,
-            is_game: offer.is_game || offer.isGame || false,
-            is_sticky: offer.is_sticky || offer.isSticky || false,
-            disclaimer: offer.disclaimer || "",
-            support_url: offer.support_url || offer.supportUrl || "",
-            session_hours: offer.session_hours || offer.sessionHours || 0,
-            // Additional fields
-            estimatedTime: offer.estimatedTime || 0,
-            isAvailable: offer.isAvailable !== false,
-            sdkProvider: offer.sdkProvider || offer.provider || "bitlabs",
+              id: offer.id ?? offer.offerId ?? offer.id?.toString(),
+              offerId: offer.offerId ?? offer.id ?? offer.id?.toString(),
+              title:
+                offer.title ||
+                offer.name ||
+                offer.anchor ||
+                offer.product_name ||
+                "Untitled Shopping Offer",
+              description: offer.description || "",
+              type: "shopping",
+              category:
+                typeof offer.category === "string"
+                  ? offer.category
+                  : Array.isArray(offer.categories) &&
+                      offer.categories.length > 0
+                    ? offer.categories[0]
+                    : offer.category?.name || "Shopping",
+              icon:
+                offer.icon ||
+                offer.banner ||
+                offer.icon_url ||
+                offer.creatives?.icon ||
+                "",
+              banner:
+                offer.banner ||
+                offer.icon ||
+                offer.creatives?.images?.["600x300"] ||
+                offer.creatives?.icon ||
+                "",
+              reward: offer.reward || {
+                coins: userCoins,
+                currency: "points",
+                xp: userXP,
+              },
+              userRewardCoins: userCoins,
+              userRewardXP: userXP,
+              clickUrl: offer.clickUrl || offer.url || offer.click_url || "",
+              provider: offer.provider || "bitlabs",
+              anchor: offer.anchor || "",
+              product_name: offer.product_name || "",
+              product_id: offer.product_id || "",
+              total_points: offer.total_points || "0",
+              confirmation_time:
+                offer.confirmation_time || offer.confirmationTime || "",
+              pending_time: offer.pending_time ?? offer.pendingTime ?? 0,
+              offer_expires_at:
+                offer.offer_expires_at || offer.offerExpiresAt || null,
+              creatives: offer.creatives || {},
+              categories: offer.categories || [],
+              epc: offer.epc || "0",
+              events: offer.events || [],
+              requirements: offer.requirements || "",
+              things_to_know: offer.things_to_know || offer.thingsToKnow || [],
+              mobile_verification_required:
+                offer.mobile_verification_required ||
+                offer.mobileVerificationRequired ||
+                false,
+              is_game: offer.is_game || offer.isGame || false,
+              is_sticky: offer.is_sticky || offer.isSticky || false,
+              disclaimer: offer.disclaimer || "",
+              support_url: offer.support_url || offer.supportUrl || "",
+              session_hours: offer.session_hours || offer.sessionHours || 0,
+              // Additional fields
+              estimatedTime: offer.estimatedTime || 0,
+              isAvailable: offer.isAvailable !== false,
+              sdkProvider: offer.sdkProvider || offer.provider || "bitlabs",
             };
           });
 
@@ -493,7 +601,7 @@ export default function NonGamingOffers() {
             currentPage: page,
             totalPages: Math.ceil(
               (response.categorized.shopping?.length || 0) /
-                pagination.itemsPerPage
+                pagination.itemsPerPage,
             ),
             totalItems: response.categorized.shopping?.length || 0,
             itemsPerPage: pagination.itemsPerPage,
@@ -516,20 +624,33 @@ export default function NonGamingOffers() {
           // Admin route returns: { data: offers[], categorized: {}, breakdown: {}, total: number, estimatedEarnings: number }
           // Filter out surveys from the response
           const allOffers = (response.data || []).filter(
-            (offer) => offer.type !== "survey" && offer.type !== "surveys"
+            (offer) => offer.type !== "survey" && offer.type !== "surveys",
           );
           const mappedOffers = allOffers.map((offer) => ({
-            id: offer.id ?? offer.offerId ?? offer.surveyId ?? offer.product_id ?? offer.merchant_id,
+            id:
+              offer.id ??
+              offer.offerId ??
+              offer.surveyId ??
+              offer.product_id ??
+              offer.merchant_id,
             offerId: offer.offerId ?? offer.id ?? offer.surveyId,
-            title: offer.title || offer.name || offer.anchor || offer.product_name || offer.merchant_name || "Untitled Offer",
+            title:
+              offer.title ||
+              offer.name ||
+              offer.anchor ||
+              offer.product_name ||
+              offer.merchant_name ||
+              "Untitled Offer",
             description: offer.description || "",
             type: offer.type || "other",
             category:
               typeof offer.category === "string"
                 ? offer.category
                 : Array.isArray(offer.categories) && offer.categories[0]
-                ? (typeof offer.categories[0] === "string" ? offer.categories[0] : offer.categories[0]?.name)
-                : offer.category?.name || "General",
+                  ? typeof offer.categories[0] === "string"
+                    ? offer.categories[0]
+                    : offer.categories[0]?.name
+                  : offer.category?.name || "General",
             icon: offer.creatives?.icon || offer.icon || offer.banner || "",
             banner: offer.creatives?.icon || offer.banner || offer.icon || "",
             reward: offer.reward || { coins: 0, currency: "points", xp: 0 },
@@ -549,7 +670,7 @@ export default function NonGamingOffers() {
           setPagination({
             currentPage: page,
             totalPages: Math.ceil(
-              mappedOffers.length / pagination.itemsPerPage
+              mappedOffers.length / pagination.itemsPerPage,
             ),
             totalItems: mappedOffers.length,
             itemsPerPage: pagination.itemsPerPage,
@@ -591,14 +712,21 @@ export default function NonGamingOffers() {
       const response = await surveyAPIs.getConfiguredOffers({
         offerType: "all",
         status: "all",
-        sdk: sdkFilter === "everflow" ? "everflow" : sdkFilter === "besitos" ? "besitos" : sdkFilter === "affise" ? "affise" : "bitlabs",
+        sdk:
+          sdkFilter === "everflow"
+            ? "everflow"
+            : sdkFilter === "besitos"
+              ? "besitos"
+              : sdkFilter === "affise"
+                ? "affise"
+                : "bitlabs",
       });
       console.log("Configured offers response:", response);
       if (response.success) {
         setConfiguredOffers(response.data.configuredOffers || []);
         console.log(
           "Configured offers set:",
-          response.data.configuredOffers?.length || 0
+          response.data.configuredOffers?.length || 0,
         );
       }
     } catch (error) {
@@ -679,7 +807,9 @@ export default function NonGamingOffers() {
       const externalId = c.externalId != null ? String(c.externalId) : null;
       const offerIdField = c.offerId != null ? String(c.offerId) : null;
       const idField = c.id != null ? String(c.id) : null;
-      return externalId === idStr || offerIdField === idStr || idField === idStr;
+      return (
+        externalId === idStr || offerIdField === idStr || idField === idStr
+      );
     });
   };
 
@@ -692,7 +822,9 @@ export default function NonGamingOffers() {
         const externalId = c.externalId != null ? String(c.externalId) : null;
         const offerIdField = c.offerId != null ? String(c.offerId) : null;
         const idField = c.id != null ? String(c.id) : null;
-        return externalId === idStr || offerIdField === idStr || idField === idStr;
+        return (
+          externalId === idStr || offerIdField === idStr || idField === idStr
+        );
       }) || null
     );
   };
@@ -717,7 +849,7 @@ export default function NonGamingOffers() {
         console.log("Deleting offer:", configuredOffer);
         if (configuredOffer?.id) {
           const response = await surveyAPIs.deleteConfiguredOffer(
-            configuredOffer.id
+            configuredOffer.id,
           );
           console.log("Delete response:", response);
           toast.success("Offer removed successfully");
@@ -761,7 +893,7 @@ export default function NonGamingOffers() {
         stack: error.stack,
       });
       toast.error(
-        error.message || error.data?.message || "Failed to toggle offer"
+        error.message || error.data?.message || "Failed to toggle offer",
       );
     } finally {
       setTogglingOffers((prev) => {
@@ -777,7 +909,7 @@ export default function NonGamingOffers() {
     setSelectedOffers((prev) =>
       prev.includes(offerId)
         ? prev.filter((id) => id !== offerId)
-        : [...prev, offerId]
+        : [...prev, offerId],
     );
   };
 
@@ -901,8 +1033,11 @@ export default function NonGamingOffers() {
       title: isCashback
         ? offer.merchant_name || offer.title || "Untitled Offer"
         : isShopping || isMagicReceipt
-        ? offer.anchor || offer.product_name || offer.title || "Untitled Offer"
-        : offer.title || "Untitled Offer",
+          ? offer.anchor ||
+            offer.product_name ||
+            offer.title ||
+            "Untitled Offer"
+          : offer.title || "Untitled Offer",
       description: offer.description || "",
       coinReward:
         isShopping || isMagicReceipt
@@ -996,8 +1131,10 @@ export default function NonGamingOffers() {
         if (response.success) {
           toast.success(
             `Successfully synced ${response.data.syncedCount} Affise offer(s)! ${
-              response.data.updatedCount > 0 ? `${response.data.updatedCount} updated.` : ""
-            }`
+              response.data.updatedCount > 0
+                ? `${response.data.updatedCount} updated.`
+                : ""
+            }`,
           );
           setSelectedOffers([]);
           fetchOffers(1, typeFilter);
@@ -1026,7 +1163,7 @@ export default function NonGamingOffers() {
             response.data.updatedCount > 0
               ? `${response.data.updatedCount} updated.`
               : ""
-          }`
+          }`,
         );
         setSelectedOffers([]);
         fetchOffers(1, typeFilter);
@@ -1080,8 +1217,10 @@ export default function NonGamingOffers() {
         if (response.success) {
           toast.success(
             `Successfully synced ${response.data.syncedCount} Affise offer(s)! ${
-              response.data.updatedCount > 0 ? `${response.data.updatedCount} updated.` : ""
-            }`
+              response.data.updatedCount > 0
+                ? `${response.data.updatedCount} updated.`
+                : ""
+            }`,
           );
           setSelectedOffers([]);
           fetchOffers(1, typeFilter);
@@ -1110,7 +1249,7 @@ export default function NonGamingOffers() {
             response.data.updatedCount > 0
               ? `${response.data.updatedCount} updated.`
               : ""
-          }`
+          }`,
         );
         setSelectedOffers([]);
         fetchOffers(1, typeFilter);
@@ -1127,7 +1266,8 @@ export default function NonGamingOffers() {
 
   // Handle single Everflow offer sync after modal confirmation
   const performSingleEverflowSync = async (targetAudience) => {
-    if (!pendingSyncAction || pendingSyncAction.type !== "single_everflow") return;
+    if (!pendingSyncAction || pendingSyncAction.type !== "single_everflow")
+      return;
 
     const offerId = pendingSyncAction.offerId;
     setTogglingOffers((prev) => new Set(prev).add(offerId));
@@ -1158,7 +1298,8 @@ export default function NonGamingOffers() {
 
   // Handle single Affise offer sync after modal confirmation
   const performSingleAffiseSync = async (targetAudience) => {
-    if (!pendingSyncAction || pendingSyncAction.type !== "single_affise") return;
+    if (!pendingSyncAction || pendingSyncAction.type !== "single_affise")
+      return;
 
     const offerId = pendingSyncAction.offerId;
     setTogglingOffers((prev) => new Set(prev).add(offerId));
@@ -1195,18 +1336,25 @@ export default function NonGamingOffers() {
     setTogglingOffers((prev) => new Set(prev).add(offerId));
     try {
       const backendType = getBackendOfferType(
-        pendingSyncAction.offerType || typeFilter
+        pendingSyncAction.offerType || typeFilter,
       );
       const devices = deviceFilter !== "all" ? [deviceFilter] : undefined;
       const country = countryFilter;
 
       const response = await surveyAPIs.syncNonGamingOffers({
-        sdk: sdkFilter === "everflow" ? "everflow" : sdkFilter === "affise" ? "affise" : "bitlabs",
+        sdk:
+          sdkFilter === "everflow"
+            ? "everflow"
+            : sdkFilter === "affise"
+              ? "affise"
+              : "bitlabs",
         offerIds: [offerId],
         autoActivate: true,
         devices,
         country,
-        targetAudience: targetAudience ? [{ offerId: String(offerId), targetAudience }] : undefined,
+        targetAudience: targetAudience
+          ? [{ offerId: String(offerId), targetAudience }]
+          : undefined,
       });
 
       if (response.success) {
@@ -1459,15 +1607,18 @@ export default function NonGamingOffers() {
               onChange={(e) => {
                 const next = e.target.value;
                 setSdkFilter(next);
-                // For Everflow/Affise, force "all" since BitLabs-specific types don't apply
-                if (next === "everflow" || next === "affise") setTypeFilter("all");
-                if (next === "bitlabs" && typeFilter === "all") setTypeFilter("cashback");
+                // For Everflow/Affise/Besitos, force "all" since BitLabs-specific types don't apply
+                if (next === "everflow" || next === "affise" || next === "besitos")
+                  setTypeFilter("all");
+                if (next === "bitlabs" && typeFilter === "all")
+                  setTypeFilter("cashback");
               }}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
               <option value="bitlabs">BitLabs</option>
               <option value="everflow">Everflow</option>
               <option value="affise">Affise</option>
+              <option value="besitos">Besitos</option>
             </select>
           </div>
 
@@ -1479,7 +1630,7 @@ export default function NonGamingOffers() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              disabled={sdkFilter === "everflow" || sdkFilter === "affise"}
+              disabled={sdkFilter === "everflow" || sdkFilter === "affise" || sdkFilter === "besitos"}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
               {typeOptions.map((option) => {
@@ -1606,17 +1757,17 @@ export default function NonGamingOffers() {
                       {typeFilter === "cashback"
                         ? "Merchant"
                         : typeFilter === "shopping" ||
-                          typeFilter === "magic-receipts"
-                        ? "Product/Offer"
-                        : "Merchant/Offer"}
+                            typeFilter === "magic-receipts"
+                          ? "Product/Offer"
+                          : "Merchant/Offer"}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {typeFilter === "cashback"
                         ? "Points / Cashback"
                         : typeFilter === "shopping" ||
-                          typeFilter === "magic-receipts"
-                        ? "Points"
-                        : "Reward"}
+                            typeFilter === "magic-receipts"
+                          ? "Points"
+                          : "Reward"}
                     </th>
                     {(sdkFilter === "everflow" || sdkFilter === "affise") && (
                       <>
@@ -1652,9 +1803,9 @@ export default function NonGamingOffers() {
                       {typeFilter === "cashback"
                         ? "Reward Delay"
                         : typeFilter === "shopping" ||
-                          typeFilter === "magic-receipts"
-                        ? "Confirmation"
-                        : "Delay"}
+                            typeFilter === "magic-receipts"
+                          ? "Confirmation"
+                          : "Delay"}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -1675,9 +1826,12 @@ export default function NonGamingOffers() {
                           (typeFilter === "cashback"
                             ? 10
                             : typeFilter === "shopping" ||
-                              typeFilter === "magic-receipts"
-                            ? 10
-                            : 8) + (sdkFilter === "everflow" || sdkFilter === "affise" ? 2 : 0)
+                                typeFilter === "magic-receipts"
+                              ? 10
+                              : 8) +
+                          (sdkFilter === "everflow" || sdkFilter === "affise"
+                            ? 2
+                            : 0)
                         }
                         className="px-6 py-4 text-center text-gray-500"
                       >
@@ -1696,18 +1850,22 @@ export default function NonGamingOffers() {
                       const displayName = isCashback
                         ? offer.merchant_name || offer.title || "Untitled"
                         : isShopping || isMagicReceipt
-                        ? offer.anchor ||
-                          offer.product_name ||
-                          offer.title ||
-                          "Untitled"
-                        : offer.title || "Untitled";
+                          ? offer.anchor ||
+                            offer.product_name ||
+                            offer.title ||
+                            "Untitled"
+                          : offer.title || "Untitled";
 
                       // Image source based on type (Publisher API: creatives.icon, icon)
                       const imageSrc = isCashback
-                        ? offer.creatives?.icon || offer.icon || offer.images?.cardImageSmall
+                        ? offer.creatives?.icon ||
+                          offer.icon ||
+                          offer.images?.cardImageSmall
                         : isShopping || isMagicReceipt
-                        ? offer.creatives?.icon || offer.icon_url || offer.icon
-                        : offer.icon || offer.banner || null;
+                          ? offer.creatives?.icon ||
+                            offer.icon_url ||
+                            offer.icon
+                          : offer.icon || offer.banner || null;
 
                       return (
                         <tr
@@ -1746,7 +1904,9 @@ export default function NonGamingOffers() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {isCashback &&
                             (offer.cashback || offer.original_cashback) &&
-                            parseFloat(offer.cashback || offer.original_cashback) > 0 ? (
+                            parseFloat(
+                              offer.cashback || offer.original_cashback,
+                            ) > 0 ? (
                               <div className="text-sm">
                                 <span className="font-semibold text-emerald-600">
                                   {offer.cashback || offer.original_cashback}%
@@ -1762,19 +1922,23 @@ export default function NonGamingOffers() {
                                   </span>
                                 )}
                               </div>
-                            ) : (isCashback && (offer.total_points || offer.events?.[0]?.points)) ||
-                              ((isShopping || isMagicReceipt) && offer.total_points) ? (
+                            ) : (isCashback &&
+                                (offer.total_points ||
+                                  offer.events?.[0]?.points)) ||
+                              ((isShopping || isMagicReceipt) &&
+                                offer.total_points) ? (
                               <div className="text-sm">
                                 <span className="font-semibold text-emerald-600">
                                   {parseInt(
                                     offer.total_points ||
                                       offer.events?.[0]?.points ||
-                                      0
+                                      0,
                                   ).toLocaleString()}{" "}
                                   pts
                                 </span>
                               </div>
-                            ) : (offer.sdkProvider === "affise" || offer.sdkProvider === "everflow") ? (
+                            ) : offer.sdkProvider === "affise" ||
+                              offer.sdkProvider === "everflow" ? (
                               <div className="text-sm">
                                 <span className="font-semibold text-gray-700">
                                   {offer.payout_type || offer.type || "—"}
@@ -1789,11 +1953,13 @@ export default function NonGamingOffers() {
                               <span className="text-sm text-gray-400">N/A</span>
                             )}
                           </td>
-                          {(sdkFilter === "everflow" || sdkFilter === "affise") && (
+                          {(sdkFilter === "everflow" ||
+                            sdkFilter === "affise") && (
                             <>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className="text-sm font-semibold text-gray-900">
-                                  {offer.payoutAmount != null && offer.payoutAmount !== ""
+                                  {offer.payoutAmount != null &&
+                                  offer.payoutAmount !== ""
                                     ? `${Number(offer.payoutAmount)} ${offer.currency || "EUR"}`
                                     : "—"}
                                 </span>
@@ -1812,14 +1978,22 @@ export default function NonGamingOffers() {
                                       className="w-10 h-10 rounded object-cover border border-gray-200 bundle-img"
                                       onError={(e) => {
                                         e.target.style.display = "none";
-                                        const fallback = e.target.parentElement?.querySelector(".bundle-fallback");
-                                        if (fallback) fallback.classList.remove("hidden");
+                                        const fallback =
+                                          e.target.parentElement?.querySelector(
+                                            ".bundle-fallback",
+                                          );
+                                        if (fallback)
+                                          fallback.classList.remove("hidden");
                                       }}
                                     />
-                                    <span className="bundle-fallback hidden">View bundle</span>
+                                    <span className="bundle-fallback hidden">
+                                      View bundle
+                                    </span>
                                   </a>
                                 ) : (
-                                  <span className="text-sm text-gray-400">—</span>
+                                  <span className="text-sm text-gray-400">
+                                    —
+                                  </span>
                                 )}
                               </td>
                             </>
@@ -1828,7 +2002,8 @@ export default function NonGamingOffers() {
                             typeFilter === "shopping" ||
                             typeFilter === "magic-receipts") && (
                             <td className="px-6 py-4 whitespace-nowrap">
-                              {offer.epc != null && String(offer.epc) !== "0" ? (
+                              {offer.epc != null &&
+                              String(offer.epc) !== "0" ? (
                                 <div className="text-sm">
                                   <span className="font-semibold text-blue-600">
                                     ${offer.epc}
@@ -1857,14 +2032,19 @@ export default function NonGamingOffers() {
                                   {offer.reward_delay_days} days
                                 </div>
                               ) : (
-                                <span className="text-sm text-gray-400">N/A</span>
+                                <span className="text-sm text-gray-400">
+                                  N/A
+                                </span>
                               )}
                             </td>
                           )}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm">
                               <span className="font-medium text-emerald-700">
-                                {offer.userRewardCoins ?? offer.reward?.coins ?? 0} coins
+                                {offer.userRewardCoins ??
+                                  offer.reward?.coins ??
+                                  0}{" "}
+                                coins
                               </span>
                               <span className="text-gray-500 mx-1">/</span>
                               <span className="font-medium text-amber-700">

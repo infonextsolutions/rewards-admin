@@ -8,7 +8,7 @@ const surveyAPIs = {
   // ── Fetch from SDK (admin preview — no DB write) ─────────────────────────
 
   // GET /api/non-gaming-survey/admin/non-gaming/fetch
-  // sdk: "bitlabs" | "everflow" | "affise"
+  // sdk: "bitlabs" | "everflow" | "affise" | "besitos"
   // Returns: { success, data, categorized: { cashback, shopping, magicReceipts, surveys, other }, breakdown, total }
   async fetchNonGamingOffers({ sdk = "bitlabs", type = "all", country, devices, page = 1, limit = 20 } = {}) {
     try {
@@ -48,7 +48,7 @@ const surveyAPIs = {
   // ── Sync (save) to DB ────────────────────────────────────────────────────
 
   // POST /api/non-gaming-survey/admin/non-gaming/sync
-  // sdk: "bitlabs" | "everflow" | "affise"
+  // sdk: "bitlabs" | "everflow" | "affise" | "besitos"
   async syncNonGamingOffers({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience } = {}) {
     try {
       const response = await apiClient.post(`${BASE}/admin/non-gaming/sync`, {
@@ -78,7 +78,7 @@ const surveyAPIs = {
   // ── Read / Delete configured offers from DB ──────────────────────────────
 
   // GET /api/non-gaming-survey/admin/configured
-  // offerType: "all" | "survey" | "cashback" | "shopping" | "magic_receipt"
+  // offerType: "all" | "survey" | "cashback" | "shopping" | "magic_receipt" | "besitos_deal"
   // status: "all" | "live" | "paused"
   // sdk: "all" | "bitlabs" | "besitos" | "everflow" | "affise"
   async getConfiguredOffers({ offerType = "all", status = "all", sdk = "all" } = {}) {
