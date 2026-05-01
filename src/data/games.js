@@ -432,6 +432,7 @@ export const gamesAPI = {
         return {
           id: game._id,
           gameId: game.gameId, // Include gameId from API
+          position: game.position, // Position number (1, 2, 3, 4, 5, 6, 7...) from backend
           name: game.title || "Untitled Game", // For dropdowns and selectors
           title: game.title || "Untitled Game",
           sdk: game.sdkProvider || "N/A",

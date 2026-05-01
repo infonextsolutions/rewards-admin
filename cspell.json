@@ -1,0 +1,18 @@
+{
+  "version": "0.1",
+  "language": "en",
+  "ignoreWords": [
+    "cooldown",
+    "cooldowns",
+    "Cooldown",
+    "cooldownPeriod",
+    "VIP",
+    "VIPs",
+    "vip",
+    "spinwheel",
+    "spinwheel",
+    "spinMultiplier",
+    "rewardMultiplier",
+    "unlimitedSpins"
+  ]
+}

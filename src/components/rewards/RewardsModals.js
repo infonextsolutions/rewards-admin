@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
+  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
 
-// const API_BASE = 'https://rewardsuatapi.hireagent.co/api'
+// const API_BASE = 'https://rewardsapi.hireagent.co/api'
 
 // Axios instance with default config
 const apiClient = axios.create({
