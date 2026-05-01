@@ -7,26 +7,39 @@ import {
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 
+function minutesToHM(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return { hours: h, minutes: m };
+}
+
+function hmToMinutes(hours, minutes) {
+  return (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
+}
+
 export default function SpinSettingsConfiguration({
   settings = {},
   onUpdateSettings,
   loading,
 }) {
+  const [cooldownHours, setCooldownHours] = useState(6);
+  const [cooldownMinutes, setCooldownMinutes] = useState(0);
+
   const [formData, setFormData] = useState({
     spinMode: "free",
-    cooldownPeriod: 6, // in hours
-    maxSpinsPerDay: 3,
+    cooldownPeriod: 360,
     eligibleTiers: ["All Tiers"],
     startDate: "",
     endDate: "",
     vipMultipliers: {
-      bronze: 1.0,
-      gold: 1.5,
-      platinum: 2.0,
+    },
+    spinsPerTier: {
+
     },
     ...settings,
   });
 
+  const [vipTiers, setVipTiers] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -34,21 +47,54 @@ export default function SpinSettingsConfiguration({
 
   useEffect(() => {
     setFormData((prev) => ({ ...prev, ...settings }));
+    const { hours, minutes } = minutesToHM(settings.cooldownPeriod || 360);
+    setCooldownHours(hours);
+    setCooldownMinutes(minutes);
   }, [settings]);
+
+  const handleCooldownChange = (type, value) => {
+    if (type === "hours") {
+      setCooldownHours(value);
+    } else {
+      setCooldownMinutes(value);
+    }
+    const newMinutes = hmToMinutes(
+      type === "hours" ? value : cooldownHours,
+      type === "minutes" ? value : cooldownMinutes
+    );
+    setFormData((prev) => ({ ...prev, cooldownPeriod: newMinutes }));
+  };
+
+  useEffect(() => {
+    const fetchVIPTiers = async () => {
+      try {
+        const { default: spinWheelAPIs } = await import("../../data/spinWheel/spinWheelAPI");
+        const response = await spinWheelAPIs.getVIPTiers();
+        if (response.success && Array.isArray(response.data)) {
+          setVipTiers(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching VIP tiers:", error);
+      }
+    };
+    fetchVIPTiers();
+  }, []);
 
   useEffect(() => {
     const isChanged =
-      JSON.stringify(formData) !== JSON.stringify({ ...formData, ...settings });
+      JSON.stringify(formData) !== JSON.stringify({ ...formData, ...settings }) ||
+      cooldownHours !== minutesToHM(settings.cooldownPeriod || 360).hours ||
+      cooldownMinutes !== minutesToHM(settings.cooldownPeriod || 360).minutes;
     setHasChanges(isChanged);
-  }, [formData, settings]);
+  }, [formData, settings, cooldownHours, cooldownMinutes]);
 
-  const tierOptions = ["All Tiers", "Bronze", "Gold", "Platinum"];
+  const tierOptions = ["All Tiers", "Free", "Bronze", "Gold", "Platinum"];
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (formData.cooldownPeriod < 1 || formData.cooldownPeriod > 24) {
-      newErrors.cooldownPeriod = "Cooldown period must be between 1-24 hours";
+    if (formData.cooldownPeriod < 1 || formData.cooldownPeriod > 1440) {
+      newErrors.cooldownPeriod = "Cooldown period must be between 1-1440 minutes";
     }
 
     if (
@@ -76,7 +122,6 @@ export default function SpinSettingsConfiguration({
       [field]: value,
     }));
     setSaveSuccess(false);
-    // Clear error for this field when user starts typing
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -84,7 +129,6 @@ export default function SpinSettingsConfiguration({
         return newErrors;
       });
     }
-    // Clear dateRange error when either date changes
     if (field === "startDate" || field === "endDate") {
       if (errors.dateRange) {
         setErrors((prev) => {
@@ -140,18 +184,21 @@ export default function SpinSettingsConfiguration({
     }
   };
 
-  const handleReset = () => {
+const handleReset = () => {
+    const { hours, minutes } = minutesToHM(360);
+    setCooldownHours(hours);
+    setCooldownMinutes(minutes);
     setFormData({
       spinMode: "free",
-      cooldownPeriod: 6, // in hours
-      maxSpinsPerDay: 3,
+      cooldownPeriod: 360,
       eligibleTiers: ["All Tiers"],
       startDate: "",
       endDate: "",
       vipMultipliers: {
-        bronze: 1.0,
-        gold: 1.5,
-        platinum: 2.0,
+        
+      },
+      spinsPerTier: {
+        
       },
       ...settings,
     });
@@ -162,7 +209,6 @@ export default function SpinSettingsConfiguration({
 
   return (
     <div className="space-y-6">
-      {/* Spin Settings Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -171,25 +217,20 @@ export default function SpinSettingsConfiguration({
                 Spin Settings Configuration
               </h2>
               <p className="mt-1 text-sm text-gray-600">
-                Configure spin modes, cooldowns, eligibility, and advanced
-                settings
+                Configure spin modes, cooldowns, eligibility, and advanced settings
               </p>
             </div>
             {saveSuccess && (
               <div className="flex items-center text-emerald-600">
                 <CheckIcon className="h-5 w-5 mr-2" />
-                <span className="text-sm font-medium">
-                  Settings saved successfully
-                </span>
+                <span className="text-sm font-medium">Settings saved successfully</span>
               </div>
             )}
           </div>
         </div>
 
         <div className="p-6 space-y-8">
-          {/* Basic Spin Settings */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Spin Mode */}
             <div className="space-y-4">
               <h3 className="text-base font-medium text-gray-900">Spin Mode</h3>
               <div className="space-y-3">
@@ -199,9 +240,7 @@ export default function SpinSettingsConfiguration({
                     name="spinMode"
                     value="free"
                     checked={formData.spinMode === "free"}
-                    onChange={(e) =>
-                      handleInputChange("spinMode", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange("spinMode", e.target.value)}
                     className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
                   />
                   <span className="ml-3 text-sm text-gray-700">Free Spin</span>
@@ -211,97 +250,136 @@ export default function SpinSettingsConfiguration({
                     type="radio"
                     name="spinMode"
                     value="ad-based"
-                    checked={
-                      formData.spinMode === "ad-based" ||
-                      formData.spinMode === "ad_based"
-                    }
-                    onChange={(e) =>
-                      handleInputChange("spinMode", e.target.value)
-                    }
+                    checked={formData.spinMode === "ad-based" || formData.spinMode === "ad_based"}
+                    onChange={(e) => handleInputChange("spinMode", e.target.value)}
                     className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
                   />
-                  <span className="ml-3 text-sm text-gray-700">
-                    Ad-Based Spin
-                  </span>
+                  <span className="ml-3 text-sm text-gray-700">Ad-Based Spin</span>
                 </label>
               </div>
             </div>
 
-            {/* Cooldown & Frequency */}
             <div className="space-y-4">
-              <h3 className="text-base font-medium text-gray-900">
-                Frequency Controls
-              </h3>
+              <h3 className="text-base font-medium text-gray-900">Frequency Controls</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cooldown Period (hours) *
+                    Cooldown Period *
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={formData.cooldownPeriod}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "cooldownPeriod",
-                        parseInt(e.target.value),
-                      )
-                    }
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                      errors.cooldownPeriod
-                        ? "border-red-300"
-                        : "border-gray-300"
-                    }`}
-                    placeholder="6"
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={cooldownHours}
+                        onChange={(e) => handleCooldownChange("hours", parseInt(e.target.value) || 0)}
+                        className={`w-20 px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                          errors.cooldownPeriod ? "border-red-300" : "border-gray-300"
+                        }`}
+                        placeholder="6"
+                      />
+                      <span className="ml-2 text-sm text-gray-600">hr</span>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={cooldownMinutes}
+                        onChange={(e) => handleCooldownChange("minutes", parseInt(e.target.value) || 0)}
+                        className={`w-20 px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                          errors.cooldownPeriod ? "border-red-300" : "border-gray-300"
+                        }`}
+                        placeholder="0"
+                      />
+                      <span className="ml-2 text-sm text-gray-600">min</span>
+                    </div>
+                  </div>
                   {errors.cooldownPeriod && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.cooldownPeriod}
-                    </p>
+                    <p className="mt-1 text-sm text-red-600">{errors.cooldownPeriod}</p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max Spins Per Day
+<div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Max Spins Per Day Based on Membership
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={formData.maxSpinsPerDay}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "maxSpinsPerDay",
-                        parseInt(e.target.value),
-                      )
-                    }
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                      errors.maxSpinsPerDay
-                        ? "border-red-300"
-                        : "border-gray-300"
-                    }`}
-                    placeholder="3"
-                  />
-                  {errors.maxSpinsPerDay && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.maxSpinsPerDay}
-                    </p>
-                  )}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {["free", "bronze", "gold", "platinum"].map((tier) => {
+                      const vipTierData = vipTiers.find(t => t.tierId?.toLowerCase() === tier);
+                      const vipBonusSpins = vipTierData?.features?.bonusSpins || 0;
+                      return (
+                        <div key={tier} className="relative">
+                          <label className="block text-xs text-gray-500 mb-1 capitalize">
+                            {tier}
+                            
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={formData.spinsPerTier?.[tier] || 0}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value) || 0;
+                              setFormData((prev) => ({
+                                ...prev,
+                                spinsPerTier: {
+                                  ...prev.spinsPerTier,
+                                  [tier]: value,
+                                },
+                              }));
+                            }}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bonus Spins Per Day (from VIP membership)
+                  </label>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {["free", "bronze", "gold", "platinum"].map((tier) => {
+                      const vipTierData = vipTiers.find(t => t.tierId?.toLowerCase() === tier);
+                      const vipBonusSpins = vipTierData?.features?.bonusSpins || 0;
+                      return (
+                        <div key={tier} className="relative">
+                          <label className="block text-xs text-gray-500 mb-1 capitalize">
+                            {tier}
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={formData.spinsPerTier?.[tier] || 0}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value) || 0;
+                              setFormData((prev) => ({
+                                ...prev,
+                                spinsPerTier: {
+                                  ...prev.spinsPerTier,
+                                  [tier]: value,
+                                },
+                              }));
+                            }}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div> */}
               </div>
             </div>
           </div>
 
-          {/* Eligibility Settings */}
           <div>
-            <h3 className="text-base font-medium text-gray-900 mb-1">
-              Eligible Membership Tiers
-            </h3>
-            <p className="text-xs text-gray-500 mb-4">
-              Select one or more tiers that can access the spin wheel
-            </p>
+            <h3 className="text-base font-medium text-gray-900 mb-1">Eligible Membership Tiers</h3>
+            <p className="text-xs text-gray-500 mb-4">Select one or more tiers that can access the spin wheel</p>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               {tierOptions.map((tier) => (
                 <label key={tier} className="flex items-center">
@@ -316,83 +394,9 @@ export default function SpinSettingsConfiguration({
               ))}
             </div>
           </div>
-
-          {/* Date Range Settings */}
           <div>
-            <div className="mb-4">
-              <h3 className="text-base font-medium text-gray-900 mb-1">
-                Campaign Duration (Optional)
-              </h3>
-              <p className="text-sm text-gray-600 mb-2">
-                Set a time window when the spin wheel will be available to
-                users. Leave empty to make it always available.
-              </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-800">
-                  <strong>How it works:</strong> The spin wheel will only be
-                  accessible to users between the start and end dates. If no
-                  dates are set, the spin wheel is always available (subject to
-                  other settings like cooldown and daily limits).
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    handleInputChange("startDate", e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                    errors.dateRange ? "border-red-300" : "border-gray-300"
-                  }`}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Spin wheel becomes available at this time
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.endDate}
-                  onChange={(e) => handleInputChange("endDate", e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                    errors.dateRange ? "border-red-300" : "border-gray-300"
-                  }`}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Spin wheel becomes unavailable after this time
-                </p>
-              </div>
-            </div>
-            {errors.dateRange && (
-              <p className="mt-2 text-sm text-red-600">{errors.dateRange}</p>
-            )}
-            {formData.startDate && formData.endDate && (
-              <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                <p className="text-xs text-emerald-800">
-                  <strong>Active Period:</strong> The spin wheel will be
-                  available from {new Date(formData.startDate).toLocaleString()}{" "}
-                  to {new Date(formData.endDate).toLocaleString()}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* VIP Multipliers */}
-          <div>
-            <h3 className="text-base font-medium text-gray-900 mb-1">
-              VIP Tier Multipliers
-            </h3>
-            <p className="text-sm text-gray-600 mb-2">
+            <h3 className="text-base font-medium text-gray-900 mb-1">VIP Tier Multipliers</h3>
+           <p className="text-sm text-gray-600 mb-2">
               Configure reward multipliers for each VIP tier. These multipliers
               determine how much users receive when they win rewards from the
               spin wheel.
@@ -406,44 +410,99 @@ export default function SpinSettingsConfiguration({
                 1.5x multiplier, they receive 150 coins.
               </p>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {["bronze", "gold", "platinum"].map((tier) => (
-                <div key={tier}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                    {tier} Multiplier
-                  </label>
-                  <input
-                    type="number"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    value={formData.vipMultipliers?.[tier] || 1.0}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value) || 1.0;
-                      setFormData((prev) => ({
-                        ...prev,
-                        vipMultipliers: {
-                          ...prev.vipMultipliers,
-                          [tier]: value,
-                        },
-                      }));
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-              ))}
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {["free", "bronze", "gold", "platinum"].map((tier) => {
+                const vipTierData = vipTiers.find(t => t.tierId?.toLowerCase() === tier);
+                const vipMultiplier = vipTierData?.features?.xpMultiplier || 1.0;
+                const bonusMultiplier = vipMultiplier > 1 ? (vipMultiplier - 1).toFixed(1) : 0;
+                return (
+                  <div key={tier} className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                      {tier} Multiplier 
+                      
+                    </label>
+                    <input
+                      type="number"
+                      min="0.1"
+                      max="10"
+                      step="0.1"
+                      value={vipMultiplier}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Validation Messages */}
+          <div>
+            <div className="mb-4">
+              <h3 className="text-base font-medium text-gray-900 mb-1">Campaign Duration (Optional)</h3>
+              <p className="text-sm text-gray-600 mb-2">
+Set a time window when the spin wheel will be available to
+                users. Leave empty to make it always available.              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>How it works:</strong> The spin wheel will only be
+                  accessible to users between the start and end dates. If no
+                  dates are set, the spin wheel is always available (subject to
+                  other settings like cooldown and daily limits).
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
+                <input
+                  type="datetime-local"
+                  value={formData.startDate}
+                  onChange={(e) => handleInputChange("startDate", e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                    errors.dateRange ? "border-red-300" : "border-gray-300"
+                  }`}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Spin wheel becomes available at this time
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
+                <input
+                  type="datetime-local"
+                  value={formData.endDate}
+                  onChange={(e) => handleInputChange("endDate", e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
+                    errors.dateRange ? "border-red-300" : "border-gray-300"
+                  }`}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Spin wheel becomes unavailable after this time
+                </p>
+              </div>
+            </div>
+            {errors.dateRange && <p className="mt-2 text-sm text-red-600">{errors.dateRange}</p>}
+             {formData.startDate && formData.endDate && (
+              <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <p className="text-xs text-emerald-800">
+                  <strong>Active Period:</strong> The spin wheel will be
+                  available from {new Date(formData.startDate).toLocaleString()}{" "}
+                  to {new Date(formData.endDate).toLocaleString()}
+                </p>
+              </div>
+            )}
+          </div>
+
+          
+
           {Object.keys(errors).length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="flex">
                 <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mt-0.5" />
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    Please fix the following errors:
-                  </h3>
+                  <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
                   <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
                     {Object.values(errors).map((error, index) => (
                       <li key={index}>{error}</li>
@@ -454,7 +513,6 @@ export default function SpinSettingsConfiguration({
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
               onClick={handleReset}
