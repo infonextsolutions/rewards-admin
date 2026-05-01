@@ -76,17 +76,6 @@ const CITIES = {
   // Add more cities as needed
 };
 
-const MARKETING_CHANNELS = [
-  "Facebook",
-  "TikTok",
-  "Organic",
-  "Paid",
-  "Google",
-  "Instagram",
-  "Twitter",
-  "YouTube",
-];
-
 export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const {
     sdkProviders,
@@ -99,6 +88,51 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const [loadingGames, setLoadingGames] = useState(false);
   const [uiSections, setUiSections] = useState([]);
   const [loadingUISections, setLoadingUISections] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [marketingChannels, setMarketingChannels] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [loadingChannels, setLoadingChannels] = useState(false);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+
+  // Fetch marketing channels and campaigns from backend
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const fetchData = async () => {
+      setLoadingChannels(true);
+      try {
+        const channelsRes = await apiClient.get('/admin/marketing/channels');
+        const channelsData = channelsRes.data;
+        if (channelsData.success && channelsData.data) {
+          setMarketingChannels(channelsData.data);
+          console.log('✅ Marketing channels loaded:', channelsData.data);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching marketing channels:', error);
+        setMarketingChannels([]);
+      } finally {
+        setLoadingChannels(false);
+      }
+
+      // Fetch campaigns
+      setLoadingCampaigns(true);
+      try {
+        const campaignsRes = await apiClient.get('/admin/marketing/campaigns');
+        const campaignsData = campaignsRes.data;
+        if (campaignsData.success && campaignsData.data) {
+          setCampaigns(campaignsData.data);
+          console.log('✅ Campaigns loaded:', campaignsData.data);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching campaigns:', error);
+        setCampaigns([]);
+      } finally {
+        setLoadingCampaigns(false);
+      }
+    };
+    fetchData();
+  }, [isOpen]);
+
   const [formData, setFormData] = useState({
     gameId: "",
     title: "",
@@ -144,6 +178,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       marketingChannel: "",
       campaignName: "",
     },
+    country: "", // Country filter for Bitlabs games
     thirdPartyGameData: null, // Store complete third-party API response
   });
 
@@ -199,6 +234,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         segmentsMarketingChannel: game.segments?.marketingChannel,
         campaignName: game.campaignName,
         segmentsCampaignName: game.segments?.campaignName,
+        country: game.country || game.segments?.country || "", // Country for Bitlabs games
       });
 
       setFormData({
@@ -316,7 +352,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         rewardXP: 0,
         rewardCoins: 0,
         rewardDollars: 0,
-        taskCount: 0,
+    taskCount: 0,
         activeVisible: true,
         fallbackGame: false,
         thumbnail: null,
@@ -404,8 +440,12 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       setLoadingGames(true);
       try {
         const sdkName = formData.sdk.toLowerCase();
+        // Include country parameter for Bitlabs games
+        const countryParam = formData.sdk.toLowerCase() === "bitlabs" && formData.country 
+          ? `&country=${formData.country}` 
+          : "";
         const response = await apiClient.get(
-          `/admin/game-offers/games/by-sdk/${sdkName}?device_platform=${platform}`,
+          `/admin/game-offers/games/by-sdk/${sdkName}?device_platform=${platform}${countryParam}`,
         );
 
         if (response.data.success && response.data.data) {
@@ -427,7 +467,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     };
 
     fetchGamesBySDK();
-  }, [formData.sdk, platform]);
+  }, [formData.sdk, platform, formData.country]);
 
   const handleInputChange = (field, value) => {
     if (field.includes(".")) {
@@ -649,7 +689,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       return;
     }
 
-    // Map form data to API format
+     // Map form data to API format
     const apiPayload = {
       gameId: formData.gameId,
       title: formData.title,
@@ -671,7 +711,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       difficulty: formData.metadata.difficulty,
       rating: parseFloat(formData.metadata.rating) || 3,
       estimatedPlayTime: parseInt(formData.metadata.estimatedPlayTime) || 15,
-      // Countries field removed from Game model
+      // Only send country for Bitlabs games
+      country: formData.sdk?.toLowerCase() === "bitlabs" ? formData.country : undefined,
       ageGroups: formData.segments.ageGroups,
       gender: formData.segments.gender || "all",
       marketingChannel: formData.segments.marketingChannel,
@@ -705,18 +746,29 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         ></div>
 
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl z-50">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b">
-            <h3 className="text-lg font-medium text-gray-900">
-              {game ? "Edit Game" : "Add New Game"}
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-          </div>
+        {/* Header */}
+           <div className="flex items-center justify-between px-6 py-4 border-b">
+             <h3 className="text-lg font-medium text-gray-900">
+               {game ? "Edit Game" : "Add New Game"}
+             </h3>
+             <div className="flex items-center space-x-3">
+               {!game && formData.gameId && (
+                 <button
+                   type="button"
+                   onClick={() => setShowPreviewModal(true)}
+                   className="inline-flex items-center px-3 py-1.5 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100"
+                 >
+                   Preview Tasks
+                 </button>
+               )}
+               <button
+                 onClick={onClose}
+                 className="text-gray-400 hover:text-gray-600"
+               >
+                 <XMarkIcon className="h-6 w-6" />
+               </button>
+             </div>
+           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -798,6 +850,37 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     ))}
                   </select>
                 </div>
+
+                {/* Country filter for Bitlabs games */}
+                {formData.sdk?.toLowerCase() === "bitlabs" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Country <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.country}
+                      onChange={(e) => handleInputChange("country", e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                      required
+                    >
+                      <option value="">Select Country...</option>
+                      <option value="US">US</option>
+                      <option value="CA">Canada</option>
+                      <option value="UK">UK</option>
+                      <option value="AU">Australia</option>
+                      <option value="DE">Germany</option>
+                      <option value="FR">France</option>
+                      <option value="JP">Japan</option>
+                      <option value="KR">South Korea</option>
+                      <option value="IN">India</option>
+                      <option value="BR">Brazil</option>
+                      <option value="MX">Mexico</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Country filter for Bitlabs game offers (required)
+                    </p>
+                  </div>
+                )}
 
                 {/* XPTR Rules - Hidden: Field not used anywhere in app logic */}
                 {/* <div className="md:col-span-2">
@@ -891,7 +974,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   </p>
                 </div>
 
-                {/* Default Task Count - Hidden: Field not used anywhere per dev confirmation */}
+                {/* Default Task Count - Hidden: Not used in app logic */}
                 {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Default Task Count
@@ -1191,7 +1274,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
 
                 {/* City field - Hidden in edit modal */}
 
-                <div>
+                  <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Marketing Channel
                   </label>
@@ -1200,14 +1283,15 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     onChange={(e) =>
                       handleInputChange(
                         "segments.marketingChannel",
-                        e.target.value,
+                        e.target.value
                       )
                     }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
                     aria-label="Marketing Channel"
+                    disabled={loadingChannels}
                   >
-                    <option value="">Select Channel...</option>
-                    {MARKETING_CHANNELS.map((channel) => (
+                    <option value="">Select Channel... {loadingChannels ? '(Loading...)' : ''}</option>
+                    {marketingChannels.map((channel) => (
                       <option key={channel} value={channel}>
                         {channel}
                       </option>
@@ -1219,16 +1303,21 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Campaign Name
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.segments.campaignName}
                     onChange={(e) =>
                       handleInputChange("segments.campaignName", e.target.value)
                     }
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                    placeholder="Enter campaign name"
                     aria-label="Campaign Name"
-                  />
+                    disabled={loadingCampaigns}
+                  >
+                    <option value="">Select campaign...</option>
+                    {campaigns.map(campaign => (
+                      <option key={campaign} value={campaign}>{campaign}</option>
+                    ))}
+                  </select>
+                  {loadingCampaigns && <p className="text-xs text-gray-500 mt-1">Loading campaigns...</p>}
                 </div>
               </div>
             </div>
@@ -1254,6 +1343,210 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           </form>
         </div>
       </div>
+
+      {/* Preview Modal - Shows actual tasks from API response */}
+      {showPreviewModal && formData.thirdPartyGameData && (
+        <div className="fixed inset-0 z-60 overflow-y-auto">
+          <div className="flex items-start justify-center min-h-screen px-4 pt-10">
+            <div
+              className="fixed inset-0 bg-gray-500 bg-opacity-75"
+              onClick={() => setShowPreviewModal(false)}
+            ></div>
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl z-50">
+              <div className="flex items-center justify-between px-6 py-4 border-b">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Task Preview: {formData.title || "New Game"}
+                </h3>
+                <button
+                  onClick={() => setShowPreviewModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-4">
+                {/* Summary Cards - Row 1: Task info */}
+                <div className="mb-3 grid grid-cols-4 gap-3 text-sm">
+                  <div className="bg-gray-50 p-2 rounded">
+                    <span className="text-gray-500">Total Tasks</span>
+                    <p className="font-bold text-lg">
+                      {formData.thirdPartyGameData.events?.length ||
+                        formData.thirdPartyGameData.goals?.length ||
+                        0}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <span className="text-gray-500">SDK</span>
+                    <p className="font-bold text-lg">{formData.sdk || "N/A"}</p>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <span className="text-gray-500">Base XP (Task 1)</span>
+                    <p className="font-bold text-lg text-blue-700">
+                      {parseFloat(formData.baseXP) || 0}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded">
+                    <span className="text-gray-500">Multiplier</span>
+                    <p className="font-bold text-lg text-blue-700">
+                      {parseFloat(formData.xpMultiplier) || 1}x
+                    </p>
+                  </div>
+                </div>
+
+                {/* Summary Cards - Row 2: Rewards */}
+                <div className="mb-4 grid grid-cols-4 gap-4 text-sm">
+                  <div className="bg-green-50 p-2 rounded border border-green-200">
+                    <span className="text-gray-600">Total Reward (USD)</span>
+                    <p className="font-bold text-lg text-green-700">
+                      ${(() => {
+                        const events = formData.thirdPartyGameData.events;
+                        const goals = formData.thirdPartyGameData.goals;
+                        let total = 0;
+                        if (events && events.length > 0) {
+                          total = events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0);
+                        } else if (goals && goals.length > 0) {
+                          total = goals.reduce((sum, g) => sum + (parseFloat(g.amount) || 0), 0);
+                        }
+                        return total.toFixed(2);
+                      })()}
+                    </p>
+                  </div>
+                  <div className="bg-yellow-50 p-2 rounded border border-yellow-200">
+                    <span className="text-gray-600">Total Coins</span>
+                    <p className="font-bold text-lg text-yellow-700">
+                      {(() => {
+                        const events = formData.thirdPartyGameData.events;
+                        const goals = formData.thirdPartyGameData.goals;
+                        let totalUSD = 0;
+                        if (events && events.length > 0) {
+                          totalUSD = events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0);
+                        } else if (goals && goals.length > 0) {
+                          totalUSD = goals.reduce((sum, g) => sum + (parseFloat(g.amount) || 0), 0);
+                        }
+                        return Math.round(totalUSD * 50).toLocaleString();
+                      })()}
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                    <span className="text-gray-600">Total XP</span>
+                    <p className="font-bold text-lg text-blue-700">
+                      {(() => {
+                        const baseXP = parseFloat(formData.baseXP) || 0;
+                        const multiplier = parseFloat(formData.xpMultiplier) || 1;
+                        const taskCount = formData.thirdPartyGameData.events?.length ||
+                          formData.thirdPartyGameData.goals?.length || 0;
+                        let totalXP = 0;
+                        for (let i = 1; i <= taskCount; i++) {
+                          totalXP += i === 1 ? baseXP : baseXP * Math.pow(multiplier, i - 1);
+                        }
+                        return totalXP.toFixed(1);
+                      })()} XP
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-2 rounded border border-purple-200">
+                    <span className="text-gray-600">CPI</span>
+                    <p className="font-bold text-lg text-purple-700">
+                      ${formData.cpi ? parseFloat(formData.cpi).toFixed(2) : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* XP Calculation Info */}
+                <div className="mb-3 bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
+                  <strong>XP Calculation (matches user-side):</strong> Task 1 = Base XP | Task N = Base XP × (Multiplier ^ (N-1))
+                </div>
+
+                 {/* Tasks Table */}
+                 <div className="max-h-72 overflow-y-auto">
+                   <table className="w-full text-sm border-collapse">
+                     <thead className="sticky top-0 bg-gray-50">
+                       <tr>
+                         <th className="text-left p-2 border">#</th>
+                         <th className="text-left p-2 border">Task Name</th>
+                         <th className="text-left p-2 border">Reward (USD)</th>
+                         {/* <th className="text-left p-2 border">Coins</th> */}
+                         <th className="text-left p-2 border">XP</th>
+                         <th className="text-left p-2 border">Type</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {/* Bitlabs: events array */}
+                       {formData.thirdPartyGameData.events?.map((event, index) => (
+                         <tr key={event.id || index} className="hover:bg-gray-50">
+                           <td className="p-2 border font-medium">{index + 1}</td>
+                           <td className="p-2 border">{event.name}</td>
+                           <td className="p-2 border text-green-700 font-semibold">
+                             ${parseFloat(event.payout || 0).toFixed(2)}
+                           </td>
+                           {/* <td className="p-2 border text-yellow-700">
+                             {Math.round((parseFloat(event.payout) || 0) * 50).toLocaleString()}
+                           </td> */}
+                           <td className="p-2 border text-blue-700 font-semibold">
+                             {(() => {
+                               const baseXP = parseFloat(formData.baseXP) || 0;
+                               const multiplier = parseFloat(formData.xpMultiplier) || 1;
+                               const taskNum = index + 1;
+                               return taskNum === 1 ? baseXP : (baseXP * Math.pow(multiplier, taskNum - 1)).toFixed(1);
+                             })()}
+                           </td>
+                           <td className="p-2 border">
+                             <span className={`px-2 py-1 rounded text-xs ${
+                               event.type_id === 1 ? 'bg-blue-100 text-blue-800' :
+                               event.type_id === 2 ? 'bg-green-100 text-green-800' :
+                               'bg-purple-100 text-purple-800'
+                             }`}>
+                               {event.type_id === 1 ? 'Install' :
+                                event.type_id === 2 ? 'Level' : 'Purchase'}
+                             </span>
+                           </td>
+                         </tr>
+                       )) || null}
+
+                       {/* Besitos: goals array */}
+                       {formData.thirdPartyGameData.goals?.map((goal, index) => (
+                         <tr key={goal.goal_id || index} className="hover:bg-gray-50">
+                           <td className="p-2 border font-medium">{goal.position || index + 1}</td>
+                           <td className="p-2 border">{goal.text}</td>
+                           <td className="p-2 border text-green-700 font-semibold">
+                             ${parseFloat(goal.amount || 0).toFixed(2)}
+                           </td>
+                           <td className="p-2 border text-yellow-700">
+                             {Math.round((parseFloat(goal.amount) || 0) * 50).toLocaleString()}
+                           </td>
+                           <td className="p-2 border text-blue-700 font-semibold">
+                             {(() => {
+                               const baseXP = parseFloat(formData.baseXP) || 0;
+                               const multiplier = parseFloat(formData.xpMultiplier) || 1;
+                               const taskNum = goal.position || index + 1;
+                               return taskNum === 1 ? baseXP : (baseXP * Math.pow(multiplier, taskNum - 1)).toFixed(1);
+                             })()}
+                           </td>
+                           <td className="p-2 border">
+                             <span className={`px-2 py-1 rounded text-xs ${
+                               goal.goal_type === 'linear' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+                             }`}>
+                               {goal.goal_type === 'linear' ? 'Linear' : 'Bonus'}
+                             </span>
+                           </td>
+                         </tr>
+                       )) || null}
+
+                       {/* No tasks message */}
+                       {!formData.thirdPartyGameData.events?.length && !formData.thirdPartyGameData.goals?.length && (
+                         <tr>
+                           <td colSpan="6" className="p-4 text-center text-gray-500">
+                             No tasks found in API response
+                           </td>
+                         </tr>
+                       )}
+                     </tbody>
+                   </table>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

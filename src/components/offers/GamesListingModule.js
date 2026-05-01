@@ -46,6 +46,7 @@ export default function GamesListingModule() {
 
   // single columns set matching combined screenshot
   const columns = [
+    { key: "position", label: "Position" },
     { key: "title", label: "Game Title" },
     { key: "sdk", label: "SDK Game" },
     { key: "device", label: "Device" },
@@ -402,6 +403,12 @@ export default function GamesListingModule() {
 
   const renderCell = (key, game) => {
     switch (key) {
+      case "position":
+        return (
+          <div className="text-center text-sm font-medium text-gray-900">
+            {game.position || "N/A"}
+          </div>
+        );
       case "title":
         return (
           <div>

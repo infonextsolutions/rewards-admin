@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import apiClient from '../lib/apiClient';
 import {
   PlusIcon,
   PencilIcon,
@@ -17,15 +18,9 @@ import OfferPreviewModal from "../surveys-offers/modals/OfferPreviewModal";
 import TierBadge from "../ui/TierBadge";
 import XPTierBadge from "../ui/XPTierBadge";
 import { useOffers } from "../../hooks/useOffers";
+import { useState, useEffect } from "react";
 
 const STATUS_TYPES = ["Active", "Inactive"];
-const MARKETING_CHANNELS = [
-  "Facebook",
-  "TikTok",
-  "Google",
-  "Instagram",
-  "Twitter",
-];
 const COUNTRIES = [
   "US",
   "CA",
@@ -85,6 +80,32 @@ export default function OffersListingModule() {
   const [showSegmentsModal, setShowSegmentsModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
+  const [marketingChannels, setMarketingChannels] = useState([]);
+  const [loadingChannels, setLoadingChannels] = useState(true);
+
+  // Fetch marketing channels from backend
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        setLoadingChannels(true);
+        const response = await apiClient.get('/admin/marketing/channels');
+        const data = response.data;
+        if (data.success && data.data) {
+          setMarketingChannels(data.data);
+          console.log('✅ Marketing channels loaded:', data.data);
+        } else {
+          console.warn('⚠️ No marketing channels found, using empty list');
+          setMarketingChannels([]);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching marketing channels:', error);
+        setMarketingChannels([]);
+      } finally {
+        setLoadingChannels(false);
+      }
+    };
+    fetchChannels();
+  }, []);
 
   // Fetch offers on mount and when filters change
   useEffect(() => {
@@ -477,9 +498,10 @@ export default function OffersListingModule() {
                 }
                 className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
                 aria-label="Filter by channel"
+                disabled={loadingChannels}
               >
-                <option value="all">All Channels</option>
-                {MARKETING_CHANNELS.map((channel) => (
+                <option value="all">All Channels {loadingChannels ? '(Loading...)' : ''}</option>
+                {marketingChannels.map((channel) => (
                   <option key={channel} value={channel}>
                     {channel}
                   </option>

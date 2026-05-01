@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import apiClient from '../../../lib/apiClient';
 import { XMarkIcon, CloudArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useMasterData } from '../../../hooks/useMasterData';
 
@@ -29,10 +30,6 @@ const GAME_PREFERENCES = [
   'Puzzle', 'Trivia', 'Casual', 'Strategy', 'Action', 'Adventure', 'Sports', 'Racing'
 ];
 
-const MARKETING_CHANNELS = [
-  'Facebook', 'TikTok', 'Organic', 'Paid', 'Google', 'Instagram', 'Twitter', 'YouTube'
-];
-
 const XP_TIERS = ['Junior', 'Mid', 'Senior', 'All'];
 
 const CREATIVE_SECTIONS = {
@@ -46,6 +43,48 @@ const CREATIVE_SECTIONS = {
 
 export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
   const { tierAccess, countries, loading: masterDataLoading } = useMasterData();
+  const [marketingChannels, setMarketingChannels] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [loadingChannels, setLoadingChannels] = useState(false);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+
+  // Fetch marketing channels and campaigns from backend
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const fetchData = async () => {
+      setLoadingChannels(true);
+      try {
+        const channelsRes = await apiClient.get('/admin/marketing/channels');
+        if (channelsRes.data.success && channelsRes.data.data) {
+          setMarketingChannels(channelsRes.data.data);
+          console.log('✅ Marketing channels loaded:', channelsRes.data.data);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching marketing channels:', error);
+        setMarketingChannels([]);
+      } finally {
+        setLoadingChannels(false);
+      }
+
+      // Fetch campaigns
+      setLoadingCampaigns(true);
+      try {
+        const campaignsRes = await apiClient.get('/admin/marketing/campaigns');
+        if (campaignsRes.data.success && campaignsRes.data.data) {
+          setCampaigns(campaignsRes.data.data);
+          console.log('✅ Campaigns loaded:', campaignsRes.data.data);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching campaigns:', error);
+        setCampaigns([]);
+      } finally {
+        setLoadingCampaigns(false);
+      }
+    };
+    fetchData();
+  }, [isOpen]);
+
   const [formData, setFormData] = useState({
     sdkOfferId: '',
     offerName: '',
@@ -637,9 +676,10 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                     onChange={(e) => handleInputChange('segments.marketingChannel', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                     aria-label="Marketing Channel"
+                    disabled={loadingChannels}
                   >
-                    <option value="">Select Channel...</option>
-                    {MARKETING_CHANNELS.map(channel => (
+                    <option value="">Select Channel... {loadingChannels ? '(Loading...)' : ''}</option>
+                    {marketingChannels.map(channel => (
                       <option key={channel} value={channel}>{channel}</option>
                     ))}
                   </select>
@@ -649,14 +689,19 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Campaign Name
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.segments.campaignName}
                     onChange={(e) => handleInputChange('segments.campaignName', e.target.value)}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Enter campaign name"
                     aria-label="Campaign Name"
-                  />
+                    disabled={loadingCampaigns}
+                  >
+                    <option value="">Select campaign...</option>
+                    {campaigns.map(campaign => (
+                      <option key={campaign} value={campaign}>{campaign}</option>
+                    ))}
+                  </select>
+                  {loadingCampaigns && <p className="text-xs text-gray-500 mt-1">Loading campaigns...</p>}
                 </div>
 
                 <div>
