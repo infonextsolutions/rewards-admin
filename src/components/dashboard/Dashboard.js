@@ -366,6 +366,16 @@ const Dashboard = () => {
     () => dashboardData.attribution || [],
     [dashboardData.attribution],
   );
+
+  const attributionDateRange = useMemo(() => {
+    if (apiFilters && apiFilters.startDate && apiFilters.endDate) {
+      return {
+        startDate: apiFilters.startDate.split("T")[0],
+        endDate: apiFilters.endDate.split("T")[0],
+      };
+    }
+    return null;
+  }, [apiFilters]);
   const retentionCurrent = useMemo(
     () => dashboardData.retention?.current,
     [dashboardData.retention?.current],
@@ -464,6 +474,7 @@ const Dashboard = () => {
         <AttributionPerformanceTable
           data={attributionData}
           loading={loadingStates.attribution}
+          dateRange={attributionDateRange}
         />
       </div>
     </div>
