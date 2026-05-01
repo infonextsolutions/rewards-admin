@@ -18,18 +18,22 @@ export default function ConversionSettings() {
 
   const [defaultRule, setDefaultRule] = useState({
     coinsPerDollar: 100,
-    minRedemption: 100,
+    minRedemption: 20,
     maxRedemption: 10000,
     defaultCurrency: "USD",
   });
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [editFormData, setEditFormData] = useState({
-    coinsPerDollar: 100,
     coinsPerUnit: 500,
     currencyAmount: 5,
   });
   const [saving, setSaving] = useState(false);
+
+  // Dynamically calculate minRedemption (20% of coinsPerDollar)
+  const dynamicMinRedemption = Math.round(
+    (Number(defaultRule.coinsPerDollar) || 100) * 0.2
+  );
 
   // Load conversion settings from API
   useEffect(() => {
@@ -49,7 +53,7 @@ export default function ConversionSettings() {
           setDefaultRule(
             data.defaultRule || {
               coinsPerDollar: 100,
-              minRedemption: 100,
+              minRedemption: 20,
               maxRedemption: 10000,
               defaultCurrency: "USD",
             }
@@ -87,7 +91,7 @@ export default function ConversionSettings() {
         setDefaultRule(
           data.defaultRule || {
             coinsPerDollar: 100,
-            minRedemption: 100,
+            minRedemption: 20,
             maxRedemption: 10000,
             defaultCurrency: "USD",
           }
@@ -111,7 +115,6 @@ export default function ConversionSettings() {
   const handleEdit = (rule) => {
     setEditingRule(rule);
     setEditFormData({
-      coinsPerDollar: rule.coinsPerDollar || 100,
       coinsPerUnit: rule.coinsPerUnit || 500,
       currencyAmount: rule.currencyAmount || 5,
     });
@@ -122,7 +125,6 @@ export default function ConversionSettings() {
     setEditModalOpen(false);
     setEditingRule(null);
     setEditFormData({
-      coinsPerDollar: 100,
       coinsPerUnit: 500,
       currencyAmount: 5,
     });
@@ -132,10 +134,6 @@ export default function ConversionSettings() {
     if (!editingRule) return;
 
     // Validate form data
-    if (!editFormData.coinsPerDollar || editFormData.coinsPerDollar <= 0) {
-      toast.error("Coins per dollar must be a positive number");
-      return;
-    }
     if (!editFormData.coinsPerUnit || editFormData.coinsPerUnit <= 0) {
       toast.error("Coins per unit must be a positive number");
       return;
@@ -151,7 +149,6 @@ export default function ConversionSettings() {
         "/admin/transactions/conversion/settings",
         {
           currency: editingRule.currency,
-          coinsPerDollar: parseFloat(editFormData.coinsPerDollar),
           coinsPerUnit: parseFloat(editFormData.coinsPerUnit),
           currencyAmount: parseFloat(editFormData.currencyAmount),
         }
@@ -171,7 +168,7 @@ export default function ConversionSettings() {
           setDefaultRule(
             data.defaultRule || {
               coinsPerDollar: 100,
-              minRedemption: 100,
+              minRedemption: 20,
               maxRedemption: 10000,
               defaultCurrency: "USD",
             }
@@ -238,12 +235,12 @@ export default function ConversionSettings() {
             <div className="text-2xl font-semibold text-emerald-600">
               {defaultRule.coinsPerDollar || 100}
             </div>
-            <div className="text-xs text-gray-500 mt-1">100 Coins = $1</div>
+            <div className="text-xs text-gray-500 mt-1">{defaultRule.coinsPerDollar || 100} Coins = $1</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-sm text-gray-600 mb-1">Min Redemption</div>
+            <div className="text-sm text-gray-600 mb-1">Min Redemption <span className="text-xs text-blue-500">(auto-calculated)</span></div>
             <div className="text-2xl font-semibold text-gray-900">
-              {defaultRule.minRedemption || 100} Coins
+              {dynamicMinRedemption} Coins
             </div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4">
@@ -361,7 +358,7 @@ export default function ConversionSettings() {
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Coins Per Dollor <span className="text-red-500">*</span>
+                    Coins <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -379,13 +376,13 @@ export default function ConversionSettings() {
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Number of coins per Dollor
+                    Number of coins shown in rule (e.g., 600 Coins)
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Currency Amount <span className="text-red-500">*</span>
+                    Dollar Amount <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -403,15 +400,14 @@ export default function ConversionSettings() {
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Dollar amount for the conversion unit
+                    Dollar amount shown in rule (e.g., $6)
                   </p>
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">Preview:</span>{" "}
-                    {editFormData.coinsPerUnit} Coins = $
-                    {editFormData.currencyAmount}
+                    {editFormData.coinsPerUnit} Coins = ${editFormData.currencyAmount}
                   </p>
                 </div>
               </div>
