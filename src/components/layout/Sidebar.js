@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import apiClient from '@/lib/apiClient';
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: "/dashboard.png", href: "/" },
@@ -88,6 +91,26 @@ const menuItems = [
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [redemptionCount, setRedemptionCount] = useState(0);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const res = await apiClient.get('/admin/payouts/pending-count');
+        if (res.data.success) setRedemptionCount(res.data.data.count);
+      } catch (err) {
+        console.error('Failed to fetch redemption count:', err);
+      }
+    };
+
+    fetchCount();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchCount, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Helper function to check if a sub-item should be active
   const isSubItemActive = (subItem) => {
@@ -215,6 +238,11 @@ export default function Sidebar({ isOpen, onClose }) {
                         className="flex-shrink-0"
                       />
                       <span className="font-medium">{item.label}</span>
+                      {item.id === "transaction-wallet" && redemptionCount > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                          {redemptionCount}
+                        </span>
+                      )}
                     </Link>
 
                     {/* Expand/Collapse Button */}

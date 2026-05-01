@@ -196,5 +196,91 @@ export const eventTokensAPI = {
       throw error;
     }
   },
+
+   /**
+    * Get Adjust callbacks with filters (Country, Network only)
+    * @param {Object} params - Filter parameters
+    * @param {string} params.clickId - Filter by click ID (note: not a valid Adjust API dimension)
+    * @param {string} params.eventToken - Filter by event token (note: not a valid Adjust API filter)
+    * @param {string} params.country - Filter by country
+    * @param {string} params.network - Filter by network
+    * @param {string} params.startDate - Start date
+    * @param {string} params.endDate - End date
+    * @param {number} params.page - Page number
+    * @param {number} params.limit - Items per page
+    */
+   async getCallbacks(params = {}) {
+     try {
+       const queryParams = new URLSearchParams();
+       if (params.country) queryParams.append("country", params.country);
+       if (params.network) queryParams.append("network", params.network);
+       if (params.startDate) queryParams.append("startDate", params.startDate);
+       if (params.endDate) queryParams.append("endDate", params.endDate);
+       if (params.page) queryParams.append("page", params.page.toString());
+       if (params.limit) queryParams.append("limit", params.limit.toString());
+
+      const response = await apiClient.get(
+         `/admin/adjust-events/callbacks?${queryParams.toString()}`
+       );
+       return {
+         success: true,
+         data: response.data.data || [],
+         pagination: response.data.pagination || {},
+         note: response.data.note || "",
+         source: response.data.source || "",
+       };
+     } catch (error) {
+       console.error("Error fetching callbacks:", error);
+       throw error;
+     }
+   },
+
+  /**
+   * Get complete tracking details for a Click ID
+   * @param {string} clickId - The click ID to look up
+   */
+  async getClickDetails(clickId) {
+    try {
+      const response = await apiClient.get(
+        `/admin/adjust-events/callbacks/${clickId}/details`
+      );
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error) {
+      console.error("Error fetching click details:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get analytics overview for all tokens
+   * @param {Object} params - Filter parameters
+   * @param {string} params.startDate - Start date
+   * @param {string} params.endDate - End date
+   * @param {string} params.country - Filter by country
+   */
+  async getAnalyticsOverview(params = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.country) queryParams.append("country", params.country);
+      if (params.eventToken) queryParams.append("eventToken", params.eventToken);
+      if (params.network) queryParams.append("network", params.network);
+
+      const response = await apiClient.get(
+        `/admin/adjust-events/analytics/overview?${queryParams.toString()}`
+      );
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error) {
+      console.error("Error fetching analytics overview:", error);
+      throw error;
+    }
+  },
 };
 

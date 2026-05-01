@@ -64,7 +64,7 @@ export default function AddEditRewardModal({
 
   // Calculate remaining probability per tier (BUG-063 fix)
   const remainingProbabilityPerTier = useMemo(() => {
-    const allTiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+    const allTiers = ['Free', 'Bronze', 'Gold', 'Platinum'];
     const remaining = {};
     
     allTiers.forEach(tier => {
@@ -88,7 +88,7 @@ export default function AddEditRewardModal({
     
     // If "All Tiers" is selected, check all tiers
     const tiersToCheck = formData.tierVisibility.includes('All Tiers') 
-      ? ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond']
+      ? ['Free', 'Bronze', 'Gold', 'Platinum']
       : formData.tierVisibility;
     
     return Math.min(...tiersToCheck.map(tier => remainingProbabilityPerTier[tier] || 100));
@@ -132,7 +132,7 @@ export default function AddEditRewardModal({
       } else {
         // Check for duplicates within the same tier
         const selectedTiers = formData.tierVisibility.includes('All Tiers') 
-          ? ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond']
+          ? ['Free', 'Bronze', 'Gold', 'Platinum']
           : formData.tierVisibility;
         
         for (const tier of selectedTiers) {

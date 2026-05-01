@@ -206,6 +206,20 @@ const spinWheelAPIs = {
       throw error.response?.data || error;
     }
   },
+
+  // Get VIP tiers for reference in spin settings
+  async getVIPTiers() {
+    try {
+      const response = await apiClient.get("/admin/vip/tiers", { params: { limit: 100 } });
+      if (response.data.success && response.data.data?.tiers) {
+        return { success: true, data: response.data.data.tiers };
+      }
+      return { success: true, data: [] };
+    } catch (error) {
+      console.error("Get VIP tiers error:", error);
+      return { success: true, data: [] };
+    }
+  },
 };
 
 export default spinWheelAPIs;

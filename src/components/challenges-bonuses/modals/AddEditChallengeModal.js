@@ -896,7 +896,7 @@ export default function AddEditChallengeModal({
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="Scheduled">Scheduled</option>
+                {/* <option value="Scheduled">Scheduled</option> */}
                 <option value="Live">Live</option>
                 <option value="Expired">Expired</option>
               </select>

@@ -1,10 +1,21 @@
 
-
+ 
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
+import SourceDetailModal from "./SourceDetailModal";
 
-const AttributionPerformanceTable = memo(({ data, loading }) => {
+const AttributionPerformanceTable = memo(({ data, loading, dateRange }) => {
+  const [selectedSource, setSelectedSource] = useState(null);
+
+  const handleSourceClick = (source) => {
+    setSelectedSource(source);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedSource(null);
+  };
+
   // Map API data to table format
   const getSourceIcon = (source) => {
     const iconMap = {
@@ -182,7 +193,8 @@ const AttributionPerformanceTable = memo(({ data, loading }) => {
                 {displayData.map((source) => (
                   <tr
                     key={source.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedSource(source)}
                   >
                     <td className="py-4 px-2">
                       <div className="flex items-center">
@@ -252,6 +264,14 @@ const AttributionPerformanceTable = memo(({ data, loading }) => {
           </div>
         )}
       </div>
+
+      {selectedSource && (
+        <SourceDetailModal
+          source={selectedSource.source}
+          dateRange={dateRange}
+          onClose={() => setSelectedSource(null)}
+        />
+      )}
     </div>
   );
 });

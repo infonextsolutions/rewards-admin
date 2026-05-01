@@ -432,6 +432,7 @@ export const gamesAPI = {
         return {
           id: game._id,
           gameId: game.gameId, // Include gameId from API
+          position: game.position, // Position number (1, 2, 3, 4, 5, 6, 7...) from backend
           name: game.title || "Untitled Game", // For dropdowns and selectors
           title: game.title || "Untitled Game",
           sdk: game.sdkProvider || "N/A",
@@ -507,6 +508,8 @@ export const gamesAPI = {
           besitosRawData: game.besitosRawData || null,
           // Device platform from API or raw Besitos data (device: "ios" | "android") for Edit modal
           device: game.device || game.besitosRawData?.device || null,
+          // Device type - iOS or Android - stored when game is created
+          deviceType: game.deviceType || null,
           // Include rewards data
           rewards: game.rewards || { xp: 0, coins: 0 },
           // Include ageGroups array for ageGroup display

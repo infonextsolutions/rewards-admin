@@ -6,7 +6,7 @@ export function useSpinWheel() {
   const [rewards, setRewards] = useState([]);
   const [settings, setSettings] = useState({
     spinMode: "free",
-    cooldownPeriod: 6, // in hours
+    cooldownPeriod: 360,
     maxSpinsPerDay: 3,
     eligibleTiers: ["All Tiers"],
     startDate: "",
@@ -98,10 +98,17 @@ export function useSpinWheel() {
           endDate: response.data.endDate
             ? new Date(response.data.endDate).toISOString().slice(0, 16)
             : "",
-          vipMultipliers: rawData.vipMultipliers || {
-            bronze: 1.0,
-            gold: 1.5,
-            platinum: 2.0,
+vipMultipliers: rawData.vipMultipliers || {
+            free: 1.0,
+            bronze: 1.5,
+            gold: 2.0,
+            platinum: 2.5,
+          },
+          spinsPerTier: rawData.spinsPerTier || {
+            free: 3,
+            bronze: 5,
+            gold: 10,
+            platinum: 50,
           },
         };
 
@@ -147,7 +154,7 @@ export function useSpinWheel() {
         if (rewardData.tierVisibility && rewardData.tierVisibility.length > 0) {
           // If "All Tiers" is selected, send all tier values
           if (rewardData.tierVisibility.includes("All Tiers")) {
-            const allTiers = ["Bronze", "Gold", "Platinum"];
+            const allTiers = ["Free", "Bronze", "Gold", "Platinum"];
             allTiers.forEach((tier) => {
               formData.append("tierVisibility[]", tier);
             });
@@ -219,7 +226,7 @@ export function useSpinWheel() {
         if (rewardData.tierVisibility && rewardData.tierVisibility.length > 0) {
           // If "All Tiers" is selected, send all tier values
           if (rewardData.tierVisibility.includes("All Tiers")) {
-            const allTiers = ["Bronze", "Gold", "Platinum"];
+            const allTiers = ["Free", "Bronze", "Gold", "Platinum"];
             allTiers.forEach((tier) => {
               formData.append("tierVisibility[]", tier);
             });
@@ -305,12 +312,18 @@ export function useSpinWheel() {
           name: nameMap[settingsData.spinMode] || "Main Spin Wheel",
           spinMode: settingsData.spinMode,
           cooldownPeriod: settingsData.cooldownPeriod,
-          maxSpinsPerDay: settingsData.maxSpinsPerDay,
           eligibleTiers: settingsData.eligibleTiers || [],
           vipMultipliers: settingsData.vipMultipliers || {
-            bronze: 1.0,
-            gold: 1.5,
-            platinum: 2.0,
+            free: 1.0,
+            bronze: 1.5,
+            gold: 2.0,
+            platinum: 2.5,
+          },
+          spinsPerTier: settingsData.spinsPerTier || {
+            free: 3,
+            bronze: 5,
+            gold: 10,
+            platinum: 50,
           },
         };
 
@@ -333,7 +346,12 @@ export function useSpinWheel() {
         );
         const response = await spinWheelAPIs.saveConfig(payload);
 
-        if (response.success && response.data) {
+        if (!response.success) {
+          console.error("Save config failed:", response.error || response.message);
+          throw new Error(response.error || response.message || "Failed to save configuration");
+        }
+
+        if (response.data) {
           // Refresh settings
           await fetchSettings();
           return response.data;

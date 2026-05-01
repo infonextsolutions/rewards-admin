@@ -46,8 +46,10 @@ export default function GamesListingModule() {
 
   // single columns set matching combined screenshot
   const columns = [
+    { key: "position", label: "Position" },
     { key: "title", label: "Game Title" },
     { key: "sdk", label: "SDK Game" },
+    { key: "device", label: "Device" },
     // { key: "gameCategory", label: "Game Category" }, // Commented out - hidden
     { key: "uiSection", label: "UI Section" },
     { key: "ageGroup", label: "Age Group" },
@@ -401,6 +403,12 @@ export default function GamesListingModule() {
 
   const renderCell = (key, game) => {
     switch (key) {
+      case "position":
+        return (
+          <div className="text-center text-sm font-medium text-gray-900">
+            {game.position || "N/A"}
+          </div>
+        );
       case "title":
         return (
           <div>
@@ -412,6 +420,18 @@ export default function GamesListingModule() {
         );
       case "sdk":
         return <div className="text-sm text-gray-900">{game.sdk}</div>;
+      case "device":
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              game.deviceType?.toLowerCase() === "ios"
+                ? "bg-purple-100 text-purple-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {game.deviceType === "ios" ? "iOS" : "Android"}
+          </span>
+        );
       // case "gameCategory": // Commented out - hidden
       //   return (
       //     <div className="text-sm text-gray-900">

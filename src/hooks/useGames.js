@@ -39,8 +39,14 @@ export function useGames() {
 
       const response = await gamesAPI.getGames(params);
 
-      setGames(response.games);
-      setPagination(response.pagination);
+      // Backend returns { success: true, data: { games: [...], pagination: {...} } }
+      setGames(response.data?.games || response.games || []);
+      setPagination(response.data?.pagination || response.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 10,
+      });
     } catch (err) {
       setError("Failed to load games. Please try again.");
       console.error("Error fetching games:", err);

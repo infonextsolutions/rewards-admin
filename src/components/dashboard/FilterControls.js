@@ -113,12 +113,42 @@ const FilterControls = ({ filters, onFilterChange, loading = false }) => {
     fetchGames();
   }, []);
 
-  // Source options matching API collection (facebook, google, direct)
-  const sourceOptions = [
-    { value: "facebook", label: "Facebook" },
-    { value: "google", label: "Google" },
-    { value: "direct", label: "Direct" },
-  ];
+  // Dynamic source options from backend API
+  const [sourceOptions, setSourceOptions] = useState([]);
+  const [loadingSources, setLoadingSources] = useState(false);
+
+  // Fetch attribution sources from backend
+  useEffect(() => {
+    const fetchSources = async () => {
+      setLoadingSources(true);
+      try {
+        const DASHBOARD_API = await import('../../data/dashboard').then(m => m.DASHBOARD_API);
+        const response = await DASHBOARD_API.getAttributionSources();
+        if (response.data?.success && response.data.data.length > 0) {
+          const options = response.data.data.map(source => ({
+            value: source,
+            label: source
+          }));
+          setSourceOptions(options);
+        } else {
+          // Fallback to common sources if API fails
+          setSourceOptions([
+            { value: "Facebook", label: "Facebook" },
+            { value: "Google", label: "Google" },
+            { value: "TikTok", label: "TikTok" },
+            { value: "Organic", label: "Organic" },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error fetching attribution sources:", error);
+        setSourceOptions([]);
+      } finally {
+        setLoadingSources(false);
+      }
+    };
+
+    fetchSources();
+  }, []);
 
   // Gender options matching API collection (male, female, other)
   const genderOptions = [

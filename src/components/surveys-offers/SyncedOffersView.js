@@ -17,7 +17,7 @@ export default function SyncedOffersView() {
     itemsPerPage: 20,
   });
 
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("surveys"); // "surveys" | "non-gaming"
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [response, setResponse] = useState(null);
@@ -26,47 +26,17 @@ export default function SyncedOffersView() {
   const fetchSyncedOffers = async (page = 1) => {
     setLoading(true);
     try {
-      console.log("Fetching synced offers...", {
-        typeFilter,
-        statusFilter,
-        page,
-      });
+      const offerType = activeTab === "surveys" ? "survey" : "all";
       const response = await surveyAPIs.getConfiguredOffers({
-        offerType: typeFilter,
+        offerType: offerType,
         status: statusFilter,
         sdk: "all",
       });
-      console.log("Synced offers response:", response);
 
       if (response.success) {
-        // Store full response for statistics calculation
         setResponse(response);
 
         let offers = response.data.configuredOffers || [];
-        console.log("Total offers received:", offers.length);
-        console.log("Offers breakdown by type:", {
-          surveys: offers.filter((o) => o.offerType === "survey").length,
-          cashback: offers.filter((o) => o.offerType === "cashback").length,
-          shopping: offers.filter((o) => o.offerType === "shopping").length,
-          magic_receipt: offers.filter((o) => o.offerType === "magic_receipt")
-            .length,
-          other: offers.filter(
-            (o) =>
-              !["survey", "cashback", "shopping", "magic_receipt"].includes(
-                o.offerType
-              )
-          ).length,
-        });
-        console.log(
-          "Sample offers:",
-          offers.slice(0, 3).map((o) => ({
-            id: o.id,
-            externalId: o.externalId,
-            title: o.title,
-            offerType: o.offerType,
-            status: o.status,
-          }))
-        );
 
         // Apply search filter
         if (searchQuery.trim()) {
@@ -77,7 +47,11 @@ export default function SyncedOffersView() {
               offer.description?.toLowerCase().includes(query) ||
               offer.externalId?.toLowerCase().includes(query)
           );
-          console.log("Offers after search filter:", offers.length);
+        }
+
+        // For non-gaming tab, filter out surveys
+        if (activeTab === "non-gaming") {
+          offers = offers.filter((o) => o.offerType !== "survey");
         }
 
         // Pagination
@@ -92,22 +66,11 @@ export default function SyncedOffersView() {
           totalItems: offers.length,
           itemsPerPage: pagination.itemsPerPage,
         });
-        console.log("Pagination set:", {
-          page,
-          totalPages: Math.ceil(offers.length / pagination.itemsPerPage),
-          totalItems: offers.length,
-        });
       } else {
         setResponse(null);
       }
     } catch (error) {
       console.error("Error fetching synced offers:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response,
-        data: error.data,
-        stack: error.stack,
-      });
       toast.error(error.message || "Failed to load synced offers");
     } finally {
       setLoading(false);
@@ -117,7 +80,7 @@ export default function SyncedOffersView() {
   useEffect(() => {
     fetchSyncedOffers(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter, statusFilter]);
+  }, [activeTab, statusFilter]);
 
   useEffect(() => {
     // Debounce search
@@ -204,24 +167,15 @@ export default function SyncedOffersView() {
     }
   };
 
-  const typeOptions = [
-    { value: "all", label: "All Types" },
-    { value: "survey", label: "Surveys" },
-    { value: "cashback", label: "Cashback" },
-    { value: "shopping", label: "Shopping" },
-    { value: "magic_receipt", label: "Magic Receipts" },
-  ];
-
-  const statusOptions = [
-    { value: "all", label: "All Status" },
-    { value: "live", label: "Live" },
-    { value: "expired", label: "Expired" },
-  ];
-
   // Calculate statistics - use all offers before pagination
   const allOffersBeforePagination = useMemo(() => {
     if (!response?.data?.configuredOffers) return [];
     let offers = response.data.configuredOffers || [];
+
+    // For non-gaming tab, filter out surveys
+    if (activeTab === "non-gaming") {
+      offers = offers.filter((o) => o.offerType !== "survey");
+    }
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -235,7 +189,7 @@ export default function SyncedOffersView() {
     }
 
     return offers;
-  }, [response?.data?.configuredOffers, searchQuery]);
+  }, [response?.data?.configuredOffers, searchQuery, activeTab]);
 
   const stats = {
     total: allOffersBeforePagination.length,
@@ -285,6 +239,40 @@ export default function SyncedOffersView() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex gap-4">
+          <button
+            onClick={() => {
+              setActiveTab("surveys");
+              setStatusFilter("all");
+              setSearchQuery("");
+            }}
+            className={`py-2 px-4 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === "surveys"
+                ? "border-emerald-500 text-emerald-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Surveys
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("non-gaming");
+              setStatusFilter("all");
+              setSearchQuery("");
+            }}
+            className={`py-2 px-4 border-b-2 font-medium text-sm transition-colors ${
+              activeTab === "non-gaming"
+                ? "border-emerald-500 text-emerald-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Non-Gaming
+          </button>
+        </nav>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-4">
         <div className="flex gap-4 flex-1">
@@ -302,24 +290,6 @@ export default function SyncedOffersView() {
             />
           </div>
 
-          {/* Type Filter */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-2">
-              Type
-            </label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-            >
-              {typeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Status Filter */}
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-2">
@@ -330,11 +300,9 @@ export default function SyncedOffersView() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              <option value="all">All Status</option>
+              <option value="live">Live</option>
+              <option value="expired">Expired</option>
             </select>
           </div>
         </div>
@@ -351,6 +319,9 @@ export default function SyncedOffersView() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                       Index Position
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Offer
                     </th>
@@ -387,7 +358,7 @@ export default function SyncedOffersView() {
                   {syncedOffers.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="10"
+                        colSpan="11"
                         className="px-6 py-4 text-center text-gray-500"
                       >
                         {searchQuery
@@ -396,8 +367,13 @@ export default function SyncedOffersView() {
                       </td>
                     </tr>
                   ) : (
-                    syncedOffers.map((offer) => (
+                    syncedOffers.map((offer, index) => (
                       <tr key={offer.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-bold text-gray-700">
+                            {index + 1}
+                          </span>
+                        </td>
                         <td className="px-6 py-4">
                           <div className="text-sm font-medium text-gray-900">
                             {offer.title || "Untitled Offer"}
@@ -430,7 +406,8 @@ export default function SyncedOffersView() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {offer.estimatedTime === 0 ||
-                            (offer.sdkId?.name && String(offer.sdkId.name).toLowerCase().includes("everflow"))
+                            (offer.sdkId?.name &&
+                              String(offer.sdkId.name).toLowerCase().includes("everflow"))
                               ? "NIL"
                               : `${offer.estimatedTime ?? offer.loi ?? 0} min`}
                           </div>
@@ -454,10 +431,8 @@ export default function SyncedOffersView() {
                               : "All"}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs text-gray-500 font-mono break-all max-w-xs">
-                            {offer.externalId || "N/A"}
-                          </div>
+                        <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono break-all max-w-xs">
+                          {offer.externalId || "N/A"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
                           {offer.createdAt

@@ -32,7 +32,7 @@ export default function PrizePoolConfiguration({
 
   // Calculate per-tier probability totals (BUG-063 Fix)
   const tierProbabilities = useMemo(() => {
-    const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+    const tiers = ['Free', 'Bronze', 'Gold', 'Platinum'];
     const tierTotals = {};
     
     tiers.forEach(tier => {
@@ -98,7 +98,7 @@ export default function PrizePoolConfiguration({
   }, [rewards, searchTerm, statusFilter, typeFilter]);
 
   const rewardTypes = ["Coins", "XP"];
-  const tierOptions = ["All Tiers", "Bronze", "Gold", "Platinum"];
+  const tierOptions = ["All Tiers", "Free", "Bronze", "Gold", "Platinum"];
 
   const handleAddReward = async (rewardData) => {
     try {

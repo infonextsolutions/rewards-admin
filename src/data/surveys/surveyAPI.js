@@ -8,12 +8,13 @@ const surveyAPIs = {
   // ── Fetch from SDK (admin preview — no DB write) ─────────────────────────
 
   // GET /api/non-gaming-survey/admin/non-gaming/fetch
-  // sdk: "bitlabs" | "everflow" | "affise"
+  // sdk: "bitlabs" | "everflow" | "affise" | "besitos"
   // Returns: { success, data, categorized: { cashback, shopping, magicReceipts, surveys, other }, breakdown, total }
   async fetchNonGamingOffers({ sdk = "bitlabs", type = "all", country, devices, page = 1, limit = 20 } = {}) {
     try {
       const params = { sdk, type, page, limit };
-      if (country) params.country = country;
+      // BitLabs Publisher API expects "countries" (array), not "country" (string)
+      if (country) params.countries = Array.isArray(country) ? country : [country];
       if (devices && devices.length > 0) params.devices = devices;
       const response = await apiClient.get(`${BASE}/admin/non-gaming/fetch`, {
         params,
@@ -32,7 +33,8 @@ const surveyAPIs = {
   async fetchSurveys({ sdk = "bitlabs", country, devices, page = 1, limit = 20 } = {}) {
     try {
       const params = { sdk, page, limit };
-      if (country) params.country = country;
+      // BitLabs API expects "countries" (array), not "country" (string)
+      if (country) params.countries = Array.isArray(country) ? country : [country];
       if (devices && devices.length > 0) params.devices = devices;
       const response = await apiClient.get(`${BASE}/admin/surveys/fetch`, {
         params,
@@ -48,11 +50,13 @@ const surveyAPIs = {
   // ── Sync (save) to DB ────────────────────────────────────────────────────
 
   // POST /api/non-gaming-survey/admin/non-gaming/sync
-  // sdk: "bitlabs" | "everflow" | "affise"
+  // sdk: "bitlabs" | "everflow" | "affise" | "besitos"
   async syncNonGamingOffers({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience } = {}) {
     try {
+      // BitLabs API expects "countries" (array), not "country" (string)
+      const countries = country ? (Array.isArray(country) ? country : [country]) : undefined;
       const response = await apiClient.post(`${BASE}/admin/non-gaming/sync`, {
-        sdk, offerIds, autoActivate, devices, country, targetAudience,
+        sdk, offerIds, autoActivate, devices, countries, targetAudience,
       });
       return response.data;
     } catch (error) {
@@ -65,8 +69,10 @@ const surveyAPIs = {
   // sdk: "bitlabs" | "besitos"
   async syncSurveys({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience } = {}) {
     try {
+      // BitLabs API expects "countries" (array), not "country" (string)
+      const countries = country ? (Array.isArray(country) ? country : [country]) : undefined;
       const response = await apiClient.post(`${BASE}/admin/surveys/sync`, {
-        sdk, offerIds, autoActivate, devices, country, targetAudience,
+        sdk, offerIds, autoActivate, devices, countries, targetAudience,
       });
       return response.data;
     } catch (error) {
@@ -78,7 +84,7 @@ const surveyAPIs = {
   // ── Read / Delete configured offers from DB ──────────────────────────────
 
   // GET /api/non-gaming-survey/admin/configured
-  // offerType: "all" | "survey" | "cashback" | "shopping" | "magic_receipt"
+  // offerType: "all" | "survey" | "cashback" | "shopping" | "magic_receipt" | "besitos_deal"
   // status: "all" | "live" | "paused"
   // sdk: "all" | "bitlabs" | "besitos" | "everflow" | "affise"
   async getConfiguredOffers({ offerType = "all", status = "all", sdk = "all" } = {}) {
