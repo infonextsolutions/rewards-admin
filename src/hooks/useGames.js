@@ -35,6 +35,7 @@ export function useGames() {
             ? filters.status.toLowerCase()
             : "all",
         gender: filters.gender && filters.gender !== "all" ? filters.gender : "",
+        uiSection: filters.uiSection && filters.uiSection !== "all" ? filters.uiSection : "",
       };
 
       const response = await gamesAPI.getGames(params);
