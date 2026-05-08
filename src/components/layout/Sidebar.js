@@ -70,6 +70,12 @@ const menuItems = [
     href: "/spin-wheel",
   },
   {
+    id: "ad-reward",
+    label: "Ad Reward Config",
+    icon: "/Rewards.png",
+    href: "/ad-reward",
+  },
+  {
     id: "payments",
     label: "Payments",
     icon: "/Payments.png",
