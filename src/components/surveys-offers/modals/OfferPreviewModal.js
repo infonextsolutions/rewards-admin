@@ -375,11 +375,11 @@ export default function OfferPreviewModal({ isOpen, onClose, offer }) {
                                 </span>
                               </div>
                             )}
-                            {offer.epc && (
+                            {offer.cpi && (
                               <div className="flex items-center justify-between text-xs">
-                                <span className="text-gray-600">EPC:</span>
+                                <span className="text-gray-600">CPI:</span>
                                 <span className="font-medium text-gray-900">
-                                  ${offer.epc}
+                                  ${offer.cpi}
                                 </span>
                               </div>
                             )}
