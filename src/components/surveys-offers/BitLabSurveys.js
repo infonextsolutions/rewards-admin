@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import Pagination from "../ui/Pagination";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import surveyAPIs from "../../data/surveys/surveyAPI";
+import { TRANSACTION_API } from "../../data/transactions";
 import toast from "react-hot-toast";
 import TargetAudienceModal from "./modals/TargetAudienceModal";
 import * as XLSX from "xlsx";
@@ -32,7 +33,8 @@ export default function BitLabSurveys() {
   // Toggle states for surveys (sync/unsync operations)
   const [syncingSurveys, setSyncingSurveys] = useState(new Set());
   const [showTargetAudienceModal, setShowTargetAudienceModal] = useState(false);
-  const [pendingSyncSurvey, setPendingSyncSurvey] = useState(null); // Store survey ID to sync
+  const [pendingSyncSurvey, setPendingSyncSurvey] = useState(null);
+  const [coinsPerDollar, setCoinsPerDollar] = useState(100);
 
   // Fetch surveys
   const fetchSurveys = async (page = pagination.currentPage) => {
@@ -47,6 +49,7 @@ export default function BitLabSurveys() {
           page,
           limit: pagination.itemsPerPage,
         });
+
       } else {
         response = await surveyAPIs.fetchSurveys({
           sdk: "bitlabs",
@@ -54,6 +57,7 @@ export default function BitLabSurveys() {
           page,
           limit: pagination.itemsPerPage,
         });
+
       }
       if (response.success && response.data) {
         const surveys = response.data || [];
@@ -62,8 +66,6 @@ export default function BitLabSurveys() {
           const isPublisherFormat = survey.click_url != null || (survey.anchor != null && survey.events != null);
           const payout = survey.events?.[0];
           const valueNum = survey.value != null ? parseFloat(survey.value) : (payout ? parseFloat(payout.payout) : parseFloat(survey.total_points) || 0);
-          const userCoins = survey.userRewardCoins ?? Math.round(valueNum * 0.2);
-          const userXP = survey.userRewardXP ?? Math.round(userCoins * 0.5);
           const countries = survey.geo_targeting?.countries || survey.countries || (survey.country ? [survey.country] : []);
           const countryCodes = Array.isArray(countries) ? countries.map((c) => (typeof c === "object" ? c?.country_code : c)).filter(Boolean) : [];
           const categoryVal = survey.categories?.[0] ?? survey.category;
@@ -76,7 +78,7 @@ export default function BitLabSurveys() {
             description: survey.description || "",
             icon: (isPublisherFormat ? survey.creatives?.icon : null) || survey.icon || survey.banner || "",
             banner: (isPublisherFormat ? survey.creatives?.icon : null) || survey.banner || survey.icon || "",
-            reward: survey.reward || { coins: userCoins, currency: "points", xp: userXP },
+            reward: { coins: 0, currency: "points", xp: 0 },
             estimatedTime: survey.estimatedTime ?? survey.duration ?? survey.loi ?? (survey.session_hours ? Math.round(survey.session_hours / 60) : 0),
             clickUrl: survey.clickUrl || survey.click_url || survey.surveyUrl || survey.url || "",
             confirmationTime: survey.confirmationTime || "",
@@ -87,14 +89,12 @@ export default function BitLabSurveys() {
             thingsToKnow: survey.thingsToKnow ?? survey.things_to_know ?? [],
             category: categoryStr,
             value: valueNum,
-            cpi: survey.cpi != null ? parseFloat(survey.cpi) : (payout ? parseFloat(payout.payout) : 0),
+            cpi: sdkProvider === "besitos" ? valueNum : (survey.cpi != null ? parseFloat(survey.cpi) : (payout ? parseFloat(payout.payout) : 0)),
             loi: survey.loi != null ? parseFloat(survey.loi) : survey.estimatedTime ?? 0,
             cr: survey.cr ? parseFloat(survey.cr) : 0,
             rating: survey.rating || 0,
             country: survey.country || countryCodes[0] || "",
             language: survey.language || "",
-            userRewardCoins: userCoins,
-            userRewardXP: userXP,
           };
         });
 
@@ -113,8 +113,6 @@ export default function BitLabSurveys() {
           .map((survey) => {
             const payout = survey.events?.[0];
             const valueNum = survey.value != null ? parseFloat(survey.value) : (payout ? parseFloat(payout.payout) : parseFloat(survey.total_points) || 0);
-            const userCoins = survey.userRewardCoins ?? Math.round(valueNum * 0.2);
-            const userXP = survey.userRewardXP ?? Math.round(userCoins * 0.5);
             const countries = survey.geo_targeting?.countries || survey.countries || (survey.country ? [survey.country] : []);
             const countryCodes = Array.isArray(countries) ? countries.map((c) => (typeof c === "object" ? c?.country_code : c)).filter(Boolean) : [];
             const categoryVal = survey.categories?.[0] ?? survey.category;
@@ -127,21 +125,19 @@ export default function BitLabSurveys() {
               description: survey.description || "",
               icon: survey.creatives?.icon || survey.icon || survey.banner || "",
               banner: survey.creatives?.icon || survey.banner || survey.icon || "",
-              reward: survey.reward || { coins: userCoins, currency: "points", xp: userXP },
+              reward: { coins: 0, currency: "points", xp: 0 },
               estimatedTime: survey.estimatedTime ?? survey.duration ?? survey.loi ?? 0,
               clickUrl: survey.clickUrl || survey.click_url || survey.surveyUrl || survey.url || "",
               isAvailable: survey.isAvailable !== false,
               provider: survey.provider || sdkProvider,
               category: categoryStr,
               value: valueNum,
-              cpi: survey.cpi != null ? parseFloat(survey.cpi) : (payout ? parseFloat(payout.payout) : 0),
+            cpi: sdkProvider === "besitos" ? valueNum : (survey.cpi != null ? parseFloat(survey.cpi) : (payout ? parseFloat(payout.payout) : 0)),
               loi: survey.loi != null ? parseFloat(survey.loi) : survey.estimatedTime ?? 0,
               cr: survey.cr ? parseFloat(survey.cr) : 0,
               rating: survey.rating || 0,
               country: survey.country || countryCodes[0] || "",
               language: survey.language || "",
-              userRewardCoins: userCoins,
-              userRewardXP: userXP,
               revenue: survey.revenue || 0, // Revenue from backend
               completions: survey.completions || 0, // Completions from backend
             };
@@ -183,9 +179,16 @@ export default function BitLabSurveys() {
   };
 
   useEffect(() => {
-    console.log("BitLabSurveys: Component mounted, fetching surveys...");
     fetchSurveys(1);
     fetchConfiguredSurveys();
+    // Fetch conversion rate for coin calculation
+    TRANSACTION_API.getConversionSettings()
+      .then((res) => {
+        if (res.data?.success && res.data?.data?.defaultRule?.coinsPerDollar) {
+          setCoinsPerDollar(res.data.data.defaultRule.coinsPerDollar);
+        }
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -204,8 +207,6 @@ export default function BitLabSurveys() {
   const analytics = useMemo(() => {
     return {
       totalSurveys: surveys.length,
-      totalReward: surveys.reduce((sum, s) => sum + (s.reward?.coins || 0), 0),
-      totalXP: surveys.reduce((sum, s) => sum + (s.reward?.xp || 0), 0),
       avgEstimatedTime:
         surveys.length > 0
           ? Math.round(
@@ -263,8 +264,9 @@ export default function BitLabSurveys() {
           return next;
         });
       } else {
-        // Show target audience modal before syncing
-        setPendingSyncSurvey(surveyId);
+        // Find the survey object and store it for the modal
+        const survey = surveys.find((s) => s.id === surveyId);
+        setPendingSyncSurvey(survey || surveyId);
         setShowTargetAudienceModal(true);
         // Don't proceed with sync yet, wait for modal confirmation
         // The syncing state will be managed in performSurveySync
@@ -282,10 +284,10 @@ export default function BitLabSurveys() {
 
   // Handle survey sync after modal confirmation
   const performSurveySync = useCallback(
-    async (targetAudience) => {
+    async (targetAudience, userRewardCoins, userRewardXP) => {
       if (!pendingSyncSurvey) return;
 
-      const surveyId = pendingSyncSurvey;
+      const surveyId = typeof pendingSyncSurvey === "object" ? pendingSyncSurvey.id : pendingSyncSurvey;
       setSyncingSurveys((prev) => new Set(prev).add(surveyId));
       try {
         const response = await surveyAPIs.syncSurveys({
@@ -294,6 +296,8 @@ export default function BitLabSurveys() {
           autoActivate: true,
           country: countryFilter,
           targetAudience: targetAudience ? [{ offerId: String(surveyId), targetAudience }] : undefined,
+          userRewardCoins,
+          userRewardXP,
         });
         if (response.success) {
           toast.success("Survey synced successfully");
@@ -316,8 +320,8 @@ export default function BitLabSurveys() {
 
   // Handle modal confirmation
   const handleTargetAudienceConfirm = useCallback(
-    (targetAudience) => {
-      performSurveySync(targetAudience);
+    ({ targetAudience, userRewardCoins, userRewardXP }) => {
+      performSurveySync(targetAudience, userRewardCoins, userRewardXP);
     },
     [performSurveySync]
   );
@@ -444,9 +448,6 @@ export default function BitLabSurveys() {
         Description: survey.description || "",
         "CPI (USD)": survey.cpi > 0 ? survey.cpi.toFixed(2) : "0.00",
         "Value (Points)": survey.value > 0 ? survey.value : "0",
-        "User Reward (Coins)":
-          survey.userRewardCoins || survey.reward?.coins || 0,
-        "User Reward (XP)": survey.userRewardXP || survey.reward?.xp || 0,
         "Time (LOI - min)":
           survey.loi > 0 ? survey.loi : survey.estimatedTime || 0,
         "Revenue (USD)": survey.revenue > 0 ? survey.revenue.toFixed(2) : "0.00",
@@ -647,15 +648,6 @@ export default function BitLabSurveys() {
                       CPI (USD)
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Value (Points)
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User Reward (Coins)
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User Reward (XP)
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Time (LOI - min)
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -670,7 +662,7 @@ export default function BitLabSurveys() {
                   {filteredSurveys.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="9"
+                        colSpan="6"
                         className="px-6 py-4 text-center text-gray-500"
                       >
                         No surveys found
@@ -741,31 +733,6 @@ export default function BitLabSurveys() {
                             </div>
                             <div className="text-xs text-gray-500">
                               Publisher
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              {survey.value > 0 ? survey.value : "0"}
-                            </div>
-                            <div className="text-xs text-gray-500">Points</div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-emerald-600">
-                              {survey.userRewardCoins ||
-                                survey.reward?.coins ||
-                                0}{" "}
-                              coins
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              20% of value
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-blue-600">
-                              {survey.userRewardXP || survey.reward?.xp || 0} XP
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              50% of coins
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -854,6 +821,16 @@ export default function BitLabSurveys() {
         onConfirm={handleTargetAudienceConfirm}
         offerCount={1}
         offerTitle="survey"
+        surveyData={
+          pendingSyncSurvey && typeof pendingSyncSurvey === "object"
+            ? {
+                cpi: pendingSyncSurvey.cpi || 0,
+                value: pendingSyncSurvey.value || 0,
+                provider: pendingSyncSurvey.provider || sdkProvider,
+              }
+            : undefined
+        }
+        coinsPerDollar={coinsPerDollar}
       />
     </div>
   );
