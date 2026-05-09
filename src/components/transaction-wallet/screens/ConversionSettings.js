@@ -29,11 +29,10 @@ export default function ConversionSettings() {
     currencyAmount: 5,
   });
   const [saving, setSaving] = useState(false);
-
-  // Dynamically calculate minRedemption (20% of coinsPerDollar)
-  const dynamicMinRedemption = Math.round(
-    (Number(defaultRule.coinsPerDollar) || 100) * 0.2
-  );
+  const [redemptionForm, setRedemptionForm] = useState({
+    minRedemption: 20,
+    maxRedemption: 10000,
+  });
 
   // Load conversion settings from API
   useEffect(() => {
@@ -58,6 +57,10 @@ export default function ConversionSettings() {
               defaultCurrency: "USD",
             }
           );
+          setRedemptionForm({
+            minRedemption: data.defaultRule?.minRedemption || 20,
+            maxRedemption: data.defaultRule?.maxRedemption || 10000,
+          });
           setLastUpdated(new Date().toLocaleString());
         } else {
           throw new Error("Failed to load conversion settings");
@@ -96,6 +99,10 @@ export default function ConversionSettings() {
             defaultCurrency: "USD",
           }
         );
+        setRedemptionForm({
+          minRedemption: data.defaultRule?.minRedemption || 20,
+          maxRedemption: data.defaultRule?.maxRedemption || 10000,
+        });
         setLastUpdated(new Date().toLocaleString());
         toast.success("Conversion settings refreshed successfully!");
       } else {
@@ -173,6 +180,10 @@ export default function ConversionSettings() {
               defaultCurrency: "USD",
             }
           );
+          setRedemptionForm({
+            minRedemption: data.defaultRule?.minRedemption || 20,
+            maxRedemption: data.defaultRule?.maxRedemption || 10000,
+          });
         }
       } else {
         throw new Error(
@@ -183,6 +194,64 @@ export default function ConversionSettings() {
       console.error("Error updating conversion rate:", error);
       toast.error(
         error.response?.data?.message || "Failed to update conversion rate"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveRedemption = async () => {
+    if (!redemptionForm.minRedemption || redemptionForm.minRedemption <= 0) {
+      toast.error("Min redemption must be a positive number");
+      return;
+    }
+    if (!redemptionForm.maxRedemption || redemptionForm.maxRedemption <= 0) {
+      toast.error("Max redemption must be a positive number");
+      return;
+    }
+    if (Number(redemptionForm.minRedemption) >= Number(redemptionForm.maxRedemption)) {
+      toast.error("Min redemption must be less than max redemption");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await apiClient.put(
+        "/admin/transactions/conversion/settings",
+        {
+          currency: "USD",
+          minRedemption: parseFloat(redemptionForm.minRedemption),
+          maxRedemption: parseFloat(redemptionForm.maxRedemption),
+        }
+      );
+
+      if (response.data?.success) {
+        toast.success("Redemption limits updated successfully!");
+        const reloadResponse = await TRANSACTION_API.getConversionSettings();
+        if (reloadResponse.data?.success && reloadResponse.data?.data) {
+          const data = reloadResponse.data.data;
+          setDefaultRule(
+            data.defaultRule || {
+              coinsPerDollar: 100,
+              minRedemption: 20,
+              maxRedemption: 10000,
+              defaultCurrency: "USD",
+            }
+          );
+          setRedemptionForm({
+            minRedemption: data.defaultRule?.minRedemption || 20,
+            maxRedemption: data.defaultRule?.maxRedemption || 10000,
+          });
+        }
+      } else {
+        throw new Error(
+          response.data?.message || "Failed to update redemption limits"
+        );
+      }
+    } catch (error) {
+      console.error("Error updating redemption limits:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to update redemption limits"
       );
     } finally {
       setSaving(false);
@@ -225,30 +294,82 @@ export default function ConversionSettings() {
         <div className="mb-3">
           <p className="text-sm text-blue-700 bg-blue-50 p-2 rounded">
             This is the default conversion rule that will be used for all
-            currencies unless a custom rule is set below. If users' currency
+            currencies unless a custom rule is set below. If users&apos; currency
             does not match any custom rule, this rule applies.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-sm text-gray-600 mb-1">Coins Per Dollar</div>
-            <div className="text-2xl font-semibold text-emerald-600">
+          <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 border border-gray-200">
+            <div className="text-sm font-medium text-gray-500 mb-1">Coins Per Dollar</div>
+            <div className="text-2xl font-bold text-emerald-600">
               {defaultRule.coinsPerDollar || 100}
             </div>
-            <div className="text-xs text-gray-500 mt-1">{defaultRule.coinsPerDollar || 100} Coins = $1</div>
+            <div className="text-xs text-gray-400 mt-1">{defaultRule.coinsPerDollar || 100} Coins = $1</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-sm text-gray-600 mb-1">Min Redemption <span className="text-xs text-blue-500">(auto-calculated)</span></div>
-            <div className="text-2xl font-semibold text-gray-900">
-              {dynamicMinRedemption} Coins
+          <div className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-sm font-medium text-gray-700">Min Redemption</span>
+              <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-medium">editable</span>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                value={redemptionForm.minRedemption}
+                onChange={(e) =>
+                  setRedemptionForm({ ...redemptionForm, minRedemption: e.target.value })
+                }
+                min="1"
+                className="w-full px-3 py-2.5 pr-14 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-lg font-semibold text-gray-900"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <span className="text-sm text-gray-400 font-medium">Coins</span>
+              </div>
             </div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-sm text-gray-600 mb-1">Max Redemption</div>
-            <div className="text-2xl font-semibold text-gray-900">
-              {defaultRule.maxRedemption || 10000} Coins
+          <div className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-sm font-medium text-gray-700">Max Redemption</span>
+              <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-medium">editable</span>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                value={redemptionForm.maxRedemption}
+                onChange={(e) =>
+                  setRedemptionForm({ ...redemptionForm, maxRedemption: e.target.value })
+                }
+                min="1"
+                className="w-full px-3 py-2.5 pr-14 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-lg font-semibold text-gray-900"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <span className="text-sm text-gray-400 font-medium">Coins</span>
+              </div>
             </div>
           </div>
+        </div>
+        <div className="mt-5 flex justify-end">
+          <button
+            onClick={handleSaveRedemption}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg hover:from-emerald-700 hover:to-emerald-600 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Saving...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Save Redemption Limits
+              </>
+            )}
+          </button>
         </div>
       </div>
 
