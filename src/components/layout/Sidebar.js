@@ -70,8 +70,14 @@ const menuItems = [
     href: "/spin-wheel",
   },
   {
+    id: "account-overview",
+    label: "Account Overview Manager",
+    icon: "/Rewards.png",
+    href: "/account-overview",
+  },
+  {
     id: "ad-reward",
-    label: "Ad Reward Config",
+    label: "Ad Reward Manager",
     icon: "/Rewards.png",
     href: "/ad-reward",
   },
