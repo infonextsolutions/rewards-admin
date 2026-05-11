@@ -479,6 +479,8 @@ export default function EventTokenAnalytics() {
   const [callbacksPagination, setCallbacksPagination] = useState({});
   const [callbacksNote, setCallbacksNote] = useState("");
   const [fullAnalysis, setFullAnalysis] = useState(null);
+  const [fullAnalysisOptions, setFullAnalysisOptions] = useState(null);
+  const [callbacksOptions, setCallbacksOptions] = useState(null);
   const [selectedClickDetails, setSelectedClickDetails] = useState(null);
 
   const [loading, setLoading] = useState(false);
@@ -492,6 +494,7 @@ export default function EventTokenAnalytics() {
   const [searchTerm, setSearchTerm] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
   const [networkFilter, setNetworkFilter] = useState("");
+  const [campaignFilter, setCampaignFilter] = useState("");
   const [callbacksPage, setCallbacksPage] = useState(1);
   const [breakdownView, setBreakdownView] = useState("network");
   const [showTokenList, setShowTokenList] = useState(false);
@@ -515,13 +518,34 @@ export default function EventTokenAnalytics() {
   }, [showTokenList]);
 
   const availableNetworks = useMemo(() => {
+    const source = callbacksOptions || callbacks;
     const set = new Set();
-    for (const row of callbacks || []) {
+    for (const row of source || []) {
       const network = row.source?.network;
       if (network) set.add(network);
     }
     return Array.from(set).sort();
-  }, [callbacks]);
+  }, [callbacksOptions, callbacks]);
+
+  const availableCampaigns = useMemo(() => {
+    const source = callbacksOptions || callbacks;
+    const set = new Set();
+    for (const row of source || []) {
+      const campaign = row.source?.campaign;
+      if (campaign && campaign !== "N/A") set.add(campaign);
+    }
+    return Array.from(set).sort();
+  }, [callbacksOptions, callbacks]);
+
+  const availableFullAnalysisCampaigns = useMemo(() => {
+    const source = fullAnalysisOptions || fullAnalysis;
+    const set = new Set();
+    for (const row of source?.byNetwork || []) {
+      const campaign = row.campaign;
+      if (campaign && campaign !== "N/A") set.add(campaign);
+    }
+    return Array.from(set).sort();
+  }, [fullAnalysisOptions, fullAnalysis]);
 
   const fetchTokens = async () => {
     setLoading(true);
@@ -554,14 +578,16 @@ export default function EventTokenAnalytics() {
     }
   };
 
-  const fetchCallbacks = async (page = 1) => {
+  const fetchCallbacks = async (page = 1, networkOverride, campaignOverride) => {
+    setCallbacks([]);
     setCallbacksLoading(true);
     try {
       const response = await eventTokensAPI.getCallbacks({
         page,
         limit: 50,
         country: countryFilter,
-        network: networkFilter,
+        network: networkOverride !== undefined ? networkOverride : networkFilter,
+        campaign: campaignOverride !== undefined ? campaignOverride : campaignFilter,
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
       });
@@ -577,7 +603,22 @@ export default function EventTokenAnalytics() {
     }
   };
 
-  const fetchFullAnalysis = async () => {
+  const fetchCallbacksOptions = async () => {
+    try {
+      const response = await eventTokensAPI.getCallbacks({
+        page: 1,
+        limit: 50,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      });
+      setCallbacksOptions(response.data || []);
+    } catch (error) {
+      console.error("Failed to load callbacks options:", error);
+    }
+  };
+
+  const fetchFullAnalysis = async (networkOverride, campaignOverride) => {
+    setFullAnalysis(null);
     setFullAnalysisLoading(true);
     try {
       const response = await eventTokensAPI.getAnalyticsOverview({
@@ -585,7 +626,8 @@ export default function EventTokenAnalytics() {
         endDate: dateRange.endDate,
         country: countryFilter,
         eventToken: selectedToken?.token,
-        network: networkFilter,
+        network: networkOverride !== undefined ? networkOverride : networkFilter,
+        campaign: campaignOverride !== undefined ? campaignOverride : campaignFilter,
       });
       setFullAnalysis(response.data || null);
     } catch (error) {
@@ -593,6 +635,19 @@ export default function EventTokenAnalytics() {
       console.error("Error fetching full analysis:", error);
     } finally {
       setFullAnalysisLoading(false);
+    }
+  };
+
+  const fetchFullAnalysisOptions = async () => {
+    try {
+      const response = await eventTokensAPI.getAnalyticsOverview({
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        eventToken: selectedToken?.token,
+      });
+      setFullAnalysisOptions(response.data || null);
+    } catch (error) {
+      console.error("Failed to load analysis options:", error);
     }
   };
 
@@ -645,8 +700,8 @@ export default function EventTokenAnalytics() {
               type="button"
               onClick={() => {
                 setActiveTab(key);
-                if (key === "clickTracking") fetchCallbacks(1);
-                if (key === "fullAnalysis") fetchFullAnalysis();
+                if (key === "clickTracking") { fetchCallbacks(1); fetchCallbacksOptions(); }
+                if (key === "fullAnalysis") { fetchFullAnalysis(); fetchFullAnalysisOptions(); }
               }}
               className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
                 activeTab === key
@@ -791,7 +846,7 @@ export default function EventTokenAnalytics() {
               </div>
               <div className="flex items-end">
                 <button
-                  onClick={() => fetchCallbacks(1)}
+                  onClick={() => { fetchCallbacks(1); fetchCallbacksOptions(); }}
                   disabled={callbacksLoading}
                   className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] disabled:opacity-50 transition-colors"
                 >
@@ -800,18 +855,35 @@ export default function EventTokenAnalytics() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
-            <select
-              value={networkFilter}
-              onChange={(e) => setNetworkFilter(e.target.value)}
-              className="w-full sm:max-w-md px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
-            >
-              <option value="">All Networks</option>
-              {availableNetworks.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
+                <select
+                  value={networkFilter}
+                  onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchCallbacks(1, v, campaignFilter); }}
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+                >
+                  <option value="">All Networks</option>
+                  {availableNetworks.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Campaign</label>
+                <select
+                  value={campaignFilter}
+                  onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchCallbacks(1, networkFilter, v); }}
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+                >
+                  <option value="">All Campaigns</option>
+                  {availableCampaigns.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
@@ -839,25 +911,13 @@ export default function EventTokenAnalytics() {
                       {callbacksNote}
                     </div>
                   )} */}
-                  {!callbacks?.length && (
-                    <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
-                      <p className="text-xs text-blue-700 font-medium mb-1">📋 How to enable tracking data:</p>
-                      <ol className="text-xs text-blue-600 list-decimal list-inside space-y-0.5">
-                        <li>Go to <strong>Adjust Dashboard</strong> → <strong>Settings</strong> → <strong>Raw Data Exports</strong></li>
-                        <li>Add a new <strong>Server Callback</strong> with URL: <code className="bg-blue-100 px-1 rounded text-[10px]">https://your-domain.com/api/webhooks/adjust/callback</code></li>
-                        <li>Select activities to track: <strong>Clicks, Installs, Events, Sessions</strong></li>
-                        <li>Save and wait 5-10 minutes for data to appear here</li>
-                      </ol>
-                    </div>
-                  )}
                 </div>
              {callbacksLoading ? (
                <div className="p-6 sm:p-8 text-center text-xs sm:text-sm text-gray-600">Loading...</div>
              ) : !callbacks?.length ? (
                <div className="p-6 sm:p-8 text-center">
                  <CursorArrowRaysIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                 <p className="text-sm font-medium text-gray-900">No tracking data available</p>
-                 <p className="mt-1 text-xs text-gray-500">Configure Raw Data Exports in Adjust Dashboard → Settings → Raw Data Exports to receive per-user click data.</p>
+                  <p className="text-sm font-medium text-gray-900">No tracking data available</p>
                </div>
              ) : (
                <div className="overflow-x-auto">
@@ -951,14 +1011,29 @@ export default function EventTokenAnalytics() {
                        };
                        const statusColor = statusColors[row.installStatus] || 'bg-gray-100 text-gray-600';
                        return (
-                         <tr key={index} className="hover:bg-gray-50">
-                           <td
-                             className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#00a389] whitespace-nowrap font-mono max-w-[120px] truncate cursor-pointer hover:underline text-center"
-                             title={`Click: ${row.clickId}`}
-                             onClick={() => fetchClickDetails(row.clickId)}
-                           >
-                             {row.clickId || 'N/A'}
-                           </td>
+                          <tr key={index} className="hover:bg-gray-50">
+                             <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                               <div className="flex items-center justify-center gap-1">
+                                 <span
+                                   className="text-[#00a389] font-mono max-w-[120px] truncate cursor-pointer hover:underline"
+                                   title={`Click: ${row.clickId}`}
+                                   onClick={() => fetchClickDetails(row.clickId)}
+                                 >
+                                   {row.clickId || 'N/A'}
+                                 </span>
+                                 {row.clickId && (
+                                   <button
+                                     onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(row.clickId); toast.success('Copied!'); }}
+                                     className="text-gray-400 hover:text-gray-600 flex-shrink-0 p-0.5 rounded hover:bg-gray-100"
+                                     title="Copy Click ID"
+                                   >
+                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                     </svg>
+                                   </button>
+                                 )}
+                               </div>
+                             </td>
                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap text-center">
                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${statusColor}`}>
                                {row.installStatus || 'Unknown'}
@@ -1041,7 +1116,7 @@ export default function EventTokenAnalytics() {
               </div>
               <div className="flex items-end">
                 <button
-                  onClick={() => fetchFullAnalysis()}
+                  onClick={() => { fetchFullAnalysis(); fetchFullAnalysisOptions(); }}
                   disabled={fullAnalysisLoading}
                   className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] disabled:opacity-50 transition-colors"
                 >
@@ -1050,22 +1125,39 @@ export default function EventTokenAnalytics() {
               </div>
             </div>
           </div>
-           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
-            <select
-              value={networkFilter}
-              onChange={(e) => { setNetworkFilter(e.target.value); fetchFullAnalysis(); }}
-              className="w-full sm:max-w-md px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
-            >
-              <option value="">All Networks</option>
-              {(fullAnalysis?.byNetwork || [])
-                .map((r) => r.network)
-                .filter((v, i, arr) => arr.indexOf(v) === i)
-                .sort()
-                .map((n) => (
-                  <option key={n} value={n}>{n || "Organic"}</option>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
+                <select
+                  value={networkFilter}
+                  onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchFullAnalysis(v, campaignFilter); }}
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+                >
+                 <option value="">All Networks</option>
+                  {((fullAnalysisOptions || fullAnalysis)?.byNetwork || [])
+                    .map((r) => r.network)
+                    .filter((v, i, arr) => arr.indexOf(v) === i)
+                    .sort()
+                    .map((n) => (
+                      <option key={n} value={n}>{n || "Organic"}</option>
+                    ))}
+               </select>
+               </div>
+               <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Campaign</label>
+                <select
+                  value={campaignFilter}
+                  onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchFullAnalysis(networkFilter, v); }}
+                 className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+               >
+                 <option value="">All Campaigns</option>
+                {availableFullAnalysisCampaigns.map((c) => (
+                  <option key={c} value={c}>{c}</option>
                 ))}
-            </select>
+              </select>
+              </div>
+             </div>
           </div>
           {fullAnalysisLoading ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center text-xs sm:text-sm text-gray-600">
@@ -1256,6 +1348,18 @@ export default function EventTokenAnalytics() {
                         )}
                         {selectedClickDetails.deviceInfo.nonce && (
                           <div className="col-span-2"><span className="text-gray-500">SKAd Nonce:</span> <span className="font-mono text-xs">{selectedClickDetails.deviceInfo.nonce}</span></div>
+                        )}
+                        {selectedClickDetails.deviceInfo.deviceIdentifiers && (
+                          <>
+                            <div className="col-span-full border-t border-gray-100 pt-2 mt-1"></div>
+                            <div className="col-span-full text-xs font-semibold text-gray-600 mb-1">Device Identifiers</div>
+                            {selectedClickDetails.deviceInfo.deviceIdentifiers.gpsAdid && (
+                              <div className="col-span-2"><span className="text-gray-500">GPS ADID (Android):</span> <span className="font-mono text-xs">{selectedClickDetails.deviceInfo.deviceIdentifiers.gpsAdid}</span></div>
+                            )}
+                            {selectedClickDetails.deviceInfo.deviceIdentifiers.idfa && (
+                              <div className="col-span-2"><span className="text-gray-500">IDFA (iOS):</span> <span className="font-mono text-xs">{selectedClickDetails.deviceInfo.deviceIdentifiers.idfa}</span></div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
