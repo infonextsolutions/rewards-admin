@@ -136,8 +136,11 @@ export default function GamesListingModule() {
     const fetchConversionSettings = async () => {
       try {
         const response = await TRANSACTION_API.getConversionSettings();
-        const rate = response?.defaultRule?.coinsPerDollar;
-        if (rate) setCoinsPerDollar(rate);
+        if (response.data?.success && response.data?.data) {
+          const data = response.data.data;
+          const rate = data.defaultRule?.coinsPerDollar;
+          if (rate) setCoinsPerDollar(rate);
+        }
       } catch (error) {
         console.error("Error fetching conversion settings:", error);
       }
@@ -537,12 +540,15 @@ export default function GamesListingModule() {
               : "N/A"}
           </div>
         );
-      case "coins":
+      case "coins": {
+        const apiAmount = game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0;
+        const calculated = apiAmount > 0 ? Math.round(apiAmount * coinsPerDollar) : (game.rewards?.coins || 0);
         return (
           <div className="text-sm text-gray-900">
-            {game.rewards?.coins ? game.rewards.coins.toLocaleString() : "N/A"}
+            {calculated.toLocaleString()}
           </div>
         );
+      }
       case "xptrRules":
         return (
           <div
@@ -599,7 +605,7 @@ export default function GamesListingModule() {
           <div className="text-sm text-gray-900">{game.marketingChannel}</div>
         );
       case "campaign":
-        return <div className="text-sm text-gray-900">{game.campaign}</div>;
+        return <div className="text-sm text-gray-900">{game.campaignName}</div>;
       case "xpTier":
         // Display XP tiers based on the xpTiers array from the API response
         // If xpTiers array exists and has values, use it; otherwise show all three

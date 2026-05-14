@@ -212,6 +212,7 @@ export const eventTokensAPI = {
    async getCallbacks(params = {}) {
       try {
         const queryParams = new URLSearchParams();
+        if (params.eventToken) queryParams.append("eventToken", params.eventToken);
         if (params.country) queryParams.append("country", params.country);
         if (params.network) queryParams.append("network", params.network);
         if (params.campaign) queryParams.append("campaign", params.campaign);

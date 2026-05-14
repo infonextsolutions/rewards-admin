@@ -115,6 +115,18 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     loadConversionSettings();
   }, [isOpen]);
 
+  // Recalculate rewardCoins when coinsPerDollar finishes loading during edit
+  useEffect(() => {
+    if (!isOpen || !game) return;
+    const dollarAmount = game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0;
+    if (dollarAmount <= 0) return;
+    setFormData((prev) => {
+      const coins = Math.round(dollarAmount * coinsPerDollar);
+      if (coins === prev.rewardCoins) return prev;
+      return { ...prev, rewardCoins: coins };
+    });
+  }, [coinsPerDollar]);
+
   // Fetch marketing channels and campaigns from backend
   useEffect(() => {
     if (!isOpen) return;
@@ -162,7 +174,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     xptrRules: "",
     rewardXP: 0,
     rewardCoins: 0,
-    rewardDollars: 0, // Dollar amount that converts to coins (50 coins = 1 dollar)
+    rewardDollars: 0, // Dollar amount that converts to coins via coinsPerDollar rate
     cpi: null, // CPI value from SDK/third-party data
     taskCount: 0,
     activeVisible: true,
@@ -265,10 +277,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         sdk: game.sdk || "",
         xptrRules: game.xptrRules || "",
         rewardXP: game.rewardXP || 0,
-        rewardCoins: game.rewardCoins || 0,
-        rewardDollars: game.rewardCoins
-          ? parseFloat((game.rewardCoins / 50).toFixed(2))
-          : 0, // Convert coins to dollars (50 coins = 1 dollar)
+        rewardDollars: game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0,
+        rewardCoins: Math.round((game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0) * coinsPerDollar),
         cpi: game.besitosRawData?.cpi ?? game.thirdPartyGameData?.cpi ?? null,
         taskCount: game.taskCount || 0,
         activeVisible:
@@ -718,7 +728,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       xptrRules: "", // Set to empty string for backward compatibility
       deviceType: platform, // iOS or Android based on platform dropdown
       rewardXP: parseInt(formData.rewardXP) || 0,
-      rewardCoins: parseInt(formData.rewardCoins) || 0, // Calculated from dollars (50 coins = 1 dollar)
+      rewardCoins: parseInt(formData.rewardCoins) || 0, // Calculated from dollars * coinsPerDollar
       defaultTaskCount: parseInt(formData.taskCount) || 0,
       xpTier: xpTierStringToNumber(formData.xpTier) || 1, // Keep for backward compatibility
       xpTiers: JSON.stringify(formData.xpTiers), // Multi-select XP tiers

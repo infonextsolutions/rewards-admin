@@ -479,8 +479,7 @@ export default function EventTokenAnalytics() {
   const [callbacksPagination, setCallbacksPagination] = useState({});
   const [callbacksNote, setCallbacksNote] = useState("");
   const [fullAnalysis, setFullAnalysis] = useState(null);
-  const [fullAnalysisOptions, setFullAnalysisOptions] = useState(null);
-  const [callbacksOptions, setCallbacksOptions] = useState(null);
+
   const [selectedClickDetails, setSelectedClickDetails] = useState(null);
 
   const [loading, setLoading] = useState(false);
@@ -495,6 +494,8 @@ export default function EventTokenAnalytics() {
   const [countryFilter, setCountryFilter] = useState("");
   const [networkFilter, setNetworkFilter] = useState("");
   const [campaignFilter, setCampaignFilter] = useState("");
+  const [trackingTokenFilter, setTrackingTokenFilter] = useState("");
+  const [fullAnalysisTokenFilter, setFullAnalysisTokenFilter] = useState("");
   const [callbacksPage, setCallbacksPage] = useState(1);
   const [breakdownView, setBreakdownView] = useState("network");
   const [showTokenList, setShowTokenList] = useState(false);
@@ -518,34 +519,31 @@ export default function EventTokenAnalytics() {
   }, [showTokenList]);
 
   const availableNetworks = useMemo(() => {
-    const source = callbacksOptions || callbacks;
     const set = new Set();
-    for (const row of source || []) {
+    for (const row of callbacks || []) {
       const network = row.source?.network;
       if (network) set.add(network);
     }
     return Array.from(set).sort();
-  }, [callbacksOptions, callbacks]);
+  }, [callbacks]);
 
   const availableCampaigns = useMemo(() => {
-    const source = callbacksOptions || callbacks;
     const set = new Set();
-    for (const row of source || []) {
+    for (const row of callbacks || []) {
       const campaign = row.source?.campaign;
       if (campaign && campaign !== "N/A") set.add(campaign);
     }
     return Array.from(set).sort();
-  }, [callbacksOptions, callbacks]);
+  }, [callbacks]);
 
   const availableFullAnalysisCampaigns = useMemo(() => {
-    const source = fullAnalysisOptions || fullAnalysis;
     const set = new Set();
-    for (const row of source?.byNetwork || []) {
+    for (const row of fullAnalysis?.byNetwork || []) {
       const campaign = row.campaign;
       if (campaign && campaign !== "N/A") set.add(campaign);
     }
     return Array.from(set).sort();
-  }, [fullAnalysisOptions, fullAnalysis]);
+  }, [fullAnalysis]);
 
   const fetchTokens = async () => {
     setLoading(true);
@@ -578,13 +576,14 @@ export default function EventTokenAnalytics() {
     }
   };
 
-  const fetchCallbacks = async (page = 1, networkOverride, campaignOverride) => {
+  const fetchCallbacks = async (page = 1, networkOverride, campaignOverride, tokenOverride) => {
     setCallbacks([]);
     setCallbacksLoading(true);
     try {
       const response = await eventTokensAPI.getCallbacks({
         page,
         limit: 50,
+        eventToken: tokenOverride !== undefined ? tokenOverride : trackingTokenFilter,
         country: countryFilter,
         network: networkOverride !== undefined ? networkOverride : networkFilter,
         campaign: campaignOverride !== undefined ? campaignOverride : campaignFilter,
@@ -603,21 +602,7 @@ export default function EventTokenAnalytics() {
     }
   };
 
-  const fetchCallbacksOptions = async () => {
-    try {
-      const response = await eventTokensAPI.getCallbacks({
-        page: 1,
-        limit: 50,
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      });
-      setCallbacksOptions(response.data || []);
-    } catch (error) {
-      console.error("Failed to load callbacks options:", error);
-    }
-  };
-
-  const fetchFullAnalysis = async (networkOverride, campaignOverride) => {
+  const fetchFullAnalysis = async (networkOverride, campaignOverride, tokenOverride) => {
     setFullAnalysis(null);
     setFullAnalysisLoading(true);
     try {
@@ -625,7 +610,7 @@ export default function EventTokenAnalytics() {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
         country: countryFilter,
-        eventToken: selectedToken?.token,
+        eventToken: tokenOverride !== undefined ? tokenOverride : fullAnalysisTokenFilter,
         network: networkOverride !== undefined ? networkOverride : networkFilter,
         campaign: campaignOverride !== undefined ? campaignOverride : campaignFilter,
       });
@@ -635,19 +620,6 @@ export default function EventTokenAnalytics() {
       console.error("Error fetching full analysis:", error);
     } finally {
       setFullAnalysisLoading(false);
-    }
-  };
-
-  const fetchFullAnalysisOptions = async () => {
-    try {
-      const response = await eventTokensAPI.getAnalyticsOverview({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        eventToken: selectedToken?.token,
-      });
-      setFullAnalysisOptions(response.data || null);
-    } catch (error) {
-      console.error("Failed to load analysis options:", error);
     }
   };
 
@@ -700,8 +672,8 @@ export default function EventTokenAnalytics() {
               type="button"
               onClick={() => {
                 setActiveTab(key);
-                if (key === "clickTracking") { fetchCallbacks(1); fetchCallbacksOptions(); }
-                if (key === "fullAnalysis") { fetchFullAnalysis(); fetchFullAnalysisOptions(); }
+                if (key === "clickTracking") { fetchCallbacks(1); }
+                if (key === "fullAnalysis") { fetchFullAnalysis(); }
               }}
               className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
                 activeTab === key
@@ -846,7 +818,7 @@ export default function EventTokenAnalytics() {
               </div>
               <div className="flex items-end">
                 <button
-                  onClick={() => { fetchCallbacks(1); fetchCallbacksOptions(); }}
+                  onClick={() => { fetchCallbacks(1); }}
                   disabled={callbacksLoading}
                   className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] disabled:opacity-50 transition-colors"
                 >
@@ -856,12 +828,25 @@ export default function EventTokenAnalytics() {
             </div>
           </div>
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Event Token</label>
+                <select
+                  value={trackingTokenFilter}
+                  onChange={(e) => { const v = e.target.value; setTrackingTokenFilter(v); fetchCallbacks(1, networkFilter, campaignFilter, v); }}
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+                >
+                  <option value="">All Tokens</option>
+                  {tokens.map((t) => (
+                    <option key={t.token} value={t.token}>{t.name} ({t.token})</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
                 <select
                   value={networkFilter}
-                  onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchCallbacks(1, v, campaignFilter); }}
+                  onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchCallbacks(1, v, campaignFilter, trackingTokenFilter); }}
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
                 >
                   <option value="">All Networks</option>
@@ -874,7 +859,7 @@ export default function EventTokenAnalytics() {
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Campaign</label>
                 <select
                   value={campaignFilter}
-                  onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchCallbacks(1, networkFilter, v); }}
+                  onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchCallbacks(1, networkFilter, v, trackingTokenFilter); }}
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
                 >
                   <option value="">All Campaigns</option>
@@ -958,30 +943,7 @@ export default function EventTokenAnalytics() {
                         </th>
                         <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Campaign</th>
                         <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Country</th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">
-                          <div className="flex items-center justify-center gap-1">
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.237M5.136 7.964l-2.285 1.793A1 1 0 003.469 9.96l2.853 2.853A1 1 0 007.96 12.469l2.853-2.853a1 1 0 00.227-1.397L9.373 5.124M7.188 2.239z" />
-                            </svg>
-                            Clicks
-                          </div>
-                        </th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">
-                          <div className="flex items-center justify-center gap-1">
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            Installs
-                          </div>
-                        </th>
-                        <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">
-                          <div className="flex items-center justify-center gap-1">
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            Events
-                          </div>
-                        </th>
+
                          <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">
                           <div className="flex items-center justify-center gap-1">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1043,9 +1005,6 @@ export default function EventTokenAnalytics() {
                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{row.source?.network || "Organic"}</td>
                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-500 whitespace-nowrap text-center">{row.source?.campaign || "N/A"}</td>
                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap font-mono uppercase text-center">{row.country || "N/A"}</td>
-                           <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{num(row.clicks)}</td>
-                           <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{num(row.installs)}</td>
-                           <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{num(row.events)}</td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">${Number(row.revenue || 0).toFixed(2)}</td>
                           </tr>
                        );
@@ -1116,7 +1075,7 @@ export default function EventTokenAnalytics() {
               </div>
               <div className="flex items-end">
                 <button
-                  onClick={() => { fetchFullAnalysis(); fetchFullAnalysisOptions(); }}
+                  onClick={() => { fetchFullAnalysis(); }}
                   disabled={fullAnalysisLoading}
                   className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] disabled:opacity-50 transition-colors"
                 >
@@ -1126,51 +1085,75 @@ export default function EventTokenAnalytics() {
             </div>
           </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+               <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Event Token</label>
                 <select
-                  value={networkFilter}
-                  onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchFullAnalysis(v, campaignFilter); }}
+                  value={fullAnalysisTokenFilter}
+                  onChange={(e) => { const v = e.target.value; setFullAnalysisTokenFilter(v); fetchFullAnalysis(networkFilter, campaignFilter, v); }}
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
                 >
-                 <option value="">All Networks</option>
-                  {((fullAnalysisOptions || fullAnalysis)?.byNetwork || [])
-                    .map((r) => r.network)
-                    .filter((v, i, arr) => arr.indexOf(v) === i)
-                    .sort()
-                    .map((n) => (
-                      <option key={n} value={n}>{n || "Organic"}</option>
-                    ))}
-               </select>
+                  <option value="">All Tokens</option>
+                  {tokens.map((t) => (
+                    <option key={t.token} value={t.token}>{t.name} ({t.token})</option>
+                  ))}
+                </select>
                </div>
                <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Campaign</label>
-                <select
-                  value={campaignFilter}
-                  onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchFullAnalysis(networkFilter, v); }}
-                 className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
-               >
-                 <option value="">All Campaigns</option>
-                {availableFullAnalysisCampaigns.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
+                 <select
+                   value={networkFilter}
+                   onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchFullAnalysis(v, campaignFilter, fullAnalysisTokenFilter); }}
+                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+                 >
+                  <option value="">All Networks</option>
+                   {(fullAnalysis?.byNetwork || [])
+                     .map((r) => r.network)
+                     .filter((v, i, arr) => arr.indexOf(v) === i)
+                     .sort()
+                     .map((n) => (
+                       <option key={n} value={n}>{n || "Organic"}</option>
+                     ))}
+                </select>
+                </div>
+                <div>
+                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Campaign</label>
+                 <select
+                   value={campaignFilter}
+                   onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchFullAnalysis(networkFilter, v, fullAnalysisTokenFilter); }}
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+                >
+                  <option value="">All Campaigns</option>
+                 {availableFullAnalysisCampaigns.map((c) => (
+                   <option key={c} value={c}>{c}</option>
+                 ))}
+               </select>
+               </div>
               </div>
-             </div>
-          </div>
+           </div>
           {fullAnalysisLoading ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center text-xs sm:text-sm text-gray-600">
               Loading full analysis...
             </div>
           ) : fullAnalysis ? (
             <>
+              {fullAnalysisTokenFilter && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-xs text-blue-700 flex items-start gap-2">
+                  <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>
+                    Token filter active: <strong>Events</strong> &amp; <strong>Revenue</strong> cards show data for <strong>{tokens.find(t => t.token === fullAnalysisTokenFilter)?.name || fullAnalysisTokenFilter}</strong> only.
+                    <strong> Clicks</strong>, <strong>Installs</strong>, <strong>Impressions</strong> are app-wide.
+                  </span>
+                </div>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
                 <MetricCard label="Clicks" value={num(fullAnalysis.summary?.totalClicks)} />
                 <MetricCard label="Installs" value={num(fullAnalysis.summary?.totalInstalls)} tone="green" />
                 <MetricCard label="Events" value={num(fullAnalysis.summary?.totalEvents)} tone="purple" />
                 <MetricCard label="Revenue" value={`$${Number(fullAnalysis.summary?.totalRevenue || 0).toFixed(2)}`} tone="yellow" />
-                <MetricCard label="Impressions" value={num(fullAnalysis.summary?.totalImpressions)} tone="indigo" className="hidden sm:block" />
+                <MetricCard label="Impressions" value={num(fullAnalysis.summary?.totalImpressions)} tone="indigo" />
               </div>
               <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg w-fit">
                 <button
@@ -1194,6 +1177,17 @@ export default function EventTokenAnalytics() {
                   Country
                 </button>
               </div>
+              {fullAnalysisTokenFilter && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-xs text-blue-700 flex items-start gap-2">
+                  <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>
+                    <strong>Events</strong> &amp; <strong>Revenue</strong> columns are filtered to token <strong>{tokens.find(t => t.token === fullAnalysisTokenFilter)?.name || fullAnalysisTokenFilter}</strong>.
+                    <strong> Installs</strong>, <strong>Clicks</strong>, <strong>Impressions</strong> are app-wide (Adjust does not expose per-event versions of these metrics).
+                  </span>
+                </div>
+              )}
 
               {breakdownView === "network" && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -1211,8 +1205,7 @@ export default function EventTokenAnalytics() {
                           <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Installs</th>
                           <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Events</th>
                            <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Revenue</th>
-                           <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Impressions</th>
-                           <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Avg DAU</th>
+                            <th className="px-3 sm:px-4 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-700 uppercase">Impressions</th>
                          </tr>
                        </thead>
                        <tbody className="divide-y divide-gray-200">
@@ -1224,9 +1217,8 @@ export default function EventTokenAnalytics() {
                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{num(row.installs)}</td>
                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{num(row.events)}</td>
                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">${Number(row.revenue || 0).toFixed(2)}</td>
-                             <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{num(row.impressions)}</td>
-                             <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{row.daus != null ? parseFloat(row.daus || 0).toFixed(2) : "0.00"}</td>
-                           </tr>
+                              <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap text-center">{num(row.impressions)}</td>
+                            </tr>
                         ))}
                       </tbody>
                     </table>
