@@ -256,6 +256,44 @@ export const eventTokensAPI = {
     }
   },
 
+   /**
+    * Get all available networks for filter dropdowns
+    */
+   async getNetworks() {
+     try {
+       const response = await apiClient.get("/admin/marketing/channels");
+       return {
+         success: true,
+         data: response.data.data || [],
+       };
+     } catch (error) {
+       console.error("Error fetching networks:", error);
+       return { success: true, data: [] };
+     }
+   },
+
+   /**
+    * Get all available campaigns for filter dropdowns
+    * @param {Object} params
+    * @param {string} params.network - Optional network filter
+    */
+   async getCampaigns(params = {}) {
+     try {
+       const queryParams = new URLSearchParams();
+       if (params.network) queryParams.append("network", params.network);
+       const response = await apiClient.get(
+         `/admin/marketing/campaigns?${queryParams.toString()}`
+       );
+       return {
+         success: true,
+         data: response.data.data || [],
+       };
+     } catch (error) {
+       console.error("Error fetching campaigns:", error);
+       return { success: true, data: [] };
+     }
+   },
+
   /**
    * Get analytics overview for all tokens
    * @param {Object} params - Filter parameters

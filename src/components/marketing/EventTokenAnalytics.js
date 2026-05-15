@@ -479,6 +479,8 @@ export default function EventTokenAnalytics() {
   const [callbacksPagination, setCallbacksPagination] = useState({});
   const [callbacksNote, setCallbacksNote] = useState("");
   const [fullAnalysis, setFullAnalysis] = useState(null);
+  const [allNetworks, setAllNetworks] = useState([]);
+  const [allCampaigns, setAllCampaigns] = useState([]);
 
   const [selectedClickDetails, setSelectedClickDetails] = useState(null);
 
@@ -506,6 +508,8 @@ export default function EventTokenAnalytics() {
 
   useEffect(() => {
     fetchTokens();
+    fetchNetworks();
+    fetchCampaigns();
   }, []);
 
   useEffect(() => {
@@ -518,32 +522,26 @@ export default function EventTokenAnalytics() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showTokenList]);
 
-  const availableNetworks = useMemo(() => {
-    const set = new Set();
-    for (const row of callbacks || []) {
-      const network = row.source?.network;
-      if (network) set.add(network);
-    }
-    return Array.from(set).sort();
-  }, [callbacks]);
+  const sortedNetworks = useMemo(() => [...allNetworks].sort(), [allNetworks]);
+  const sortedCampaigns = useMemo(() => [...allCampaigns].sort(), [allCampaigns]);
 
-  const availableCampaigns = useMemo(() => {
-    const set = new Set();
-    for (const row of callbacks || []) {
-      const campaign = row.source?.campaign;
-      if (campaign && campaign !== "N/A") set.add(campaign);
+  const fetchNetworks = async () => {
+    try {
+      const response = await eventTokensAPI.getNetworks();
+      setAllNetworks(response.data || []);
+    } catch (error) {
+      console.error("Error fetching networks:", error);
     }
-    return Array.from(set).sort();
-  }, [callbacks]);
+  };
 
-  const availableFullAnalysisCampaigns = useMemo(() => {
-    const set = new Set();
-    for (const row of fullAnalysis?.byNetwork || []) {
-      const campaign = row.campaign;
-      if (campaign && campaign !== "N/A") set.add(campaign);
+  const fetchCampaigns = async (network) => {
+    try {
+      const response = await eventTokensAPI.getCampaigns(network ? { network } : {});
+      setAllCampaigns(response.data || []);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
     }
-    return Array.from(set).sort();
-  }, [fullAnalysis]);
+  };
 
   const fetchTokens = async () => {
     setLoading(true);
@@ -846,11 +844,11 @@ export default function EventTokenAnalytics() {
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
                 <select
                   value={networkFilter}
-                  onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchCallbacks(1, v, campaignFilter, trackingTokenFilter); }}
+                  onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchCallbacks(1, v, campaignFilter, trackingTokenFilter); fetchCampaigns(v); }}
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
                 >
                   <option value="">All Networks</option>
-                  {availableNetworks.map((n) => (
+                  {sortedNetworks.map((n) => (
                     <option key={n} value={n}>{n}</option>
                   ))}
                 </select>
@@ -863,7 +861,7 @@ export default function EventTokenAnalytics() {
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
                 >
                   <option value="">All Campaigns</option>
-                  {availableCampaigns.map((c) => (
+                  {sortedCampaigns.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
@@ -1103,28 +1101,24 @@ export default function EventTokenAnalytics() {
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Network</label>
                  <select
                    value={networkFilter}
-                   onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchFullAnalysis(v, campaignFilter, fullAnalysisTokenFilter); }}
+                    onChange={(e) => { const v = e.target.value; setNetworkFilter(v); fetchFullAnalysis(v, campaignFilter, fullAnalysisTokenFilter); fetchCampaigns(v); }}
+                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
+                  >
+                   <option value="">All Networks</option>
+                  {sortedNetworks.map((n) => (
+                    <option key={n} value={n}>{n || "Organic"}</option>
+                  ))}
+                 </select>
+                 </div>
+                 <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Campaign</label>
+                  <select
+                    value={campaignFilter}
+                    onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchFullAnalysis(networkFilter, v, fullAnalysisTokenFilter); }}
                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
                  >
-                  <option value="">All Networks</option>
-                   {(fullAnalysis?.byNetwork || [])
-                     .map((r) => r.network)
-                     .filter((v, i, arr) => arr.indexOf(v) === i)
-                     .sort()
-                     .map((n) => (
-                       <option key={n} value={n}>{n || "Organic"}</option>
-                     ))}
-                </select>
-                </div>
-                <div>
-                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Campaign</label>
-                 <select
-                   value={campaignFilter}
-                   onChange={(e) => { const v = e.target.value; setCampaignFilter(v); fetchFullAnalysis(networkFilter, v, fullAnalysisTokenFilter); }}
-                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] text-xs sm:text-sm"
-                >
-                  <option value="">All Campaigns</option>
-                 {availableFullAnalysisCampaigns.map((c) => (
+                   <option value="">All Campaigns</option>
+                  {sortedCampaigns.map((c) => (
                    <option key={c} value={c}>{c}</option>
                  ))}
                </select>

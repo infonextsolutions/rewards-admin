@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import Pagination from "../ui/Pagination";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import surveyAPIs from "../../data/surveys/surveyAPI";
+import { TRANSACTION_API } from "../../data/transactions";
 import toast from "react-hot-toast";
 import OfferPreviewModal from "./modals/OfferPreviewModal";
 import TargetAudienceModal from "./modals/TargetAudienceModal";
@@ -33,6 +34,7 @@ export default function NonGamingOffers() {
   const [togglingOffers, setTogglingOffers] = useState(new Set()); // Track which offers are being toggled
   const [showTargetAudienceModal, setShowTargetAudienceModal] = useState(false);
   const [pendingSyncAction, setPendingSyncAction] = useState(null); // Store sync action details
+  const [coinsPerDollar, setCoinsPerDollar] = useState(100);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedOfferForPreview, setSelectedOfferForPreview] = useState(null);
 
@@ -760,13 +762,22 @@ export default function NonGamingOffers() {
   // Single effect: fetch when filters or provider change (including initial mount).
   // Avoids duplicate fetches on mount and prevents stale Bitlabs response overwriting Everflow after switch.
   useEffect(() => {
-
-    setSelectedOffers([]); // Clear selection when filter changes
+    setSelectedOffers([]);
     if (typeFilter !== "cashback") setCashbackSort("");
     if (typeFilter !== "shopping") setEpcSort("");
     fetchOffers(1, typeFilter);
     fetchConfiguredOffers();
   }, [typeFilter, countryFilter, deviceFilter, sdkFilter]);
+
+  useEffect(() => {
+    TRANSACTION_API.getConversionSettings()
+      .then((res) => {
+        if (res.data?.success && res.data?.data?.defaultRule?.coinsPerDollar) {
+          setCoinsPerDollar(res.data.data.defaultRule.coinsPerDollar);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Sort offers by cashback percentage or EPC when sort is active
   const sortedOffers = useMemo(() => {
@@ -1137,6 +1148,7 @@ export default function NonGamingOffers() {
           targetAudience: offersWithAudience,
           userRewardCoins,
           userRewardXP,
+          coinsPerDollar,
         });
         if (response.success) {
           toast.success(
@@ -1167,6 +1179,7 @@ export default function NonGamingOffers() {
         targetAudience: offersWithAudience,
         userRewardCoins,
         userRewardXP,
+        coinsPerDollar,
       });
 
       if (response.success) {
@@ -1227,6 +1240,7 @@ export default function NonGamingOffers() {
           targetAudience: offersWithAudience,
           userRewardCoins,
           userRewardXP,
+          coinsPerDollar,
         });
         if (response.success) {
           toast.success(
@@ -1257,6 +1271,7 @@ export default function NonGamingOffers() {
         targetAudience: offersWithAudience,
         userRewardCoins,
         userRewardXP,
+        coinsPerDollar,
       });
 
       if (response.success) {
@@ -1297,6 +1312,7 @@ export default function NonGamingOffers() {
         targetAudience: [{ offerId: String(offerId), targetAudience }],
         userRewardCoins,
         userRewardXP,
+        coinsPerDollar,
       });
       if (response?.success) {
         toast.success("Everflow offer synced successfully");
@@ -1331,6 +1347,7 @@ export default function NonGamingOffers() {
         targetAudience: [{ offerId: String(offerId), targetAudience }],
         userRewardCoins,
         userRewardXP,
+        coinsPerDollar,
       });
       if (response?.success) {
         toast.success("Affise offer synced successfully");
@@ -1377,6 +1394,7 @@ export default function NonGamingOffers() {
           : undefined,
         userRewardCoins,
         userRewardXP,
+        coinsPerDollar,
       });
 
       if (response.success) {
@@ -2267,6 +2285,7 @@ export default function NonGamingOffers() {
               }
             : undefined
         }
+        coinsPerDollar={coinsPerDollar}
       />
     </div>
   );

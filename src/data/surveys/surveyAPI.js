@@ -51,12 +51,11 @@ const surveyAPIs = {
 
   // POST /api/non-gaming-survey/admin/non-gaming/sync
   // sdk: "bitlabs" | "everflow" | "affise" | "besitos"
-  async syncNonGamingOffers({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience, userRewardCoins, userRewardXP } = {}) {
+  async syncNonGamingOffers({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience, userRewardCoins, userRewardXP, coinsPerDollar } = {}) {
     try {
-      // BitLabs API expects "countries" (array), not "country" (string)
       const countries = country ? (Array.isArray(country) ? country : [country]) : undefined;
       const response = await apiClient.post(`${BASE}/admin/non-gaming/sync`, {
-        sdk, offerIds, autoActivate, devices, countries, targetAudience, userRewardCoins, userRewardXP,
+        sdk, offerIds, autoActivate, devices, countries, targetAudience, userRewardCoins, userRewardXP, coinsPerDollar,
       });
       return response.data;
     } catch (error) {
