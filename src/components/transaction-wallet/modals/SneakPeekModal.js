@@ -28,7 +28,7 @@ export default function SneakPeekModal({ userId, isOpen, onClose }) {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          `https://rewardsuatapi.hireagent.co/api/admin/transactions/users/${userId}/sneak-peek`,
+          `https://rewardsapi.hireagent.co/api/admin/transactions/users/${userId}/sneak-peek`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
