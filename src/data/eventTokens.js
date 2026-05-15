@@ -210,14 +210,16 @@ export const eventTokensAPI = {
     * @param {number} params.limit - Items per page
     */
    async getCallbacks(params = {}) {
-     try {
-       const queryParams = new URLSearchParams();
-       if (params.country) queryParams.append("country", params.country);
-       if (params.network) queryParams.append("network", params.network);
-       if (params.startDate) queryParams.append("startDate", params.startDate);
-       if (params.endDate) queryParams.append("endDate", params.endDate);
-       if (params.page) queryParams.append("page", params.page.toString());
-       if (params.limit) queryParams.append("limit", params.limit.toString());
+      try {
+        const queryParams = new URLSearchParams();
+        if (params.eventToken) queryParams.append("eventToken", params.eventToken);
+        if (params.country) queryParams.append("country", params.country);
+        if (params.network) queryParams.append("network", params.network);
+        if (params.campaign) queryParams.append("campaign", params.campaign);
+        if (params.startDate) queryParams.append("startDate", params.startDate);
+        if (params.endDate) queryParams.append("endDate", params.endDate);
+        if (params.page) queryParams.append("page", params.page.toString());
+        if (params.limit) queryParams.append("limit", params.limit.toString());
 
       const response = await apiClient.get(
          `/admin/adjust-events/callbacks?${queryParams.toString()}`
@@ -254,6 +256,44 @@ export const eventTokensAPI = {
     }
   },
 
+   /**
+    * Get all available networks for filter dropdowns
+    */
+   async getNetworks() {
+     try {
+       const response = await apiClient.get("/admin/marketing/channels");
+       return {
+         success: true,
+         data: response.data.data || [],
+       };
+     } catch (error) {
+       console.error("Error fetching networks:", error);
+       return { success: true, data: [] };
+     }
+   },
+
+   /**
+    * Get all available campaigns for filter dropdowns
+    * @param {Object} params
+    * @param {string} params.network - Optional network filter
+    */
+   async getCampaigns(params = {}) {
+     try {
+       const queryParams = new URLSearchParams();
+       if (params.network) queryParams.append("network", params.network);
+       const response = await apiClient.get(
+         `/admin/marketing/campaigns?${queryParams.toString()}`
+       );
+       return {
+         success: true,
+         data: response.data.data || [],
+       };
+     } catch (error) {
+       console.error("Error fetching campaigns:", error);
+       return { success: true, data: [] };
+     }
+   },
+
   /**
    * Get analytics overview for all tokens
    * @param {Object} params - Filter parameters
@@ -269,6 +309,7 @@ export const eventTokensAPI = {
       if (params.country) queryParams.append("country", params.country);
       if (params.eventToken) queryParams.append("eventToken", params.eventToken);
       if (params.network) queryParams.append("network", params.network);
+      if (params.campaign) queryParams.append("campaign", params.campaign);
 
       const response = await apiClient.get(
         `/admin/adjust-events/analytics/overview?${queryParams.toString()}`

@@ -20,6 +20,7 @@ import XPTierBadge from "../ui/XPTierBadge";
 import { useGames } from "../../hooks/useGames";
 import { gamesAPI } from "../../data/games";
 import { useMasterData } from "../../hooks/useMasterData";
+import { TRANSACTION_API } from "../../data/transactions";
 import toast from "react-hot-toast";
 
 const STATUS_TYPES = ["Active", "Inactive"]; // "Testing", "Paused" - commented out
@@ -79,6 +80,7 @@ export default function GamesListingModule() {
     status: "all",
     xpTier: "all",
     tier: "all",
+    uiSection: "all",
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -128,6 +130,24 @@ export default function GamesListingModule() {
     fetchUISections();
   }, []);
 
+  // Fetch conversion settings on mount
+  const [coinsPerDollar, setCoinsPerDollar] = useState(50);
+  useEffect(() => {
+    const fetchConversionSettings = async () => {
+      try {
+        const response = await TRANSACTION_API.getConversionSettings();
+        if (response.data?.success && response.data?.data) {
+          const data = response.data.data;
+          const rate = data.defaultRule?.coinsPerDollar;
+          if (rate) setCoinsPerDollar(rate);
+        }
+      } catch (error) {
+        console.error("Error fetching conversion settings:", error);
+      }
+    };
+    fetchConversionSettings();
+  }, []);
+
   // Fetch games on mount and when filters change
   useEffect(() => {
     const apiFilters = {
@@ -137,6 +157,7 @@ export default function GamesListingModule() {
       sdk: filters.sdk,
       // Don't send xpTier to API - we filter client-side based on xpTiers array
       adGame: filters.adGame,
+      uiSection: filters.uiSection,
     };
     fetchGames(currentPage, apiFilters, itemsPerPage);
   }, [
@@ -146,15 +167,16 @@ export default function GamesListingModule() {
     filters.country,
     filters.sdk,
     filters.adGame,
+    filters.uiSection,
     itemsPerPage,
     // Note: filters.xpTier is intentionally excluded from API call but
     // client-side filtering in filteredGames useMemo will handle it
   ]);
 
-  // Reset to page 1 when search term changes
+  // Reset to page 1 when search term or uiSection filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, filters.uiSection]);
 
   // Use API data directly - server-side filtering and pagination
   const games = apiGames;
@@ -518,12 +540,15 @@ export default function GamesListingModule() {
               : "N/A"}
           </div>
         );
-      case "coins":
+      case "coins": {
+        const apiAmount = game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0;
+        const calculated = apiAmount > 0 ? Math.round(apiAmount * coinsPerDollar) : (game.rewards?.coins || 0);
         return (
           <div className="text-sm text-gray-900">
-            {game.rewards?.coins ? game.rewards.coins.toLocaleString() : "N/A"}
+            {calculated.toLocaleString()}
           </div>
         );
+      }
       case "xptrRules":
         return (
           <div
@@ -580,7 +605,7 @@ export default function GamesListingModule() {
           <div className="text-sm text-gray-900">{game.marketingChannel}</div>
         );
       case "campaign":
-        return <div className="text-sm text-gray-900">{game.campaign}</div>;
+        return <div className="text-sm text-gray-900">{game.campaignName}</div>;
       case "xpTier":
         // Display XP tiers based on the xpTiers array from the API response
         // If xpTiers array exists and has values, use it; otherwise show all three
@@ -795,6 +820,24 @@ export default function GamesListingModule() {
               </select>
 
               <select
+                value={filters.uiSection}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, uiSection: e.target.value }))
+                }
+                className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+                disabled={loadingUISections}
+              >
+                <option value="all">All UI Sections</option>
+                {uiSections
+                  .filter((section) => !["Banner", "Carousel", "Discover", "Featured", "Game", "Games", "Home", "Wallet"].includes(section))
+                  .map((section) => (
+                    <option key={section} value={section}>
+                      {section}
+                    </option>
+                  ))}
+              </select>
+
+              <select
                 value={filters.xpTier}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, xpTier: e.target.value }))
@@ -928,6 +971,7 @@ export default function GamesListingModule() {
           setSelectedGame(null);
         }}
         game={selectedGame}
+        coinsPerDollar={coinsPerDollar}
       />
 
       <ConfirmationModal

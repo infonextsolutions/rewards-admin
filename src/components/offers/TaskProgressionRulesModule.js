@@ -372,7 +372,7 @@ export default function TaskProgressionRulesModule() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             First: {rule.firstBatchSize}, Next:{" "}
-                            {rule.nextBatchSize}
+                            {rule.nextBatchSize ? rule.nextBatchSize : "All after first"}
                           </div>
                         </td>
                         {/* Max Batches column data - commented out */}

@@ -1,6 +1,6 @@
 "use client";
 
-export default function GamePreviewModal({ isOpen, onClose, game }) {
+export default function GamePreviewModal({ isOpen, onClose, game, coinsPerDollar = 50 }) {
   if (!isOpen || !game) return null;
 
   const getTierIcon = (tier) => {
@@ -253,13 +253,64 @@ export default function GamePreviewModal({ isOpen, onClose, game }) {
               Array.isArray(rawData.events) &&
               rawData.events.length > 0
             ) {
+              // Calculate per-event coin rewards proportionally based on points
+              // Total coins = dollars × coinsPerDollar (admin conversion rate)
+              // Each event's coins = (event.points / total_points) × totalCoins
+              // This ensures the total distributed coins exactly match the calculated budget
+              const totalPoints = parseInt(rawData.total_points) || 0;
+              const dollarAmount = parseFloat(rawData.amount) || 0;
+              const totalCoins = Math.round(dollarAmount * coinsPerDollar);
+
+              const eventsWithCoins = rawData.events.map((event) => {
+                const eventPoints = parseInt(event.points) || 0;
+                const coinReward =
+                  totalPoints > 0 && eventPoints > 0
+                    ? Math.round((eventPoints / totalPoints) * totalCoins)
+                    : 0;
+                return { ...event, calculatedCoinReward: coinReward };
+              });
+
               return (
                 <div className="mt-6">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">
                     Tasks/Events
                   </h4>
+                  {/* Budget summary */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <div>
+                        <span className="font-medium text-blue-900">
+                          Revenue:
+                        </span>{" "}
+                        <span className="text-blue-700">
+                          ${dollarAmount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-blue-900">
+                          Total Points:
+                        </span>{" "}
+                        <span className="text-blue-700">
+                          {totalPoints.toLocaleString()}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-blue-900">
+                          Total Coin Budget:
+                        </span>{" "}
+                        <span className="text-blue-700 font-bold">
+                          {totalCoins.toLocaleString()} coins
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Coins per task are calculated proportionally:
+                      (task points / {totalPoints.toLocaleString()}) ×{" "}
+                      {totalCoins.toLocaleString()} coins
+                    </p>
+                  </div>
                   <div className="space-y-3">
-                    {rawData.events.map((event, index) => (
+                    {eventsWithCoins.map((event, index) => (
                       <div
                         key={index}
                         className="bg-gray-50 rounded-lg p-4 border border-gray-200"
@@ -270,31 +321,61 @@ export default function GamePreviewModal({ isOpen, onClose, game }) {
                               {event.name || `Task ${index + 1}`}
                             </h5>
                             <div className="space-y-1 text-xs text-gray-600">
+                              {event.type_id === 1 && (
+                                <div className="flex items-center">
+                                  <span className="font-medium mr-2">
+                                    Type:
+                                  </span>
+                                  <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
+                                    Install (CPI)
+                                  </span>
+                                </div>
+                              )}
+                              {event.type_id === 2 && (
+                                <div className="flex items-center">
+                                  <span className="font-medium mr-2">
+                                    Type:
+                                  </span>
+                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                                    Gameplay Goal
+                                  </span>
+                                </div>
+                              )}
+                              {event.type_id === 3 && (
+                                <div className="flex items-center">
+                                  <span className="font-medium mr-2">
+                                    Type:
+                                  </span>
+                                  <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                    Box/Boost Offer
+                                  </span>
+                                </div>
+                              )}
+                              {event.type_id === 13 && (
+                                <div className="flex items-center">
+                                  <span className="font-medium mr-2">
+                                    Type:
+                                  </span>
+                                  <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+                                    In-App Purchase
+                                  </span>
+                                </div>
+                              )}
                               {event.points && (
                                 <div className="flex items-center">
                                   <span className="font-medium mr-2">
                                     Points:
                                   </span>
-                                  <span>{event.points}</span>
+                                  <span>{parseInt(event.points).toLocaleString()}</span>
                                 </div>
                               )}
                               {event.payout && parseFloat(event.payout) > 0 && (
                                 <div className="flex items-center">
                                   <span className="font-medium mr-2">
-                                    Payout:
+                                    Admin Payout:
                                   </span>
-                                  <span>
+                                  <span className="text-green-700 font-medium">
                                     ${parseFloat(event.payout).toFixed(2)}
-                                  </span>
-                                </div>
-                              )}
-                              {event.type && (
-                                <div className="flex items-center">
-                                  <span className="font-medium mr-2">
-                                    Type:
-                                  </span>
-                                  <span className="capitalize">
-                                    {event.type}
                                   </span>
                                 </div>
                               )}
@@ -317,12 +398,164 @@ export default function GamePreviewModal({ isOpen, onClose, game }) {
                               {event.ttc_minutes > 0 && (
                                 <div className="flex items-center">
                                   <span className="font-medium mr-2">
-                                    Time to Complete:
+                                    Est. Time:
                                   </span>
-                                  <span>{event.ttc_minutes} minutes</span>
+                                  <span>{event.ttc_minutes} min</span>
                                 </div>
                               )}
                             </div>
+                          </div>
+                          {/* Coin reward badge */}
+                          <div className="flex-shrink-0 ml-4 text-right">
+                            {event.calculatedCoinReward > 0 ? (
+                              <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                <div className="text-xs text-emerald-600 font-medium">
+                                  User Reward
+                                </div>
+                                <div className="text-lg font-bold text-emerald-700">
+                                  {event.calculatedCoinReward.toLocaleString()}
+                                </div>
+                                <div className="text-xs text-emerald-500">
+                                  coins
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-gray-100 rounded-lg px-3 py-2">
+                                <div className="text-xs text-gray-500 font-medium">
+                                  No coin reward
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Tasks/Goals Section (for Besitos) - Display one by one */}
+          {(() => {
+            const rawData = game.besitosRawData;
+            const isBesitos =
+              game.sdk === "Besitos" || game.sdkProvider === "besitos";
+
+            if (
+              isBesitos &&
+              rawData?.goals &&
+              Array.isArray(rawData.goals) &&
+              rawData.goals.length > 0
+            ) {
+              const dollarAmount = parseFloat(rawData.amount) || 0;
+              const totalCoins = Math.round(dollarAmount * coinsPerDollar);
+
+              const goalsWithCoins = rawData.goals.map((goal) => {
+                const goalAmount = parseFloat(goal.amount) || 0;
+                const coinReward = Math.round(goalAmount * coinsPerDollar);
+                return { ...goal, calculatedCoinReward: coinReward };
+              });
+
+              return (
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    Tasks/Goals
+                  </h4>
+                  {/* Budget summary */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <div>
+                        <span className="font-medium text-blue-900">
+                          Revenue:
+                        </span>{" "}
+                        <span className="text-blue-700">
+                          ${dollarAmount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-blue-900">
+                          Conversion Rate:
+                        </span>{" "}
+                        <span className="text-blue-700">
+                          {coinsPerDollar} coins/$
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-blue-900">
+                          Total Coins:
+                        </span>{" "}
+                        <span className="text-blue-700 font-bold">
+                          {totalCoins.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2">
+                      Each goal's coins = goal amount × {coinsPerDollar}. Install goal ($0) has no coin reward (CPI payout goes to admin).
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {goalsWithCoins.map((goal, index) => (
+                      <div
+                        key={goal.goal_id || index}
+                        className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h5 className="text-sm font-semibold text-gray-900 mb-2">
+                              {goal.text || `Goal ${index + 1}`}
+                            </h5>
+                            <div className="space-y-1 text-xs text-gray-600">
+                              <div className="flex items-center">
+                                <span className="font-medium mr-2">
+                                  Section:
+                                </span>
+                                <span className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded text-xs font-medium">
+                                  {goal.section === "bonus" ? "Bonus" : "Linear"}
+                                </span>
+                              </div>
+                              {goal.days_left && (
+                                <div className="flex items-center">
+                                  <span className="font-medium mr-2">
+                                    Time Limit:
+                                  </span>
+                                  <span>{goal.days_left} days</span>
+                                </div>
+                              )}
+                              {goal.amount && parseFloat(goal.amount) > 0 && (
+                                <div className="flex items-center">
+                                  <span className="font-medium mr-2">
+                                    Admin Payout:
+                                  </span>
+                                  <span className="text-green-700 font-medium">
+                                    ${parseFloat(goal.amount).toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {/* Coin reward badge */}
+                          <div className="flex-shrink-0 ml-4 text-right">
+                            {goal.calculatedCoinReward > 0 ? (
+                              <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                <div className="text-xs text-emerald-600 font-medium">
+                                  User Reward
+                                </div>
+                                <div className="text-lg font-bold text-emerald-700">
+                                  {goal.calculatedCoinReward.toLocaleString()}
+                                </div>
+                                <div className="text-xs text-emerald-500">
+                                  coins
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-gray-100 rounded-lg px-3 py-2">
+                                <div className="text-xs text-gray-500 font-medium">
+                                  No coin reward
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

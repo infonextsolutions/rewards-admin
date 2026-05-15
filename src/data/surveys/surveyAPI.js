@@ -51,12 +51,11 @@ const surveyAPIs = {
 
   // POST /api/non-gaming-survey/admin/non-gaming/sync
   // sdk: "bitlabs" | "everflow" | "affise" | "besitos"
-  async syncNonGamingOffers({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience } = {}) {
+  async syncNonGamingOffers({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience, userRewardCoins, userRewardXP, coinsPerDollar } = {}) {
     try {
-      // BitLabs API expects "countries" (array), not "country" (string)
       const countries = country ? (Array.isArray(country) ? country : [country]) : undefined;
       const response = await apiClient.post(`${BASE}/admin/non-gaming/sync`, {
-        sdk, offerIds, autoActivate, devices, countries, targetAudience,
+        sdk, offerIds, autoActivate, devices, countries, targetAudience, userRewardCoins, userRewardXP, coinsPerDollar,
       });
       return response.data;
     } catch (error) {
@@ -67,12 +66,12 @@ const surveyAPIs = {
 
   // POST /api/non-gaming-survey/admin/surveys/sync
   // sdk: "bitlabs" | "besitos"
-  async syncSurveys({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience } = {}) {
+  async syncSurveys({ sdk = "bitlabs", offerIds = [], autoActivate = true, devices, country, targetAudience, userRewardCoins, userRewardXP } = {}) {
     try {
       // BitLabs API expects "countries" (array), not "country" (string)
       const countries = country ? (Array.isArray(country) ? country : [country]) : undefined;
       const response = await apiClient.post(`${BASE}/admin/surveys/sync`, {
-        sdk, offerIds, autoActivate, devices, countries, targetAudience,
+        sdk, offerIds, autoActivate, devices, countries, targetAudience, userRewardCoins, userRewardXP,
       });
       return response.data;
     } catch (error) {

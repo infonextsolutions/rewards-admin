@@ -422,6 +422,13 @@ export const gamesAPI = {
       ) {
         queryParams.append("gender", params.gender);
       }
+      if (
+        params.uiSection &&
+        params.uiSection !== "all" &&
+        params.uiSection.trim() !== ""
+      ) {
+        queryParams.append("uiSection", params.uiSection);
+      }
 
       const response = await apiClient.get(
         `/admin/game-offers/games?${queryParams.toString()}`,

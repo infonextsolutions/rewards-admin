@@ -37,7 +37,7 @@ export default function EditProgressionRuleModal({
         membershipTier: progressionRule.membershipTier || null,
         priority: progressionRule.priority || 0,
         firstBatchSize: progressionRule.firstBatchSize || 5,
-        nextBatchSize: progressionRule.nextBatchSize || 5,
+        nextBatchSize: progressionRule.nextBatchSize ?? 5,
         maxBatches: progressionRule.maxBatches || null,
         isActive:
           progressionRule.isActive !== undefined
@@ -89,8 +89,8 @@ export default function EditProgressionRuleModal({
       newErrors.firstBatchSize = "First batch size must be at least 1";
     }
 
-    if (formData.nextBatchSize < 1) {
-      newErrors.nextBatchSize = "Next batch size must be at least 1";
+    if (formData.nextBatchSize < 0) {
+      newErrors.nextBatchSize = "Next batch size must be 0 or greater";
     }
 
     if (formData.maxBatches !== null && formData.maxBatches < 1) {
@@ -340,33 +340,50 @@ export default function EditProgressionRuleModal({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Next Batch Size *
+                      Next Batch Size
                     </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.nextBatchSize}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "nextBatchSize",
-                          parseInt(e.target.value) || 1
-                        )
-                      }
-                      className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                        errors.nextBatchSize
-                          ? "border-red-300 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-indigo-500"
-                      }`}
-                      placeholder="5"
-                    />
+                    <div className="flex items-center gap-3 mb-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.nextBatchSize}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "nextBatchSize",
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                          errors.nextBatchSize
+                            ? "border-red-300 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-indigo-500"
+                        }`}
+                        placeholder="5"
+                      />
+                      <label className="flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={formData.nextBatchSize === 0}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "nextBatchSize",
+                              e.target.checked ? 0 : 5
+                            )
+                          }
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        No next batch
+                      </label>
+                    </div>
                     {errors.nextBatchSize && (
                       <p className="mt-1 text-xs text-red-600">
                         {errors.nextBatchSize}
                       </p>
                     )}
                     <p className="mt-1 text-xs text-gray-500">
-                      Number of tasks in each subsequent batch (e.g., next 5,
-                      then next 5, etc.)
+                      Set to 0 or check &quot;No next batch&quot; to allow all remaining
+                      tasks to unlock freely after the first batch. User can claim
+                      reward at any time.
                     </p>
                   </div>
 
@@ -408,13 +425,20 @@ export default function EditProgressionRuleModal({
                     <strong>How it works:</strong>
                     <br />• First {formData.firstBatchSize} tasks unlock
                     sequentially
-                    <br />• After {formData.firstBatchSize} tasks, coins
-                    accumulate in Coin Box
-                    <br />• User transfers coins → Next {
-                      formData.nextBatchSize
-                    }{" "}
-                    tasks unlock
-                    <br />• Process repeats for each batch
+                    {formData.nextBatchSize > 0 ? (
+                      <>
+                        <br />• After {formData.firstBatchSize} tasks, coins
+                        accumulate in Coin Box
+                        <br />• User transfers coins → Next {formData.nextBatchSize} tasks unlock
+                        <br />• Process repeats for each batch
+                      </>
+                    ) : (
+                      <>
+                        <br />• After {formData.firstBatchSize} tasks, all
+                        remaining tasks unlock freely
+                        <br />• User can claim reward at any time after first batch
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

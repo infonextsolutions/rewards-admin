@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useMasterData } from "../../../hooks/useMasterData";
 import { gamesAPI } from "../../../data/games";
+import { TRANSACTION_API } from "../../../data/transactions";
 import apiClient from "../../../lib/apiClient";
 import toast from "react-hot-toast";
 
@@ -93,6 +94,38 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   const [campaigns, setCampaigns] = useState([]);
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+  const [coinsPerDollar, setCoinsPerDollar] = useState(50);
+
+  // Fetch conversion settings on modal open to get coinsPerDollar rate
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadConversionSettings = async () => {
+      try {
+        const response = await TRANSACTION_API.getConversionSettings();
+        if (response.data?.success && response.data?.data) {
+          const data = response.data.data;
+          const rate = data.defaultRule?.coinsPerDollar || 50;
+          setCoinsPerDollar(rate);
+        }
+      } catch (error) {
+        console.error("Failed to load conversion settings:", error);
+        setCoinsPerDollar(50); // fallback
+      }
+    };
+    loadConversionSettings();
+  }, [isOpen]);
+
+  // Recalculate rewardCoins when coinsPerDollar finishes loading during edit
+  useEffect(() => {
+    if (!isOpen || !game) return;
+    const dollarAmount = game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0;
+    if (dollarAmount <= 0) return;
+    setFormData((prev) => {
+      const coins = Math.round(dollarAmount * coinsPerDollar);
+      if (coins === prev.rewardCoins) return prev;
+      return { ...prev, rewardCoins: coins };
+    });
+  }, [coinsPerDollar]);
 
   // Fetch marketing channels and campaigns from backend
   useEffect(() => {
@@ -141,7 +174,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     xptrRules: "",
     rewardXP: 0,
     rewardCoins: 0,
-    rewardDollars: 0, // Dollar amount that converts to coins (50 coins = 1 dollar)
+    rewardDollars: 0, // Dollar amount that converts to coins via coinsPerDollar rate
     cpi: null, // CPI value from SDK/third-party data
     taskCount: 0,
     activeVisible: true,
@@ -244,10 +277,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         sdk: game.sdk || "",
         xptrRules: game.xptrRules || "",
         rewardXP: game.rewardXP || 0,
-        rewardCoins: game.rewardCoins || 0,
-        rewardDollars: game.rewardCoins
-          ? parseFloat((game.rewardCoins / 50).toFixed(2))
-          : 0, // Convert coins to dollars (50 coins = 1 dollar)
+        rewardDollars: game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0,
+        rewardCoins: Math.round((game.besitosRawData?.amount ?? game.thirdPartyGameData?.amount ?? 0) * coinsPerDollar),
         cpi: game.besitosRawData?.cpi ?? game.thirdPartyGameData?.cpi ?? null,
         taskCount: game.taskCount || 0,
         activeVisible:
@@ -544,15 +575,13 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     const selectedGame = gamesList.find((g) => g.id === gameId);
     if (selectedGame) {
       // Extract dollar amount from API response (amount field)
-      // The amount field from API is in dollars (e.g., 700 = $700)
       const dollarAmount =
         selectedGame.amount !== undefined && selectedGame.amount !== null
           ? parseFloat(selectedGame.amount)
           : 0;
 
-      // Convert dollars to coins (50 coins = 1 dollar)
-      // Example: $700 = 35,000 coins
-      const coins = Math.round(dollarAmount * 50);
+      // Convert dollars to coins using admin-configured conversion rate
+      const coins = Math.round(dollarAmount * coinsPerDollar);
 
       console.log("Selected game:", selectedGame);
       console.log("Amount field from API:", selectedGame.amount);
@@ -589,10 +618,10 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
     }
   };
 
-  // Handle dollar input change and convert to coins
+  // Handle dollar input change and convert to coins using admin conversion rate
   const handleDollarChange = (dollarValue) => {
     const dollars = parseFloat(dollarValue) || 0;
-    const coins = Math.round(dollars * 50); // 50 coins = 1 dollar
+    const coins = Math.round(dollars * coinsPerDollar);
 
     setFormData((prev) => ({
       ...prev,
@@ -699,7 +728,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       xptrRules: "", // Set to empty string for backward compatibility
       deviceType: platform, // iOS or Android based on platform dropdown
       rewardXP: parseInt(formData.rewardXP) || 0,
-      rewardCoins: parseInt(formData.rewardCoins) || 0, // Calculated from dollars (50 coins = 1 dollar)
+      rewardCoins: parseInt(formData.rewardCoins) || 0, // Calculated from dollars * coinsPerDollar
       defaultTaskCount: parseInt(formData.taskCount) || 0,
       xpTier: xpTierStringToNumber(formData.xpTier) || 1, // Keep for backward compatibility
       xpTiers: JSON.stringify(formData.xpTiers), // Multi-select XP tiers
@@ -902,7 +931,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 {/* XP Reward - Hidden in edit modal */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CPI (Cost Per Install)
+                    {formData.sdk?.toLowerCase() === "bitlabs"
+                      ? "CPI (Cost Per Install)"
+                      : "CPI (Cost Per Install)"}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -922,7 +953,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    CPI is received from the SDK and cannot be edited
+                    {formData.sdk?.toLowerCase() === "bitlabs"
+                      ? "CPI is received from the SDK and cannot be edited"
+                      : "CPI is received from the SDK and cannot be edited"}
                   </p>
                 </div>
 
@@ -969,8 +1002,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     {formData.rewardDollars > 0
                       ? `${
                           formData.rewardDollars
-                        } USD = ${formData.rewardCoins.toLocaleString()} coins (50 coins per dollar)`
-                      : "Coins are calculated from the dollar amount above"}
+                        } USD = ${formData.rewardCoins.toLocaleString()} coins (${coinsPerDollar} coins per dollar)`
+                      : "Coins are calculated from the dollar amount using admin conversion settings"}
                   </p>
                 </div>
 
@@ -1399,6 +1432,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     <span className="text-gray-600">Total Reward (USD)</span>
                     <p className="font-bold text-lg text-green-700">
                       ${(() => {
+                        const directAmount = parseFloat(formData.thirdPartyGameData.amount) || 0;
+                        if (directAmount > 0) return directAmount.toFixed(2);
                         const events = formData.thirdPartyGameData.events;
                         const goals = formData.thirdPartyGameData.goals;
                         let total = 0;
@@ -1415,15 +1450,18 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     <span className="text-gray-600">Total Coins</span>
                     <p className="font-bold text-lg text-yellow-700">
                       {(() => {
-                        const events = formData.thirdPartyGameData.events;
-                        const goals = formData.thirdPartyGameData.goals;
-                        let totalUSD = 0;
-                        if (events && events.length > 0) {
-                          totalUSD = events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0);
-                        } else if (goals && goals.length > 0) {
-                          totalUSD = goals.reduce((sum, g) => sum + (parseFloat(g.amount) || 0), 0);
+                        const directAmount = parseFloat(formData.thirdPartyGameData.amount) || 0;
+                        let totalUSD = directAmount;
+                        if (directAmount === 0) {
+                          const events = formData.thirdPartyGameData.events;
+                          const goals = formData.thirdPartyGameData.goals;
+                          if (events && events.length > 0) {
+                            totalUSD = events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0);
+                          } else if (goals && goals.length > 0) {
+                            totalUSD = goals.reduce((sum, g) => sum + (parseFloat(g.amount) || 0), 0);
+                          }
                         }
-                        return Math.round(totalUSD * 50).toLocaleString();
+                        return Math.round(totalUSD * coinsPerDollar).toLocaleString();
                       })()}
                     </p>
                   </div>
@@ -1451,68 +1489,112 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   </div>
                 </div>
 
-                {/* XP Calculation Info */}
-                <div className="mb-3 bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
-                  <strong>XP Calculation (matches user-side):</strong> Task 1 = Base XP | Task N = Base XP × (Multiplier ^ (N-1))
-                </div>
+                 {/* XP Calculation Info */}
+                 <div className="mb-3 bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
+                   <strong>XP Calculation (matches user-side):</strong> Task 1 = Base XP | Task N = Base XP × (Multiplier ^ (N-1))
+                 </div>
+
+                  {/* Coin Distribution Info (Bitlabs only) */}
+                  {formData.sdk?.toLowerCase() === "bitlabs" && (
+                    <div className="mb-3 bg-yellow-50 border border-yellow-200 rounded p-2 text-xs text-yellow-800">
+                      <strong>Coin Distribution:</strong> Total coins = ${(() => {
+                        const directAmount = parseFloat(formData.thirdPartyGameData.amount) || 0;
+                        if (directAmount > 0) return directAmount.toFixed(2);
+                        const events = formData.thirdPartyGameData.events;
+                        return events ? events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0).toFixed(2) : "0.00";
+                      })()} × {coinsPerDollar} = {(() => {
+                        const directAmount = parseFloat(formData.thirdPartyGameData.amount) || 0;
+                        let totalUSD = directAmount;
+                        if (directAmount === 0) {
+                          const events = formData.thirdPartyGameData.events;
+                          totalUSD = events ? events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0) : 0;
+                        }
+                        return Math.round(totalUSD * coinsPerDollar).toLocaleString();
+                      })()} coins. Each task's coins = (task points / {formData.thirdPartyGameData.total_points?.toLocaleString() || 0}) × total coins. Install task has no coin reward (CPI payout goes to admin).
+                    </div>
+                  )}
 
                  {/* Tasks Table */}
                  <div className="max-h-72 overflow-y-auto">
                    <table className="w-full text-sm border-collapse">
                      <thead className="sticky top-0 bg-gray-50">
-                       <tr>
-                         <th className="text-left p-2 border">#</th>
-                         <th className="text-left p-2 border">Task Name</th>
-                         <th className="text-left p-2 border">Reward (USD)</th>
-                         {/* <th className="text-left p-2 border">Coins</th> */}
-                         <th className="text-left p-2 border">XP</th>
-                         <th className="text-left p-2 border">Type</th>
-                       </tr>
+                         <tr>
+                           <th className="text-left p-2 border">#</th>
+                           <th className="text-left p-2 border">Task Name</th>
+                           {/* <th className="text-left p-2 border">Reward (USD)</th> */}
+                           <th className="text-left p-2 border">Coins</th>
+                           <th className="text-left p-2 border">XP</th>
+                           <th className="text-left p-2 border">Type</th>
+                         </tr>
                      </thead>
                      <tbody>
-                       {/* Bitlabs: events array */}
-                       {formData.thirdPartyGameData.events?.map((event, index) => (
-                         <tr key={event.id || index} className="hover:bg-gray-50">
-                           <td className="p-2 border font-medium">{index + 1}</td>
-                           <td className="p-2 border">{event.name}</td>
-                           <td className="p-2 border text-green-700 font-semibold">
-                             ${parseFloat(event.payout || 0).toFixed(2)}
-                           </td>
-                           {/* <td className="p-2 border text-yellow-700">
-                             {Math.round((parseFloat(event.payout) || 0) * 50).toLocaleString()}
-                           </td> */}
-                           <td className="p-2 border text-blue-700 font-semibold">
-                             {(() => {
-                               const baseXP = parseFloat(formData.baseXP) || 0;
-                               const multiplier = parseFloat(formData.xpMultiplier) || 1;
-                               const taskNum = index + 1;
-                               return taskNum === 1 ? baseXP : (baseXP * Math.pow(multiplier, taskNum - 1)).toFixed(1);
-                             })()}
-                           </td>
-                           <td className="p-2 border">
-                             <span className={`px-2 py-1 rounded text-xs ${
-                               event.type_id === 1 ? 'bg-blue-100 text-blue-800' :
-                               event.type_id === 2 ? 'bg-green-100 text-green-800' :
-                               'bg-purple-100 text-purple-800'
-                             }`}>
-                               {event.type_id === 1 ? 'Install' :
-                                event.type_id === 2 ? 'Level' : 'Purchase'}
-                             </span>
-                           </td>
-                         </tr>
-                       )) || null}
+                        {/* Bitlabs: events array */}
+                        {(() => {
+                          const events = formData.thirdPartyGameData.events;
+                          if (!events || events.length === 0) return null;
+
+                          const totalPoints = parseInt(formData.thirdPartyGameData.total_points) || 0;
+                          const directAmount = parseFloat(formData.thirdPartyGameData.amount) || 0;
+                          const totalUSD = directAmount > 0
+                            ? directAmount
+                            : events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0);
+                          const totalCoins = Math.round(totalUSD * coinsPerDollar);
+
+                          return events.map((event, index) => {
+                            const eventPoints = parseInt(event.points) || 0;
+                            const eventCoins = totalPoints > 0 && eventPoints > 0
+                              ? Math.round((eventPoints / totalPoints) * totalCoins)
+                              : 0;
+
+                            return (
+                              <tr key={event.id || index} className="hover:bg-gray-50">
+                                <td className="p-2 border font-medium">{index + 1}</td>
+                                <td className="p-2 border">{event.name}</td>
+                                {/* <td className="p-2 border text-green-700 font-semibold">
+                                  ${parseFloat(event.payout || 0).toFixed(2)}
+                                </td> */}
+                                <td className="p-2 border text-yellow-700 font-medium">
+                                  {eventCoins > 0
+                                    ? eventCoins.toLocaleString()
+                                    : "—"}
+                                </td>
+                                <td className="p-2 border text-blue-700 font-semibold">
+                                  {(() => {
+                                    const baseXP = parseFloat(formData.baseXP) || 0;
+                                    const multiplier = parseFloat(formData.xpMultiplier) || 1;
+                                    const taskNum = index + 1;
+                                    return taskNum === 1 ? baseXP : (baseXP * Math.pow(multiplier, taskNum - 1)).toFixed(1);
+                                  })()}
+                                </td>
+                                <td className="p-2 border">
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    event.type_id === 1 ? 'bg-blue-100 text-blue-800' :
+                                    event.type_id === 2 ? 'bg-green-100 text-green-800' :
+                                    event.type_id === 13 ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-purple-100 text-purple-800'
+                                  }`}>
+                                    {event.type_id === 1 ? 'Install' :
+                                     event.type_id === 2 ? 'Goal' :
+                                     event.type_id === 13 ? 'Purchase' :
+                                     event.type_id === 3 ? 'Box/Boost' : 'Other'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          });
+                        })()}
 
                        {/* Besitos: goals array */}
                        {formData.thirdPartyGameData.goals?.map((goal, index) => (
                          <tr key={goal.goal_id || index} className="hover:bg-gray-50">
-                           <td className="p-2 border font-medium">{goal.position || index + 1}</td>
-                           <td className="p-2 border">{goal.text}</td>
-                           <td className="p-2 border text-green-700 font-semibold">
-                             ${parseFloat(goal.amount || 0).toFixed(2)}
-                           </td>
-                           <td className="p-2 border text-yellow-700">
-                             {Math.round((parseFloat(goal.amount) || 0) * 50).toLocaleString()}
-                           </td>
+                            <td className="p-2 border font-medium">{goal.position || index + 1}</td>
+                            <td className="p-2 border">{goal.text}</td>
+                            {/* <td className="p-2 border text-green-700 font-semibold">
+                              ${parseFloat(goal.amount || 0).toFixed(2)}
+                            </td> */}
+                             <td className="p-2 border text-yellow-700">
+                              {Math.round((parseFloat(goal.amount) || 0) * coinsPerDollar).toLocaleString()}
+                            </td>
                            <td className="p-2 border text-blue-700 font-semibold">
                              {(() => {
                                const baseXP = parseFloat(formData.baseXP) || 0;
