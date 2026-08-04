@@ -1,4 +1,5 @@
 import axios from "axios";
+import { reportApiFailure } from "./errorTracking";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://rewardsapi.hireagent.co/api";
@@ -35,6 +36,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Report to error tracking (5xx -> event, 4xx/network -> breadcrumb)
+    reportApiFailure({
+      endpoint: error.config?.url || "unknown",
+      method: (error.config?.method || "get").toUpperCase(),
+      status: error.response?.status || 0,
+      message:
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        error.message,
+    });
+
     // Handle authentication errors
     if (error.response) {
       const status = error.response.status;
