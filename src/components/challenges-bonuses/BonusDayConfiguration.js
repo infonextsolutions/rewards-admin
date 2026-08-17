@@ -387,6 +387,16 @@ export default function BonusDayConfiguration({
   };
 
   const sortedBonusDays = [...bonusDays].sort((a, b) => a.bonusDay - b.bonusDay);
+  const configuredDayNumbers = new Set(
+    sortedBonusDays.map((bonusDay) => Number(bonusDay.bonusDay)),
+  );
+  const highestConfiguredDay = sortedBonusDays.length
+    ? Math.max(...configuredDayNumbers)
+    : 0;
+  const missingBonusDays = Array.from(
+    { length: highestConfiguredDay },
+    (_, index) => index + 1,
+  ).filter((dayNumber) => !configuredDayNumbers.has(dayNumber));
 
   // If showing streak config, render that component
   if (showStreakConfig) {
@@ -734,6 +744,12 @@ export default function BonusDayConfiguration({
         )}
 
         {/* Bonus Days Table */}
+        {missingBonusDays.length > 0 && (
+          <div className="mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            Missing bonus milestone {missingBonusDays.length === 1 ? "day" : "days"}: {missingBonusDays.join(", ")}.
+            The iOS progress bar displays only configured active days, so these gaps will also appear in the app.
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

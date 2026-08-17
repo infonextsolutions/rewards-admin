@@ -48,6 +48,12 @@ const menuItems = [
     icon: "/Rewards.png",
     href: "/challenges-bonuses",
   },
+  {
+    id: "walkathon",
+    label: "Walkathon Manager",
+    icon: "/Rewards.png",
+    href: "/walkathon",
+  },
   // { id: 'analytics', label: 'Marketing Attribution and Analytics', icon: '/Analytics and Reports.png', href: '/analytics' },
   {
     id: "marketing",
