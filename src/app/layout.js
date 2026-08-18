@@ -3,6 +3,7 @@ import "./globals.css";
 import AdminLayout from "../components/AdminLayout";
 import { AuthProvider } from "../contexts/AuthContext";
 import ToastProvider from "../components/ToastProvider";
+import ErrorTrackingProvider from "../components/ErrorTrackingProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,10 +25,12 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
-          <AdminLayout>
-            {children}
-          </AdminLayout>
-          <ToastProvider />
+          <ErrorTrackingProvider>
+            <AdminLayout>
+              {children}
+            </AdminLayout>
+            <ToastProvider />
+          </ErrorTrackingProvider>
         </AuthProvider>
       </body>
     </html>
