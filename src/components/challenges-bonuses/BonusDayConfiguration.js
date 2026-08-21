@@ -390,11 +390,11 @@ export default function BonusDayConfiguration({
   const configuredDayNumbers = new Set(
     sortedBonusDays.map((bonusDay) => Number(bonusDay.bonusDay)),
   );
-  const highestConfiguredDay = sortedBonusDays.length
-    ? Math.max(...configuredDayNumbers)
-    : 0;
+  // The iOS weekly progression always expects Days 1–7. Longer streak
+  // milestones (Day 14/30/etc.) are optional and must not make every
+  // intermediate day look missing in this warning.
   const missingBonusDays = Array.from(
-    { length: highestConfiguredDay },
+    { length: 7 },
     (_, index) => index + 1,
   ).filter((dayNumber) => !configuredDayNumbers.has(dayNumber));
 
@@ -746,8 +746,8 @@ export default function BonusDayConfiguration({
         {/* Bonus Days Table */}
         {missingBonusDays.length > 0 && (
           <div className="mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            Missing bonus milestone {missingBonusDays.length === 1 ? "day" : "days"}: {missingBonusDays.join(", ")}.
-            The iOS progress bar displays only configured active days, so these gaps will also appear in the app.
+            Missing weekly bonus {missingBonusDays.length === 1 ? "day" : "days"}: {missingBonusDays.join(", ")}.
+            Configure every Day 1–7 reward before releasing the iOS build; missing active days appear as gaps in the app.
           </div>
         )}
         <div className="overflow-x-auto">
