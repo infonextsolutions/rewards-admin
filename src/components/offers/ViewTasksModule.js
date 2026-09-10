@@ -17,6 +17,8 @@ export default function ViewTasksModule() {
   const [besitosRawData, setBesitosRawData] = useState(null)
   const [goals, setGoals] = useState([])
   const [events, setEvents] = useState([])
+  const [gameTasks, setGameTasks] = useState([])
+  const [savingTaskId, setSavingTaskId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -67,6 +69,20 @@ export default function ViewTasksModule() {
         setBesitosRawData(null)
         setGoals([])
         setEvents([])
+      }
+
+      // Provider-synced tasks are hidden from the normal task list because a
+      // game can carry 20+ of them; this screen exists to classify them, so it
+      // opts in explicitly.
+      try {
+        const tasksResponse = await apiClient.get(
+          `/admin/game-offers/games/${gameFilter}/tasks`,
+          { params: { includeProviderSynced: true, limit: 200 } }
+        )
+        setGameTasks(tasksResponse.data?.data?.tasks || [])
+      } catch (taskErr) {
+        console.error('Error fetching game tasks:', taskErr)
+        setGameTasks([])
       }
     } catch (err) {
       console.error('Error fetching game data:', err)
@@ -175,6 +191,42 @@ export default function ViewTasksModule() {
         {formatFieldValue(key, value)}
       </div>
     )
+  }
+
+  const EVENT_TYPES = ['purchase', 'milestone', 'install', 'playtime']
+
+  // Saving always promotes the source to "admin". That is what makes a task
+  // countable: keyword-inferred guesses deliberately never satisfy a purchase
+  // or milestone challenge, so a Besitos goal stays inert until confirmed here.
+  const toggleEventType = async (task, type) => {
+    const current = Array.isArray(task.eventTypes) ? task.eventTypes : []
+    const next = current.includes(type)
+      ? current.filter((t) => t !== type)
+      : [...current, type]
+
+    setSavingTaskId(task.id || task._id)
+    try {
+      const { data } = await apiClient.patch(
+        `/admin/game-offers/tasks/${task.id || task._id}/classification`,
+        { eventTypes: next }
+      )
+      const updated = data?.data
+      setGameTasks((prev) =>
+        prev.map((t) =>
+          (t.id || t._id) === (task.id || task._id)
+            ? { ...t, eventTypes: updated?.eventTypes ?? next, classificationSource: 'admin' }
+            : t
+        )
+      )
+      toast.success('Classification updated')
+    } catch (err) {
+      console.error('Error updating classification:', err)
+      toast.error(
+        err?.response?.data?.message || 'Failed to update classification'
+      )
+    } finally {
+      setSavingTaskId(null)
+    }
   }
 
   return (
@@ -288,6 +340,90 @@ export default function ViewTasksModule() {
                   </div>
                 </div>
               )}
+
+            {/* Task classification - what daily challenges count */}
+            {gameTasks.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1 pb-2 border-b border-gray-200">
+                  Task Classification ({gameTasks.length})
+                </h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Daily challenges asking for purchases or milestones only count
+                  tasks classified here. BitLabs tasks are classified
+                  automatically from the provider; Besitos has no equivalent
+                  data, so its suggestions are guesses from the task text and
+                  must be confirmed before they count.
+                </p>
+                <div className="space-y-2">
+                  {gameTasks.map((task) => {
+                    const id = task.id || task._id
+                    const types = Array.isArray(task.eventTypes)
+                      ? task.eventTypes
+                      : []
+                    const source = task.classificationSource
+                    return (
+                      <div
+                        key={id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 break-words">
+                            {task.name}
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            {source === 'inferred' && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">
+                                Needs confirmation
+                              </span>
+                            )}
+                            {source === 'provider' && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">
+                                From provider
+                              </span>
+                            )}
+                            {source === 'admin' && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">
+                                Confirmed
+                              </span>
+                            )}
+                            {!source && (
+                              <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                                Unclassified
+                              </span>
+                            )}
+                            {task.externalTaskId && (
+                              <span className="text-xs text-gray-400 font-mono">
+                                {task.externalTaskId}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                          {EVENT_TYPES.map((type) => {
+                            const active = types.includes(type)
+                            return (
+                              <button
+                                key={type}
+                                type="button"
+                                disabled={savingTaskId === id}
+                                onClick={() => toggleEventType(task, type)}
+                                className={`text-xs px-3 py-1 rounded-full border capitalize transition-colors disabled:opacity-50 ${
+                                  active
+                                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-600 hover:border-emerald-500'
+                                }`}
+                              >
+                                {type}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Events/Tasks Display (for BitLabs) */}
             {besitosRawData?.events &&
