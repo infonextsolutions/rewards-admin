@@ -4,6 +4,22 @@ import axios from "axios";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
 
+/**
+ * Coerces a form value to a finite number, or null when it is blank or not
+ * numeric.
+ *
+ * Numeric fields were validated with `isNaN(value)`, which is false for "" -
+ * `Number("")` is 0 - so an untouched required field passed validation, reached
+ * the API and came back as a generic 500 with no field-level error. Blank and
+ * non-numeric are now treated the same way.
+ */
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 // const API_BASE = 'https://rewardsuatapi.hireagent.co/api'
 
 // Axios instance with default config
@@ -317,15 +333,20 @@ export function AddEditModal({
         errors.tierName = "Please select a valid XP Tier";
       }
 
-      if (
-        formData.xpMin == null ||
-        isNaN(formData.xpMin) ||
-        formData.xpMin < 0
-      ) {
+      const xpMin = toFiniteNumber(formData.xpMin);
+      const xpMax = toFiniteNumber(formData.xpMax);
+
+      if (xpMin === null) {
+        errors.xpMin = "Min XP is required";
+      } else if (xpMin < 0) {
         errors.xpMin = "Min XP must be 0 or greater";
       }
 
-      if (!formData.xpMax || formData.xpMax <= formData.xpMin) {
+      if (xpMax === null) {
+        errors.xpMax = "Max XP is required";
+      } else if (xpMax <= 0) {
+        errors.xpMax = "Max XP must be greater than 0";
+      } else if (xpMin !== null && xpMax <= xpMin) {
         errors.xpMax = "Max XP must be greater than Min XP";
       }
     }
@@ -340,11 +361,10 @@ export function AddEditModal({
         errors.inactivityDuration = 'Format: "7 Days", "2 Weeks", etc.';
       }
 
-      if (
-        formData.minimumXpLimit == null ||
-        isNaN(formData.minimumXpLimit) ||
-        formData.minimumXpLimit < 0
-      ) {
+      const minimumXpLimit = toFiniteNumber(formData.minimumXpLimit);
+      if (minimumXpLimit === null) {
+        errors.minimumXpLimit = "Min XP limit is required";
+      } else if (minimumXpLimit < 0) {
         errors.minimumXpLimit = "Min XP limit must be 0 or greater";
       }
 
@@ -514,7 +534,7 @@ export function AddEditModal({
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          xpMin: parseInt(e.target.value),
+                          xpMin: e.target.value,
                         }))
                       }
                       placeholder="0"
@@ -537,7 +557,7 @@ export function AddEditModal({
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          xpMax: parseInt(e.target.value),
+                          xpMax: e.target.value,
                         }))
                       }
                       placeholder="999"
@@ -795,7 +815,7 @@ export function AddEditModal({
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          minimumXpLimit: parseInt(e.target.value),
+                          minimumXpLimit: e.target.value,
                         }))
                       }
                       placeholder="100"
