@@ -219,11 +219,13 @@ export default function AddEditChallengeModal({
 
     // Validate game-specific requirements for Game/SDK Game types
     if (formData.type === "Game" || formData.type === "SDK Game") {
-      if (!formData.sdkProvider) {
-        newErrors.sdkProvider = "SDK Provider is required for Game challenges";
+      // Provider and game are only needed when the challenge is pinned to one
+      // game. "Any game" challenges follow whatever the user is playing, so
+      // neither applies.
+      if (formData.gameScope !== "any" && !formData.sdkProvider) {
+        newErrors.sdkProvider =
+          "SDK Provider is required unless the challenge applies to any game";
       }
-      // A game is only needed when the challenge is pinned to one. "Any game"
-      // challenges follow whatever the user is playing.
       if (formData.gameScope !== "any" && !formData.gameId) {
         newErrors.gameId =
           'Game is required unless the challenge applies to any game';
