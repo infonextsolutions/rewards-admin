@@ -758,7 +758,7 @@ export default function AddEditChallengeModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SDK Provider *
+                  SDK Provider{formData.gameScope !== "any" ? " *" : ""}
                 </label>
                 <select
                   value={formData.sdkProvider}
@@ -770,8 +770,15 @@ export default function AddEditChallengeModal({
                     });
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  // Only required when the challenge is pinned to one game.
+                  // The HTML required attribute runs before any JS validation,
+                  // so leaving it on unconditionally made "Applies To: Any
+                  // game" impossible to submit - the browser blocked it with
+                  // "Please select an item in the list".
                   required={
-                    formData.type === "Game" || formData.type === "SDK Game"
+                    (formData.type === "Game" ||
+                      formData.type === "SDK Game") &&
+                    formData.gameScope !== "any"
                   }
                 >
                   <option value="">Select SDK Provider</option>
@@ -792,7 +799,7 @@ export default function AddEditChallengeModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Game *
+                  Game{formData.gameScope !== "any" ? " *" : ""}
                 </label>
                 <select
                   value={formData.gameId}
@@ -804,8 +811,15 @@ export default function AddEditChallengeModal({
                   }}
                   disabled={!formData.sdkProvider || loadingGames}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  // Only required when the challenge is pinned to one game.
+                  // The HTML required attribute runs before any JS validation,
+                  // so leaving it on unconditionally made "Applies To: Any
+                  // game" impossible to submit - the browser blocked it with
+                  // "Please select an item in the list".
                   required={
-                    formData.type === "Game" || formData.type === "SDK Game"
+                    (formData.type === "Game" ||
+                      formData.type === "SDK Game") &&
+                    formData.gameScope !== "any"
                   }
                 >
                   <option value="">

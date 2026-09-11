@@ -380,6 +380,10 @@ export const challengesBonusesAPI = {
         sdkProvider: apiData.sdkProvider || null,
         // Timer-based game configuration
         playTimeMinutes: apiData.requirements?.timeLimit || null,
+        // The edit form hydrates from this mapping, so dropping requirements
+        // here made every challenge open with default objective/target/scope
+        // regardless of what was stored.
+        requirements: apiData.requirements || null,
         createdAt: apiData.createdAt,
         updatedAt: apiData.updatedAt,
         targetAudience: apiData.targetAudience || null,
@@ -432,12 +436,22 @@ export const challengesBonusesAPI = {
         ...(challengeData.sdkProvider && {
           sdkProvider: challengeData.sdkProvider,
         }),
-        ...(challengeData.type === "Game" &&
-          typeof challengeData.playTimeMinutes === "number" && {
-            requirements: {
+        // Pass the form's requirements through rather than rebuilding it from
+        // playTimeMinutes alone. Objectives, targets, gameScope and spinCount
+        // all live here, and reconstructing the object silently dropped every
+        // one of them - a purchase challenge arrived at the API with no
+        // objective and was rejected, and spinCount never persisted.
+        // timeLimit is still derived for play-time challenges so an older
+        // backend keeps working.
+        ...((challengeData.requirements ||
+          typeof challengeData.playTimeMinutes === "number") && {
+          requirements: {
+            ...(challengeData.requirements || {}),
+            ...(typeof challengeData.playTimeMinutes === "number" && {
               timeLimit: challengeData.playTimeMinutes,
-            },
-          }),
+            }),
+          },
+        }),
         ...(challengeData.targetAudience && {
           targetAudience: challengeData.targetAudience,
         }),
@@ -525,12 +539,22 @@ export const challengesBonusesAPI = {
         ...(challengeData.sdkProvider && {
           sdkProvider: challengeData.sdkProvider,
         }),
-        ...(challengeData.type === "Game" &&
-          typeof challengeData.playTimeMinutes === "number" && {
-            requirements: {
+        // Pass the form's requirements through rather than rebuilding it from
+        // playTimeMinutes alone. Objectives, targets, gameScope and spinCount
+        // all live here, and reconstructing the object silently dropped every
+        // one of them - a purchase challenge arrived at the API with no
+        // objective and was rejected, and spinCount never persisted.
+        // timeLimit is still derived for play-time challenges so an older
+        // backend keeps working.
+        ...((challengeData.requirements ||
+          typeof challengeData.playTimeMinutes === "number") && {
+          requirements: {
+            ...(challengeData.requirements || {}),
+            ...(typeof challengeData.playTimeMinutes === "number" && {
               timeLimit: challengeData.playTimeMinutes,
-            },
-          }),
+            }),
+          },
+        }),
         ...(challengeData.targetAudience && {
           targetAudience: challengeData.targetAudience,
         }),
