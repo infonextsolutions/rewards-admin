@@ -387,6 +387,16 @@ export default function BonusDayConfiguration({
   };
 
   const sortedBonusDays = [...bonusDays].sort((a, b) => a.bonusDay - b.bonusDay);
+  const configuredDayNumbers = new Set(
+    sortedBonusDays.map((bonusDay) => Number(bonusDay.bonusDay)),
+  );
+  // The iOS weekly progression always expects Days 1–7. Longer streak
+  // milestones (Day 14/30/etc.) are optional and must not make every
+  // intermediate day look missing in this warning.
+  const missingBonusDays = Array.from(
+    { length: 7 },
+    (_, index) => index + 1,
+  ).filter((dayNumber) => !configuredDayNumbers.has(dayNumber));
 
   // If showing streak config, render that component
   if (showStreakConfig) {
@@ -734,6 +744,12 @@ export default function BonusDayConfiguration({
         )}
 
         {/* Bonus Days Table */}
+        {missingBonusDays.length > 0 && (
+          <div className="mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            Missing weekly bonus {missingBonusDays.length === 1 ? "day" : "days"}: {missingBonusDays.join(", ")}.
+            Configure every Day 1–7 reward before releasing the iOS build; missing active days appear as gaps in the app.
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

@@ -32,8 +32,15 @@ export default function AddEditChallengeModal({
     status: "Scheduled",
     gameId: "",
     sdkProvider: "",
-    // Timer-based challenge configuration (Game type)
+    // Game challenge objective
+    objective: "playtime",
+    target: "",
+    gameScope: "specific",
+    // Legacy play-time field, still sent for playtime objectives
     playTimeMinutes: "",
+    // Spin challenge configuration
+    spinCount: "1",
+    spinWindowMinutes: "",
     // Target audience (age / country / gender only)
     countriesInput: "",
     ageMin: "",
@@ -73,6 +80,23 @@ export default function AddEditChallengeModal({
         gameId: challenge.gameId || "",
         sdkProvider: challenge.sdkProvider || "",
         // Timer-based challenge: required play time (minutes)
+        objective: challenge.requirements?.objective || "playtime",
+        target:
+          challenge.requirements?.target !== undefined &&
+          challenge.requirements?.target !== null
+            ? String(challenge.requirements.target)
+            : "",
+        gameScope: challenge.requirements?.gameScope || "specific",
+        spinCount:
+          challenge.requirements?.spinCount !== undefined &&
+          challenge.requirements?.spinCount !== null
+            ? String(challenge.requirements.spinCount)
+            : "1",
+        spinWindowMinutes:
+          challenge.requirements?.spinWindowMinutes !== undefined &&
+          challenge.requirements?.spinWindowMinutes !== null
+            ? String(challenge.requirements.spinWindowMinutes)
+            : "",
         playTimeMinutes:
           challenge.playTimeMinutes !== undefined &&
           challenge.playTimeMinutes !== null
@@ -195,21 +219,33 @@ export default function AddEditChallengeModal({
 
     // Validate game-specific requirements for Game/SDK Game types
     if (formData.type === "Game" || formData.type === "SDK Game") {
-      if (!formData.sdkProvider) {
-        newErrors.sdkProvider = "SDK Provider is required for Game challenges";
+      // Provider and game are only needed when the challenge is pinned to one
+      // game. "Any game" challenges follow whatever the user is playing, so
+      // neither applies.
+      if (formData.gameScope !== "any" && !formData.sdkProvider) {
+        newErrors.sdkProvider =
+          "SDK Provider is required unless the challenge applies to any game";
       }
-      if (!formData.gameId) {
-        newErrors.gameId = "Game is required for Game challenges";
+      if (formData.gameScope !== "any" && !formData.gameId) {
+        newErrors.gameId =
+          'Game is required unless the challenge applies to any game';
       }
-      // Timer-based game: require positive play time in minutes
-      if (
-        formData.type === "Game" &&
-        (formData.playTimeMinutes === "" ||
-          Number.isNaN(Number(formData.playTimeMinutes)) ||
-          Number(formData.playTimeMinutes) <= 0)
-      ) {
-        newErrors.playTimeMinutes =
-          "Required play time (minutes) must be greater than 0";
+      if (formData.type === "Game") {
+        const amount =
+          formData.objective === "playtime"
+            ? formData.target || formData.playTimeMinutes
+            : formData.target;
+        if (
+          amount === "" ||
+          amount === undefined ||
+          Number.isNaN(Number(amount)) ||
+          Number(amount) <= 0
+        ) {
+          newErrors.target =
+            formData.objective === "playtime"
+              ? "Required play time (minutes) must be greater than 0"
+              : `Number of ${formData.objective} must be greater than 0`;
+        }
       }
     }
 
@@ -401,13 +437,35 @@ export default function AddEditChallengeModal({
       status: formData.status || "Scheduled",
       ...(formData.gameId && { gameId: formData.gameId }),
       ...(formData.sdkProvider && { sdkProvider: formData.sdkProvider }),
-      // Timer-based game configuration: required play time in minutes
-      ...(formData.type === "Game" &&
-        formData.playTimeMinutes &&
-        !Number.isNaN(Number(formData.playTimeMinutes)) &&
-        Number(formData.playTimeMinutes) > 0 && {
-          playTimeMinutes: Number(formData.playTimeMinutes),
+      // Game challenge objective. playTimeMinutes is still sent for play-time
+      // challenges so older backends keep working.
+      ...(formData.type === "Game" && {
+        requirements: {
+          objective: formData.objective,
+          target: Number(
+            formData.objective === "playtime"
+              ? formData.target || formData.playTimeMinutes
+              : formData.target,
+          ),
+          gameScope: formData.gameScope,
+          ...(formData.objective === "playtime" && {
+            timeLimit: Number(formData.target || formData.playTimeMinutes),
+          }),
+        },
+        ...(formData.objective === "playtime" && {
+          playTimeMinutes: Number(formData.target || formData.playTimeMinutes),
         }),
+      }),
+      // Spin challenge configuration
+      ...(formData.type === "Spin" && {
+        requirements: {
+          spinCount: Number(formData.spinCount) || 1,
+          ...(formData.spinWindowMinutes &&
+            Number(formData.spinWindowMinutes) > 0 && {
+              spinWindowMinutes: Number(formData.spinWindowMinutes),
+            }),
+        },
+      }),
       targetAudience,
     };
 
@@ -461,7 +519,12 @@ export default function AddEditChallengeModal({
       status: "Scheduled",
       gameId: "",
       sdkProvider: "",
+      objective: "playtime",
+      target: "",
+      gameScope: "specific",
       playTimeMinutes: "",
+      spinCount: "1",
+      spinWindowMinutes: "",
       countriesInput: "",
       ageMin: "",
       ageMax: "",
@@ -697,7 +760,7 @@ export default function AddEditChallengeModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SDK Provider *
+                  SDK Provider{formData.gameScope !== "any" ? " *" : ""}
                 </label>
                 <select
                   value={formData.sdkProvider}
@@ -709,8 +772,15 @@ export default function AddEditChallengeModal({
                     });
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  // Only required when the challenge is pinned to one game.
+                  // The HTML required attribute runs before any JS validation,
+                  // so leaving it on unconditionally made "Applies To: Any
+                  // game" impossible to submit - the browser blocked it with
+                  // "Please select an item in the list".
                   required={
-                    formData.type === "Game" || formData.type === "SDK Game"
+                    (formData.type === "Game" ||
+                      formData.type === "SDK Game") &&
+                    formData.gameScope !== "any"
                   }
                 >
                   <option value="">Select SDK Provider</option>
@@ -731,7 +801,7 @@ export default function AddEditChallengeModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Game *
+                  Game{formData.gameScope !== "any" ? " *" : ""}
                 </label>
                 <select
                   value={formData.gameId}
@@ -743,8 +813,15 @@ export default function AddEditChallengeModal({
                   }}
                   disabled={!formData.sdkProvider || loadingGames}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  // Only required when the challenge is pinned to one game.
+                  // The HTML required attribute runs before any JS validation,
+                  // so leaving it on unconditionally made "Applies To: Any
+                  // game" impossible to submit - the browser blocked it with
+                  // "Please select an item in the list".
                   required={
-                    formData.type === "Game" || formData.type === "SDK Game"
+                    (formData.type === "Game" ||
+                      formData.type === "SDK Game") &&
+                    formData.gameScope !== "any"
                   }
                 >
                   <option value="">
@@ -767,56 +844,136 @@ export default function AddEditChallengeModal({
             </div>
           )}
 
-          {/* Game Timer-Based Configuration (only for Game type) */}
+          {/* Game challenge objective (only for Game type) */}
           {formData.type === "Game" && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-gray-900">
-                Game Challenge Type
+                Game Challenge Objective
               </h3>
               <p className="text-xs text-gray-500">
-                This daily challenge uses a{" "}
-                <span className="font-semibold">Timer-Based Challenge</span>.
-                Users must play the selected game for the required minutes to
-                earn the reward.
+                What the user has to do. Purchases and milestones are counted
+                from the game&apos;s own events, so only tasks classified in
+                Game &amp; Offer Management count towards them.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Challenge Mechanic
+                    Objective *
                   </label>
-                  <input
-                    type="text"
-                    value="Timer-Based Challenge"
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700 text-sm"
-                  />
+                  <select
+                    value={formData.objective}
+                    onChange={(e) =>
+                      setFormData({ ...formData, objective: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    <option value="playtime">Play for a set time</option>
+                    <option value="purchases">Make purchases</option>
+                    <option value="milestones">Complete milestones</option>
+                    <option value="tasks">Complete any tasks</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Required Play Time (minutes) *
+                    {formData.objective === "playtime"
+                      ? "Required Play Time (minutes) *"
+                      : formData.objective === "purchases"
+                        ? "Number of Purchases *"
+                        : formData.objective === "milestones"
+                          ? "Number of Milestones *"
+                          : "Number of Tasks *"}
                   </label>
                   <input
                     type="number"
                     min="1"
-                    value={formData.playTimeMinutes}
+                    value={formData.target || formData.playTimeMinutes}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
+                        target: e.target.value,
                         playTimeMinutes: e.target.value,
                       })
                     }
                     className={`w-full px-3 py-2 border rounded-md focus:ring-emerald-500 focus:border-emerald-500 ${
-                      errors.playTimeMinutes
-                        ? "border-red-300"
-                        : "border-gray-300"
+                      errors.target ? "border-red-300" : "border-gray-300"
                     }`}
-                    placeholder="e.g., 15"
+                    placeholder={
+                      formData.objective === "playtime" ? "e.g., 15" : "e.g., 2"
+                    }
                   />
-                  {errors.playTimeMinutes && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.playTimeMinutes}
-                    </p>
+                  {errors.target && (
+                    <p className="mt-1 text-sm text-red-600">{errors.target}</p>
                   )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Applies To
+                  </label>
+                  <select
+                    value={formData.gameScope}
+                    onChange={(e) =>
+                      setFormData({ ...formData, gameScope: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    <option value="specific">One specific game</option>
+                    <option value="any">Any game the user plays</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    &quot;Any game&quot; does not require the user to install
+                    something new.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Spin challenge configuration (only for Spin type) */}
+          {formData.type === "Spin" && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Spin Challenge Configuration
+              </h3>
+              <p className="text-xs text-gray-500">
+                Each spin still awards its normal wheel prize, so a three-spin
+                challenge gives three wheel prizes plus the challenge reward.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number of Spins *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.spinCount}
+                    onChange={(e) =>
+                      setFormData({ ...formData, spinCount: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="e.g., 3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Time Window (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.spinWindowMinutes}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        spinWindowMinutes: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Leave blank for all day"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Counted from when the user starts the challenge.
+                  </p>
                 </div>
               </div>
             </div>
