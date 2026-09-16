@@ -12,6 +12,7 @@ import {
   PhoneIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
+import { API_BASE } from "@/lib/apiClient";
 
 export default function SneakPeekModal({ userId, isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
@@ -28,7 +29,7 @@ export default function SneakPeekModal({ userId, isOpen, onClose }) {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          `https://rewardsuatapi.hireagent.co/api/admin/transactions/users/${userId}/sneak-peek`,
+          `${API_BASE}/admin/transactions/users/${userId}/sneak-peek`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
