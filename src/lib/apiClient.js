@@ -1,7 +1,10 @@
 import axios from "axios";
 import { reportApiFailure } from "./errorTracking";
 
-const API_BASE =
+// Single source of truth for the API host. Set NEXT_PUBLIC_API_BASE per
+// environment (Vercel production must point at the live API); the literal is
+// only a local-development fallback and must never be relied on in a deploy.
+export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
 // const API_BASE = "https://rewardsuatapi.hireagent.co/api";
 

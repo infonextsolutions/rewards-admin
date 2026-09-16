@@ -12,6 +12,7 @@ export async function GET(request) {
     const url = new URL(imageUrl);
     const allowedHostnames = [
       'rewardsapi.hireagent.co',
+      'rewardsuatapi.hireagent.co',
       'hireagent.co',
       'c.animaapp.com',
       'lh3.googleusercontent.com',
