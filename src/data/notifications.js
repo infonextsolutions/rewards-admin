@@ -1,27 +1,16 @@
-// EXCLUDED: Notification settings with Slack configuration not supported per requirements
+
 export const MOCK_NOTIFICATION_SETTINGS = {
   email: {
     enabled: true,
     recipients: ['admin@jackson.com'],
     events: ['cashout_failure']
   },
-  // EXCLUDED: Slack configuration not supported per requirements
-  // slack: {
-  //   enabled: false,
-  //   webhookUrl: '',
-  //   events: ['system_error']
-  // },
-  // EXCLUDED: Firebase A/B testing not supported per requirements
-  // firebase: {
-  //   abTestingEnabled: true
-  // }
+
 };
 
-// EXCLUDED: Notification types with Slack not supported per requirements
 export const NOTIFICATION_TYPES = [
   { value: 'email', label: 'Email', icon: '📧' },
-  // EXCLUDED: Slack notifications not supported per requirements
-  // { value: 'slack', label: 'Slack', icon: '💬' }
+
 ];
 
 // Available trigger events - core events as per requirements
@@ -46,7 +35,6 @@ export const TRIGGER_EVENTS = [
   }
 ];
 
-// EXCLUDED: Notification roles/recipients configuration not supported per requirements
 export const NOTIFICATION_ROLES = [
   // Notification recipient configuration disabled per requirements
   // {
@@ -92,7 +80,6 @@ export const EVENT_CATEGORIES = [
   'Rewards'
 ];
 
-// EXCLUDED: Firebase feature flags not supported per requirements
 export const FIREBASE_FEATURES = [
   // Firebase A/B testing feature flags disabled per requirements
   // {

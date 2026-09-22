@@ -82,7 +82,7 @@ export default function WalletAdjustments({ onSneakPeek }) {
     try {
       const response = await TRANSACTION_API.getUserWallet(userId);
       if (response.data?.success) {
-        console.log("User wallet response:", response.data.data);
+
         setUserBalance(response.data.data);
       } else {
         setUserBalance(null);
@@ -150,8 +150,6 @@ export default function WalletAdjustments({ onSneakPeek }) {
         amount: parseFloat(formData.amount),
         reason: formData.reason,
       };
-
-      console.log("Sending wallet adjustment request:", payload);
 
       // Make real API call
       const response = await TRANSACTION_API.adjustWallet(payload);

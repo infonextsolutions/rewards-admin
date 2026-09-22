@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import apiClient from '../lib/apiClient';
+import apiClient from '../../lib/apiClient';
 import {
   PlusIcon,
   PencilIcon,
@@ -18,7 +18,6 @@ import OfferPreviewModal from "../surveys-offers/modals/OfferPreviewModal";
 import TierBadge from "../ui/TierBadge";
 import XPTierBadge from "../ui/XPTierBadge";
 import { useOffers } from "../../hooks/useOffers";
-import { useState, useEffect } from "react";
 
 const STATUS_TYPES = ["Active", "Inactive"];
 const COUNTRIES = [
@@ -92,7 +91,7 @@ export default function OffersListingModule() {
         const data = response.data;
         if (data.success && data.data) {
           setMarketingChannels(data.data);
-          console.log('✅ Marketing channels loaded:', data.data);
+
         } else {
           console.warn('⚠️ No marketing channels found, using empty list');
           setMarketingChannels([]);
@@ -281,7 +280,7 @@ export default function OffersListingModule() {
   };
 
   const handleSaveSegments = (segmentData) => {
-    console.log("Applying segment changes:", segmentData);
+
     // TODO: Implement API call to save segment changes
     // For now, just close the modal
     setShowSegmentsModal(false);

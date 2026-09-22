@@ -210,12 +210,7 @@ export default function EventTokenManagement() {
         </div>
         {activeTab === "tokens" && (
           <div className="flex items-center gap-3">
-            {/* <button
-              onClick={() => setShowBulkImportModal(true)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389]"
-            >
-              Bulk Import
-            </button> */}
+
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 text-sm font-medium text-white bg-[#00a389] rounded-md hover:bg-[#008a73] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00a389] flex items-center gap-2"
@@ -489,9 +484,7 @@ export default function EventTokenManagement() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Name
                         </th>
-                        {/* <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Category
-                        </th> */}
+
                         <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Unique
                         </th>
@@ -531,11 +524,7 @@ export default function EventTokenManagement() {
                               {event.name}
                             </div>
                           </td>
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">
-                              {event.category || "N/A"}
-                            </div>
-                          </td> */}
+
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             {event.unique ? (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

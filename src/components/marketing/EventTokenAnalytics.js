@@ -884,16 +884,12 @@ export default function EventTokenAnalytics() {
                           </svg>
                           Click any row to view full details
                         </span>
-                       
+
                       </div>
                     </div>
-                    
+
                   </div>
-                  {/* {callbacksNote && (
-                    <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-700">
-                      {callbacksNote}
-                    </div>
-                  )} */}
+
                 </div>
              {callbacksLoading ? (
                <div className="p-6 sm:p-8 text-center text-xs sm:text-sm text-gray-600">Loading...</div>

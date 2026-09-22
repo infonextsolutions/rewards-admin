@@ -338,9 +338,8 @@ export default function RewardsPage() {
     resetPagination()
   }
 
-  // EXCLUDED: Global export function on XP screens not supported per requirements
   const handleExport = () => {
-    console.log('Export functionality disabled per requirements')
+
     toast.error('Export functionality is not supported per requirements')
     // exportToCSV(currentData, `${activeTab.toLowerCase().replace(/\s+/g, '-')}-data`);
   }
@@ -498,13 +497,6 @@ export default function RewardsPage() {
 
   return (
     <div className='w-full space-y-6'>
-      {/* <RewardsSummary
-        xpTiers={xpTiers}
-        xpDecaySettings={xpDecaySettings}
-        xpConversions={xpConversions}
-        bonusLogic={bonusLogic}
-        auditLogs={auditLogs}
-      /> */}
 
       <RewardsHeader
         tabs={REWARDS_TABS}

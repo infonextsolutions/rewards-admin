@@ -271,19 +271,6 @@ export default function ConversionSettings() {
           </p>
         </div>
 
-        {/* <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-500">
-            Last updated: {lastUpdated}
-          </div>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-          >
-            <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Syncing...' : 'Sync with Config'}
-          </button>
-        </div> */}
       </div>
 
       {/* Default Rule */}
@@ -392,9 +379,7 @@ export default function ConversionSettings() {
                     Conversion Rule
                   </th>
                   {/* Payment Methods column commented out */}
-                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment Methods
-                  </th> */}
+
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Rule Source
                   </th>
@@ -417,24 +402,7 @@ export default function ConversionSettings() {
                       </div>
                     </td>
                     {/* Payment Methods column commented out */}
-                    {/* <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {Array.isArray(rule.method) ? (
-                          rule.method.map((method, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
-                            >
-                              {method}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-sm text-gray-900">
-                            {rule.method || "N/A"}
-                          </span>
-                        )}
-                      </div>
-                    </td> */}
+
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <CogIcon className="w-4 h-4 text-gray-400 mr-2" />

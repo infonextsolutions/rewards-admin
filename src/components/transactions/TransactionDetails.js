@@ -25,7 +25,7 @@ export default function TransactionDetails({ transactionId }) {
       setLoading(true);
       try {
         let t = null;
-        
+
         // First, try to fetch by direct ID (MongoDB ObjectId)
         try {
           const directResponse = await apiClient.get(
@@ -36,11 +36,11 @@ export default function TransactionDetails({ transactionId }) {
           }
         } catch (directError) {
           // If direct ID lookup fails, try search endpoint
-          console.log("Direct ID lookup failed, trying search endpoint...");
+
           const searchResponse = await apiClient.get(
             `/admin/transactions?search=${encodeURIComponent(decodedTransactionId)}`
           );
-          
+
           if (
             searchResponse.data?.success &&
             searchResponse.data?.data?.transactions?.length > 0

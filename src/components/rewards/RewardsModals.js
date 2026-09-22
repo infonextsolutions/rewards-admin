@@ -1,8 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
+import apiClient from "../../lib/apiClient";
 
 /**
  * Coerces a form value to a finite number, or null when it is blank or not
@@ -19,27 +16,6 @@ const toFiniteNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 };
-
-// const API_BASE = 'https://rewardsuatapi.hireagent.co/api'
-
-// Axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Add auth token to requests
-apiClient.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
 
 export function AddEditModal({
   isOpen,
@@ -254,7 +230,7 @@ export function AddEditModal({
   // Update form data when editingItem changes
   useEffect(() => {
     if (editingItem) {
-      console.log("editingItem in modal:", editingItem); // Debug log
+
       setFormData({
         // XP Tiers
         tierName: editingItem?.tierName || editingItem?.tier || "",
@@ -571,20 +547,6 @@ export function AddEditModal({
                   </div>
                 </div>
 
-                {/* <div>
-                  <label className="block text-sm font-medium text-black mb-1">Badge/Icon</label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".png,.svg"
-                    onChange={handleFileUpload}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black file:mr-4 file:py-1 file:px-2 file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  {formData.badgeFile && (
-                    <div className="text-xs text-green-600 mt-1">File selected: {formData.badgeFile.name}</div>
-                  )}
-                </div> */}
-
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">
                     Access Benefits
@@ -673,7 +635,7 @@ export function AddEditModal({
                   >
                     <option value="Fixed">Fixed</option>
                     <option value="Stepwise">Stepwise</option>
-                    {/* <option value="Gradual">Gradual</option> */}
+
                   </select>
                 </div>
 
@@ -850,26 +812,6 @@ export function AddEditModal({
                   </label>
                 </div>
 
-                {/* <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="notifications"
-                    checked={formData.notificationToggle}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        notificationToggle: e.target.checked,
-                      }))
-                    }
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor="notifications"
-                    className="text-sm font-medium text-black"
-                  >
-                    Send Notification
-                  </label>
-                </div> */}
               </>
             )}
 

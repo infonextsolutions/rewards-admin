@@ -66,7 +66,7 @@ export default function AddEditRewardModal({
   const remainingProbabilityPerTier = useMemo(() => {
     const allTiers = ['Free', 'Bronze', 'Gold', 'Platinum'];
     const remaining = {};
-    
+
     allTiers.forEach(tier => {
       // Get rewards that affect this tier (excluding current reward if editing)
       const tierRewards = existingRewards.filter(r => 
@@ -74,23 +74,23 @@ export default function AddEditRewardModal({
         r.tierVisibility.includes(tier) && 
         (!isEdit || r.id !== reward?.id)
       );
-      
+
       const usedInTier = tierRewards.reduce((sum, r) => sum + (r.probability || 0), 0);
       remaining[tier] = Math.max(0, 100 - usedInTier);
     });
-    
+
     return remaining;
   }, [existingRewards, isEdit, reward?.id]);
 
   // Get minimum remaining probability for selected tiers
   const getMinRemainingForSelectedTiers = () => {
     if (!formData.tierVisibility.length) return 100;
-    
+
     // If "All Tiers" is selected, check all tiers
     const tiersToCheck = formData.tierVisibility.includes('All Tiers') 
       ? ['Free', 'Bronze', 'Gold', 'Platinum']
       : formData.tierVisibility;
-    
+
     return Math.min(...tiersToCheck.map(tier => remainingProbabilityPerTier[tier] || 100));
   };
 
@@ -134,7 +134,7 @@ export default function AddEditRewardModal({
         const selectedTiers = formData.tierVisibility.includes('All Tiers') 
           ? ['Free', 'Bronze', 'Gold', 'Platinum']
           : formData.tierVisibility;
-        
+
         for (const tier of selectedTiers) {
           // Check for duplicate probabilities in this tier
           const tierRewards = existingRewards.filter(r => 
@@ -142,13 +142,13 @@ export default function AddEditRewardModal({
             r.tierVisibility.includes(tier) && 
             (!isEdit || r.id !== reward?.id)
           );
-          
+
           const duplicates = tierRewards.filter(r => r.probability === prob);
           if (duplicates.length > 0) {
             newErrors.probability = `Probability ${prob}% is already used by another reward in ${tier} tier`;
             break;
           }
-          
+
           // Check tier probability limit
           const tierRemaining = remainingProbabilityPerTier[tier] || 0;
           if (prob > tierRemaining) {
@@ -409,48 +409,6 @@ export default function AddEditRewardModal({
           </div>
 
           {/* Icon Upload - Hidden */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Reward Icon (Optional)
-            </label>
-            <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                {iconPreview ? (
-                  <img
-                    src={iconPreview}
-                    alt="Icon preview"
-                    className="h-16 w-16 object-cover rounded-lg border border-gray-300"
-                  />
-                ) : (
-                  <div className="h-16 w-16 border-2 border-gray-300 border-dashed rounded-lg flex items-center justify-center">
-                    <PhotoIcon className="h-8 w-8 text-gray-400" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleIconUpload}
-                  className="hidden"
-                  id="icon-upload"
-                />
-                <label
-                  htmlFor="icon-upload"
-                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-                >
-                  <PhotoIcon className="h-4 w-4 mr-2" />
-                  {iconPreview ? 'Change Icon' : 'Upload Icon'}
-                </label>
-                <p className="mt-1 text-xs text-gray-500">
-                  PNG, JPG, SVG
-                </p>
-                {errors.icon && (
-                  <p className="mt-1 text-sm text-red-600">{errors.icon}</p>
-                )}
-              </div>
-            </div>
-          </div> */}
 
           {/* Active Status */}
           <div>

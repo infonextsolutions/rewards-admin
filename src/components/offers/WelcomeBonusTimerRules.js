@@ -104,14 +104,14 @@ export default function WelcomeBonusTimerRules() {
         });
         const games = response.games || [];
         setAvailableGames(games);
-        console.log("🎮 [WelcomeBonusTimer] Available games:", games.length, "games loaded");
+
         // Log SDK provider distribution
         const sdkCounts = games.reduce((acc, game) => {
           const sdk = (game.sdk || game.sdkProvider || "unknown").toLowerCase();
           acc[sdk] = (acc[sdk] || 0) + 1;
           return acc;
         }, {});
-        console.log("🎮 [WelcomeBonusTimer] SDK distribution:", sdkCounts);
+
       } catch (error) {
         console.error("Error fetching games:", error);
       }
@@ -156,13 +156,9 @@ export default function WelcomeBonusTimerRules() {
             limit: 100,
           });
           apiTasks = tasksResponse.tasks || [];
-          console.log("✅ [WelcomeBonusTimer] Fetched tasks from GameTask API:", apiTasks.length);
+
           if (apiTasks.length > 0) {
-            console.log("✅ [WelcomeBonusTimer] Sample task:", {
-              id: apiTasks[0].id,
-              name: apiTasks[0].name,
-              order: apiTasks[0].order,
-            });
+
           }
         } catch (error) {
           console.warn("⚠️ [WelcomeBonusTimer] Error fetching tasks from API:", error);
@@ -177,20 +173,10 @@ export default function WelcomeBonusTimerRules() {
           );
           const gameData = gameResponse.data.data;
           const sdkProvider = (gameData.sdkProvider || "").toLowerCase();
-          
-          console.log("🔍 [WelcomeBonusTimer] Game data:", {
-            gameId: selectedGameId,
-            sdkProvider: gameData.sdkProvider,
-            sdkProviderLower: sdkProvider,
-            hasBesitosRawData: !!gameData.besitosRawData,
-            hasGoals: !!gameData.besitosRawData?.goals,
-            hasEvents: !!gameData.besitosRawData?.events,
-            eventsCount: gameData.besitosRawData?.events?.length || 0,
-          });
-          
+
           // Handle Besitos games: fetch goals from besitosRawData
           if (sdkProvider === "besitos" && gameData.besitosRawData?.goals && Array.isArray(gameData.besitosRawData.goals)) {
-            console.log("✅ [WelcomeBonusTimer] Processing Besitos goals:", gameData.besitosRawData.goals.length);
+
             // Transform besitos goals to task format
             besitosTasks = gameData.besitosRawData.goals.map((goal, index) => ({
               id: goal.goal_id || `besitos_${index}`,
@@ -200,23 +186,21 @@ export default function WelcomeBonusTimerRules() {
               source: "besitos",
             }));
           }
-          
+
           // Handle Bitlabs games: fetch events from besitosRawData.events
           // Check for "bitlabs" (case-insensitive - already lowercased)
           const isBitlabs = sdkProvider === "bitlabs" || sdkProvider.includes("bitlab");
           if (isBitlabs && gameData.besitosRawData?.events && Array.isArray(gameData.besitosRawData.events)) {
-            console.log("✅ [WelcomeBonusTimer] Processing Bitlabs events:", gameData.besitosRawData.events.length);
-            
+
             // For Bitlabs, use ALL events (not just payable ones)
             // Tasks are primarily managed via GameTask model, events are just for reference
             // If no payable events, use all events as fallback
             let eventsToUse = gameData.besitosRawData.events.filter((e) => e.payable === true);
             if (eventsToUse.length === 0) {
-              console.log("⚠️ [WelcomeBonusTimer] No payable events found, using all events as fallback");
+
               eventsToUse = gameData.besitosRawData.events;
             }
-            console.log("✅ [WelcomeBonusTimer] Events to use:", eventsToUse.length);
-            
+
             // Sort events by type_id (1 = Install, 2+ = Steps/Levels)
             const sortedEvents = [...eventsToUse].sort((a, b) => {
               const typeA = a.type_id || 999;
@@ -224,7 +208,7 @@ export default function WelcomeBonusTimerRules() {
               if (typeA !== typeB) return typeA - typeB;
               return (a.name || a.uuid || "").localeCompare(b.name || b.uuid || "");
             });
-            
+
             // Transform Bitlabs events to task format
             bitlabsTasks = sortedEvents.map((event, index) => ({
               id: event.uuid || event.id || `bitlabs_${index}`,
@@ -235,7 +219,7 @@ export default function WelcomeBonusTimerRules() {
               typeId: event.type_id,
               payout: event.payout || 0,
             }));
-            console.log("✅ [WelcomeBonusTimer] Transformed Bitlabs tasks:", bitlabsTasks.length);
+
           } else if (isBitlabs) {
             console.warn("⚠️ [WelcomeBonusTimer] Bitlabs game selected but no events found:", {
               hasBesitosRawData: !!gameData.besitosRawData,
@@ -252,13 +236,6 @@ export default function WelcomeBonusTimerRules() {
         // Combine tasks from both sources, prioritizing API tasks
         const combinedTasks = [...apiTasks];
         const newTaskDataMap = new Map();
-        
-        console.log("📊 [WelcomeBonusTimer] Task summary:", {
-          apiTasks: apiTasks.length,
-          besitosTasks: besitosTasks.length,
-          bitlabsTasks: bitlabsTasks.length,
-          totalBeforeCombine: combinedTasks.length,
-        });
 
         // Store API tasks in map
         apiTasks.forEach((task) => {
@@ -1031,102 +1008,11 @@ export default function WelcomeBonusTimerRules() {
               {!loading && !error && (
                 <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
                   {/* Base Configuration - commented out */}
-                  {/* <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-2 text-indigo-600" />
-                      Base Configuration
-                    </h4>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Unlock Time:</span>
-                        <span className="font-medium text-gray-900">
-                          {config.unlockTimeHours} hours
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          Completion Deadline:
-                        </span>
-                        <span className="font-medium text-gray-900">
-                          {config.completionDeadlineDays} days
-                        </span>
-                      </div>
-                    </div>
-                  </div> */}
 
                   {/* Game Overrides - commented out */}
-                  {/* <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                      <Cog6ToothIcon className="h-4 w-4 mr-2 text-indigo-600" />
-                      Game Overrides
-                    </h4>
-                    {config.gameOverrides && config.gameOverrides.length > 0 ? (
-                      <div className="space-y-2 text-xs">
-                        {config.gameOverrides
-                          .slice(0, 2)
-                          .map((override, idx) => (
-                            <div key={idx} className="p-2 bg-gray-50 rounded">
-                              <div className="flex justify-between mb-1">
-                                <span className="text-gray-600">Game ID:</span>
-                                <span className="font-mono text-xs text-gray-900">
-                                  {override.gameId.substring(0, 8)}...
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Timer:</span>
-                                <span className="font-medium text-gray-900">
-                                  {override.unlockTimeHours}h /{" "}
-                                  {override.completionDeadlineDays}d
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        {config.gameOverrides.length > 2 && (
-                          <p className="text-xs text-gray-500 text-center mt-2">
-                            +{config.gameOverrides.length - 2} more
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-500">
-                        No game overrides configured
-                      </p>
-                    )}
-                  </div> */}
 
                   {/* XP Tier Overrides - commented out */}
-                  {/* <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                      <UserGroupIcon className="h-4 w-4 mr-2 text-indigo-600" />
-                      XP Tier Overrides
-                    </h4>
-                    {config.xpTierOverrides &&
-                    config.xpTierOverrides.length > 0 ? (
-                      <div className="space-y-2 text-xs">
-                        {config.xpTierOverrides.map((tier, idx) => (
-                          <div key={idx} className="p-2 bg-gray-50 rounded">
-                            <div className="flex justify-between mb-1">
-                              <span className="text-gray-600">XP Range:</span>
-                              <span className="font-medium text-gray-900">
-                                {tier.minXp}-{tier.maxXp}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Timer:</span>
-                              <span className="font-medium text-gray-900">
-                                {tier.unlockTimeHours}h /{" "}
-                                {tier.completionDeadlineDays}d
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-500">
-                        No XP tier overrides configured
-                      </p>
-                    )}
-                  </div> */}
+
                 </div>
               )}
             </div>
@@ -1234,61 +1120,13 @@ export default function WelcomeBonusTimerRules() {
                       </div>
 
                       {/* PHASE 2: Completion Deadline temporarily hidden */}
-                      {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Bonus Completion Deadline
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        min="1"
-                        value={welcomeBonusSettings.completionDeadline.value}
-                        onChange={(e) => handleCompletionDeadlineChange('value', parseInt(e.target.value) || 1)}
-                        className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        disabled={!welcomeBonusSettings.enableRule}
-                      />
-                      <select
-                        value={welcomeBonusSettings.completionDeadline.unit}
-                        onChange={(e) => handleCompletionDeadlineChange('unit', e.target.value)}
-                        className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        disabled={!welcomeBonusSettings.enableRule}
-                      >
-                        {timeUnits.map(unit => (
-                          <option key={unit} value={unit}>{unit}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Maximum time allowed to complete bonus tasks after unlock
-                    </p>
-                  </div> */}
+
                     </div>
 
                     {/* Bonus Tasks Configuration */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                       {/* Max Games with Bonus Tasks - commented out */}
-                      {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Max Games with Bonus Tasks
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Number of games (per user) that should have bonus tasks (based on download order)
-                    </p>
-                    <input
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={welcomeBonusSettings.maxGamesWithBonusTasks || 3}
-                      onChange={(e) =>
-                        handleWelcomeBonusChange(
-                          "maxGamesWithBonusTasks",
-                          parseInt(e.target.value) || 3
-                        )
-                      }
-                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      disabled={!welcomeBonusSettings.enableRule}
-                    />
-                  </div> */}
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Max Bonus Tasks Per Game
@@ -1315,79 +1153,6 @@ export default function WelcomeBonusTimerRules() {
                     </div>
 
                     {/* PHASE 2: Override Settings temporarily hidden */}
-                    {/* <div className="space-y-6">
-                  <h4 className="text-sm font-medium text-gray-900">Override Settings</h4>
-
-                  <div>
-                    <div className="flex items-center mb-3">
-                      <input
-                        type="checkbox"
-                        id="override-game"
-                        checked={welcomeBonusSettings.overrideByGameId}
-                        onChange={(e) => handleWelcomeBonusChange('overrideByGameId', e.target.checked)}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        disabled={!welcomeBonusSettings.enableRule}
-                      />
-                      <label htmlFor="override-game" className="ml-2 text-sm font-medium text-gray-700">
-                        Override by Game ID
-                      </label>
-                    </div>
-                    {welcomeBonusSettings.overrideByGameId && welcomeBonusSettings.enableRule && (
-                      <div className="ml-6">
-                        <label className="block text-sm text-gray-600 mb-2">Select Games for Override:</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {availableGames.map(game => (
-                            <label key={game.id} className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={welcomeBonusSettings.selectedGames.includes(game.id)}
-                                onChange={() => handleGameSelection(game.id)}
-                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                              />
-                              <span className="ml-2 text-sm text-gray-700">{game.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center mb-3">
-                      <input
-                        type="checkbox"
-                        id="override-xp"
-                        checked={welcomeBonusSettings.overrideByXP}
-                        onChange={(e) => handleWelcomeBonusChange('overrideByXP', e.target.checked)}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        disabled={!welcomeBonusSettings.enableRule}
-                      />
-                      <label htmlFor="override-xp" className="ml-2 text-sm font-medium text-gray-700">
-                        Override by XP Threshold
-                      </label>
-                    </div>
-                    {welcomeBonusSettings.overrideByXP && welcomeBonusSettings.enableRule && (
-                      <div className="ml-6">
-                        <label className="block text-sm text-gray-600 mb-2">XP Threshold:</label>
-                        <div className="relative max-w-xs">
-                          <input
-                            type="number"
-                            min="0"
-                            value={welcomeBonusSettings.xpThreshold}
-                            onChange={(e) => handleWelcomeBonusChange('xpThreshold', parseInt(e.target.value) || 0)}
-                            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm pr-12"
-                          />
-                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500 sm:text-sm">XP</span>
-                          </div>
-                        </div>
-                        <p className="mt-1 text-xs text-gray-500">
-                          Apply custom timing for users above this XP level
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div> */}
 
                     {/* Validation Rules Display */}
                     <div className="mt-6 p-4 bg-blue-50 rounded-lg">
@@ -1427,20 +1192,7 @@ export default function WelcomeBonusTimerRules() {
                       Saved Bonus Task Configurations
                     </h3>
                   </div>
-                  {/* <button
-                    onClick={() => {
-                      setSelectedGameId("");
-                      setBonusTasksConfig({ 
-                        minimumEventThreshold: 3, 
-                        completionDeadlineHours: 24,
-                        bonusTasks: [] 
-                      });
-                      setIsModified(false);
-                    }}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    + Add New Game Configuration
-                  </button> */}
+
                 </div>
 
                 {loadingConfigurations ? (
@@ -1552,8 +1304,8 @@ export default function WelcomeBonusTimerRules() {
                 ) : (
                   <div className="mb-8 p-4 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-500">
-                      No bonus task configurations saved yet. Click "Add New
-                      Game Configuration" to create one.
+                      No bonus task configurations saved yet. Click &quot;Add New
+                      Game Configuration&quot; to create one.
                     </p>
                   </div>
                 )}
@@ -1980,13 +1732,7 @@ export default function WelcomeBonusTimerRules() {
                 </span>
               </div>
               {/* Completion Deadline - commented out */}
-              {/* <div>
-                <span className="text-gray-600">Completion Deadline:</span>
-                <span className="ml-2 font-medium text-gray-900">
-                  {welcomeBonusSettings.completionDeadline.value}{" "}
-                  {welcomeBonusSettings.completionDeadline.unit}
-                </span>
-              </div> */}
+
               <div>
                 <span className="text-gray-600">Overrides:</span>
                 <span className="ml-2 font-medium text-gray-900">

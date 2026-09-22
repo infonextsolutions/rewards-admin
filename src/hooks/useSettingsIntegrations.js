@@ -497,61 +497,18 @@ export const useSettingsIntegrations = () => {
     [integrations]
   );
 
-  // EXCLUDED: Notification settings operations not supported per requirements
   const updateNotificationSettings = useCallback(async (settings) => {
     // Notification settings updates disabled per requirements
-    console.log("Notification settings updates are disabled per requirements");
+
     return { success: false, error: "Notification settings not supported" };
 
-    /* ORIGINAL CODE - COMMENTED OUT
-    setLoading(true);
-    setError(null);
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setNotificationSettings(prev => ({
-        ...prev,
-        ...settings
-      }));
-
-      return { success: true };
-    } catch (err) {
-      setError('Failed to update notification settings');
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-    */
   }, []);
 
-  // EXCLUDED: Firebase A/B testing flags toggle not supported per requirements
   const toggleFirebaseFeature = useCallback(async (featureKey) => {
     // Firebase feature toggles disabled per requirements
-    console.log("Firebase feature toggles are disabled per requirements");
+
     return { success: false, error: "Firebase feature toggles not supported" };
 
-    /* ORIGINAL CODE - COMMENTED OUT
-    setLoading(true);
-    setError(null);
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      setFirebaseFeatures(prev => prev.map(feature =>
-        feature.key === featureKey
-          ? { ...feature, enabled: !feature.enabled }
-          : feature
-      ));
-
-      return { success: true };
-    } catch (err) {
-      setError('Failed to toggle Firebase feature');
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-    */
   }, []);
 
   // Computed values

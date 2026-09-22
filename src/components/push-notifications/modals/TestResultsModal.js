@@ -18,10 +18,10 @@ export default function TestResultsModal({ test, isOpen, onClose }) {
   // Calculate improvement
   const getImprovement = () => {
     if (!test.stats || !test.winner) return null;
-    
+
     const variantA = test.stats.variantA;
     const variantB = test.stats.variantB;
-    
+
     if (test.winner === 'A') {
       return ((variantA.ctr - variantB.ctr) / variantB.ctr * 100).toFixed(1);
     } else {
@@ -125,7 +125,7 @@ export default function TestResultsModal({ test, isOpen, onClose }) {
                     <h5 className="text-md font-medium text-gray-900">Variant A</h5>
                     {test.winner === 'A' && <span className="text-green-600 text-sm font-medium">Winner</span>}
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <div className="text-sm font-medium text-gray-700 mb-1">Title</div>
@@ -182,7 +182,7 @@ export default function TestResultsModal({ test, isOpen, onClose }) {
                     <h5 className="text-md font-medium text-gray-900">Variant B</h5>
                     {test.winner === 'B' && <span className="text-green-600 text-sm font-medium">Winner</span>}
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <div className="text-sm font-medium text-gray-700 mb-1">Title</div>
@@ -234,19 +234,7 @@ export default function TestResultsModal({ test, isOpen, onClose }) {
             </div>
 
             {/* Key Insights */}
-            {/* {test.stats && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="text-lg font-medium text-blue-900 mb-2">Key Insights</h4>
-                <div className="text-sm text-blue-700 space-y-1">
-                  <p>• Total messages sent: {(test.stats.variantA.sent + test.stats.variantB.sent).toLocaleString()}</p>
-                  <p>• Overall open rate: {((test.stats.variantA.openRate + test.stats.variantB.openRate) / 2).toFixed(1)}%</p>
-                  <p>• Overall CTR: {((test.stats.variantA.ctr + test.stats.variantB.ctr) / 2).toFixed(1)}%</p>
-                  {test.winner && (
-                    <p>• Variant {test.winner} outperformed by {getImprovement()}% in click-through rate</p>
-                  )}
-                </div>
-              </div>
-            )} */}
+
           </div>
         </div>
 

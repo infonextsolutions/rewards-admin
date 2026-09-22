@@ -195,10 +195,10 @@ const handleReset = () => {
       startDate: "",
       endDate: "",
       vipMultipliers: {
-        
+
       },
       spinsPerTier: {
-        
+
       },
       ...settings,
     });
@@ -313,7 +313,7 @@ const handleReset = () => {
                         <div key={tier} className="relative">
                           <label className="block text-xs text-gray-500 mb-1 capitalize">
                             {tier}
-                            
+
                           </label>
                           <input
                             type="number"
@@ -338,41 +338,6 @@ const handleReset = () => {
                   </div>
                 </div>
 
-                {/* <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bonus Spins Per Day (from VIP membership)
-                  </label>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {["free", "bronze", "gold", "platinum"].map((tier) => {
-                      const vipTierData = vipTiers.find(t => t.tierId?.toLowerCase() === tier);
-                      const vipBonusSpins = vipTierData?.features?.bonusSpins || 0;
-                      return (
-                        <div key={tier} className="relative">
-                          <label className="block text-xs text-gray-500 mb-1 capitalize">
-                            {tier}
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={formData.spinsPerTier?.[tier] || 0}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value) || 0;
-                              setFormData((prev) => ({
-                                ...prev,
-                                spinsPerTier: {
-                                  ...prev.spinsPerTier,
-                                  [tier]: value,
-                                },
-                              }));
-                            }}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div> */}
               </div>
             </div>
           </div>
@@ -404,13 +369,13 @@ const handleReset = () => {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
               <p className="text-xs text-blue-800">
                 <strong>How it works:</strong> When a user wins a reward, the
-                reward amount is multiplied by their tier's multiplier. For
+                reward amount is multiplied by their tier&apos;s multiplier. For
                 example, if a Bronze user wins 100 coins with a 1.0x multiplier,
                 they receive 100 coins. If a Gold user wins 100 coins with a
                 1.5x multiplier, they receive 150 coins.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {["free", "bronze", "gold", "platinum"].map((tier) => {
                 const vipTierData = vipTiers.find(t => t.tierId?.toLowerCase() === tier);
@@ -420,7 +385,7 @@ const handleReset = () => {
                   <div key={tier} className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
                       {tier} Multiplier 
-                      
+
                     </label>
                     <input
                       type="number"
@@ -494,8 +459,6 @@ Set a time window when the spin wheel will be available to
               </div>
             )}
           </div>
-
-          
 
           {Object.keys(errors).length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">

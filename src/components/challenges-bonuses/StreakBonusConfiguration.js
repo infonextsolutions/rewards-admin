@@ -342,9 +342,7 @@ export default function StreakBonusConfiguration({
                   </h3>
                   <div className="flex items-center">
                     <label className="flex items-center cursor-pointer">
-                      {/* <span className="mr-3 text-sm text-gray-700">
-                        {milestone.active ? "Active" : "Inactive"}
-                      </span> */}
+
                       <div className="relative">
                         <input
                           type="checkbox"
@@ -358,17 +356,7 @@ export default function StreakBonusConfiguration({
                           }
                           className="sr-only"
                         />
-                        {/* <div
-                          className={`block w-14 h-8 rounded-full transition-colors duration-200 ease-in-out ${
-                            milestone.active ? 'bg-emerald-600' : 'bg-gray-300'
-                          }`}
-                        >
-                          <div
-                            className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-200 ease-in-out ${
-                              milestone.active ? 'transform translate-x-6' : ''
-                            }`}
-                          />
-                        </div> */}
+
                       </div>
                     </label>
                   </div>

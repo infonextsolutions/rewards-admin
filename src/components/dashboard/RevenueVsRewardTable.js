@@ -32,7 +32,7 @@ const RevenueVsRewardTable = memo(
           const marginPercent =
             game.marginPercent ||
             (revenue > 0 ? (marginDollar / revenue) * 100 : 0);
-          
+
           // Use generic retention field (supports any retention day)
           const retention = game.retention || game.d7Retention || 0;
 
@@ -81,19 +81,6 @@ const RevenueVsRewardTable = memo(
       return currencyFormatter.format(amount);
     };
 
-    // EXCLUDED: Red/green visual margin indicators & automatic underperformer flagging not supported per requirements
-    // const getMarginColor = (percent) => {
-    //   if (percent >= 75) return 'text-green-600 bg-green-50';
-    //   if (percent >= 60) return 'text-yellow-600 bg-yellow-50';
-    //   return 'text-red-600 bg-red-50';
-    // };
-    //
-    // const getRetentionColor = (percent) => {
-    //   if (percent >= 50) return 'text-green-600';
-    //   if (percent >= 35) return 'text-yellow-600';
-    //   return 'text-red-600';
-    // };
-
     const getMarginColor = (percent) => {
       return "text-gray-600 bg-gray-50";
     };
@@ -136,7 +123,7 @@ const RevenueVsRewardTable = memo(
                 Profitability analysis by game performance
               </p>
             </div>
-            
+
             {/* Retention Day Dropdown */}
             <div className="relative">
               <label className="block text-xs font-medium text-gray-700 mb-1">

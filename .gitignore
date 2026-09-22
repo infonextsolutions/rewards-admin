@@ -1,5 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Local hidden directories; retain shared workflow and package-manager files
+/.*/
+!/.github/
+!/.yarn/
+
 # dependencies
 /node_modules
 /.pnp
@@ -30,8 +35,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# Local configuration; keep the credential-free setup template
 .env*
+!.env.example
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+
+# Local credentials and diagnostic output
+*.key
+*.p12
+*.pfx
+*.log
+/playwright-report/
+/test-results/
 
 # vercel
 .vercel

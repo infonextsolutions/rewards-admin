@@ -1,19 +1,6 @@
 import React from "react";
 
 export const ActivitySummarySection = ({ user }) => {
-  // Debug: Log user data received by component
-  console.log("🟡 [ActivitySummary] User data received:", user);
-  console.log("🟡 [ActivitySummary] Redemption data:", {
-    redemptionsMade: user?.redemptionsMade,
-    redemptionCount: user?.redemptionCount,
-    redemptionBreakdown: user?.redemptionBreakdown,
-    wallet: user?.wallet,
-  });
-  console.log("🟡 [ActivitySummary] Spin data:", {
-    spinUsage: user?.spinUsage,
-    spinCount: user?.spinCount,
-    lastSpinAt: user?.lastSpinAt,
-  });
 
   // Helper function to get redemption data with proper breakdown
   const getRedemptionData = () => {
@@ -32,16 +19,6 @@ export const ActivitySummarySection = ({ user }) => {
         ? user.redemptionCount
         : null) ||
       0;
-
-    console.log(
-      "🟡 [ActivitySummary] getRedemptionData - totalCount calculation:",
-      {
-        redemptionBreakdownCount: redemptionBreakdown?.count,
-        redemptionsMade: user?.redemptionsMade,
-        redemptionCount: user?.redemptionCount,
-        finalTotalCount: totalCount,
-      }
-    );
 
     // If no redemptions, return early
     if (totalCount === 0 || totalCount === null) {
@@ -258,13 +235,6 @@ export const ActivitySummarySection = ({ user }) => {
             ? user.wallet.spinCount
             : null) ||
           0;
-
-        console.log("🟡 [ActivitySummary] Spin count calculation:", {
-          spinUsage: user?.spinUsage,
-          spinCount: user?.spinCount,
-          walletSpinCount: user?.wallet?.spinCount,
-          finalSpinCount: spinCount,
-        });
 
         if (spinCount > 0) {
           return `${spinCount} spin${spinCount !== 1 ? "s" : ""} used`;

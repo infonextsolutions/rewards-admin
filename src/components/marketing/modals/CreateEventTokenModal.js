@@ -206,34 +206,6 @@ export default function CreateEventTokenModal({
           </div>
 
           {/* Category */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
-            <select
-              value={formData.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              disabled={categoriesLoading}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#00a389] ${
-                errors.category ? "border-red-500" : "border-gray-300"
-              } ${categoriesLoading ? "bg-gray-100 cursor-not-allowed" : ""}`}
-            >
-              <option value="">
-                {categoriesLoading
-                  ? "Loading categories..."
-                  : "Select a category"}
-              </option>
-              {Array.isArray(fetchedCategories) &&
-                fetchedCategories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-            </select>
-            {errors.category && (
-              <p className="mt-1 text-sm text-red-600">{errors.category}</p>
-            )}
-          </div> */}
 
           {/* Checkboxes */}
           <div className="space-y-3">

@@ -59,8 +59,6 @@ export default function NonGamingOffers() {
             countryFilter !== "US" && { country: countryFilter }),
         });
 
-
-
         if (thisFetchId !== fetchIdRef.current) return; // stale response, ignore
 
         if (response.success && Array.isArray(response.data)) {
@@ -157,8 +155,6 @@ export default function NonGamingOffers() {
             countryFilter !== "US" && { country: countryFilter }),
         });
 
-
-
         if (thisFetchId !== fetchIdRef.current) return;
 
         if (!response.success) {
@@ -253,8 +249,6 @@ export default function NonGamingOffers() {
             countryFilter !== "US" && { country: countryFilter }),
         });
 
-
-
         if (thisFetchId !== fetchIdRef.current) return;
 
         if (response.success && Array.isArray(response.data)) {
@@ -316,8 +310,6 @@ export default function NonGamingOffers() {
             countryFilter !== "US" && { country: countryFilter }),
           ...(devices && { devices: devices }),
         });
-
-
 
         if (thisFetchId !== fetchIdRef.current) return;
 
@@ -435,8 +427,6 @@ export default function NonGamingOffers() {
 
         if (thisFetchId !== fetchIdRef.current) return;
 
-
-
         if (response.success && response.categorized) {
           const magicReceipts = response.categorized.magicReceipts || [];
           const mappedOffers = magicReceipts.map((offer) => ({
@@ -526,8 +516,6 @@ export default function NonGamingOffers() {
         });
 
         if (thisFetchId !== fetchIdRef.current) return;
-
-
 
         if (response.success && response.categorized) {
           const shoppingOffers = response.categorized.shopping || [];
@@ -636,8 +624,6 @@ export default function NonGamingOffers() {
         });
 
         if (thisFetchId !== fetchIdRef.current) return;
-
-
 
         if (response.success && response.data) {
           // Admin route returns: { data: offers[], categorized: {}, breakdown: {}, total: number, estimatedEarnings: number }
@@ -854,8 +840,6 @@ export default function NonGamingOffers() {
     const offerId = offer.id;
     const isCurrentlyConfigured = isConfigured(offerId);
 
-
-
     setTogglingOffers((prev) => new Set(prev).add(offerId));
 
     try {
@@ -867,7 +851,7 @@ export default function NonGamingOffers() {
           const response = await surveyAPIs.deleteConfiguredOffer(
             configuredOffer.id,
           );
-  
+
           toast.success("Offer removed successfully");
         } else {
           console.warn("No configured offer ID found for:", offerId);
@@ -1540,168 +1524,15 @@ export default function NonGamingOffers() {
             Export
           </button>
           {/* COMMENTED OUT: Sync Selected button (checkboxes are hidden) */}
-          {/* {selectedOffers.length > 0 && (
-            <button
-              onClick={handleSyncSelected}
-              disabled={syncing}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                />
-              </svg>
-              <span>Sync Selected ({selectedOffers.length})</span>
-            </button>
-          )} */}
+
           {/* COMMENTED OUT: Sync All Offers button */}
-          {/* <button
-            onClick={handleSyncAll}
-            disabled={syncing}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-              />
-            </svg>
-            <span>
-              {syncing
-                ? "Syncing..."
-                : `Sync All ${
-                    typeFilter === "all"
-                      ? "Offers"
-                      : typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)
-                  }`}
-            </span>
-          </button> */}
+
           {/* COMMENTED OUT: Configured button */}
-          {/* <button
-            onClick={() => setShowConfigured(!showConfigured)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center space-x-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>Configured ({configuredOffers.length})</span>
-          </button> */}
+
         </div>
       </div>
 
       {/* COMMENTED OUT: Configured Offers Section */}
-      {/* {showConfigured && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Configured Offers (Shown to Users)
-            </h3>
-            <span className="text-sm text-gray-600">
-              {configuredOffers.length} offers configured
-            </span>
-          </div>
-          {configuredOffers.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              No offers configured yet. Select and sync offers from the list
-              below.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Offer
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Reward
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Synced
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {configuredOffers.map((offer) => (
-                    <tr key={offer.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          {offer.title || "Untitled"}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {offer.description || ""}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                          {typeof offer.offerType === "string"
-                            ? offer.offerType
-                            : "survey"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {typeof offer.coinReward === "number"
-                          ? offer.coinReward
-                          : 0}{" "}
-                        coins
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            offer.status === "live"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {typeof offer.status === "string"
-                            ? offer.status
-                            : "paused"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">
-                        {offer.createdAt
-                          ? new Date(offer.createdAt).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )} */}
 
       {/* Filters */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -1851,17 +1682,7 @@ export default function NonGamingOffers() {
                 <thead className="bg-gray-50">
                   <tr>
                     {/* HIDDEN: Checkbox column */}
-                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <input
-                        type="checkbox"
-                        checked={
-                          selectedOffers.length === offers.length &&
-                          offers.length > 0
-                        }
-                        onChange={handleSelectAll}
-                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                    </th> */}
+
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {typeFilter === "cashback"
                         ? "Merchant"
@@ -1871,14 +1692,7 @@ export default function NonGamingOffers() {
                           : "Merchant/Offer"}
                     </th>
                     {/* HIDDEN: Points column */}
-                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {typeFilter === "cashback"
-                        ? "Points / Cashback"
-                        : typeFilter === "shopping" ||
-                            typeFilter === "magic-receipts"
-                          ? "Points"
-                          : "Reward"}
-                    </th> */}
+
                     {(sdkFilter === "everflow" || sdkFilter === "affise") && (
                       <>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -2009,58 +1823,7 @@ export default function NonGamingOffers() {
                             </div>
                           </td>
                           {/* HIDDEN: Points column */}
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
-                            {isCashback &&
-                            (offer.cashback || offer.original_cashback) &&
-                            parseFloat(
-                              offer.cashback || offer.original_cashback,
-                            ) > 0 ? (
-                              <div className="text-sm">
-                                <span className="font-semibold text-emerald-600">
-                                  {offer.cashback || offer.original_cashback}%
-                                </span>
-                                {offer.currency && (
-                                  <span className="text-xs text-gray-500 ml-1">
-                                    {offer.currency}
-                                  </span>
-                                )}
-                                {offer.up_to && (
-                                  <span className="text-xs text-gray-500 ml-1">
-                                    (up to)
-                                  </span>
-                                )}
-                              </div>
-                            ) : (isCashback &&
-                                (offer.total_points ||
-                                  offer.events?.[0]?.points)) ||
-                              ((isShopping || isMagicReceipt) &&
-                                offer.total_points) ? (
-                              <div className="text-sm">
-                                <span className="font-semibold text-emerald-600">
-                                  {parseInt(
-                                    offer.total_points ||
-                                      offer.events?.[0]?.points ||
-                                      0,
-                                  ).toLocaleString()}{" "}
-                                  pts
-                                </span>
-                              </div>
-                            ) : offer.sdkProvider === "affise" ||
-                              offer.sdkProvider === "everflow" ? (
-                              <div className="text-sm">
-                                <span className="font-semibold text-gray-700">
-                                  {offer.payout_type || offer.type || "—"}
-                                </span>
-                                {offer.payment_goal && (
-                                  <span className="text-xs text-gray-500 ml-1">
-                                    (goal: {offer.payment_goal})
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">N/A</span>
-                            )}
-                          </td> */}
+
                           {(sdkFilter === "everflow" ||
                             sdkFilter === "affise") && (
                             <>

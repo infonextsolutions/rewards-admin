@@ -84,18 +84,10 @@ export const progressionRulesAPI = {
         isActive: ruleData.isActive !== undefined ? ruleData.isActive : true,
       };
 
-      console.log("Creating progression rule - API call:", {
-        url: `/admin/game-offers/progression-rules/game/${gameId}`,
-        payload: apiPayload,
-        gameId,
-      });
-
       const response = await apiClient.post(
         `/admin/game-offers/progression-rules/game/${gameId}`,
         apiPayload
       );
-
-      console.log("Progression rule created successfully:", response.data);
 
       // Transform response back to frontend format
       const rule = response.data.data;

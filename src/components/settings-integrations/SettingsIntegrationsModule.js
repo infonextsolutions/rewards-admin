@@ -3,8 +3,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSettingsIntegrations } from "../../hooks/useSettingsIntegrations";
 import SDKIntegrationPanel from "./SDKIntegrationPanel";
-import NotificationConfigPanel from "./NotificationConfigPanel";
-import ApiTestPanel from "./ApiTestPanel";
 
 const TABS = [
   {
@@ -13,19 +11,7 @@ const TABS = [
     icon: "🔌",
     description: "Manage third-party SDK credentials and test connections",
   },
-  {
-    id: "api-test",
-    label: "API Integration Test",
-    icon: "🧪",
-    description: "Test API integration endpoints and verify CRUD operations",
-  },
-  // EXCLUDED: Notification & A/B Testing functionality not supported per requirements
-  // {
-  //   id: 'notifications',
-  //   label: 'Notification & A/B Testing',
-  //   icon: '🔔',
-  //   description: 'Configure alerts, recipients and Firebase features'
-  // }
+
 ];
 
 export default function SettingsIntegrationsModule() {
@@ -34,24 +20,18 @@ export default function SettingsIntegrationsModule() {
 
   const {
     integrations,
-    notificationSettings,
-    firebaseFeatures,
     stats,
     loading,
     error,
     categories,
     statuses,
     availableIntegrations,
-    triggerEvents,
-    notificationRoles,
     filterIntegrations,
     createIntegration,
     updateIntegration,
     deleteIntegration,
     testConnection,
     toggleIntegrationStatus,
-    updateNotificationSettings,
-    toggleFirebaseFeature,
     clearError,
   } = useSettingsIntegrations();
 
@@ -90,22 +70,7 @@ export default function SettingsIntegrationsModule() {
             onShowNotification={showNotification}
           />
         );
-      case "api-test":
-        return <ApiTestPanel />;
-      // EXCLUDED: Notification configuration not supported per requirements
-      // case 'notifications':
-      //   return (
-      //     <NotificationConfigPanel
-      //       notificationSettings={notificationSettings}
-      //       firebaseFeatures={firebaseFeatures}
-      //       triggerEvents={triggerEvents}
-      //       notificationRoles={notificationRoles}
-      //       loading={loading}
-      //       onUpdateSettings={updateNotificationSettings}
-      //       onToggleFirebaseFeature={toggleFirebaseFeature}
-      //       onShowNotification={showNotification}
-      //     />
-      //   );
+
       default:
         return null;
     }
@@ -119,8 +84,7 @@ export default function SettingsIntegrationsModule() {
           Settings & Integrations
         </h1>
         <p className="text-gray-600 mt-2">
-          Manage third-party SDK credentials, test connections, configure
-          notifications, and control Firebase features
+          Manage third-party SDK credentials and test connections
         </p>
       </div>
 
@@ -244,33 +208,6 @@ export default function SettingsIntegrationsModule() {
 
         {/* Tab Content */}
         <div className="p-6">
-          {/* {loading && (
-            <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-40">
-              <div className="bg-white rounded-lg p-6 flex items-center space-x-3">
-                <svg
-                  className="animate-spin h-5 w-5 text-emerald-600"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span className="text-gray-700">Processing...</span>
-              </div>
-            </div>
-          )} */}
 
           {renderTabContent()}
         </div>

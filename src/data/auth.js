@@ -1,9 +1,5 @@
-// Authentication API service
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
+import { API_BASE } from "../lib/apiClient";
 
-// const API_BASE = "https://rewardsuatapi.hireagent.co/api";
-// git stat
 export const authAPI = {
   // Admin login
   async login(credentials) {

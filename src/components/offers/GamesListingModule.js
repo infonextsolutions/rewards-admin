@@ -393,7 +393,7 @@ export default function GamesListingModule() {
   };
 
   const handleSegmentSave = (segmentData) => {
-    console.log("Segment data saved:", segmentData);
+
     // Handle segment save logic here
   };
 
@@ -646,13 +646,6 @@ export default function GamesListingModule() {
         return (
           <div className="flex items-center justify-center space-x-2">
             {/* View button - commented out */}
-            {/* <button
-              onClick={() => handleViewGame(game)}
-              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-              title="View game details"
-            >
-              <EyeIcon className="h-4 w-4" />
-            </button> */}
 
             {/* Edit button */}
             <button
@@ -757,21 +750,6 @@ export default function GamesListingModule() {
               </div>
 
               {/* Country filter - hidden */}
-              {/* <select
-                value={filters.country}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, country: e.target.value }))
-                }
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-                disabled={masterDataLoading}
-              >
-                <option value="all">All Countries</option>
-                {masterCountries.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} - {c.name}
-                  </option>
-                ))}
-              </select> */}
 
               <select
                 value={filters.sdk}
@@ -792,17 +770,6 @@ export default function GamesListingModule() {
               </select>
 
               {/* Ad Games filter - hidden */}
-              {/* <select
-                value={filters.adGame}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, adGame: e.target.value }))
-                }
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-              >
-                <option value="all">Ad Games</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select> */}
 
               <select
                 value={filters.status}

@@ -130,7 +130,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   // Fetch marketing channels and campaigns from backend
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const fetchData = async () => {
       setLoadingChannels(true);
       try {
@@ -138,7 +138,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         const channelsData = channelsRes.data;
         if (channelsData.success && channelsData.data) {
           setMarketingChannels(channelsData.data);
-          console.log('✅ Marketing channels loaded:', channelsData.data);
+
         }
       } catch (error) {
         console.error('❌ Error fetching marketing channels:', error);
@@ -154,7 +154,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
         const campaignsData = campaignsRes.data;
         if (campaignsData.success && campaignsData.data) {
           setCampaigns(campaignsData.data);
-          console.log('✅ Campaigns loaded:', campaignsData.data);
+
         }
       } catch (error) {
         console.error('❌ Error fetching campaigns:', error);
@@ -255,20 +255,6 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       if (gamePlatform === "ios" || gamePlatform === "android") {
         setPlatform(gamePlatform);
       }
-
-      // Debug: Log game data to help troubleshoot
-      console.log("Loading game data for edit:", {
-        gameId: game.gameId || game.id,
-        ageGroups: game.ageGroups,
-        segmentsAgeGroups: game.segments?.ageGroups,
-        gender: game.gender,
-        segmentsGender: game.segments?.gender,
-        marketingChannel: game.marketingChannel,
-        segmentsMarketingChannel: game.segments?.marketingChannel,
-        campaignName: game.campaignName,
-        segmentsCampaignName: game.segments?.campaignName,
-        country: game.country || game.segments?.country || "", // Country for Bitlabs games
-      });
 
       setFormData({
         gameId: game.gameId || game.id || "",
@@ -483,7 +469,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
           const games = Array.isArray(response.data.data)
             ? response.data.data
             : [response.data.data];
-          console.log("Fetched games:", games);
+
           // API already filters by device_platform, no need to filter again
           setGamesList(games);
         } else {
@@ -582,11 +568,6 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
 
       // Convert dollars to coins using admin-configured conversion rate
       const coins = Math.round(dollarAmount * coinsPerDollar);
-
-      console.log("Selected game:", selectedGame);
-      console.log("Amount field from API:", selectedGame.amount);
-      console.log("Dollar amount:", dollarAmount);
-      console.log("Calculated coins:", coins);
 
       // Store the complete third-party API response with all original fields
       // This preserves the exact structure and all key names as received from the API
@@ -912,21 +893,6 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 )}
 
                 {/* XPTR Rules - Hidden: Field not used anywhere in app logic */}
-                {/* <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    XPTR Rules *
-                  </label>
-                  <textarea
-                    value={formData.xptrRules}
-                    onChange={(e) =>
-                      handleInputChange("xptrRules", e.target.value)
-                    }
-                    placeholder="Enter XP tier rules (e.g., Complete 3 surveys worth 100+ points each)"
-                    rows={2}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                    required
-                  />
-                </div> */}
 
                 {/* XP Reward - Hidden in edit modal */}
                 <div>
@@ -1008,23 +974,6 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 </div>
 
                 {/* Default Task Count - Hidden: Not used in app logic */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Default Task Count
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.taskCount}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "taskCount",
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                    placeholder="Enter task count"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  />
-                </div> */}
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1160,65 +1109,11 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                 </div>
 
                 {/* Game Genre - Hidden: Fields do not populate correct values and do not map to any logic in app */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Game Genre
-                  </label>
-                  <select
-                    value={formData.metadata.genre}
-                    onChange={(e) =>
-                      handleInputChange("metadata.genre", e.target.value)
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  >
-                    {GAME_GENRES.map((genre) => (
-                      <option key={genre} value={genre}>
-                        {genre.charAt(0).toUpperCase() + genre.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div> */}
 
                 {/* Difficulty - Hidden: Fields do not populate correct values and do not map to any logic in app */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Difficulty
-                  </label>
-                  <select
-                    value={formData.metadata.difficulty}
-                    onChange={(e) =>
-                      handleInputChange("metadata.difficulty", e.target.value)
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  >
-                    {GAME_DIFFICULTIES.map((difficulty) => (
-                      <option key={difficulty} value={difficulty}>
-                        {difficulty.charAt(0).toUpperCase() +
-                          difficulty.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div> */}
 
                 {/* Rating - Hidden: Fields do not populate correct values and do not map to any logic in app */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Rating (1-5)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={formData.metadata.rating}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "metadata.rating",
-                        parseInt(e.target.value) || 3
-                      )
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                  />
-                </div> */}
+
               </div>
 
               {/* Target Countries - Hidden in edit modal */}
@@ -1238,19 +1133,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
               </div>
 
               {/* Default Fallback Game checkbox - commented out */}
-              {/* <div className="flex items-center mt-4">
-                <input
-                  type="checkbox"
-                  checked={formData.fallbackGame}
-                  onChange={(e) =>
-                    handleInputChange("fallbackGame", e.target.checked)
-                  }
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  Default Fallback Game
-                </span>
-              </div> */}
+
             </div>
 
             {/* SECTION 2: Targeting & Segmentation */}
@@ -1510,7 +1393,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                           totalUSD = events ? events.reduce((sum, e) => sum + (parseFloat(e.payout) || 0), 0) : 0;
                         }
                         return Math.round(totalUSD * coinsPerDollar).toLocaleString();
-                      })()} coins. Each task's coins = (task points / {formData.thirdPartyGameData.total_points?.toLocaleString() || 0}) × total coins. Install task has no coin reward (CPI payout goes to admin).
+                      })()} coins. Each task&apos;s coins = (task points / {formData.thirdPartyGameData.total_points?.toLocaleString() || 0}) × total coins. Install task has no coin reward (CPI payout goes to admin).
                     </div>
                   )}
 
@@ -1521,7 +1404,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                          <tr>
                            <th className="text-left p-2 border">#</th>
                            <th className="text-left p-2 border">Task Name</th>
-                           {/* <th className="text-left p-2 border">Reward (USD)</th> */}
+
                            <th className="text-left p-2 border">Coins</th>
                            <th className="text-left p-2 border">XP</th>
                            <th className="text-left p-2 border">Type</th>
@@ -1550,9 +1433,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                               <tr key={event.id || index} className="hover:bg-gray-50">
                                 <td className="p-2 border font-medium">{index + 1}</td>
                                 <td className="p-2 border">{event.name}</td>
-                                {/* <td className="p-2 border text-green-700 font-semibold">
-                                  ${parseFloat(event.payout || 0).toFixed(2)}
-                                </td> */}
+
                                 <td className="p-2 border text-yellow-700 font-medium">
                                   {eventCoins > 0
                                     ? eventCoins.toLocaleString()
@@ -1589,9 +1470,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                          <tr key={goal.goal_id || index} className="hover:bg-gray-50">
                             <td className="p-2 border font-medium">{goal.position || index + 1}</td>
                             <td className="p-2 border">{goal.text}</td>
-                            {/* <td className="p-2 border text-green-700 font-semibold">
-                              ${parseFloat(goal.amount || 0).toFixed(2)}
-                            </td> */}
+
                              <td className="p-2 border text-yellow-700">
                               {Math.round((parseFloat(goal.amount) || 0) * coinsPerDollar).toLocaleString()}
                             </td>

@@ -156,16 +156,6 @@ export default function ManageSegmentsModal({ isOpen, onClose, offer, onSave }) 
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-4">Select Segments to Activate/Deactivate</h4>
 
-              {/* {offer && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-700">Offer:</span>
-                    <span className="ml-2 text-gray-900">{offer.offerName}</span>
-                    <span className="ml-2 text-gray-600">({offer.sdkOffer})</span>
-                  </div>
-                </div>
-              )} */}
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Age Groups */}
                 <div>

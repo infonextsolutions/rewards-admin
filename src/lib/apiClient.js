@@ -6,7 +6,6 @@ import { reportApiFailure } from "./errorTracking";
 // only a local-development fallback and must never be relied on in a deploy.
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://rewardsuatapi.hireagent.co/api";
-// const API_BASE = "https://rewardsuatapi.hireagent.co/api";
 
 // Create axios instance with default config
 const apiClient = axios.create({

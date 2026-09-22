@@ -14,7 +14,6 @@ import PreviewModal from "./components/modals/PreviewModal";
 import ViewDetailsModal from "./components/modals/ViewDetailsModal";
 import DeleteModal from "./components/modals/DeleteModal";
 
-
 // Main Component
 export default function CreativeManagementPage() {
   const { searchTerm, registerSearchHandler } = useSearch();
@@ -71,14 +70,8 @@ export default function CreativeManagementPage() {
       creative.placement.toLowerCase().includes(searchTerm.toLowerCase()) ||
       creative.segment.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // EXCLUDED: Placement, PID, and Segment filtering disabled per requirements
-    // const matchesPlacement = !filters.placement || filters.placement === "All Placements" || creative.placement === filters.placement;
-    // const matchesPID = !filters.pid || filters.pid === "All PIDs" || creative.campaignPID === filters.pid;
-    // const matchesSegment = !filters.segment || filters.segment === "All Segments" ||
-    //   creative.segment.split(', ').some(seg => seg.trim() === filters.segment);
     const matchesStatus = !filters.status || filters.status === "All Status" || creative.status === filters.status;
 
-    // EXCLUDED: Only use search and status filtering per requirements
     return matchesSearch && matchesStatus;
   });
 
@@ -236,7 +229,6 @@ export default function CreativeManagementPage() {
         </div>
       )}
 
-      {/* EXCLUDED: Campaign Tracker functionality not supported per requirements - only show upload table */}
       {!loading && !error && (
         <UploadTable
           data={paginatedData}
@@ -250,31 +242,6 @@ export default function CreativeManagementPage() {
           onPageChange={handlePageChange}
         />
       )}
-
-      {/* EXCLUDED: TrackerTable functionality removed per requirements
-      {activeTab === "upload" ? (
-        <UploadTable
-          data={paginatedData}
-          onEdit={(creative) => openModal('addEdit', creative)}
-          onDelete={(creative) => openModal('delete', creative)}
-          onToggle={handleToggle}
-          onPreview={(creative) => openModal('preview', creative)}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          onPageChange={handlePageChange}
-        />
-      ) : (
-        <TrackerTable
-          data={paginatedData}
-          onView={(creative) => openModal('view', creative)}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          onPageChange={handlePageChange}
-        />
-      )}
-      */}
 
       {/* Modals */}
       <AddEditCreativeModal

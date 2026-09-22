@@ -394,18 +394,7 @@ export default function GameDisplayRulesModule() {
               </select>
 
               {/* Milestone filtering commented out */}
-              {/* <select
-                value={filterMilestone}
-                onChange={(e) => setFilterMilestone(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="all">All Milestones</option>
-                {milestoneOptions.map((milestone) => (
-                  <option key={milestone} value={milestone}>
-                    {milestone}
-                  </option>
-                ))}
-              </select> */}
+
             </div>
           </div>
         </div>
@@ -416,16 +405,12 @@ export default function GameDisplayRulesModule() {
             <thead className="bg-gray-50">
               <tr>
                 {/* Priority column hidden */}
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Priority
-                </th> */}
+
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rule Name
                 </th>
                 {/* Milestone column hidden */}
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Milestone
-                </th> */}
+
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Target Segment
                 </th>
@@ -484,11 +469,7 @@ export default function GameDisplayRulesModule() {
                 filteredRules.map((rule) => (
                   <tr key={rule.id} className="hover:bg-gray-50">
                     {/* Priority column hidden */}
-                    {/* <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
-                        {rule.priority}
-                      </div>
-                    </td> */}
+
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -512,19 +493,7 @@ export default function GameDisplayRulesModule() {
                       </div>
                     </td>
                     {/* Milestone column hidden */}
-                    {/* <td className="px-6 py-4">
-                      <div>
-                        <MilestoneBadge milestone={rule.milestone} />
-                        {rule.userMilestones &&
-                          rule.userMilestones.length > 0 && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {rule.userMilestones
-                                .map((m) => m.replace(/_/g, " "))
-                                .join(", ")}
-                            </div>
-                          )}
-                      </div>
-                    </td> */}
+
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-xs text-gray-600">
                         {(() => {

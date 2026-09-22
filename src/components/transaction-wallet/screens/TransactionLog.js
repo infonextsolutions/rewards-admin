@@ -531,15 +531,11 @@ export default function TransactionLog({ onSneakPeek }) {
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Created On
                 </th>
-                {/* <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Approved On
-                </th> */}
+
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Status
                 </th>
-                {/* <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Approval
-                </th> */}
+
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -601,46 +597,13 @@ export default function TransactionLog({ onSneakPeek }) {
                         {transaction.createdOn}
                       </span>
                     </td>
-                    {/* <td className="px-6 py-4 text-center">
-                    <span className="text-gray-900">{transaction.approvedOn}</span>
-                  </td> */}
+
                     <td className="px-6 py-4 whitespace-nowrap align-middle text-center">
                       <div className="flex items-center justify-center">
                         {getStatusBadge(transaction.status)}
                       </div>
                     </td>
-                    {/* <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {transaction.approval === 'Yes' ? (
-                        <div className="flex items-center">
-                          <CheckIcon className="w-5 h-5 text-green-500" />
-                          <span className="ml-2 text-sm text-gray-600">Approved</span>
-                        </div>
-                      ) : transaction.status === 'Pending' ? (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleApprovalClick(transaction, 'approve')}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 hover:bg-green-200 text-green-600 hover:text-green-700 transition-colors"
-                            title="Approve transaction"
-                          >
-                            <CheckIcon className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleApprovalClick(transaction, 'reject')}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 transition-colors"
-                            title="Reject transaction"
-                          >
-                            <XMarkIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center">
-                          <XMarkIcon className="w-5 h-5 text-red-500" />
-                          <span className="ml-2 text-sm text-gray-600">Rejected</span>
-                        </div>
-                      )}
-                    </div>
-                  </td> */}
+
                   </tr>
                 ))
               )}

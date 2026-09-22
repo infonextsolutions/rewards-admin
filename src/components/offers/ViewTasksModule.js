@@ -129,7 +129,7 @@ export default function ViewTasksModule() {
   // Render field value with special handling for images and URLs
   const renderFieldValue = (key, value) => {
     if (key === 'image' || key === 'square_image' || key === 'large_image') {
-      console.log(value, 'value')
+
       return (
         <div className='mt-2'>
           <img

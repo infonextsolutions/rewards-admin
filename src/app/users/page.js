@@ -118,16 +118,6 @@ export default function UsersPage() {
     fetchUniqueMarketingChannels();
   }, []); // Only fetch once on component mount
 
-  // Console log users data from backend
-  useEffect(() => {
-    console.log("🟡 Users Page - Users data:", users);
-    console.log("🟡 Users Page - First user example:", users?.[0]);
-    if (users?.[0]) {
-      console.log("🟡 Users Page - User ID field:", users[0].id);
-      console.log("🟡 Users Page - User userId field:", users[0].userId);
-    }
-  }, [users]);
-
   // Apply filters when search term or filters change
   useEffect(() => {
     applyFilters(localSearchTerm, selectedFilters);
@@ -347,11 +337,6 @@ export default function UsersPage() {
       />
 
       {/* PHASE 2: Bulk Actions temporarily hidden */}
-      {/* <BulkActionsBar
-        selectedCount={selectedUsers.length}
-        onBulkAction={handleBulkAction}
-        onClearSelection={() => setSelectedUsers([])}
-      /> */}
 
       <UsersResultsSummary
         startIndex={(pagination.currentPage - 1) * pagination.itemsPerPage}

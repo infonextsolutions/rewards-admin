@@ -21,13 +21,13 @@ export const useRemoteConfig = () => {
         const matchesType = !filters.type || config.type === filters.type;
         const matchesStatus = !filters.status || config.status === filters.status;
         const matchesSegment = !filters.segment || config.segment === filters.segment;
-        
+
         let matchesDateRange = true;
         if (filters.dateRange) {
           const configDate = new Date(config.updatedAt);
           const now = new Date();
           const daysDiff = Math.floor((now - configDate) / (1000 * 60 * 60 * 24));
-          
+
           switch (filters.dateRange) {
             case 'Last 7 days':
               matchesDateRange = daysDiff <= 7;
@@ -42,7 +42,7 @@ export const useRemoteConfig = () => {
               matchesDateRange = true;
           }
         }
-        
+
         return matchesSearch && matchesType && matchesStatus && 
                matchesSegment && matchesDateRange;
       });
@@ -58,7 +58,7 @@ export const useRemoteConfig = () => {
 
         const matchesSegment = !filters.segment || pid.segment === filters.segment;
         const matchesStatus = !filters.status || pid.status === filters.status;
-        
+
         return matchesSearch && matchesSegment && matchesStatus;
       });
     };
@@ -67,7 +67,7 @@ export const useRemoteConfig = () => {
   const createConfig = async (configData) => {
     setLoading(true);
     try {
-      console.log('Creating config:', configData);
+
       await new Promise(resolve => setTimeout(resolve, 500));
       setLoading(false);
       return { success: true, configId: `RC-${Date.now()}` };
@@ -81,7 +81,7 @@ export const useRemoteConfig = () => {
   const updateConfig = async (configId, configData) => {
     setLoading(true);
     try {
-      console.log('Updating config:', configId, configData);
+
       await new Promise(resolve => setTimeout(resolve, 500));
       setLoading(false);
       return { success: true };
@@ -95,7 +95,7 @@ export const useRemoteConfig = () => {
   const deleteConfig = async (configId) => {
     setLoading(true);
     try {
-      console.log('Deleting config:', configId);
+
       await new Promise(resolve => setTimeout(resolve, 500));
       setLoading(false);
       return { success: true };
@@ -109,7 +109,7 @@ export const useRemoteConfig = () => {
   const updatePidReward = async (pidId, rewardData) => {
     setLoading(true);
     try {
-      console.log('Updating PID reward:', pidId, rewardData);
+
       await new Promise(resolve => setTimeout(resolve, 500));
       setLoading(false);
       return { success: true };
@@ -127,7 +127,7 @@ export const useRemoteConfig = () => {
   const toggleConfigStatus = async (configId) => {
     setLoading(true);
     try {
-      console.log('Toggling config status:', configId);
+
       await new Promise(resolve => setTimeout(resolve, 300));
       setLoading(false);
       return { success: true };

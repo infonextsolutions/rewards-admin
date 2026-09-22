@@ -492,7 +492,7 @@ export default function GamePreviewModal({ isOpen, onClose, game, coinsPerDollar
                       </div>
                     </div>
                     <p className="text-xs text-blue-600 mt-2">
-                      Each goal's coins = goal amount × {coinsPerDollar}. Install goal ($0) has no coin reward (CPI payout goes to admin).
+                      Each goal&apos;s coins = goal amount × {coinsPerDollar}. Install goal ($0) has no coin reward (CPI payout goes to admin).
                     </p>
                   </div>
                   <div className="space-y-3">

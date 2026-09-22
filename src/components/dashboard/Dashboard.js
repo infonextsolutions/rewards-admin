@@ -425,17 +425,7 @@ const Dashboard = () => {
         </div>
 
         {/* ADM-DR-029 FIX: Right Column - System Alerts Panel Hidden */}
-        {/* <div className="xl:col-span-1">
-          <AlertsPanel
-            alerts={alertsData}
-            loading={loadingStates.alerts || loading}
-            onRefresh={() => {
-              if (apiFilters) {
-                fetchDashboardData(apiFilters);
-              }
-            }}
-          />
-        </div> */}
+
       </div>
 
       {/* Top Played Game Section - Full Width */}

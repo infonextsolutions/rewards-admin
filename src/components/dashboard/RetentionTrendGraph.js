@@ -43,7 +43,7 @@ const RetentionTrendGraph = memo(
     // Memoize tooltip component to avoid recreation
     const customTooltip = useMemo(
       () =>
-        ({ active, payload, label }) => {
+        function RetentionTooltip({ active, payload, label }) {
           if (active && payload && payload.length) {
             return (
               <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-200">

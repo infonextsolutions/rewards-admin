@@ -148,8 +148,7 @@ export default function SurveysOffersModule() {
 
       {/* Tab Content */}
       <div className="min-h-screen">
-        {/* {activeTab === 'sdk-manager' && <SurveySDKManager key="sdk-manager" />} */}
-        {/* {activeTab === 'live-offers' && <LiveOffersAnalytics key="live-offers" />} */}
+
         {activeTab === "non-gaming" && <NonGamingOffers key="non-gaming" />}
         {activeTab === 'bitlab-surveys' && <BitLabSurveys key="bitlab-surveys" />}
         {activeTab === "synced-offers" && (

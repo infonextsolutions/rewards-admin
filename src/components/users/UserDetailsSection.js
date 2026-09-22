@@ -137,14 +137,6 @@ export const UserDetailsSection = ({ user }) => {
   const getActionButtons = () => {
     const buttons = [];
 
-    // EXCLUDED: Ban/Restore Account functionality not supported per requirements - will be handled as DevOps activity
-    // if (user?.status === 'Active') {
-    //   buttons.push({ text: "Ban Account", bgColor: "bg-red-600 hover:bg-red-700", action: "ban" });
-    // } else {
-    //   buttons.push({ text: "Restore Account", bgColor: "bg-green-600 hover:bg-green-700", action: "restore" });
-    // }
-
-    // Only show Suspend button if user is Active
     if (user?.status === "Active") {
       buttons.push({
         text: "Suspend Account",
@@ -152,12 +144,6 @@ export const UserDetailsSection = ({ user }) => {
         action: "suspend",
       });
     }
-
-    // EXCLUDED: Delete User (hard-delete) not supported per requirements
-    // buttons.push({ text: "Delete Account", bgColor: "bg-gray-800 hover:bg-gray-900", action: "delete" });
-
-    // PHASE 2: Adjust Balance temporarily hidden
-    // buttons.push({ text: "Adjust Balance", bgColor: "bg-blue-600 hover:bg-blue-700", action: "adjustBalance" });
 
     return buttons;
   };
@@ -170,46 +156,11 @@ export const UserDetailsSection = ({ user }) => {
 
   const handleActionClick = (action) => {
     switch (action) {
-      /* EXCLUDED: Ban/Restore Account functionality not supported per requirements
-      case 'ban':
-        setConfirmationModal({
-          isOpen: true,
-          action: 'ban',
-          data: {
-            title: 'Ban Account',
-            message: `Are you sure you want to ban ${user?.name || 'this user'}? This will permanently block their access to the platform.`,
-            type: 'danger'
-          }
-        });
-        break;
-      case 'restore':
-        setConfirmationModal({
-          isOpen: true,
-          action: 'restore',
-          data: {
-            title: 'Restore Account',
-            message: `Are you sure you want to restore ${user?.name || 'this user'}? This will reactivate their account and restore full access.`,
-            type: 'info'
-          }
-        });
-        break;
-      */
+
       case "suspend":
         setShowSuspendModal(true);
         break;
-      /* EXCLUDED: Delete User (hard-delete) not supported per requirements
-      case 'delete':
-        setConfirmationModal({
-          isOpen: true,
-          action: 'delete',
-          data: {
-            title: 'Delete Account',
-            message: `Are you sure you want to permanently delete ${user?.name || 'this user'}? This action cannot be undone and all user data will be lost.`,
-            type: 'danger'
-          }
-        });
-        break;
-      */
+
       case "adjustBalance":
         setInputModal({
           isOpen: true,
@@ -225,41 +176,19 @@ export const UserDetailsSection = ({ user }) => {
         });
         break;
       default:
-        console.log(`${action} action clicked for user:`, user?.name);
+
     }
   };
 
   const handleConfirmAction = async (action) => {
     try {
       switch (action) {
-        /* EXCLUDED: Ban/Restore/Delete Account functionality not supported per requirements
-        case 'ban':
-          console.log(`Banning user: ${user?.name || 'user'}`);
-          // TODO: API call to ban user
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          showSuccessNotification(`User ${user?.name || 'account'} has been banned successfully`);
-          break;
-        case 'restore':
-          console.log(`Restoring user: ${user?.name || 'user'}`);
-          // TODO: API call to restore user
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          showSuccessNotification(`User ${user?.name || 'account'} has been restored successfully`);
-          break;
-        case 'delete':
-          console.log(`Deleting user: ${user?.name || 'user'}`);
-          // TODO: API call to delete user
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          showSuccessNotification(`User ${user?.name || 'account'} has been deleted successfully`);
-          break;
-        */
+
         case "suspend":
           // This case is now handled by the SuspendUserModal
           break;
         default:
-          console.log(`Confirmed action: ${action}`);
+
       }
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
@@ -308,7 +237,7 @@ export const UserDetailsSection = ({ user }) => {
     try {
       switch (action) {
         case "changeTier":
-          console.log(`Changing user tier to: ${inputValue}`);
+
           // TODO: API call to update user tier
           await new Promise((resolve) => setTimeout(resolve, 800));
           showSuccessNotification(`User tier changed to ${inputValue}`);
@@ -325,7 +254,7 @@ export const UserDetailsSection = ({ user }) => {
           }
           break;
         case "adjustBalance":
-          console.log(`Adjusting user balance by: ${inputValue}`);
+
           // TODO: API call to adjust user balance
           await new Promise((resolve) => setTimeout(resolve, 800));
           const isPositive = !inputValue.startsWith("-");
@@ -338,7 +267,7 @@ export const UserDetailsSection = ({ user }) => {
           );
           break;
         default:
-          console.log(`Input action: ${action}, value: ${inputValue}`);
+
       }
     } catch (error) {
       console.error(`Error performing ${action}:`, error);

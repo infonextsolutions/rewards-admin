@@ -787,12 +787,6 @@ export default function DailyChallengeCalendarView({
 
             {/* Calendar Navigation */}
             <div className="flex items-center space-x-4">
-              {/* <button
-                onClick={goToToday}
-                className='px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'
-              >
-                Today
-              </button> */}
 
               {/* View Mode Controls */}
               <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-lg">
@@ -1140,10 +1134,6 @@ export default function DailyChallengeCalendarView({
               </div>
             </div>
 
-            {/* <div className='flex items-center space-x-2 text-gray-600'>
-              <EyeSlashIcon className='h-4 w-4' />
-              <span>Hidden from users</span>
-            </div> */}
           </div>
         </div>
       </div>

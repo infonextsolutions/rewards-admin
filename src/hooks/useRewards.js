@@ -2,15 +2,7 @@
 
 import { useState } from 'react'
 import apiClient from '../lib/apiClient'
-import {
-  MOCK_XP_TIERS,
-  MOCK_XP_DECAY_SETTINGS,
-  MOCK_XP_CONVERSIONS,
-  MOCK_BONUS_LOGIC,
-} from '../data/rewards'
 
-// Use shared apiClient from lib/apiClient.js which has baseURL: "http://localhost:4001/api"
-// For rewards endpoints, we'll use paths like "/admin/rewards/xp-decay"
 
 export const useRewards = () => {
   const [xpTiers, setXpTiers] = useState([])
@@ -34,25 +26,6 @@ export const useRewards = () => {
       default:
         return []
     }
-  }
-
-  // EXCLUDED: Copy of Data KPIs file mapping and audit logging not supported per requirements
-  const logAction = (action, activeTab, itemData, itemId = null) => {
-    // Audit logging and KPI mapping disabled per requirements
-    console.log('Audit logging and KPI file mapping disabled per requirements')
-
-    /* ORIGINAL CODE - COMMENTED OUT
-    const logEntry = {
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      action,
-      tab: activeTab,
-      itemId,
-      itemData: { ...itemData },
-      admin: 'Admin User', // This would come from auth context in real app
-    };
-    setAuditLogs(prev => [logEntry, ...prev]);
-    */
   }
 
   const validateBusinessRules = (
@@ -104,7 +77,6 @@ export const useRewards = () => {
   const updateItem = async (activeTab, itemId, itemData) => {
     setLoading(true)
     try {
-      console.log(`Updating ${activeTab} item:`, itemId, itemData)
 
       // Validate business rules
       const validationErrors = validateBusinessRules(
@@ -166,7 +138,6 @@ export const useRewards = () => {
       }
 
       // Log the action
-      logAction('UPDATE', activeTab, updatedItem, itemId)
 
       await new Promise((resolve) => setTimeout(resolve, 500))
       setLoading(false)
@@ -181,7 +152,6 @@ export const useRewards = () => {
   const addItem = async (activeTab, itemData) => {
     setLoading(true)
     try {
-      console.log(`Adding ${activeTab} item:`, itemData)
 
       // Validate business rules
       const validationErrors = validateBusinessRules(activeTab, itemData)
@@ -222,7 +192,6 @@ export const useRewards = () => {
       }
 
       // Log the action
-      logAction('CREATE', activeTab, newItem)
 
       await new Promise((resolve) => setTimeout(resolve, 500))
       setLoading(false)
@@ -237,7 +206,6 @@ export const useRewards = () => {
   const deleteItem = async (activeTab, itemId) => {
     setLoading(true)
     try {
-      console.log(`Deleting ${activeTab} item:`, itemId)
 
       let deletedItem
 
@@ -264,7 +232,6 @@ export const useRewards = () => {
 
       // Log the action
       if (deletedItem) {
-        logAction('DELETE', activeTab, deletedItem, itemId)
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500))

@@ -48,7 +48,7 @@ const FiltersSection = ({ filters, onFilterChange, filterOptions = {} }) => {
   const acquisitionSources = filterOptions.acquisitionSources || [
     'Facebook', 'Google Ads', 'Organic'
   ];
-  
+
   const advertiserList = filterOptions.advertisers || [];
 
   const platformList = filterOptions.platforms || [
@@ -92,42 +92,6 @@ const FiltersSection = ({ filters, onFilterChange, filterOptions = {} }) => {
             ))}
           </div>
         </div>
-
-        {/* EXCLUDED: KPIs per Game Title functionality not supported per requirements - display only as per UTM information
-        <div className="flex flex-col">
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-sm font-medium text-gray-700">Game Title</label>
-            {filters.gamesTitles.length > 0 && (
-              <button
-                onClick={() => onFilterChange('gamesTitles', [])}
-                className="text-xs text-red-600 hover:text-red-800 underline"
-              >
-                Clear All
-              </button>
-            )}
-          </div>
-          <div className="border border-gray-300 rounded-md p-3 bg-white max-h-24 overflow-y-auto">
-            {gameList.map(game => (
-              <label key={game} className="flex items-center mb-1 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                <input
-                  type="checkbox"
-                  checked={filters.gamesTitles.includes(game)}
-                  onChange={(e) => {
-                    const currentGames = filters.gamesTitles;
-                    if (e.target.checked) {
-                      onFilterChange('gamesTitles', [...currentGames, game]);
-                    } else {
-                      onFilterChange('gamesTitles', currentGames.filter(g => g !== game));
-                    }
-                  }}
-                  className="mr-2 w-3 h-3 text-[#00a389] border-gray-300 rounded focus:ring-[#00a389] focus:ring-2"
-                />
-                <span className="text-sm text-gray-700">{game}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        */}
 
         {/* Advertiser */}
         <div className="flex flex-col">
@@ -195,23 +159,6 @@ const FiltersSection = ({ filters, onFilterChange, filterOptions = {} }) => {
         </div>
 
         {/* Country filter hidden - no corresponding table column */}
-        {/* <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-2">Country</label>
-          <select
-            value={filters.country}
-            onChange={(e) => onFilterChange('country', e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a389] focus:border-transparent bg-white"
-            style={{
-              color: '#333333',
-              backgroundColor: 'white'
-            }}
-          >
-            <option value="" style={{ color: '#333333', backgroundColor: 'white' }}>All Countries</option>
-            {countryList.map(country => (
-              <option key={country} value={country} style={{ color: '#333333', backgroundColor: 'white' }}>{country}</option>
-            ))}
-          </select>
-        </div> */}
 
         {/* Date Range */}
         <div className="flex flex-col xl:col-span-2">
@@ -246,90 +193,10 @@ const FiltersSection = ({ filters, onFilterChange, filterOptions = {} }) => {
   );
 };
 
-// EXCLUDED: Row-click drill-down modal with multi-KPI trendlines not supported per requirements
 const TrendModal = ({ isOpen, onClose, selectedRow }) => {
   // Drill-down modal functionality disabled per requirements
   return null;
 
-  /* ORIGINAL CODE - COMMENTED OUT
-  if (!isOpen || !selectedRow) return null;
-
-  // Prepare chart data
-  const chartData = [
-    { day: 'Day 1', installs: 120, revenue: 4800, retention: 33 },
-    { day: 'Day 2', installs: 150, revenue: 5200, retention: 35 },
-    { day: 'Day 3', installs: 180, revenue: 5800, retention: 32 },
-    { day: 'Day 4', installs: 200, revenue: 6100, retention: 38 },
-    { day: 'Day 5', installs: 170, revenue: 5900, retention: 36 },
-    { day: 'Day 6', installs: 220, revenue: 6400, retention: 34 },
-    { day: 'Day 7', installs: 250, revenue: 6800, retention: 37 }
-  ];
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Trend Analysis: {selectedRow.gameTitle} - {selectedRow.acquisitionSource}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="space-y-8">
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="font-medium mb-4 text-blue-600 text-lg">Installs Trend</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [value, 'Installs']} />
-                  <Line type="monotone" dataKey="installs" stroke="#3B82F6" strokeWidth={2} dot={{ fill: '#3B82F6' }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="font-medium mb-4 text-green-600 text-lg">Revenue Trend (₹)</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, 'Revenue']} />
-                  <Line type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} dot={{ fill: '#10B981' }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="font-medium mb-4 text-purple-600 text-lg">Retention Trend (%)</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`${value}%`, 'Retention']} />
-                  <Line type="monotone" dataKey="retention" stroke="#8B5CF6" strokeWidth={2} dot={{ fill: '#8B5CF6' }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-  */
 };
 
 const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowClick, sortConfig, onSort, loading }) => {
@@ -347,13 +214,7 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
           <table className="w-full min-w-[900px]">
             <thead>
               <tr className="h-16 bg-[#ecf8f1] rounded-[10px]">
-                {/* EXCLUDED: Game Title KPIs not supported per requirements
-                <th className="text-left px-4 py-4">
-                  <div className="font-bold text-[#333333] text-sm">
-                    Game Title
-                  </div>
-                </th>
-                */}
+
                 <th className="text-left px-4 py-4">
                   <div className="font-bold text-[#333333] text-sm">
                     Acquisition Source
@@ -384,39 +245,7 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                     Platform
                   </div>
                 </th>
-                {/* EXCLUDED: Rewards Issued tracking as marketing KPI not supported per requirements
-                <th className="text-center px-4 py-4 cursor-pointer" onClick={() => onSort('rewards')}>
-                  <div className="font-bold text-[#333333] text-sm hover:text-[#00a389]">
-                    Rewards Issued{getSortIcon('rewards')}
-                  </div>
-                </th>
-                */}
-                {/* EXCLUDED: ROAS % calculation functionality not supported per requirements
-                <th className="text-center px-4 py-4 cursor-pointer" onClick={() => onSort('roas')}>
-                  <div className="font-bold text-[#333333] text-sm hover:text-[#00a389] flex items-center justify-center gap-1">
-                    ROAS %{getSortIcon('roas')}
-                    <span
-                      className="text-gray-400 cursor-help"
-                      title="Return on Ad Spend: (Revenue ÷ Reward Cost) × 100. Shows profitability of campaigns. >100% indicates profitable campaigns."
-                    >
-                      ℹ️
-                    </span>
-                  </div>
-                </th>
-                */}
-                {/* EXCLUDED: Quality Score composite metric not supported per requirements
-                <th className="text-center px-4 py-4 cursor-pointer" onClick={() => onSort('qualityScore')}>
-                  <div className="font-bold text-[#333333] text-sm hover:text-[#00a389] flex items-center justify-center gap-1">
-                    Quality Score{getSortIcon('qualityScore')}
-                    <span
-                      className="text-gray-400 cursor-help"
-                      title="Composite score (0-10) evaluating user quality based on retention rates and revenue generation. Higher scores indicate better user quality."
-                    >
-                      ℹ️
-                    </span>
-                  </div>
-                </th>
-                */}
+
               </tr>
             </thead>
             <tbody>
@@ -448,16 +277,9 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                 <tr
                   key={index}
                   className="h-[66px] border-b [border-bottom-style:solid] border-[#d0d6e7] hover:bg-gray-50 transition-colors"
-                  // EXCLUDED: Row click drill-down disabled per requirements
-                  // onClick={() => onRowClick(row)}
+
                 >
-                  {/* EXCLUDED: Game Title data not displayed per requirements
-                  <td className="px-4 py-4">
-                    <div className="font-normal text-[#333333] text-sm">
-                      {row.gameTitle}
-                    </div>
-                  </td>
-                  */}
+
                   <td className="px-4 py-4">
                     <div className="font-normal text-[#333333] text-sm">
                       {row.acquisitionSource}
@@ -490,29 +312,7 @@ const Table = ({ currentPage, onPageChange, totalPages, totalItems, data, onRowC
                       {row.platform}
                     </div>
                   </td>
-                  {/* EXCLUDED: Rewards Issued data not displayed per requirements
-                  <td className="px-4 py-4 text-center">
-                    <div className="font-normal text-[#333333] text-sm">
-                      ₹{row.rewards.toLocaleString()}
-                    </div>
-                  </td>
-                  */}
-                  {/* EXCLUDED: ROAS % data not displayed per requirements
-                  <td className="px-4 py-4 text-center">
-                    <div className={`font-normal text-sm ${
-                      parseFloat(row.roas) > 100 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {row.roas}%
-                    </div>
-                  </td>
-                  */}
-                  {/* EXCLUDED: Quality Score data not displayed per requirements
-                  <td className="px-4 py-4 text-center">
-                    <div className="font-normal text-[#333333] text-sm">
-                      {row.qualityScore}
-                    </div>
-                  </td>
-                  */}
+
                 </tr>
                 ))
               )}
@@ -541,8 +341,7 @@ export default function AnalyticsPage() {
   const { registerSearchHandler, searchTerm } = useSearch();
   const [filters, setFilters] = useState({
     acquisitionSources: [],
-    // EXCLUDED: gamesTitles filter removed per requirements
-    // gamesTitles: [],
+
     advertiser: '',
     platform: '',
     country: '',
@@ -589,7 +388,7 @@ export default function AnalyticsPage() {
       };
 
       const response = await ANALYTICS_API.getAttributionData(apiFilters);
-      
+
       if (response.data?.success && response.data?.data?.attribution) {
         // Map API attribution data to component format
         const mappedData = response.data.data.attribution.map((item) => {
@@ -599,7 +398,7 @@ export default function AnalyticsPage() {
             facebook: "Facebook",
             direct: "Organic",
           };
-          
+
           return {
             acquisitionSource: sourceMap[item.source] || item.source.charAt(0).toUpperCase() + item.source.slice(1),
             installs: item.installs || 0,
@@ -651,17 +450,17 @@ export default function AnalyticsPage() {
         row.country.toLowerCase().includes(query) ||
         row.installs.toString().includes(query) ||
         row.revenue.toString().includes(query);
-      
+
       if (!matchesSearch) {
         return false;
       }
     }
-    
+
     // Apply client-side filters for acquisition sources (multi-select)
     if (filters.acquisitionSources.length > 0 && !filters.acquisitionSources.includes(row.acquisitionSource)) {
       return false;
     }
-    
+
     // Other filters are handled server-side via API
     return true;
   });
@@ -669,17 +468,17 @@ export default function AnalyticsPage() {
   // Sort data
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortConfig.key) return 0;
-    
+
     let aValue = a[sortConfig.key];
     let bValue = b[sortConfig.key];
-    
+
     if (typeof aValue === 'string' && !isNaN(parseFloat(aValue))) {
       aValue = parseFloat(aValue);
     }
     if (typeof bValue === 'string' && !isNaN(parseFloat(bValue))) {
       bValue = parseFloat(bValue);
     }
-    
+
     if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
@@ -716,7 +515,7 @@ export default function AnalyticsPage() {
   };
 
   const exportToCSV = () => {
-    // EXCLUDED: Game Title, Rewards Issued, ROAS %, Quality Score columns removed per requirements
+
     const headers = [
       'Acquisition Source', 'Installs', 'Retention D1%', 'Retention D7%',
       'Revenue', 'Advertiser', 'Platform', 'Country'
@@ -732,11 +531,11 @@ export default function AnalyticsPage() {
       row.platform,
       row.country
     ]);
-    
+
     const csvContent = [headers, ...csvData]
       .map(row => row.map(field => `"${field}"`).join(','))
       .join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);

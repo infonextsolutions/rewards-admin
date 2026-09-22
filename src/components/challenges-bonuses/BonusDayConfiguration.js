@@ -25,12 +25,12 @@ export default function BonusDayConfiguration({
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [errors, setErrors] = useState({});
-  
+
   // Toggles for Bonus Days section
   const [bonusDayConfigEnabled, setBonusDayConfigEnabled] = useState(true);
   const [streakBonusConfigEnabled, setStreakBonusConfigEnabled] = useState(false);
   const [showStreakConfig, setShowStreakConfig] = useState(false);
-  
+
   // Delete modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingBonusDayId, setDeletingBonusDayId] = useState(null);
@@ -50,11 +50,11 @@ export default function BonusDayConfiguration({
     setFormData(prev => {
       // Maximum 2 rewards (Coins and XP)
       if (prev.rewards.length >= 2) return prev;
-      
+
       // Determine which reward type to use for the new reward
       const existingTypes = prev.rewards.map(r => r.type);
       const newType = existingTypes.includes('Coins') ? 'XP' : 'Coins';
-      
+
       return {
         ...prev,
         rewards: [...prev.rewards, { type: newType, value: '' }]
@@ -66,13 +66,13 @@ export default function BonusDayConfiguration({
     setFormData(prev => {
       // At least one reward must remain
       if (prev.rewards.length <= 1) return prev;
-      
+
       return {
         ...prev,
         rewards: prev.rewards.filter((_, idx) => idx !== rewardIndex)
       };
     });
-    
+
     // Clear errors for removed reward
     setErrors(prev => {
       const newErrors = { ...prev };
@@ -85,13 +85,13 @@ export default function BonusDayConfiguration({
   const handleRewardChange = (rewardIndex, field, value) => {
     setFormData(prev => {
       const newRewards = [...prev.rewards];
-      
+
       // If changing reward type, check for duplicates
       if (field === 'type') {
         const otherRewardTypes = prev.rewards
           .map((r, idx) => idx !== rewardIndex ? r.type : null)
           .filter(type => type !== null);
-        
+
         // Prevent selecting a type that's already selected in another reward
         if (otherRewardTypes.includes(value)) {
           setErrors(prevErrors => ({
@@ -100,7 +100,7 @@ export default function BonusDayConfiguration({
           }));
           return prev; // Don't update if duplicate
         }
-        
+
         // Clear error if valid
         setErrors(prevErrors => {
           const newErrors = { ...prevErrors };
@@ -108,7 +108,7 @@ export default function BonusDayConfiguration({
           return newErrors;
         });
       }
-      
+
       newRewards[rewardIndex] = { ...newRewards[rewardIndex], [field]: value };
       return { ...prev, rewards: newRewards };
     });
@@ -129,7 +129,7 @@ export default function BonusDayConfiguration({
       if (formData.rewards.length > 2) {
         newErrors.rewards = 'Maximum 2 rewards allowed (Coins and XP)';
       }
-      
+
       // Validate no duplicate reward types
       const rewardTypes = formData.rewards.map(r => r.type);
       const uniqueTypes = new Set(rewardTypes);
@@ -142,7 +142,7 @@ export default function BonusDayConfiguration({
           }
         });
       }
-      
+
       // Validate reward values
       let hasAtLeastOneValue = false;
       formData.rewards.forEach((reward, idx) => {
@@ -155,7 +155,7 @@ export default function BonusDayConfiguration({
           }
         }
       });
-      
+
       if (!hasAtLeastOneValue) {
         newErrors.rewards = 'At least one reward value must be provided';
       }
@@ -182,7 +182,7 @@ export default function BonusDayConfiguration({
   const handleSubmit = async () => {
     // Validate and get errors
     const newErrors = {};
-    
+
     if (!formData.bonusDay || formData.bonusDay < 1) {
       newErrors.bonusDay = 'Bonus day must be at least 1';
     }
@@ -195,14 +195,14 @@ export default function BonusDayConfiguration({
       if (formData.rewards.length > 2) {
         newErrors.rewards = 'Maximum 2 rewards allowed (Coins and XP)';
       }
-      
+
       // Validate no duplicate reward types
       const rewardTypes = formData.rewards.map(r => r.type);
       const uniqueTypes = new Set(rewardTypes);
       if (rewardTypes.length !== uniqueTypes.size) {
         newErrors.rewards = 'Each reward type can only be selected once';
       }
-      
+
       // Validate reward values
       let hasAtLeastOneValue = false;
       formData.rewards.forEach((reward, idx) => {
@@ -215,7 +215,7 @@ export default function BonusDayConfiguration({
           }
         }
       });
-      
+
       if (!hasAtLeastOneValue) {
         newErrors.rewards = 'At least one reward value must be provided';
       }
@@ -237,7 +237,7 @@ export default function BonusDayConfiguration({
 
     // Set errors and show toast if validation fails
     setErrors(newErrors);
-    
+
     if (Object.keys(newErrors).length > 0) {
       // Show toast for the most important error
       if (newErrors.bonusDay) {
@@ -293,7 +293,7 @@ export default function BonusDayConfiguration({
   const handleEdit = (bonusDay) => {
     // Convert bonusDay data to rewards array format
     let rewards = [];
-    
+
     // Check if bonusDay has rewards array (new format)
     if (bonusDay.rewards && Array.isArray(bonusDay.rewards) && bonusDay.rewards.length > 0) {
       rewards = bonusDay.rewards.map(r => ({
@@ -314,7 +314,7 @@ export default function BonusDayConfiguration({
           value: bonusDay.xpRewardValue.toString()
         });
       }
-      
+
       // Fallback to legacy format
       if (rewards.length === 0 && bonusDay.rewardType && bonusDay.rewardValue) {
         rewards.push({
@@ -329,7 +329,7 @@ export default function BonusDayConfiguration({
         }
       }
     }
-    
+
     // Ensure at least one reward exists
     if (rewards.length === 0) {
       rewards = [{ type: 'Coins', value: '' }];
@@ -357,7 +357,7 @@ export default function BonusDayConfiguration({
 
   const handleConfirmDelete = async () => {
     if (!deletingBonusDayId) return;
-    
+
     try {
       await onDeleteBonusDay(deletingBonusDayId);
       setShowDeleteModal(false);
@@ -625,7 +625,7 @@ export default function BonusDayConfiguration({
                       const selectedTypes = formData.rewards
                         .map((r, idx) => idx !== rewardIndex ? r.type : null)
                         .filter(type => type !== null);
-                      
+
                       return (
                         <div
                           key={rewardIndex}
@@ -761,9 +761,7 @@ export default function BonusDayConfiguration({
                   Rewards
                 </th>
                 {/* Alternate Reward column hidden */}
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Alternate Reward
-                </th> */}
+
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Reset Rule
                 </th>
@@ -850,7 +848,7 @@ export default function BonusDayConfiguration({
                               const selectedTypes = formData.rewards
                                 .map((r, idx) => idx !== rewardIndex ? r.type : null)
                                 .filter(type => type !== null);
-                              
+
                               return (
                                 <div
                                   key={rewardIndex}
@@ -913,16 +911,7 @@ export default function BonusDayConfiguration({
                           </div>
                         </td>
                         {/* Alternate Reward input hidden */}
-                        {/* <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="number"
-                            min="0"
-                            value={formData.alternateReward}
-                            onChange={(e) => setFormData({...formData, alternateReward: e.target.value})}
-                            className={`w-20 px-2 py-1 border rounded text-sm ${errors.alternateReward ? 'border-red-300' : 'border-gray-300'}`}
-                            placeholder="Alt"
-                          />
-                        </td> */}
+
                         <td className="px-6 py-4 whitespace-nowrap">
                           <input
                             type="checkbox"
@@ -1014,18 +1003,7 @@ export default function BonusDayConfiguration({
                           </div>
                         </td>
                         {/* Alternate Reward data column hidden */}
-                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {bonusDay.alternateReward ? (
-                            <span
-                              className="font-medium text-orange-600"
-                              title={`${bonusDay.alternateReward} ${bonusDay.rewardType.toLowerCase()} (fallback)`}
-                            >
-                              {bonusDay.alternateReward.toLocaleString()}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 italic">None</span>
-                          )}
-                        </td> */}
+
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center justify-center min-w-[60px] px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             bonusDay.resetRule

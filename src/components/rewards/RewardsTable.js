@@ -153,9 +153,7 @@ export default function RewardsTable({
               Min XP Limit
             </th>
             {/* ADM-DR-030 FIX: Notifications column hidden from XP Decay Settings */}
-            {/* <th className='text-center py-4 px-2 font-semibold text-[#333333] text-sm'>
-              Notifications
-            </th> */}
+
             <th className='text-center py-4 px-2 font-semibold text-[#333333] text-sm'>
               Status
             </th>
@@ -324,14 +322,7 @@ export default function RewardsTable({
               </span>
             </td>
             {/* ADM-DR-030 FIX: Notifications column hidden from XP Decay Settings */}
-            {/* <td className='py-4 px-2 text-center'>
-              <div className='flex justify-center'>
-                {renderToggle(
-                  item.sendNotification,
-                  () => onToggleNotification && onToggleNotification(item.id),
-                )}
-              </div>
-            </td> */}
+
             <td className='py-4 px-2 text-center'>
               <span
                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

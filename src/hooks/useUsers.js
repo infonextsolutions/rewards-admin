@@ -36,9 +36,7 @@ export const useUsers = () => {
       });
 
       if (response.success) {
-        console.log('🟢 useUsers Hook - Response data:', response.data);
-        console.log('🟢 useUsers Hook - Users array:', response.data.users);
-        console.log('🟢 useUsers Hook - First user example:', response.data.users?.[0]);
+
         setUsers(response.data.users);
         setPagination({
           currentPage: response.data.pagination.currentPage,
@@ -118,7 +116,7 @@ export const useUsers = () => {
   const updateUser = async (userId, userData) => {
     setLoading(true);
     try {
-      console.log('Updating user:', userId, userData);
+
       await new Promise(resolve => setTimeout(resolve, 500));
       setLoading(false);
       return { success: true };
@@ -158,24 +156,10 @@ export const useUsers = () => {
     }
   };
 
-  // EXCLUDED: Bulk actions not supported per requirements - actions can only be taken on single users
   const bulkAction = async (userIds, action) => {
-    console.log('Bulk actions are disabled per requirements');
+
     throw new Error('Bulk actions are not supported. Actions can only be taken on individual users.');
 
-    /* ORIGINAL CODE - COMMENTED OUT
-    setLoading(true);
-    try {
-      console.log(`Bulk ${action} for users:`, userIds);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setLoading(false);
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-      throw err;
-    }
-    */
   };
 
   return {

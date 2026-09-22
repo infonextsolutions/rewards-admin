@@ -72,14 +72,7 @@ export default function UsersTable({
           <thead>
             <tr className="bg-[#ecf8f1]">
               {/* Select All checkbox hidden */}
-              {/* <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] w-12">
-                <input
-                  type="checkbox"
-                  checked={selectedUsers.length === users.length && users.length > 0}
-                  onChange={onSelectAll}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-              </th> */}
+
               <th className="text-center py-4 px-3 font-semibold text-[#333333] text-sm tracking-[0.1px] min-w-[180px]">
                 Name
               </th>
@@ -121,14 +114,6 @@ export default function UsersTable({
                 } ${selectedUsers.includes(row.id) ? "bg-blue-50" : ""}`}
               >
                 {/* Select Column - hidden */}
-                {/* <td className="py-4 px-3 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.includes(row.id)}
-                    onChange={() => onSelectUser(row.id)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                  />
-                </td> */}
 
                 {/* Name Column */}
                 <td className="py-4 px-3 text-center">

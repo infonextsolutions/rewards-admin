@@ -216,9 +216,7 @@ const SourceDetailModal = ({ source, dateRange, onClose }) => {
                       <span className="text-xs text-white font-medium">{formatNumber(c.installs)}</span>
                     </div>
                   </div>
-                  {/* <span className="text-sm text-gray-600 w-24 text-right">{formatCurrency(c.revenue)}</span>
-                  <span className="text-sm text-gray-600 w-24 text-right">{formatCurrency(c.cost)}</span>
-                  <span className="text-sm font-medium text-blue-600 w-16 text-right">{c.roas && c.roas !== '∞' ? parseFloat(c.roas).toFixed(2) + "x" : c.roas === '∞' ? '∞' : "N/A"}</span> */}
+
                 </div>
               );
             })}
@@ -291,8 +289,7 @@ const SourceDetailModal = ({ source, dateRange, onClose }) => {
                       <span className="text-xs text-white font-medium">{formatNumber(c.installs)}</span>
                     </div>
                   </div>
-                  {/* <span className="text-sm text-gray-600 w-24 text-right">{formatCurrency(c.revenue)}</span>
-                  <span className="text-sm text-gray-600 w-24 text-right">{formatCurrency(c.cost)}</span> */}
+
                 </div>
               );
             })}

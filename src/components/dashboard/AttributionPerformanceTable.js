@@ -1,5 +1,5 @@
 
- 
+
 "use client";
 
 import { memo, useMemo, useState } from "react";
@@ -102,19 +102,6 @@ const AttributionPerformanceTable = memo(({ data, loading, dateRange }) => {
         displayData.length,
     };
   }, [displayData, hasData]);
-
-  // EXCLUDED: Red/green visual margin indicators & automatic underperformer flagging not supported per requirements
-  // const getRetentionColor = (percent) => {
-  //   if (percent >= 70) return 'text-green-600 bg-green-50';
-  //   if (percent >= 60) return 'text-yellow-600 bg-yellow-50';
-  //   return 'text-red-600 bg-red-50';
-  // };
-  //
-  // const getMarginColor = (percent) => {
-  //   if (percent >= 70) return 'text-green-600';
-  //   if (percent >= 60) return 'text-yellow-600';
-  //   return 'text-red-600';
-  // };
 
   const getRetentionColor = (percent) => {
     return "text-gray-600 bg-gray-50";

@@ -51,14 +51,14 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
   // Fetch marketing channels and campaigns from backend
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const fetchData = async () => {
       setLoadingChannels(true);
       try {
         const channelsRes = await apiClient.get('/admin/marketing/channels');
         if (channelsRes.data.success && channelsRes.data.data) {
           setMarketingChannels(channelsRes.data.data);
-          console.log('✅ Marketing channels loaded:', channelsRes.data.data);
+
         }
       } catch (error) {
         console.error('❌ Error fetching marketing channels:', error);
@@ -73,7 +73,7 @@ export default function EditOfferModal({ isOpen, onClose, offer, onSave }) {
         const campaignsRes = await apiClient.get('/admin/marketing/campaigns');
         if (campaignsRes.data.success && campaignsRes.data.data) {
           setCampaigns(campaignsRes.data.data);
-          console.log('✅ Campaigns loaded:', campaignsRes.data.data);
+
         }
       } catch (error) {
         console.error('❌ Error fetching campaigns:', error);

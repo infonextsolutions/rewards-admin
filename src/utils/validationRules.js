@@ -7,22 +7,14 @@ export const VALIDATION_RULES = {
     pattern: /^[a-zA-Z0-9_-]{16,}$/,
     message: 'API key must be at least 16 characters (alphanumeric, underscore, dash)'
   },
-  
+
   // Endpoint URL validation - URL format required
   endpointUrl: {
     required: true,
     pattern: /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/,
     message: 'Please enter a valid HTTPS URL (e.g., https://api.example.com/v1)'
   },
-  
-  // EXCLUDED: Slack webhook URL validation not supported per requirements
-  // slackWebhookUrl: {
-  //   required: false, // Only required when Slack is selected
-  //   pattern: /^https:\/\/hooks\.slack\.com\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[a-zA-Z0-9]+$/,
-  //   message: 'Please enter a valid Slack webhook URL'
-  // },
-  
-  // Integration name validation
+
   integrationName: {
     required: true,
     pattern: /^[a-zA-Z0-9\s-_]{2,50}$/,
@@ -60,7 +52,7 @@ export const validateField = (fieldName, value, isRequired = false) => {
 
 export const validateIntegrationForm = (formData) => {
   const errors = {};
-  
+
   // Validate integration name
   const nameValidation = validateField('integrationName', formData.name, true);
   if (!nameValidation.isValid) {
@@ -85,7 +77,6 @@ export const validateIntegrationForm = (formData) => {
   };
 };
 
-// EXCLUDED: Notification form validation not supported per requirements (Slack webhooks & notification recipients excluded)
 export const validateNotificationForm = (formData) => {
   // Validation disabled per requirements
   return {
@@ -93,30 +84,4 @@ export const validateNotificationForm = (formData) => {
     errors: {}
   };
 
-  /* ORIGINAL CODE - COMMENTED OUT
-  const errors = {};
-
-  // Validate Slack webhook URL if Slack is selected
-  if (formData.notificationType === 'slack') {
-    const webhookValidation = validateField('slackWebhookUrl', formData.slackWebhookUrl, true);
-    if (!webhookValidation.isValid) {
-      errors.slackWebhookUrl = webhookValidation.message;
-    }
-  }
-
-  // Validate recipient roles selection
-  if (!formData.recipientRoles || formData.recipientRoles.length === 0) {
-    errors.recipientRoles = 'Please select at least one recipient role';
-  }
-
-  // Validate trigger events selection
-  if (!formData.triggerEvents || formData.triggerEvents.length === 0) {
-    errors.triggerEvents = 'Please select at least one trigger event';
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-  */
 };

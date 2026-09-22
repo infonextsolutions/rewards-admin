@@ -31,8 +31,7 @@ const userAPIs = {
       };
 
       const response = await apiClient.get('/admin/users', { params });
-      console.log('🔵 User API Route - Response from backend:', response.data);
-      console.log('🔵 User API Route - Users data:', response.data?.data?.users);
+
       return response.data;
     } catch (error) {
       console.error('Get users error:', error);
@@ -43,43 +42,12 @@ const userAPIs = {
   // Get user details by ID
   async getUserDetails(userId) {
     try {
-      console.log('🔵 [UserAPI] Fetching user details for ID:', userId);
+
       const response = await apiClient.get(`/admin/users/${userId}`);
-      
-      // Debug: Log full response
-      console.log('🔵 [UserAPI] Full API Response:', response.data);
-      console.log('🔵 [UserAPI] Response Success:', response.data?.success);
-      console.log('🔵 [UserAPI] User Data:', response.data?.data);
-      
-      // Debug: Log specific fields we care about
-      const userData = response.data?.data;
-      if (userData) {
-        console.log('🔵 [UserAPI] Redemption Data:', {
-          redemptionsMade: userData.redemptionsMade,
-          redemptionBreakdown: userData.redemptionBreakdown,
-          redemptionCount: userData.redemptionBreakdown?.count,
-          totalCoins: userData.redemptionBreakdown?.totalCoins,
-          lastRedeemed: userData.redemptionBreakdown?.lastRedeemed
-        });
-        
-        console.log('🔵 [UserAPI] Spin Data:', {
-          spinUsage: userData.spinUsage,
-          spinCount: userData.spinCount,
-          lastSpinAt: userData.lastSpinAt,
-          userSpinCount: userData.user?.spinCount
-        });
-        
-        console.log('🔵 [UserAPI] Wallet Data:', {
-          wallet: userData.wallet,
-          walletBalance: userData.wallet?.balance,
-          walletTransactions: userData.wallet?.transactions?.length || 0
-        });
-      }
-      
+
       return response.data;
     } catch (error) {
-      console.error('❌ [UserAPI] Get user details error:', error);
-      console.error('❌ [UserAPI] Error response:', error.response?.data);
+      console.error('Get user details failed:', error.message);
       throw error.response?.data || error;
     }
   },
@@ -165,7 +133,7 @@ const userAPIs = {
   async getUniqueLocations() {
     try {
       const response = await apiClient.get('/admin/users/locations');
-      console.log('🔵 User API - Unique locations from backend:', response.data);
+
       return response.data;
     } catch (error) {
       console.error('Get unique locations error:', error);
@@ -177,7 +145,7 @@ const userAPIs = {
   async getUniqueMarketingChannels() {
     try {
       const response = await apiClient.get('/admin/users/marketing-channels');
-      console.log('🔵 User API - Unique marketing channels from backend:', response.data);
+
       return response.data;
     } catch (error) {
       console.error('Get unique marketing channels error:', error);

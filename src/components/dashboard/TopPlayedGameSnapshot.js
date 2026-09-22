@@ -534,22 +534,7 @@ const TopPlayedGameSnapshot = memo(
           </div>
 
           {/* Filter Controls */}
-          {/* <div className="flex gap-4">
-          <button className="inline-flex h-[30px] items-center gap-1.5 px-3 py-1.5 bg-[#fff2ab33] rounded-[20px] border border-solid border-[#ffde5b]">
-            <span className="font-semibold text-[#fff2ab] text-sm">
-              Age &amp; Gender
-            </span>
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M14.77 12.79a.75.75 0 01-1.06-.02L10 8.832 6.29 12.77a.75.75 0 11-1.08-1.04l4.25-4.5a.75.75 0 011.08 0l4.25 4.5a.75.75 0 01-.02 1.06z" clipRule="evenodd" />
-            </svg>
-          </button>
 
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f1f1f133] rounded-[20px]">
-            <span className="font-medium text-white text-sm">
-              Region &amp; Tier
-            </span>
-          </button>
-        </div> */}
         </div>
 
         {/* Donut Charts for Demographics */}
