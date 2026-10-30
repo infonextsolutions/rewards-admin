@@ -18,6 +18,7 @@ const menuItems = [
     subItems: [
       // { id: 'offers-listing', label: 'Offers Listing', href: '/offers' },
       { id: "games-listing", label: "Games Listing", href: "/offers/games" },
+      { id: "client-games", label: "Client Games (Adjust)", href: "/offers/client-games" },
       // { id: 'view-tasks', label: 'View Tasks', href: '/offers/tasks' },
       {
         id: "display-rules",

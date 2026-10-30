@@ -279,7 +279,11 @@ export default function GamesListingModule() {
       } else {
         // Create new game
         await createGame(gameData);
-        toast.success("Game created successfully");
+        toast.success(
+          gameData.sdkProvider === "adjust"
+            ? "Game created. Next: link it to Adjust and add its tasks in Client Games."
+            : "Game created successfully"
+        );
       }
       setShowEditModal(false);
       setSelectedGame(null);
@@ -663,9 +667,13 @@ export default function GamesListingModule() {
               <PencilIcon className="h-4 w-4" />
             </button>
 
-            {/* Tasks button (link) */}
+            {/* Tasks button (link) - client games manage tasks with their Adjust setup */}
             <Link
-              href={`/offers/tasks?game=${encodeURIComponent(game.id)}`}
+              href={
+                game.sdk === "adjust"
+                  ? `/offers/client-games?game=${encodeURIComponent(game.id)}`
+                  : `/offers/tasks?game=${encodeURIComponent(game.id)}`
+              }
               className="inline-flex items-center px-3 py-1 rounded-md text-sm bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors"
               title="View Tasks"
             >

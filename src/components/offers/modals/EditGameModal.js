@@ -69,6 +69,11 @@ const AGE_GROUPS = [
 
 const GENDERS = ["Male", "Female", "Other", "Any"];
 
+// Client games are entered by hand and report milestones through Adjust.
+// Sent as the provider id (not the display name) because the backend keys
+// its Adjust handling on exactly this value.
+const CLIENT_GAME_SDK = "adjust";
+
 const CITIES = {
   US: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"],
   CA: ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa"],
@@ -463,7 +468,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
   // Fetch games by SDK name
   useEffect(() => {
     const fetchGamesBySDK = async () => {
-      if (!formData.sdk || !platform) {
+      // Client games have no provider feed to pick from - they are entered by hand
+      if (!formData.sdk || !platform || formData.sdk === CLIENT_GAME_SDK) {
         setGamesList([]);
         return;
       }
@@ -499,6 +505,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
 
     fetchGamesBySDK();
   }, [formData.sdk, platform, formData.country]);
+
+  const isClientGame = formData.sdk === CLIENT_GAME_SDK;
 
   const handleInputChange = (field, value) => {
     if (field.includes(".")) {
@@ -649,14 +657,20 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
       return;
     }
 
+    if (isClientGame && !formData.description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+
     // XPTR Rules validation removed - field not used anywhere in app logic
     // if (!formData.xptrRules || !formData.xptrRules.trim()) {
     //   toast.error("XPTR Rules are required");
     //   return;
     // }
 
-    // Validate dollar/reward amount when adding new game
-    if (!game && (!formData.rewardDollars || formData.rewardDollars <= 0)) {
+    // Validate dollar/reward amount when adding new game. Client games have no
+    // provider payout; their rewards are set per task.
+    if (!game && !isClientGame && (!formData.rewardDollars || formData.rewardDollars <= 0)) {
       toast.error("Please enter a valid reward amount in USD");
       return;
     }
@@ -781,7 +795,7 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                {game ? "Edit Game" : "Add New Game"}
              </h3>
              <div className="flex items-center space-x-3">
-               {!game && formData.gameId && (
+               {!game && formData.gameId && !isClientGame && (
                  <button
                    type="button"
                    onClick={() => setShowPreviewModal(true)}
@@ -845,40 +859,97 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                     <option value="">Choose SDK Game...</option>
                     {sdkProviders
                       .filter((sdk) =>
-                        ["bitlabs", "besitos"].includes(sdk.id?.toLowerCase()),
+                        ["bitlabs", "besitos", CLIENT_GAME_SDK].includes(sdk.id?.toLowerCase()),
                       )
                       .map((sdk) => (
-                        <option key={sdk.id} value={sdk.name}>
+                        <option
+                          key={sdk.id}
+                          value={sdk.id === CLIENT_GAME_SDK ? CLIENT_GAME_SDK : sdk.name}
+                        >
                           {sdk.name}
                         </option>
                       ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Game Title
-                  </label>
-                  <select
-                    value={formData.gameId}
-                    onChange={(e) => handleGameSelect(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
-                    disabled={!formData.sdk || loadingGames}
-                  >
-                    <option value="">
-                      {!formData.sdk
-                        ? "Select SDK first..."
-                        : loadingGames
-                          ? "Loading games..."
-                          : "Choose game..."}
-                    </option>
-                    {gamesList.map((game) => (
-                      <option key={game.id} value={game.id}>
-                        {game.title}
+                {isClientGame ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Game ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.gameId}
+                        onChange={(e) => handleInputChange("gameId", e.target.value)}
+                        placeholder="e.g. client-puzzle-quest"
+                        disabled={!!game}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 disabled:text-gray-600"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Your own identifier for this game. Variants of the same game share it.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Game Title <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.title}
+                        onChange={(e) => {
+                          handleInputChange("title", e.target.value);
+                          handleInputChange("thumbnailAltText", `${e.target.value} game thumbnail`);
+                        }}
+                        placeholder="Enter game title"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => handleInputChange("description", e.target.value)}
+                        rows={3}
+                        placeholder="Shown to players on the game page"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        After saving, link the game to Adjust and add its tasks under
+                        Game &amp; Offer Management → Client Games.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Game Title
+                    </label>
+                    <select
+                      value={formData.gameId}
+                      onChange={(e) => handleGameSelect(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500"
+                      disabled={!formData.sdk || loadingGames}
+                    >
+                      <option value="">
+                        {!formData.sdk
+                          ? "Select SDK first..."
+                          : loadingGames
+                            ? "Loading games..."
+                            : "Choose game..."}
                       </option>
-                    ))}
-                  </select>
-                </div>
+                      {gamesList.map((game) => (
+                        <option key={game.id} value={game.id}>
+                          {game.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Country filter for Bitlabs games */}
                 {formData.sdk?.toLowerCase() === "bitlabs" && (
@@ -928,6 +999,9 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                   />
                 </div> */}
 
+                {/* Provider payout fields - client games are paid per task instead */}
+                {!isClientGame && (
+                <>
                 {/* XP Reward - Hidden in edit modal */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1006,6 +1080,8 @@ export default function EditGameModal({ isOpen, onClose, game, onSave }) {
                       : "Coins are calculated from the dollar amount using admin conversion settings"}
                   </p>
                 </div>
+                </>
+                )}
 
                 {/* Default Task Count - Hidden: Not used in app logic */}
                 {/* <div>
