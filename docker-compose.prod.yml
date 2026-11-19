@@ -1,6 +1,8 @@
 # Production stack for the rewards admin panel.
 #   cp .env.production.example .env.production   # fill in values
 #   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+name: jackson-admin-prod
+
 services:
   admin:
     build:

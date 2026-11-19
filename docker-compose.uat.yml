@@ -1,6 +1,8 @@
 # UAT stack for the rewards admin panel.
 #   cp .env.uat.example .env.uat   # fill in values
 #   docker compose --env-file .env.uat -f docker-compose.uat.yml up -d --build
+name: jackson-admin-uat
+
 services:
   admin:
     build:
