@@ -1,0 +1,22 @@
+# UAT stack for the rewards admin panel.
+#   cp .env.uat.example .env.uat   # fill in values
+#   docker compose --env-file .env.uat -f docker-compose.uat.yml up -d --build
+services:
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:?set NEXT_PUBLIC_API_BASE in .env.uat}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_SENTRY_ENV: ${NEXT_PUBLIC_SENTRY_ENV:-uat}
+    image: jackson-admin:uat
+    container_name: jackson-admin-uat
+    restart: always
+    ports:
+      - "${ADMIN_PORT:-3001}:3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

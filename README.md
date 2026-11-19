@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Docker deployment (UAT / Production)
+
+`NEXT_PUBLIC_*` values are baked in at build time, so each environment gets its own image.
+After changing an env value, rebuild with `--build`.
+
+```bash
+# UAT (default host port 3001)
+cp .env.uat.example .env.uat            # fill in values
+docker compose --env-file .env.uat -f docker-compose.uat.yml up -d --build
+
+# Production (default host port 3000)
+cp .env.production.example .env.production
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+
+# Logs / stop
+docker compose -f docker-compose.uat.yml logs -f
+docker compose -f docker-compose.uat.yml down
+```

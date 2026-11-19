@@ -1,5 +1,12 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Self-contained server bundle in .next/standalone, used by the Docker image.
+  output: "standalone",
+  // Pin tracing to this folder (the parent repo has its own lockfile).
+  outputFileTracingRoot: path.dirname(fileURLToPath(import.meta.url)),
   images: {
     remotePatterns: [
       {
@@ -13,6 +20,14 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "*.hireagent.co",
+      },
+      {
+        protocol: "https",
+        hostname: "indoviaholdings.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.indoviaholdings.com",
       },
     ],
   },

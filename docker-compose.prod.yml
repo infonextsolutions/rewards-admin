@@ -1,0 +1,22 @@
+# Production stack for the rewards admin panel.
+#   cp .env.production.example .env.production   # fill in values
+#   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+services:
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:?set NEXT_PUBLIC_API_BASE in .env.production}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_SENTRY_ENV: ${NEXT_PUBLIC_SENTRY_ENV:-production}
+    image: jackson-admin:prod
+    container_name: jackson-admin-prod
+    restart: always
+    ports:
+      - "${ADMIN_PORT:-3000}:3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

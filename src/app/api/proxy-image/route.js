@@ -14,6 +14,8 @@ export async function GET(request) {
       'rewardsapi.hireagent.co',
       'rewardsuatapi.hireagent.co',
       'hireagent.co',
+      'api.indoviaholdings.com',
+      'api.uat.indoviaholdings.com',
       'c.animaapp.com',
       'lh3.googleusercontent.com',
     ];
