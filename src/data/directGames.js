@@ -70,6 +70,16 @@ export const directGamesAPI = {
     return response.data.data;
   },
 
+  async previewTaskImport(gameId, tasks) {
+    const response = await apiClient.post(`/admin/direct-games/games/${gameId}/task-import/preview`, { tasks });
+    return response.data.data;
+  },
+
+  async applyTaskImport(gameId, tasks, previewHash) {
+    const response = await apiClient.post(`/admin/direct-games/games/${gameId}/task-import/apply`, { tasks, previewHash });
+    return response.data.data;
+  },
+
   // Events and review queue
 
   async listEvents(params = {}) {

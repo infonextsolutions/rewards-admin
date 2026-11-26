@@ -14,6 +14,7 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 import ConfirmationModal from '../offers/modals/ConfirmationModal';
 import AdjustConfigModal from './AdjustConfigModal';
 import ClientTaskModal from './ClientTaskModal';
+import ImportClientTasksModal from './ImportClientTasksModal';
 import { EVENT_TYPES } from './constants';
 import { directGamesAPI, apiErrorMessage } from '../../data/directGames';
 
@@ -24,6 +25,7 @@ export default function ClientGameDetail({ game, onGameChanged }) {
   const [loading, setLoading] = useState(true);
   const [showConfig, setShowConfig] = useState(false);
   const [taskModal, setTaskModal] = useState({ open: false, task: null });
+  const [showImport, setShowImport] = useState(false);
   const [savingTask, setSavingTask] = useState(false);
   const [deleteTask, setDeleteTask] = useState(null);
   const [togglingRewards, setTogglingRewards] = useState(false);
@@ -221,6 +223,13 @@ export default function ClientGameDetail({ game, onGameChanged }) {
           >
             <PlusIcon className="h-4 w-4" /> Add task
           </button>
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            className="ml-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm text-green-700 border border-green-600 hover:bg-green-50"
+          >
+            Import Adjust CSV
+          </button>
         </div>
 
         {tasks.length === 0 ? (
@@ -326,6 +335,14 @@ export default function ClientGameDetail({ game, onGameChanged }) {
         nextOrder={nextOrder}
         onSave={handleSaveTask}
         saving={savingTask}
+      />
+      <ImportClientTasksModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        game={game}
+        nextOrder={nextOrder}
+        existingTasks={tasks}
+        onApplied={load}
       />
       <ConfirmationModal
         isOpen={!!deleteTask}
